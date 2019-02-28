@@ -1,0 +1,91 @@
+---
+# this file was originally created using go-swagger using the defined types and patched by hand for additional information
+# not supported by go-swagger generation. At this point, this file is the source of truth for the schema and must be
+# maintained by hand to reflect changes in the go model.
+paths: {}
+swagger: "2.0"
+definitions:
+  qbec.io.v1alpha1.App:
+    additionalProperties: false
+    description: The list of all components for the app is derived as all the supported
+      (jsonnet, json, yaml) files in the components subdirectory.
+    properties:
+      apiVersion:
+        description: requested API version
+        type: string
+      kind:
+        description: object kind
+        pattern: ^App$
+        type: string
+      metadata:
+        $ref: '#/definitions/qbec.io.v1alpha1.AppMeta'
+      spec:
+        $ref: '#/definitions/qbec.io.v1alpha1.AppSpec'
+    required:
+    - kind
+    - apiVersion
+    - metadata
+    - spec
+    title: QbecApp is a set of components that can be applied to multiple environments
+      with tweaked runtime configurations.
+    type: object
+  qbec.io.v1alpha1.AppMeta:
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        pattern: '^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$'
+    required:
+    - name
+    title: AppMeta is the simplified metadata object for a qbec app.
+    type: object
+  qbec.io.v1alpha1.AppSpec:
+    additionalProperties: false
+    properties:
+      componentsDir:
+        description: directory containing component files, default to components/
+        type: string
+      environments:
+        additionalProperties:
+          $ref: '#/definitions/qbec.io.v1alpha1.Environment'
+        description: set of environments for the app
+        minProperties: 1
+        type: object
+      excludes:
+        description: list of components to exclude by default for every environment
+        items:
+          type: string
+        type: array
+      libPaths:
+        description: list of library paths to add to the jsonnet VM at evaluation
+        items:
+          type: string
+        type: array
+      paramsFile:
+        description: |-
+          standard file containing parameters for all environments returning correct values based on qbec.io/env external
+          variable, defaults to params.libsonnet
+        type: string
+    required:
+    - environments
+    title: AppSpec is the user-supplied configuration of the qbec app.
+    type: object
+  qbec.io.v1alpha1.Environment:
+    additionalProperties: false
+    properties:
+      defaultNamespace:
+        type: string
+      excludes:
+        items:
+          type: string
+        type: array
+      includes:
+        items:
+          type: string
+        type: array
+      server:
+        type: string
+    title: Environment points to a specific destination and has its own set of runtime
+      parameters.
+    type: object
+

@@ -1,0 +1,23 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: example1
+spec:
+  # componentsDir: components
+  # paramsFile: params.libsonnet
+  libPaths:
+  - lib
+  excludes:
+  - service2
+  environments:
+    dev:
+      server: https://dev-server
+      includes:
+      - service2
+      excludes:
+      - service1
+    prod:
+      server: https://prod-server
+      includes:
+      - service2

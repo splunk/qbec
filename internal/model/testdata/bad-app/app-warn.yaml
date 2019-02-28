@@ -1,0 +1,17 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: test-app
+spec:
+  excludes:
+  - a
+  environments:
+    prod:
+      server: http://baseline-server
+      excludes:
+      - a
+    dev:
+      server: https://dev-server
+      includes:
+      - b
+

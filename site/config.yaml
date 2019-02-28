@@ -1,0 +1,9 @@
+baseURL: http://example.org/
+languageCode: en-us
+title: Qbec
+theme: learn
+params:
+  description: a tool to configure and create Kubernetes objects on multiple environments
+  copyright: "\u00a9 2019 - the qbec authors"
+  themeVariant: blue
+  disableSearch: true
