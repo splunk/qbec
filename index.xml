@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Home on Qbec</title>
-    <link>http://example.org/</link>
+    <link>http://splunk.qbec.io/qbec/</link>
     <description>Recent content in Home on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://example.org/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://splunk.qbec.io/qbec/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>A quick tour of qbec</title>
-      <link>http://example.org/userguide/tour/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/tour/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/tour/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/tour/</guid>
       <description>Initialize a new qbec app qbec provides an init command to set up a new application. Let&amp;rsquo;s run this and see what happens.
 qbec init demo --with-example # --with-example creates a sample &amp;quot;hello&amp;quot; component  When the above command runs successfully, it creates a subdirectory called demo that has a single component and environment. The default environment is inferred from the current context in your kube config.
 The following files are created in the demo directory:</description>
@@ -23,20 +23,20 @@ The following files are created in the demo directory:</description>
     
     <item>
       <title>Folders, files, parameters</title>
-      <link>http://example.org/userguide/usage/basic/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/usage/basic/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/usage/basic/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/usage/basic/</guid>
       <description>At the very least, you need to have the following files and folders for a qbec app:
  qbec.yaml - this needs to be at the root of the source directory and defines your application in terms of:  supported environments components that should be excluded by default for all environments specific components excluded and included in specific environments. See the reference document for more details.  a folder for components.</description>
     </item>
     
     <item>
       <title>Create components</title>
-      <link>http://example.org/userguide/usage/authoring/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/usage/authoring/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/usage/authoring/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/usage/authoring/</guid>
       <description>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static and unable to support parameterization per environment. These formats are good enough for Kubernetes objects like roles, role bindings, service accounts etc. where the content doesn&amp;rsquo;t usually vary per environment.
 In order to create components that need to be different per environment, you are pretty much required to use jsonnet.
 k8s-yaml-patch, for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and return them for qbec use.</description>
@@ -44,20 +44,20 @@ k8s-yaml-patch, for example, is a jsonnet library that allows you to load YAML d
     
     <item>
       <title>Application YAML</title>
-      <link>http://example.org/reference/qbec-yaml/</link>
+      <link>http://splunk.qbec.io/qbec/reference/qbec-yaml/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/reference/qbec-yaml/</guid>
+      <guid>http://splunk.qbec.io/qbec/reference/qbec-yaml/</guid>
       <description>The app configuration is a file called qbec.yaml and needs to be at the root of the directory tree.
 apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;quot;App&amp;quot; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
     </item>
     
     <item>
       <title>Metadata for K8s objects</title>
-      <link>http://example.org/reference/gen-metadata/</link>
+      <link>http://splunk.qbec.io/qbec/reference/gen-metadata/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/reference/gen-metadata/</guid>
+      <guid>http://splunk.qbec.io/qbec/reference/gen-metadata/</guid>
       <description>Labels All Kubernetes objects produced by qbec have the following labels associated with them:
  qbec.io/application - the app name from qbec.yaml qhec.io/environment - the environment name in qbec.yaml for which the object was created  The labels are used to efficiently find all cluster objects for a specific app and environment for garbage collection.
 If you rename an app, environment, or component, garbage collection for the next immediate run of qbec apply may not work correctly.</description>
@@ -65,10 +65,10 @@ If you rename an app, environment, or component, garbage collection for the next
     
     <item>
       <title>Component evaluation</title>
-      <link>http://example.org/reference/component-evaluation/</link>
+      <link>http://splunk.qbec.io/qbec/reference/component-evaluation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/reference/component-evaluation/</guid>
+      <guid>http://splunk.qbec.io/qbec/reference/component-evaluation/</guid>
       <description>How qbec evaluates component code using jsonnet and what it expects the output to look like.
 Jsonnet evaluation This works as follows:
  Collect the list of files to be evaluated for the environment. This takes into account all components in the directory, inclusion and exclusion lists for the current environment and component filters specified on the command line. Assuming this leads to 3 files, say, c1.jsonnet, c2.json, and c3.</description>
@@ -76,10 +76,10 @@ Jsonnet evaluation This works as follows:
     
     <item>
       <title>Core concepts</title>
-      <link>http://example.org/userguide/model/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/model/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/model/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/model/</guid>
       <description>qbec uses the following concepts.
 Components Components are the source code that you write that represent Kubernetes objects. A component is single source file that produces a collection of logically related Kubernetes objects. You implement components by writing jsonnet, YAML or JSON files.
 It is also valid for a component to return an empty set of objects if runtime parameters determine that nothing should be installed for a specific target environment.</description>
@@ -87,39 +87,39 @@ It is also valid for a component to return an empty set of objects if runtime pa
     
     <item>
       <title>Running qbec commands</title>
-      <link>http://example.org/userguide/usage/commands/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/usage/commands/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/usage/commands/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/usage/commands/</guid>
       <description>The qbec CLI provides usage help for all commands. The commands that qbec supports are:
 $ qbec --help qbec provides a set of commands to manage addons. Usage: qbec [command] Available Commands: apply apply one or more components to a Kubernetes cluster component component lists and diffs delete delete one or more components from a Kubernetes cluster diff diff one or more components against objects in a Kubernetes cluster help Help about any command init initialize a qbec app param parameter lists and diffs show show output in YAML or JSON format for one or more components validate validate one or more components against the spec of a kubernetes cluster version print program version .</description>
     </item>
     
     <item>
       <title>Diffs and patches</title>
-      <link>http://example.org/reference/diffs-and-patches/</link>
+      <link>http://splunk.qbec.io/qbec/reference/diffs-and-patches/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/reference/diffs-and-patches/</guid>
+      <guid>http://splunk.qbec.io/qbec/reference/diffs-and-patches/</guid>
       <description>qbec uses a 3-way merge patch similar to kubectl/ksonnet apply. The Kubernetes documentation describes how this works.
 For existing objects, the qbec diff command produces a diff between the last applied configuration stored on the server and the current configuration of the object loaded from source. This diff is &amp;ldquo;clean&amp;rdquo; in the sense of the remote object not having additional fields, default values and so on. It faithfully represents the change between the previous and current version of the object produced from source code.</description>
     </item>
     
     <item>
       <title>Tips and tricks</title>
-      <link>http://example.org/userguide/usage/tips-and-tricks/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/usage/tips-and-tricks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/usage/tips-and-tricks/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/usage/tips-and-tricks/</guid>
       <description>Runtime  qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
     </item>
     
     <item>
       <title>Garbage collection</title>
-      <link>http://example.org/reference/garbage-collection/</link>
+      <link>http://splunk.qbec.io/qbec/reference/garbage-collection/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/reference/garbage-collection/</guid>
+      <guid>http://splunk.qbec.io/qbec/reference/garbage-collection/</guid>
       <description>While garbage collection is supported as a first-class operation qbec and enabled by default, it is a complex, nuanced subject fraught with special cases. We hope that the explanation below can help users figure out the causes of issues they might see in this area and create better bug reports.
 What garbage collection means Garbage collection is the act of deleting objects that were once applied for a qbec app but no longer exist in source code.</description>
     </item>

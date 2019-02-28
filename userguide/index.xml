@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>User guide on Qbec</title>
-    <link>http://example.org/userguide/</link>
+    <link>http://splunk.qbec.io/qbec/userguide/</link>
     <description>Recent content in User guide on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://example.org/userguide/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://splunk.qbec.io/qbec/userguide/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>A quick tour of qbec</title>
-      <link>http://example.org/userguide/tour/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/tour/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/tour/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/tour/</guid>
       <description>Initialize a new qbec app qbec provides an init command to set up a new application. Let&amp;rsquo;s run this and see what happens.
 qbec init demo --with-example # --with-example creates a sample &amp;quot;hello&amp;quot; component  When the above command runs successfully, it creates a subdirectory called demo that has a single component and environment. The default environment is inferred from the current context in your kube config.
 The following files are created in the demo directory:</description>
@@ -23,10 +23,10 @@ The following files are created in the demo directory:</description>
     
     <item>
       <title>Core concepts</title>
-      <link>http://example.org/userguide/model/</link>
+      <link>http://splunk.qbec.io/qbec/userguide/model/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://example.org/userguide/model/</guid>
+      <guid>http://splunk.qbec.io/qbec/userguide/model/</guid>
       <description>qbec uses the following concepts.
 Components Components are the source code that you write that represent Kubernetes objects. A component is single source file that produces a collection of logically related Kubernetes objects. You implement components by writing jsonnet, YAML or JSON files.
 It is also valid for a component to return an empty set of objects if runtime parameters determine that nothing should be installed for a specific target environment.</description>
