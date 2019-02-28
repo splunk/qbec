@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>http://example.org/userguide/tour/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/usage/basic/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/getting-started/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/usage/authoring/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/qbec-yaml/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/gen-metadata/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/comparison-with-other-tools/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/component-evaluation/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/model/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/usage/commands/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/diffs-and-patches/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/usage/tips-and-tricks/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/reference/garbage-collection/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://example.org/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://example.org/userguide/usage/</loc>
+  </url>
+  
+</urlset>

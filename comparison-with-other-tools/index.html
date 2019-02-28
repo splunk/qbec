@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
+
+
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
+<link rel="icon" href="/images/favicon.png" type="image/x-icon" />
+    <title>Comparison with other tools :: Qbec</title>
+
+    
+    <link href="/css/nucleus.css?1551396826" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551396826" rel="stylesheet">
+    <link href="/css/hybrid.css?1551396826" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551396826" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551396826" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551396826" rel="stylesheet">
+    <link href="/css/theme.css?1551396826" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551396826" rel="stylesheet">
+    
+      <link href="/css/theme-blue.css?1551396826" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551396826"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    <style type="text/css">
+    h1 {
+        text-align: left;
+        border-bottom: 4px solid #F0F2F4;
+    }
+    #chapter h1 {
+        text-align: center !important;
+    }
+    #chapter p {
+        text-align: left !important;
+    }
+</style>
+
+  </head>
+  <body class="" data-url="/comparison-with-other-tools/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <p style="text-align: left; margin:0; padding: 0">
+    <a style="font-weight: bold; color: white; font-family: 'work Sans',sans-serif; font-size: 14pt" id="logo" href="/">
+        &#9884;
+        qbec
+    </a>
+</p>
+
+    </div>
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/getting-started/" title="Getting started" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/getting-started/">
+          Getting started
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/">
+          User guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/tour/" title="A quick tour of qbec" class="dd-item ">
+        <a href="/userguide/tour/">
+        A quick tour of qbec
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/model/" title="Core concepts" class="dd-item ">
+        <a href="/userguide/model/">
+        Core concepts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/usage/">
+          Using qbec
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/basic/" title="Folders, files, parameters" class="dd-item ">
+        <a href="/userguide/usage/basic/">
+        Folders, files, parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/authoring/" title="Create components" class="dd-item ">
+        <a href="/userguide/usage/authoring/">
+        Create components
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
+        <a href="/userguide/usage/commands/">
+        Running qbec commands
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/tips-and-tricks/" title="Tips and tricks" class="dd-item ">
+        <a href="/userguide/usage/tips-and-tricks/">
+        Tips and tricks
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/reference/">
+          Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
+        <a href="/reference/qbec-yaml/">
+        Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/gen-metadata/" title="Metadata for K8s objects" class="dd-item ">
+        <a href="/reference/gen-metadata/">
+        Metadata for K8s objects
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
+        <a href="/reference/component-evaluation/">
+        Component evaluation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/diffs-and-patches/" title="Diffs and patches" class="dd-item ">
+        <a href="/reference/diffs-and-patches/">
+        Diffs and patches
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/garbage-collection/" title="Garbage collection" class="dd-item ">
+        <a href="/reference/garbage-collection/">
+        Garbage collection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/comparison-with-other-tools/" title="Comparison with other tools" class="dd-item 
+        parent
+        active
+        
+        ">
+      <a href="/comparison-with-other-tools/">
+          Comparison with other tools
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > Comparison with other tools
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#environments">Environments</a></li>
+<li><a href="#runtime-configuration">Runtime configuration</a></li>
+<li><a href="#component-lists-by-environment">Component lists by environment</a></li>
+<li><a href="#magic-jsonnet-variables">Magic jsonnet variables</a></li>
+<li><a href="#object-updates">Object updates</a></li>
+<li><a href="#garbage-collection">Garbage collection</a></li>
+<li><a href="#secure-by-default">Secure by default</a></li>
+<li><a href="#safe-by-default">Safe by default</a></li>
+<li><a href="#support-for-network-import-paths">Support for network import paths</a></li>
+<li><a href="#support-for-community-components-prototypes-helm-charts-etc">Support for community components, prototypes, helm charts etc.</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+
+        
+        <div id="body-inner">
+          
+            <h1>Comparison with other tools</h1>
+          
+
+        
+
+
+
+
+<p>We compare qbec with ksonnet (v0.13) and kubecfg (v0.9.0) along multiple dimensions.</p>
+
+<h3 id="environments">Environments</h3>
+
+<p>qbec and ksonnet use an application manifest to declare environments. Kubernetes contexts are derived based off the
+server URL defined for environments. Kubecfg requires the context to be specified on the command line.</p>
+
+<p>This avoids command-line typos of a dangerous nature.</p>
+
+<h3 id="runtime-configuration">Runtime configuration</h3>
+
+<ul>
+<li><p>kubecfg requires the user to parameterize runtime configuration based of jsonnet variables passed to the command line.
+In short, it leaves parameterization up to the user.</p></li>
+
+<li><p>ksonnet has a lot of structure for defining per-environment parameters and creates a code variable (i.e. <code>__ksonnet/params</code>)
+that provide this information to components. ksonnet also provides commands to set environment specific parameters,
+list them etc.</p></li>
+
+<li><p>qbec takes a middle road. It automatically creates a <code>qbec.io/env</code> variable that has the environment name and expects
+user code to return parameters based on this. It <em>does</em> support listing and displaying parameters per environment
+provided the user has followed expected conventions. The rest of the commands (<code>show</code>, <code>apply</code> etc.) do not care
+about this.</p></li>
+</ul>
+
+<p>The reason for this choice is that it is <em>far</em> easier to setup a string variable in your IDE (e.g. VSCode), have
+all components resolve statically, and have the IDE produce jsonnet errors. This allows the user to see error messages
+as they are developing components. Since the environment variable name is tied to the environment via the application
+manifest, this strategy also provides the minimal structure neeeded such that people cannot easily make mistakes and
+apply a dev configuration to a prod cluster.</p>
+
+<p>Finally <code>qbec</code> stays out of the business of <em>how</em> runtime configuration is set up in files by not having setters for parameters.
+In practice, we have found that we need to compose runtime parameters from cloud information, secrets from environment variables,
+versions of images supplied by the CD pipeline etc. and it is not always explicitly set up in a standard format.</p>
+
+<h3 id="component-lists-by-environment">Component lists by environment</h3>
+
+<ul>
+<li>kubecfg does not have a a formal notion of components by environment</li>
+<li>ksonnet produces a list of components and creates a code variable (i.e. <code>__ksonnet/components</code>) using this list.
+This can be augmented at runtime per environment using additional object definitions.</li>
+<li>qbec loads all components by default but the user has the option to specify (in <code>qbec.yaml</code>)
+
+<ul>
+<li>the components that should be excluded by default for all environments</li>
+<li>environment specific inclusions and exclusions of specific components.
+<br /></li>
+</ul></li>
+</ul>
+
+<p>This allows for qbec to create component lists in a declarative manner. Unlike ksonnet, it does not require (or support)
+a main module per environment that returns this list. The advantage over the ksonnet approach is that
+component filters work uniformly in all cases when component lists are formally specified.</p>
+
+<h3 id="magic-jsonnet-variables">Magic jsonnet variables</h3>
+
+<ul>
+<li>kubecfg does not create any jsonnet variables by default</li>
+<li>ksonnet creates 2 code variables <code>__ksonnet/components</code> and <code>__ksonnet/params</code></li>
+<li>qbec creates a string variable <code>qbec.io/env</code> that has the environment name</li>
+</ul>
+
+<p>See the runtime configuration section for pros and cons</p>
+
+<h3 id="object-updates">Object updates</h3>
+
+<p>Both ksonnet and qbec use a 3-way merge patch for applying object updates while keeping track of the last applied
+configuration similar to <code>kubectl</code>. Kubecfg does not do this which leads to spurious diffs and incorrect updates
+for a few cases (e.g. service host ports).</p>
+
+<h3 id="garbage-collection">Garbage collection</h3>
+
+<p>qbec has garbage collection turned on by default and does not require additional machinery like <code>--gc-tag</code> etc. to enable
+it. It can be disabled on demand. Diffs show objects that would be deleted.</p>
+
+<p>See how garbage collection works in qbec in the reference section.</p>
+
+<h3 id="secure-by-default">Secure by default</h3>
+
+<p>qbec hides the real values for K8s secrets by and replaces them with a hash of the value prefixed by
+a random string that changes for every invocation. This strategy allows diffs to work but
+ensures that no command dumps sensitive output.
+All commands can be safely used in a CI environment without having to worry about exposing
+secrets in the build log.</p>
+
+<h3 id="safe-by-default">Safe by default</h3>
+
+<p>Mutating commands in qbec require confirmation by default.</p>
+
+<p>Diffs are clean and dry-runs show the patches that would be applied on the server.
+This allows users to eyeball the logs and ensure that bad things won&rsquo;t happen.</p>
+
+<h3 id="support-for-network-import-paths">Support for network import paths</h3>
+
+<p>Unlike the other tools, qbec <em>does not</em> implement <code>http</code> import paths. This is not a technical limitation but a choice
+to see how far we can go with this approach, which requires all remote components to be pulled in locally before
+executing <code>qbec</code>.</p>
+
+<p>We are not averse to adding this feature but would like to do it consciously after evaluating other options.</p>
+
+<h3 id="support-for-community-components-prototypes-helm-charts-etc">Support for community components, prototypes, helm charts etc.</h3>
+
+<p>Only ksonnet has these feature. In this author&rsquo;s opinion these features have made the ksonnet surface area large and
+difficult to reason about so we have left them out.</p>
+
+<p>It is probably useful to provide support for helm charts in qbec.</p>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/reference/garbage-collection/" title="Garbage collection"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/getting-started/" title="Getting started" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551396826"></script>
+    <script src="/js/jquery.sticky.js?1551396826"></script>
+    <script src="/js/featherlight.min.js?1551396826"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551396826"></script>
+    <script src="/js/highlight.pack.js?1551396826"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551396826"></script>
+    <script src="/js/learn.js?1551396826"></script>
+    <script src="/js/hugo-learn.js?1551396826"></script>
+
+    <link href="/mermaid/mermaid.css?1551396826" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551396826"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>

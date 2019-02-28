@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Using qbec on Qbec</title>
+    <link>http://example.org/userguide/usage/</link>
+    <description>Recent content in Using qbec on Qbec</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://example.org/userguide/usage/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Folders, files, parameters</title>
+      <link>http://example.org/userguide/usage/basic/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/userguide/usage/basic/</guid>
+      <description>At the very least, you need to have the following files and folders for a qbec app:
+ qbec.yaml - this needs to be at the root of the source directory and defines your application in terms of:  supported environments components that should be excluded by default for all environments specific components excluded and included in specific environments. See the reference document for more details.  a folder for components.</description>
+    </item>
+    
+    <item>
+      <title>Create components</title>
+      <link>http://example.org/userguide/usage/authoring/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/userguide/usage/authoring/</guid>
+      <description>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static and unable to support parameterization per environment. These formats are good enough for Kubernetes objects like roles, role bindings, service accounts etc. where the content doesn&amp;rsquo;t usually vary per environment.
+In order to create components that need to be different per environment, you are pretty much required to use jsonnet.
+k8s-yaml-patch, for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and return them for qbec use.</description>
+    </item>
+    
+    <item>
+      <title>Running qbec commands</title>
+      <link>http://example.org/userguide/usage/commands/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/userguide/usage/commands/</guid>
+      <description>The qbec CLI provides usage help for all commands. The commands that qbec supports are:
+$ qbec --help qbec provides a set of commands to manage addons. Usage: qbec [command] Available Commands: apply apply one or more components to a Kubernetes cluster component component lists and diffs delete delete one or more components from a Kubernetes cluster diff diff one or more components against objects in a Kubernetes cluster help Help about any command init initialize a qbec app param parameter lists and diffs show show output in YAML or JSON format for one or more components validate validate one or more components against the spec of a kubernetes cluster version print program version .</description>
+    </item>
+    
+    <item>
+      <title>Tips and tricks</title>
+      <link>http://example.org/userguide/usage/tips-and-tricks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/userguide/usage/tips-and-tricks/</guid>
+      <description>Runtime  qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
+    </item>
+    
+  </channel>
+</rss>

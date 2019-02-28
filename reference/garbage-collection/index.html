@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
+
+
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
+<link rel="icon" href="/images/favicon.png" type="image/x-icon" />
+    <title>Garbage collection :: Qbec</title>
+
+    
+    <link href="/css/nucleus.css?1551396826" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551396826" rel="stylesheet">
+    <link href="/css/hybrid.css?1551396826" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551396826" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551396826" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551396826" rel="stylesheet">
+    <link href="/css/theme.css?1551396826" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551396826" rel="stylesheet">
+    
+      <link href="/css/theme-blue.css?1551396826" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551396826"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    <style type="text/css">
+    h1 {
+        text-align: left;
+        border-bottom: 4px solid #F0F2F4;
+    }
+    #chapter h1 {
+        text-align: center !important;
+    }
+    #chapter p {
+        text-align: left !important;
+    }
+</style>
+
+  </head>
+  <body class="" data-url="/reference/garbage-collection/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <p style="text-align: left; margin:0; padding: 0">
+    <a style="font-weight: bold; color: white; font-family: 'work Sans',sans-serif; font-size: 14pt" id="logo" href="/">
+        &#9884;
+        qbec
+    </a>
+</p>
+
+    </div>
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/getting-started/" title="Getting started" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/getting-started/">
+          Getting started
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/">
+          User guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/tour/" title="A quick tour of qbec" class="dd-item ">
+        <a href="/userguide/tour/">
+        A quick tour of qbec
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/model/" title="Core concepts" class="dd-item ">
+        <a href="/userguide/model/">
+        Core concepts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/usage/">
+          Using qbec
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/basic/" title="Folders, files, parameters" class="dd-item ">
+        <a href="/userguide/usage/basic/">
+        Folders, files, parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/authoring/" title="Create components" class="dd-item ">
+        <a href="/userguide/usage/authoring/">
+        Create components
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
+        <a href="/userguide/usage/commands/">
+        Running qbec commands
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/tips-and-tricks/" title="Tips and tricks" class="dd-item ">
+        <a href="/userguide/usage/tips-and-tricks/">
+        Tips and tricks
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/reference/">
+          Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
+        <a href="/reference/qbec-yaml/">
+        Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/gen-metadata/" title="Metadata for K8s objects" class="dd-item ">
+        <a href="/reference/gen-metadata/">
+        Metadata for K8s objects
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
+        <a href="/reference/component-evaluation/">
+        Component evaluation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/diffs-and-patches/" title="Diffs and patches" class="dd-item ">
+        <a href="/reference/diffs-and-patches/">
+        Diffs and patches
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/garbage-collection/" title="Garbage collection" class="dd-item active">
+        <a href="/reference/garbage-collection/">
+        Garbage collection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/comparison-with-other-tools/" title="Comparison with other tools" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/comparison-with-other-tools/">
+          Comparison with other tools
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Garbage collection
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#what-garbage-collection-means">What garbage collection means</a></li>
+<li><a href="#the-problem-space">The problem space</a></li>
+<li><a href="#how-qbec-implements-garbage-collection">How qbec implements garbage collection</a>
+<ul>
+<li><a href="#step-1-load-server-metadata">Step 1: Load server metadata</a></li>
+<li><a href="#step-2-figure-out-the-scope-at-which-objects-need-to-be-listed">Step 2: Figure out the scope at which objects need to be listed.</a></li>
+<li><a href="#step-3-list-remote-objects">Step 3: List remote objects</a></li>
+<li><a href="#step-4-handle-special-cases">Step 4: Handle special cases</a></li>
+<li><a href="#step-5-delete-objects">Step 5: Delete objects</a></li>
+</ul></li>
+<li><a href="#known-gotchas">Known gotchas</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+
+        
+        <div id="body-inner">
+          
+            <h1>Garbage collection</h1>
+          
+
+        
+
+
+
+
+<p>While garbage collection is supported as a first-class operation qbec and enabled by default, it is a
+complex, nuanced subject fraught with special cases. We hope that the explanation below can help users
+figure out the causes of issues they might see in this area and create better bug reports.</p>
+
+<h2 id="what-garbage-collection-means">What garbage collection means</h2>
+
+<p>Garbage collection is the act of deleting objects that were once applied for a qbec app but no longer
+exist in source code. This can be caused by removing local component files, removing object definitions
+from files or renaming objects in them.
+If garbage collection were not enabled, this would cause the deleted objects or the ones with the
+old name to be left behind on the server.</p>
+
+<h2 id="the-problem-space">The problem space</h2>
+
+<p>Here are a few reasons why GC is a non-trivial problem:</p>
+
+<ul>
+<li>We need to be able to tell that seemingly different objects are actually the same. A simple example is
+a deployment that has a group version of <code>extensions/v1beta1</code> but the server has a preferred version
+of <code>extensions/v1beta2</code>. These are the same object, just represented differently.</li>
+<li>Some groups have been aliased. So now we need to be able to tell that a deployment having a
+group version of <code>extensions/v1beta1</code> is the same as a deployment having a group version of <code>apps/v1beta1</code></li>
+<li>We need to efficiently gather a list of server-side objects that have been created in past for the qbec
+application.</li>
+<li>When bootstrapping a new cluster with cluster scoped objects, some custom resource definitions may not
+even exist on the server. Trying to get lists of server-side resources based on local resource types
+may not even work.</li>
+<li>Some objects (like specialized controllers and services) create other objects (pods and endpoints) and
+propagate their labels to these children. A naive approach of looking at all server objects having the
+labels for the app and environment and deleting the ones not locally defined may end up
+deleting objects that we didn&rsquo;t create in the first place.</li>
+<li>The process of producing lists of objects of a specific kind requires the user to have permissions to
+list that kind of object. For instance, a user with namespace-only scope may be unable to list some
+or all cluster objects.</li>
+<li>A required object that exists on the server but has not been created by qbec in the first place
+should not be a candidate for deletion. Another example is a <code>qbec apply</code> that is run with component
+filters. A target object that exists but with a different component name that does not match the filter
+should still be left alone.</li>
+</ul>
+
+<h2 id="how-qbec-implements-garbage-collection">How qbec implements garbage collection</h2>
+
+<h3 id="step-1-load-server-metadata">Step 1: Load server metadata</h3>
+
+<p>Load all group/ version/ kind combinations that the server supports and map each of them to the
+canonical version preferred for the server. This takes aliasing (e.g. extensions -&gt; apps) into account.</p>
+
+<h3 id="step-2-figure-out-the-scope-at-which-objects-need-to-be-listed">Step 2: Figure out the scope at which objects need to be listed.</h3>
+
+<p>In this step, qbec looks at all source components and</p>
+
+<ul>
+<li>computes a list of affected namespaces which always includes the default namespace for the environment</li>
+<li>computes whether any cluster-scoped objects exist in the list</li>
+</ul>
+
+<p>This computation is always done by looking at all objects in source irrespective of the component and
+kind filters passed to the command.</p>
+
+<h3 id="step-3-list-remote-objects">Step 3: List remote objects</h3>
+
+<ul>
+<li>If source objects affect a single namespace, query that namespace for all server-side objects having
+labels that match the qbec application and environment.</li>
+<li>If multiple namespaces, list objects across all namespaces using label filters. This is done for
+efficiency and assumes that the user has list permissions across namespaces. There is currently
+no way to control this behavior (i.e. listing objects one namespace at a time)</li>
+<li>If cluster-scoped objects are involved, query all cluster scoped objects as well</li>
+</ul>
+
+<p>Note that:</p>
+
+<ul>
+<li>listings are performed only for the canonical group-version-kind combinations discovered in step 1.</li>
+<li>listings are done without taking component filters into account. If kind filters are specified,
+ only the kinds matching the filter are listed.</li>
+</ul>
+
+<h3 id="step-4-handle-special-cases">Step 4: Handle special cases</h3>
+
+<ul>
+<li>Remove objects created by a controller from the list</li>
+<li>Always remove all <code>Endpoints</code> objects.<br /></li>
+</ul>
+
+<h3 id="step-5-delete-objects">Step 5: Delete objects</h3>
+
+<ul>
+<li>Create the local list of all objects with the canonical group version kinds.</li>
+<li>Remove all objects from the remote list that match any local object</li>
+<li>Apply the component filters on the filtered remote list</li>
+<li>Delete objects one at a time in reverse apply order</li>
+</ul>
+
+<h2 id="known-gotchas">Known gotchas</h2>
+
+<ul>
+<li>Since the list scope is determined by looking at currently used namespaces, it can miss a namespace
+that used to exist in source code but no longer does. It can similarly miss cluster scoped objects
+that were once created but no longer are.</li>
+<li>When multiple namespaces are involved, qbec issues list queries that span all namespaces. This
+operation can fail if the user has permissions to list each of the individual namespaces but is
+not allowed to list objects for all namespaces.</li>
+<li>When applying cluster scoped objects for the very first time, some object types may not exist on the server.
+This can be worked around by disabling GC for the initial run or by using kind filters to exclude
+the custom resources.</li>
+</ul>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/reference/diffs-and-patches/" title="Diffs and patches"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/comparison-with-other-tools/" title="Comparison with other tools" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551396826"></script>
+    <script src="/js/jquery.sticky.js?1551396826"></script>
+    <script src="/js/featherlight.min.js?1551396826"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551396826"></script>
+    <script src="/js/highlight.pack.js?1551396826"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551396826"></script>
+    <script src="/js/learn.js?1551396826"></script>
+    <script src="/js/hugo-learn.js?1551396826"></script>
+
+    <link href="/mermaid/mermaid.css?1551396826" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551396826"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>
+

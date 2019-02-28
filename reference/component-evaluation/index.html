@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
+
+
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
+<link rel="icon" href="/images/favicon.png" type="image/x-icon" />
+    <title>Component evaluation :: Qbec</title>
+
+    
+    <link href="/css/nucleus.css?1551396826" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551396826" rel="stylesheet">
+    <link href="/css/hybrid.css?1551396826" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551396826" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551396826" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551396826" rel="stylesheet">
+    <link href="/css/theme.css?1551396826" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551396826" rel="stylesheet">
+    
+      <link href="/css/theme-blue.css?1551396826" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551396826"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    <style type="text/css">
+    h1 {
+        text-align: left;
+        border-bottom: 4px solid #F0F2F4;
+    }
+    #chapter h1 {
+        text-align: center !important;
+    }
+    #chapter p {
+        text-align: left !important;
+    }
+</style>
+
+  </head>
+  <body class="" data-url="/reference/component-evaluation/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <p style="text-align: left; margin:0; padding: 0">
+    <a style="font-weight: bold; color: white; font-family: 'work Sans',sans-serif; font-size: 14pt" id="logo" href="/">
+        &#9884;
+        qbec
+    </a>
+</p>
+
+    </div>
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/getting-started/" title="Getting started" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/getting-started/">
+          Getting started
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/">
+          User guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/tour/" title="A quick tour of qbec" class="dd-item ">
+        <a href="/userguide/tour/">
+        A quick tour of qbec
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/model/" title="Core concepts" class="dd-item ">
+        <a href="/userguide/model/">
+        Core concepts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/usage/">
+          Using qbec
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/basic/" title="Folders, files, parameters" class="dd-item ">
+        <a href="/userguide/usage/basic/">
+        Folders, files, parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/authoring/" title="Create components" class="dd-item ">
+        <a href="/userguide/usage/authoring/">
+        Create components
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
+        <a href="/userguide/usage/commands/">
+        Running qbec commands
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/tips-and-tricks/" title="Tips and tricks" class="dd-item ">
+        <a href="/userguide/usage/tips-and-tricks/">
+        Tips and tricks
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/reference/">
+          Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
+        <a href="/reference/qbec-yaml/">
+        Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/gen-metadata/" title="Metadata for K8s objects" class="dd-item ">
+        <a href="/reference/gen-metadata/">
+        Metadata for K8s objects
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item active">
+        <a href="/reference/component-evaluation/">
+        Component evaluation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/diffs-and-patches/" title="Diffs and patches" class="dd-item ">
+        <a href="/reference/diffs-and-patches/">
+        Diffs and patches
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/garbage-collection/" title="Garbage collection" class="dd-item ">
+        <a href="/reference/garbage-collection/">
+        Garbage collection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/comparison-with-other-tools/" title="Comparison with other tools" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/comparison-with-other-tools/">
+          Comparison with other tools
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Component evaluation
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#jsonnet-evaluation">Jsonnet evaluation</a></li>
+<li><a href="#converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+
+        
+        <div id="body-inner">
+          
+            <h1>Component evaluation</h1>
+          
+
+        
+
+
+
+
+<p>How qbec evaluates component code using jsonnet and what it expects the output to look like.</p>
+
+<h2 id="jsonnet-evaluation">Jsonnet evaluation</h2>
+
+<p>This works as follows:</p>
+
+<ul>
+<li>Collect the list of files to be evaluated for the environment. This takes into account all components in the directory,
+inclusion and exclusion lists for the current environment and component filters specified on the command line.</li>
+<li>Assuming this leads to 3 files, say, <code>c1.jsonnet</code>, <code>c2.json</code>, and <code>c3.yaml</code> create a jsonnet snippet as follows:</li>
+</ul>
+
+<pre><code>local parseYaml = std.native('parseYaml');
+local parseJson = std.native('parseJson');
+{
+  'c1': import '/path/to/c1.jsonnet',
+  'c2': parseJson(importstr '/path/to/c2.json'),
+  'c3': parseYaml(importstr '/path/to/c3.yaml'),
+}
+</code></pre>
+
+<ul>
+<li>Evaluate this snippet after setting the <code>qbec.io/env</code> extension variable to the environment name in question.</li>
+</ul>
+
+<h2 id="converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</h2>
+
+<p>The evaluation above creates a map of component names to outputs returned by the jsonnet, json and yaml files.</p>
+
+<p>The output is allowed to be:</p>
+
+<ul>
+<li>A single Kubernetes object (identified as such by virtue of having a <code>kind</code> and <code>apiVersion</code>
+fields, where <code>kind</code> is not <code>List</code>).</li>
+<li>A Kubernetes list object where <code>kind</code> is <code>List</code> and it has an <code>items</code> array attribute
+containing an array of outputs.</li>
+<li>A map of string keys to outputs</li>
+<li>An array of outputs</li>
+</ul>
+
+<p>In the latter 3 cases, the output is processed recursively to get to the leaf k8s objects.</p>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/reference/gen-metadata/" title="Metadata for K8s objects"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/reference/diffs-and-patches/" title="Diffs and patches" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551396826"></script>
+    <script src="/js/jquery.sticky.js?1551396826"></script>
+    <script src="/js/featherlight.min.js?1551396826"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551396826"></script>
+    <script src="/js/highlight.pack.js?1551396826"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551396826"></script>
+    <script src="/js/learn.js?1551396826"></script>
+    <script src="/js/hugo-learn.js?1551396826"></script>
+
+    <link href="/mermaid/mermaid.css?1551396826" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551396826"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>
+

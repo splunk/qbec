@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
+
+
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
+<link rel="icon" href="/images/favicon.png" type="image/x-icon" />
+    <title>Core concepts :: Qbec</title>
+
+    
+    <link href="/css/nucleus.css?1551396826" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551396826" rel="stylesheet">
+    <link href="/css/hybrid.css?1551396826" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551396826" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551396826" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551396826" rel="stylesheet">
+    <link href="/css/theme.css?1551396826" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551396826" rel="stylesheet">
+    
+      <link href="/css/theme-blue.css?1551396826" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551396826"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    <style type="text/css">
+    h1 {
+        text-align: left;
+        border-bottom: 4px solid #F0F2F4;
+    }
+    #chapter h1 {
+        text-align: center !important;
+    }
+    #chapter p {
+        text-align: left !important;
+    }
+</style>
+
+  </head>
+  <body class="" data-url="/userguide/model/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <p style="text-align: left; margin:0; padding: 0">
+    <a style="font-weight: bold; color: white; font-family: 'work Sans',sans-serif; font-size: 14pt" id="logo" href="/">
+        &#9884;
+        qbec
+    </a>
+</p>
+
+    </div>
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/getting-started/" title="Getting started" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/getting-started/">
+          Getting started
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User guide" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/userguide/">
+          User guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/tour/" title="A quick tour of qbec" class="dd-item ">
+        <a href="/userguide/tour/">
+        A quick tour of qbec
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/model/" title="Core concepts" class="dd-item active">
+        <a href="/userguide/model/">
+        Core concepts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/usage/">
+          Using qbec
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/basic/" title="Folders, files, parameters" class="dd-item ">
+        <a href="/userguide/usage/basic/">
+        Folders, files, parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/authoring/" title="Create components" class="dd-item ">
+        <a href="/userguide/usage/authoring/">
+        Create components
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
+        <a href="/userguide/usage/commands/">
+        Running qbec commands
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/tips-and-tricks/" title="Tips and tricks" class="dd-item ">
+        <a href="/userguide/usage/tips-and-tricks/">
+        Tips and tricks
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/reference/">
+          Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
+        <a href="/reference/qbec-yaml/">
+        Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/gen-metadata/" title="Metadata for K8s objects" class="dd-item ">
+        <a href="/reference/gen-metadata/">
+        Metadata for K8s objects
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
+        <a href="/reference/component-evaluation/">
+        Component evaluation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/diffs-and-patches/" title="Diffs and patches" class="dd-item ">
+        <a href="/reference/diffs-and-patches/">
+        Diffs and patches
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/garbage-collection/" title="Garbage collection" class="dd-item ">
+        <a href="/reference/garbage-collection/">
+        Garbage collection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/comparison-with-other-tools/" title="Comparison with other tools" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/comparison-with-other-tools/">
+          Comparison with other tools
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/userguide/'>User guide</a> > Core concepts
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#components">Components</a></li>
+<li><a href="#environments">Environments</a></li>
+<li><a href="#application-manifest">Application manifest</a></li>
+<li><a href="#environment-specific-component-lists">Environment-specific component lists</a></li>
+<li><a href="#baseline-environment">Baseline environment</a></li>
+<li><a href="#runtime-configuration">Runtime configuration</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+
+        
+        <div id="body-inner">
+          
+            <h1>Core concepts</h1>
+          
+
+        
+
+
+
+
+<p>qbec uses the following concepts.</p>
+
+<h2 id="components">Components</h2>
+
+<p>Components are the source code that you write that represent Kubernetes objects.
+A component is single source file that produces a collection of logically related Kubernetes objects.
+You implement components by writing jsonnet, YAML or JSON files.</p>
+
+<p>It is also valid for a component to return an empty set of objects if runtime parameters determine that
+nothing should be installed for a specific target environment.</p>
+
+<h2 id="environments">Environments</h2>
+
+<p>Components are applied to environments. An environment is a cluster as represented by a server URL and an
+optional default namespace to use. This allows for the following variations:</p>
+
+<ul>
+<li><p>Every environment is a separate cluster where you deploy components. In such a setup you may freely
+create cluster scoped objects as well as K8s objects in multiple namespaces.</p></li>
+
+<li><p>Multiple environments can be on the same cluster using different namespaces. In this case, you would
+only create namespace scoped objects and leave out the namespace metadata in the object definition.
+This way, updates to different environments will update different namespaces on the same cluster.</p></li>
+</ul>
+
+<h2 id="application-manifest">Application manifest</h2>
+
+<p>qbec expects a file called <code>qbec.yaml</code> at the root of your source tree. This file provides a name
+for your application and defines the environments to which Kubernetes objects will be deployed.</p>
+
+<p>A minimal manifest with one environment looks like this:</p>
+
+<pre><code class="language-yaml">apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: my-app
+spec:
+  environments:
+    default:
+      server: https://minikube:8443 
+      defaultNamespace: my-ns
+</code></pre>
+
+<p>The <a href="../../reference/qbec-yaml">reference section</a> has a detailed description of this file.</p>
+
+<h2 id="environment-specific-component-lists">Environment-specific component lists</h2>
+
+<p>The set of all components, by definition, is all the supported files present in the components directory
+of your app. You can modify this list per environment in the following ways by adding more information
+to <code>qbec.yaml</code>.</p>
+
+<ul>
+<li>Supply a list of components that should not be included by default in any environment.</li>
+<li>Supply explicit inclusion and exclusion lists per environment.</li>
+</ul>
+
+<p>This has the following implications.</p>
+
+<ul>
+<li>A component that is excluded by default has to be explicitly included in an environment for the
+component to be applied there.</li>
+<li>A component that would be included by default can be explicitly excluded for an environment.</li>
+</ul>
+
+<h2 id="baseline-environment">Baseline environment</h2>
+
+<p>In addition to the environments you define in the application manifest (see below), qbec automatically
+adds a baseline environment called <code>_</code> that can be used for commands that operate locally and do not
+affect a cluster. These commands include <code>show</code>, as well as the <code>component</code> and <code>param</code> subcommands.</p>
+
+<h2 id="runtime-configuration">Runtime configuration</h2>
+
+<p>Different environments need different runtime parameters. These can include, among other things, replica counts,
+image versions, specialized config maps, different secrets and so forth.</p>
+
+<p>qbec sets a jsonnet variable called <code>qbec.io/env</code> to the environment name when it loads your components
+for an environment.
+You can use the value of this variable to return different runtime parameters per environment.
+Note that for some invocations, the environment may be set to <code>_</code> (representing baseline) and your code
+should be able to handle this correctly and return default values.</p>
+
+<p>qbec doesn&rsquo;t really mandate a specific file structure to define params.
+The main commands like <code>apply</code>, <code>show</code>,  and <code>diff</code> will work independent of how you set up your runtime parameters.</p>
+
+<p>That said, the <code>param</code> subcommands expect runtime configuration to be set up in a specific way.
+More information on this can be found in the <a href="../usage/basic">folders and files</a> section of the user-guide.</p>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/userguide/tour/" title="A quick tour of qbec"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/userguide/usage/" title="Using qbec" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551396826"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551396826"></script>
+    <script src="/js/jquery.sticky.js?1551396826"></script>
+    <script src="/js/featherlight.min.js?1551396826"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551396826"></script>
+    <script src="/js/highlight.pack.js?1551396826"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551396826"></script>
+    <script src="/js/learn.js?1551396826"></script>
+    <script src="/js/hugo-learn.js?1551396826"></script>
+
+    <link href="/mermaid/mermaid.css?1551396826" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551396826"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>
+
