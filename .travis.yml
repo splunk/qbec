@@ -11,7 +11,5 @@ install:
 
 script:
   - make
-  - go test -covermode=count -coverprofile=cover.out ./...
-  - ${GOPATH}/bin/goveralls -coverprofile=cover.out -service=travis-ci
   - make clean
   - diff -u <(echo -n) <(gofmt -d .)
