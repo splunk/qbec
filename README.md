@@ -12,7 +12,7 @@ the target environment in question.
 It is based on [jsonnet](https://jsonnet.org) and is similar to other tools in the same space like 
 [kubecfg](https://github.com/ksonnet/kubecfg) and [ksonnet](https://ksonnet.io/). 
 
-For more info, [read the docs](http://qbec.io/)
+For more info, [read the docs](https://qbec.io/)
 
 ### Building from source
 
