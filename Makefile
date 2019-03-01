@@ -1,11 +1,14 @@
-PATCH           := $(shell  date -u "+%Y%m%d-%H%M%S")
+VERSION         := 0.6.0
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
+GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
+
 LEARN_THEME_TAG := 2.2.0
 
 LD_FLAGS_PKG ?= main
 LD_FLAGS :=
-LD_FLAGS +=  -X "$(LD_FLAGS_PKG).PatchVersion=$(PATCH)"
-LD_FLAGS +=  -X "$(LD_FLAGS_PKG).PatchVersionSuffix=$(SHORT_COMMIT)"
+LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
+LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"
+LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 
 .PHONY: all
 all: get build lint test
@@ -46,3 +49,18 @@ clean:
 	rm -rf vendor/
 	rm -rf site/themes
 	rm -rf site/public
+
+.PHONY: os_archive
+os_archive:
+	rm -rf dist/tmp
+	mkdir -p dist/tmp
+ifeq ($(GOOS), windows)
+	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/qbec.exe .
+	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/jsonnet-qbec.exe ./cmd/jsonnet-qbec
+	(cd dist/tmp && zip ../assets/qbec-${GOOS}-${GOARCH}.zip *)
+else
+	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/qbec .
+	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/jsonnet-qbec ./cmd/jsonnet-qbec
+	(cd dist/tmp && tar -czf ../assets/qbec-${GOOS}-${GOARCH}.tar.gz *)
+endif
+	rm -rf dist/tmp

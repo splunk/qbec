@@ -17,7 +17,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -27,32 +29,52 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 )
 
-const (
-	vMajor         = 0
-	vMinor         = 6
+var (
+	version        = "dev"
+	commit         = "dev"
+	goVersion      = "unknown"
 	jsonnetVersion = "v0.11.2" // update this when library dependency is upgraded
 )
 
-// versions set from command line
-var (
-	PatchVersion       = "0"   // update from LDFLAGS
-	PatchVersionSuffix = "dev" // ditto
-)
+var exe = "qbec"
 
-func newVersionCommand(root *cobra.Command) *cobra.Command {
-	return &cobra.Command{
+func newVersionCommand() *cobra.Command {
+	var jsonOutput bool
+
+	c := &cobra.Command{
 		Use:   "version",
 		Short: "print program version",
 		Run: func(c *cobra.Command, args []string) {
-			fmt.Printf("%s version: %d.%d.%s-%s\njsonnet version: %s\n",
-				root.CommandPath(),
-				vMajor,
-				vMinor,
-				PatchVersion,
-				PatchVersionSuffix,
-				jsonnetVersion)
+			if jsonOutput {
+				out := struct {
+					Qbec    string `json:"qbec"`
+					Jsonnet string `json:"jsonnet"`
+					Go      string `json:"go"`
+					Commit  string `json:"commit"`
+				}{
+					version,
+					jsonnetVersion,
+					goVersion,
+					commit,
+				}
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				if err := enc.Encode(out); err != nil {
+					log.Fatalln(err)
+				}
+				return
+			}
+			fmt.Printf("%s version: %s\njsonnet version: %s\ngo version: %s\ncommit: %s\n",
+				exe,
+				version,
+				jsonnetVersion,
+				goVersion,
+				commit,
+			)
 		},
 	}
+	c.Flags().BoolVar(&jsonOutput, "json", false, "print versions in JSON format")
+	return c
 }
 
 func newOptionsCommand(root *cobra.Command) *cobra.Command {
@@ -67,7 +89,6 @@ func newOptionsCommand(root *cobra.Command) *cobra.Command {
 var start = time.Now()
 
 func main() {
-	exe := "qbec"
 	longdesc := "\n" + strings.Trim(fmt.Sprintf(`
 
 %s provides a set of commands to manage kubernetes objects on multiple clusters.

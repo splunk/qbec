@@ -252,7 +252,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().BoolVar(&opts.yes, "yes", false, "do not prompt for confirmation")
 
 	root.AddCommand(newOptionsCommand(root))
-	root.AddCommand(newVersionCommand(root))
+	root.AddCommand(newVersionCommand())
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == "version" || cmd.Name() == "init" { // don't make the version command dependent on work dir
 			return nil
