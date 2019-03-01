@@ -3,7 +3,16 @@ languageCode: en-us
 title: Qbec
 theme: learn
 params:
-  description: a tool to configure and create Kubernetes objects on multiple environments
   copyright: "\u00a9 2019 - the qbec authors"
-  themeVariant: blue
+  description: a tool to configure and create Kubernetes objects on multiple environments
+  disableAssetsBusting: true
   disableSearch: true
+  disableInlineCopyToClipBoard: true
+  editURL: https://github.com/splunk/qbec/edit/master/site/content/
+  themeVariant: blue
+menu:
+  shortcuts:
+    - name: "<i class='fab fa-github'></i> Github repo"
+      identifier: "ds"
+      url: "https://github.com/splunk/qbec"
+      weight: 10
