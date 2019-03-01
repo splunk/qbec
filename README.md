@@ -1,6 +1,11 @@
 qbec
 ---
 
+[![Build Status](https://travis-ci.org/splunk/qbec.svg?branch=master)](https://travis-ci.org/splunk/qbec)
+[![Coverage Status](https://coveralls.io/repos/github/splunk/qbec/badge.svg)](https://coveralls.io/github/splunk/qbec)
+[![Go Report Card](https://goreportcard.com/badge/github.com/splunk/qbec)](https://goreportcard.com/report/github.com/splunk/qbec)
+
+
 Qbec (pronounced like the [Canadian province](https://en.wikipedia.org/wiki/Quebec)) is a CLI tool that 
 allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for 
 the target environment in question.
