@@ -1,4 +1,4 @@
-baseURL: http://example.org/
+baseURL: http://splunk.qbec.io/qbec
 languageCode: en-us
 title: Qbec
 theme: learn
