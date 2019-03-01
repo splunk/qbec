@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Comparison with other tools on Qbec</title>
-    <link>http://splunk.github.io/qbec/comparison-with-other-tools/</link>
+    <link>http://qbec.io/comparison-with-other-tools/</link>
     <description>Recent content in Comparison with other tools on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://splunk.github.io/qbec/comparison-with-other-tools/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://qbec.io/comparison-with-other-tools/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>

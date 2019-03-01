@@ -3,81 +3,81 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/tour/</loc>
+    <loc>http://qbec.io/userguide/tour/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/usage/basic/</loc>
+    <loc>http://qbec.io/userguide/usage/basic/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/getting-started/</loc>
+    <loc>http://qbec.io/getting-started/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/usage/authoring/</loc>
+    <loc>http://qbec.io/userguide/usage/authoring/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/qbec-yaml/</loc>
+    <loc>http://qbec.io/reference/qbec-yaml/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/</loc>
+    <loc>http://qbec.io/userguide/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/gen-metadata/</loc>
+    <loc>http://qbec.io/reference/gen-metadata/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/</loc>
+    <loc>http://qbec.io/reference/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/comparison-with-other-tools/</loc>
+    <loc>http://qbec.io/comparison-with-other-tools/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/component-evaluation/</loc>
+    <loc>http://qbec.io/reference/component-evaluation/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/model/</loc>
+    <loc>http://qbec.io/userguide/model/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/usage/commands/</loc>
+    <loc>http://qbec.io/userguide/usage/commands/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/diffs-and-patches/</loc>
+    <loc>http://qbec.io/reference/diffs-and-patches/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/usage/tips-and-tricks/</loc>
+    <loc>http://qbec.io/userguide/usage/tips-and-tricks/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/reference/garbage-collection/</loc>
+    <loc>http://qbec.io/reference/garbage-collection/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/categories/</loc>
+    <loc>http://qbec.io/categories/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/</loc>
+    <loc>http://qbec.io/</loc>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/tags/</loc>
+    <loc>http://qbec.io/tags/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://splunk.github.io/qbec/userguide/usage/</loc>
+    <loc>http://qbec.io/userguide/usage/</loc>
   </url>
   
 </urlset>

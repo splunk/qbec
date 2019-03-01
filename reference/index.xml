@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Reference on Qbec</title>
-    <link>http://splunk.github.io/qbec/reference/</link>
+    <link>http://qbec.io/reference/</link>
     <description>Recent content in Reference on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://splunk.github.io/qbec/reference/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://qbec.io/reference/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Application YAML</title>
-      <link>http://splunk.github.io/qbec/reference/qbec-yaml/</link>
+      <link>http://qbec.io/reference/qbec-yaml/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://splunk.github.io/qbec/reference/qbec-yaml/</guid>
+      <guid>http://qbec.io/reference/qbec-yaml/</guid>
       <description>The app configuration is a file called qbec.yaml and needs to be at the root of the directory tree.
 apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;quot;App&amp;quot; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
     </item>
     
     <item>
       <title>Metadata for K8s objects</title>
-      <link>http://splunk.github.io/qbec/reference/gen-metadata/</link>
+      <link>http://qbec.io/reference/gen-metadata/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://splunk.github.io/qbec/reference/gen-metadata/</guid>
+      <guid>http://qbec.io/reference/gen-metadata/</guid>
       <description>Labels All Kubernetes objects produced by qbec have the following labels associated with them:
  qbec.io/application - the app name from qbec.yaml qhec.io/environment - the environment name in qbec.yaml for which the object was created  The labels are used to efficiently find all cluster objects for a specific app and environment for garbage collection.
 If you rename an app, environment, or component, garbage collection for the next immediate run of qbec apply may not work correctly.</description>
@@ -33,10 +33,10 @@ If you rename an app, environment, or component, garbage collection for the next
     
     <item>
       <title>Component evaluation</title>
-      <link>http://splunk.github.io/qbec/reference/component-evaluation/</link>
+      <link>http://qbec.io/reference/component-evaluation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://splunk.github.io/qbec/reference/component-evaluation/</guid>
+      <guid>http://qbec.io/reference/component-evaluation/</guid>
       <description>How qbec evaluates component code using jsonnet and what it expects the output to look like.
 Jsonnet evaluation This works as follows:
  Collect the list of files to be evaluated for the environment. This takes into account all components in the directory, inclusion and exclusion lists for the current environment and component filters specified on the command line. Assuming this leads to 3 files, say, c1.jsonnet, c2.json, and c3.</description>
@@ -44,20 +44,20 @@ Jsonnet evaluation This works as follows:
     
     <item>
       <title>Diffs and patches</title>
-      <link>http://splunk.github.io/qbec/reference/diffs-and-patches/</link>
+      <link>http://qbec.io/reference/diffs-and-patches/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://splunk.github.io/qbec/reference/diffs-and-patches/</guid>
+      <guid>http://qbec.io/reference/diffs-and-patches/</guid>
       <description>qbec uses a 3-way merge patch similar to kubectl/ksonnet apply. The Kubernetes documentation describes how this works.
 For existing objects, the qbec diff command produces a diff between the last applied configuration stored on the server and the current configuration of the object loaded from source. This diff is &amp;ldquo;clean&amp;rdquo; in the sense of the remote object not having additional fields, default values and so on. It faithfully represents the change between the previous and current version of the object produced from source code.</description>
     </item>
     
     <item>
       <title>Garbage collection</title>
-      <link>http://splunk.github.io/qbec/reference/garbage-collection/</link>
+      <link>http://qbec.io/reference/garbage-collection/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>http://splunk.github.io/qbec/reference/garbage-collection/</guid>
+      <guid>http://qbec.io/reference/garbage-collection/</guid>
       <description>While garbage collection is supported as a first-class operation qbec and enabled by default, it is a complex, nuanced subject fraught with special cases. We hope that the explanation below can help users figure out the causes of issues they might see in this area and create better bug reports.
 What garbage collection means Garbage collection is the act of deleting objects that were once applied for a qbec app but no longer exist in source code.</description>
     </item>
