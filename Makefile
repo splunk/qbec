@@ -13,7 +13,7 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 .PHONY: all
 all: get build lint test
 
-.PHONE: get
+.PHONY: get
 get:
 	dep ensure
 
