@@ -22,7 +22,6 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -102,11 +101,7 @@ func (w *walker) walkObjects(path string, component string, data interface{}) ([
 	return ret, nil
 }
 
-func k8sObjectsFromJSONString(str string, app, env string) ([]model.K8sLocalObject, error) {
-	var data interface{}
-	if err := json.Unmarshal([]byte(str), &data); err != nil {
-		return nil, errors.Wrap(err, "JSON unmarshal")
-	}
+func k8sObjectsFromJSON(data map[string]interface{}, app, env string) ([]model.K8sLocalObject, error) {
 	w := walker{app: app, env: env, data: data}
 	ret, err := w.walk()
 	if err != nil {

@@ -11,18 +11,14 @@ This works as follows:
 
 * Collect the list of files to be evaluated for the environment. This takes into account all components in the directory,
   inclusion and exclusion lists for the current environment and component filters specified on the command line.
-* Assuming this leads to 3 files, say, `c1.jsonnet`, `c2.json`, and `c3.yaml` create a jsonnet snippet as follows:
+* Assuming this leads to 3 files, say, `c1.jsonnet`, `c2.json`, and `c3.yaml` evaluate each file in its own VM in parallel
+  upto a specific concurrency.
 
-```
-local parseYaml = std.native('parseYaml');
-local parseJson = std.native('parseJson');
-{
-  'c1': import '/path/to/c1.jsonnet',
-  'c2': parseJson(importstr '/path/to/c2.json'),
-  'c3': parseYaml(importstr '/path/to/c3.yaml'),
-}
-```
-* Evaluate this snippet after setting the `qbec.io/env` extension variable to the environment name in question.
+The YAML file is parsed as: `std.native('parseYaml')(importstr '<file>')`
+
+The JSON file is parsed as: `std.native('parseJson')(importstr '<file>')`
+
+The JSONNET is evaluated as-is after setting the `qbec.io/env` extension variable to the environment name in question.
 
 ## Converting component output to Kubernetes objects
 
