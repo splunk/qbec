@@ -20,7 +20,9 @@ package eval
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
@@ -28,12 +30,15 @@ import (
 	"github.com/splunk/qbec/internal/vm"
 )
 
+const defaultConcurrency = 5
+
 // Context is the evaluation context
 type Context struct {
-	App     string // the application for which the evaluation is done
-	Env     string // the environment for which the evaluation is done
-	VM      *vm.VM // the base VM to use for eval
-	Verbose bool   // show generated code
+	App         string // the application for which the evaluation is done
+	Env         string // the environment for which the evaluation is done
+	VM          *vm.VM // the base VM to use for eval
+	Verbose     bool   // show generated code
+	Concurrency int    // concurrent components to evaluate, default 5
 }
 
 // Components evaluates the specified components using the specific runtime
@@ -42,11 +47,11 @@ func Components(components []model.Component, ctx Context) ([]model.K8sLocalObje
 	if ctx.VM == nil {
 		ctx.VM = vm.New(vm.Config{})
 	}
-	cCode, err := evalComponents(components, ctx)
+	componentMap, err := evalComponents(components, ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "evaluate components")
+		return nil, err
 	}
-	objs, err := k8sObjectsFromJSONString(cCode, ctx.App, ctx.Env)
+	objs, err := k8sObjectsFromJSON(componentMap, ctx.App, ctx.Env)
 	if err != nil {
 		return nil, errors.Wrap(err, "extract objects")
 	}
@@ -80,34 +85,79 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 	return ret, nil
 }
 
-func evalComponents(list []model.Component, ctx Context) (string, error) {
-	cfg := ctx.VM.Config().WithVars(map[string]string{model.QbecNames.EnvVarName: ctx.Env})
+func evalComponent(c model.Component, cfg vm.Config) (interface{}, error) {
 	jvm := vm.New(cfg)
-	var lines []string
-	for _, c := range list {
-		switch {
-		case strings.HasSuffix(c.File, ".yaml"):
-			lines = append(lines, fmt.Sprintf("'%s': parseYaml(importstr '%s')", c.Name, c.File))
-		case strings.HasSuffix(c.File, ".json"):
-			lines = append(lines, fmt.Sprintf("'%s': parseJson(importstr '%s')", c.Name, c.File))
-		default:
-			lines = append(lines, fmt.Sprintf("'%s': import '%s'", c.Name, c.File))
+	var inputCode string
+	contextFile := c.File
+	switch {
+	case strings.HasSuffix(c.File, ".yaml"):
+		inputCode = fmt.Sprintf("std.native('parseYaml')(importstr '%s')", c.File)
+		contextFile = "yaml-loader.jsonnet"
+	case strings.HasSuffix(c.File, ".json"):
+		inputCode = fmt.Sprintf("std.native('parseJson')(importstr '%s')", c.File)
+		contextFile = "json-loader.jsonnet"
+	default:
+		b, err := ioutil.ReadFile(c.File)
+		if err != nil {
+			return nil, errors.Wrap(err, "read inputCode for "+c.File)
 		}
+		inputCode = string(b)
 	}
-	preamble := []string{
-		"local parseYaml = std.native('parseYaml');",
-		"local parseJson = std.native('parseJson');",
-	}
-	code := strings.Join(preamble, "\n") + "\n{\n  " + strings.Join(lines, ",\n  ") + "\n}"
-	if ctx.Verbose {
-		sio.Debugln("Eval components:\n" + code)
-	}
-	ret, err := jvm.EvaluateSnippet("component-loader.jsonnet", code)
+	evalCode, err := jvm.EvaluateSnippet(contextFile, inputCode)
 	if err != nil {
-		return "", err
+		return nil, errors.Wrap(err, fmt.Sprintf("evaluate '%s'", c.File))
 	}
-	if ctx.Verbose {
-		sio.Debugln("Eval components output:\n" + prettyJSON(ret))
+	var data interface{}
+	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", c.File))
+	}
+	return data, nil
+}
+
+func evalComponents(list []model.Component, ctx Context) (map[string]interface{}, error) {
+	ch := make(chan model.Component, len(list))
+	for _, c := range list {
+		ch <- c
+	}
+	close(ch)
+
+	ret := map[string]interface{}{}
+	var errs []error
+	var l sync.Mutex
+
+	concurrency := ctx.Concurrency
+	if concurrency <= 0 {
+		concurrency = defaultConcurrency
+	}
+	if concurrency > len(list) {
+		concurrency = len(list)
+	}
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+
+	cfg := ctx.VM.Config().WithVars(map[string]string{model.QbecNames.EnvVarName: ctx.Env})
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			for c := range ch {
+				obj, err := evalComponent(c, cfg)
+				l.Lock()
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					ret[c.Name] = obj
+				}
+				l.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		msgs := []string{}
+		for _, e := range errs {
+			msgs = append(msgs, e.Error())
+		}
+		return nil, errors.New(strings.Join(msgs, "\n"))
 	}
 	return ret, nil
 }

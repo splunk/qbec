@@ -101,12 +101,13 @@ func (c *client) Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, err
 }
 
 type opts struct {
-	app       *model.App
-	client    *client
-	colorize  bool
-	verbosity int
-	out       io.Writer
-	defaultNs string
+	app         *model.App
+	client      *client
+	colorize    bool
+	verbosity   int
+	out         io.Writer
+	defaultNs   string
+	concurrency int
 }
 
 func (o *opts) App() *model.App {
@@ -142,6 +143,10 @@ func (o *opts) DefaultNamespace(env string) string {
 
 func (o *opts) Client(env string) (Client, error) {
 	return o.client, nil
+}
+
+func (o *opts) EvalConcurrency() int {
+	return o.concurrency
 }
 
 func (o *opts) Stdout() io.Writer {

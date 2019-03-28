@@ -63,9 +63,13 @@ func TestEvalComponents(t *testing.T) {
 			Name: "a",
 			File: "testdata/components/a.json",
 		},
+		{
+			Name: "tla",
+			File: "testdata/components/tla.jsonnet",
+		},
 	}, Context{Env: "dev", Verbose: true})
 	require.Nil(t, err)
-	require.Equal(t, 3, len(objs))
+	require.Equal(t, 4, len(objs))
 	a := assert.New(t)
 
 	obj := objs[0]
@@ -86,6 +90,34 @@ func TestEvalComponents(t *testing.T) {
 	a.Equal("c", obj.Component())
 	a.Equal("dev", obj.Environment())
 	a.Equal("jsonnet-config-map", obj.GetName())
+
+	obj = objs[3]
+	a.Equal("tla", obj.Component())
+	a.Equal("dev", obj.Environment())
+	a.Equal("tla-v1", obj.GetName())
+}
+
+func TestEvalTLAVariablePropagation(t *testing.T) {
+	jvm := vm.New(vm.Config{
+		TopLevelVars: map[string]string{
+			"suffix": "foobar",
+		},
+	})
+	objs, err := Components([]model.Component{
+		{
+			Name: "tla",
+			File: "testdata/components/tla.jsonnet",
+		},
+	}, Context{Env: "dev", VM: jvm})
+
+	require.Nil(t, err)
+	require.Equal(t, 1, len(objs))
+	a := assert.New(t)
+
+	obj := objs[0]
+	a.Equal("tla", obj.Component())
+	a.Equal("dev", obj.Environment())
+	a.Equal("tla-foobar", obj.GetName())
 }
 
 func TestEvalComponentsBadJson(t *testing.T) {
