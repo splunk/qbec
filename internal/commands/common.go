@@ -92,6 +92,7 @@ type StdOptions interface {
 	Stdout() io.Writer                                     // output to write to
 	DefaultNamespace(env string) string                    // the default namespace for the supplied environment
 	Confirm(context string) error                          // confirmation function for dangerous operations
+	EvalConcurrency() int                                  // the concurrency using which to evaluate components
 }
 
 // Client encapsulates all remote operations needed for the superset of all commands.

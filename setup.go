@@ -36,12 +36,13 @@ import (
 )
 
 type gOpts struct {
-	verbose   int            // verbosity level
-	app       *model.App     // app loaded from file
-	config    vm.Config      // jsonnet VM config
-	k8sConfig *remote.Config // remote config for k8s, when needed
-	colors    bool           // colorize output
-	yes       bool           // auto-confirm
+	verbose         int            // verbosity level
+	app             *model.App     // app loaded from file
+	config          vm.Config      // jsonnet VM config
+	k8sConfig       *remote.Config // remote config for k8s, when needed
+	colors          bool           // colorize output
+	yes             bool           // auto-confirm
+	evalConcurrency int            // concurrency of component eval
 }
 
 func (g gOpts) App() *model.App {
@@ -59,6 +60,10 @@ func (g gOpts) Colorize() bool {
 
 func (g gOpts) Verbosity() int {
 	return g.verbose
+}
+
+func (g gOpts) EvalConcurrency() int {
+	return g.evalConcurrency
 }
 
 type client struct {
@@ -250,6 +255,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().IntVarP(&opts.verbose, "verbose", "v", 0, "verbosity level")
 	root.PersistentFlags().BoolVar(&opts.colors, "colors", false, "colorize output (set automatically if not specified)")
 	root.PersistentFlags().BoolVar(&opts.yes, "yes", false, "do not prompt for confirmation")
+	root.PersistentFlags().IntVar(&opts.evalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())

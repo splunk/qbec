@@ -88,6 +88,117 @@ func TestEvalComponents(t *testing.T) {
 	a.Equal("jsonnet-config-map", obj.GetName())
 }
 
+func TestEvalComponentsEdges(t *testing.T) {
+	goodComponents := []model.Component{
+		{Name: "g1", File: "testdata/good-components/g1.jsonnet"},
+		{Name: "g2", File: "testdata/good-components/g2.jsonnet"},
+		{Name: "g3", File: "testdata/good-components/g3.jsonnet"},
+		{Name: "g4", File: "testdata/good-components/g4.jsonnet"},
+		{Name: "g5", File: "testdata/good-components/g5.jsonnet"},
+	}
+	goodAssert := func(t *testing.T, ret map[string]interface{}, err error) {
+		require.NotNil(t, err)
+	}
+	tests := []struct {
+		name        string
+		components  []model.Component
+		asserter    func(*testing.T, map[string]interface{}, error)
+		concurrency int
+	}{
+		{
+			name: "no components",
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.Nil(t, err)
+				assert.Equal(t, 0, len(ret))
+			},
+		},
+		{
+			name:       "single bad",
+			components: []model.Component{{Name: "e1", File: "testdata/bad-components/e1.jsonnet"}},
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "evaluate 'e1'")
+			},
+		},
+		{
+			name: "two bad",
+			components: []model.Component{
+				{Name: "e1", File: "testdata/bad-components/e1.jsonnet"},
+				{Name: "e2", File: "testdata/bad-components/e2.jsonnet"},
+			},
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "evaluate 'e1'")
+				assert.Contains(t, err.Error(), "evaluate 'e2'")
+			},
+		},
+		{
+			name: "many bad",
+			components: []model.Component{
+				{Name: "e1", File: "testdata/bad-components/e1.jsonnet"},
+				{Name: "e2", File: "testdata/bad-components/e2.jsonnet"},
+				{Name: "e3", File: "testdata/bad-components/e3.jsonnet"},
+				{Name: "e4", File: "testdata/bad-components/e4.jsonnet"},
+				{Name: "e5", File: "testdata/bad-components/e5.jsonnet"},
+			},
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "... and 2 more errors")
+			},
+		},
+		{
+			name: "bad file",
+			components: []model.Component{
+				{Name: "e1", File: "testdata/bad-components/XXX.jsonnet"},
+			},
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "no such file")
+			},
+		},
+		{
+			name:        "negative concurrency",
+			components:  goodComponents,
+			asserter:    goodAssert,
+			concurrency: -10,
+		},
+		{
+			name:        "zero concurrency",
+			components:  goodComponents,
+			asserter:    goodAssert,
+			concurrency: 0,
+		},
+		{
+			name:        "4 concurrency",
+			components:  goodComponents,
+			asserter:    goodAssert,
+			concurrency: 4,
+		},
+		{
+			name:        "one concurrency",
+			components:  goodComponents,
+			asserter:    goodAssert,
+			concurrency: 1,
+		},
+		{
+			name:        "million concurrency",
+			components:  goodComponents,
+			asserter:    goodAssert,
+			concurrency: 1000000,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ret, err := evalComponents(test.components, Context{
+				Env:         "dev",
+				VM:          vm.New(vm.Config{}),
+				Concurrency: test.concurrency,
+			})
+			test.asserter(t, ret, err)
+		})
+	}
+}
+
 func TestEvalComponentsBadJson(t *testing.T) {
 	_, err := Components([]model.Component{
 		{

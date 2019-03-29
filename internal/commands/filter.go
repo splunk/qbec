@@ -65,10 +65,11 @@ func filteredObjects(req StdOptions, env string, fp filterParams) ([]model.K8sLo
 	}
 	jvm := req.VM()
 	output, err := eval.Components(components, eval.Context{
-		App:     req.App().Name(),
-		Env:     env,
-		VM:      jvm,
-		Verbose: req.Verbosity() > 1,
+		App:         req.App().Name(),
+		Env:         env,
+		VM:          jvm,
+		Verbose:     req.Verbosity() > 1,
+		Concurrency: req.EvalConcurrency(),
 	})
 	if err != nil {
 		return nil, err
