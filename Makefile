@@ -30,6 +30,12 @@ lint:
 	go list ./... | grep -v vendor | xargs go vet
 	go list ./... | grep -v vendor | xargs golint
 
+.PHONY: install-ci
+install-ci:
+	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
+	tar -xvzf helm.tar.gz
+	mv linux-amd64/helm $(GOPATH)/bin/
+
 .PHONY: install
 install:
 	go get github.com/golang/dep/cmd/dep
