@@ -21,12 +21,11 @@ package vm
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"regexp"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	"github.com/pkg/errors"
 )
 
 // registerNativeFuncs adds kubecfg's native jsonnet functions to provided VM
@@ -51,20 +50,8 @@ func registerNativeFuncs(vm *jsonnet.VM) {
 		Name:   "parseYaml",
 		Params: []ast.Identifier{"yaml"},
 		Func: func(args []interface{}) (res interface{}, err error) {
-			ret := []interface{}{}
 			data := []byte(args[0].(string))
-			d := yaml.NewYAMLToJSONDecoder(bytes.NewReader(data))
-			for {
-				var doc interface{}
-				if err := d.Decode(&doc); err != nil {
-					if err == io.EOF {
-						break
-					}
-					return nil, err
-				}
-				ret = append(ret, doc)
-			}
-			return ret, nil
+			return parseYAMLDocuments(bytes.NewReader(data))
 		},
 	})
 
@@ -99,4 +86,24 @@ func registerNativeFuncs(vm *jsonnet.VM) {
 			return r.ReplaceAllString(src, repl), nil
 		},
 	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "expandHelmTemplate",
+		Params: []ast.Identifier{"chart", "values", "options"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			chart := args[0].(string)
+			values := args[1].(map[string]interface{})
+			options := args[2].(map[string]interface{})
+			var h helmOptions
+			b, err := json.Marshal(options)
+			if err != nil {
+				return nil, errors.Wrap(err, "marshal options to JSON")
+			}
+			if err := json.Unmarshal(b, &h); err != nil {
+				return nil, errors.Wrap(err, "unmarshal options from JSON")
+			}
+			return expandHelmTemplate(chart, values, h)
+		},
+	})
+
 }

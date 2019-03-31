@@ -7,7 +7,7 @@ before_install:
   - go get github.com/mattn/goveralls
 
 install:
-  make install get
+  make install-ci install get
 
 script:
   - make
