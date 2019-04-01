@@ -95,7 +95,10 @@ We are not averse to adding this feature but would like to do it consciously aft
 
 ### Support for community components, prototypes, helm charts etc.
 
-Only ksonnet has these feature. In this author's opinion these features have made the ksonnet surface area large and
+Only ksonnet has these features. In this author's opinion these features have made the ksonnet surface area large and
 difficult to reason about so we have left them out. 
 
 It is probably useful to provide support for helm charts in qbec.
+
+**Update**: As of v0.6.1, qbec has experimental support to expand helm chart templates. This is implemented as a
+native function that can be called from jsonnet code.
