@@ -349,6 +349,25 @@
  
   
     
+      <li data-nav-id="/reference/jsonnet-native-funcs/" title="Jsonnet native functions" class="dd-item ">
+        <a href="/reference/jsonnet-native-funcs/">
+        Jsonnet native functions
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item active">
         <a href="/reference/component-evaluation/">
         Component evaluation
@@ -549,21 +568,15 @@
 <ul>
 <li>Collect the list of files to be evaluated for the environment. This takes into account all components in the directory,
 inclusion and exclusion lists for the current environment and component filters specified on the command line.</li>
-<li>Assuming this leads to 3 files, say, <code>c1.jsonnet</code>, <code>c2.json</code>, and <code>c3.yaml</code> create a jsonnet snippet as follows:</li>
+<li>Assuming this leads to 3 files, say, <code>c1.jsonnet</code>, <code>c2.json</code>, and <code>c3.yaml</code> evaluate each file in its own VM in parallel
+upto a specific concurrency.</li>
 </ul>
 
-<pre><code>local parseYaml = std.native('parseYaml');
-local parseJson = std.native('parseJson');
-{
-  'c1': import '/path/to/c1.jsonnet',
-  'c2': parseJson(importstr '/path/to/c2.json'),
-  'c3': parseYaml(importstr '/path/to/c3.yaml'),
-}
-</code></pre>
+<p>The YAML file is parsed as: <code>std.native('parseYaml')(importstr '&lt;file&gt;')</code></p>
 
-<ul>
-<li>Evaluate this snippet after setting the <code>qbec.io/env</code> extension variable to the environment name in question.</li>
-</ul>
+<p>The JSON file is parsed as: <code>std.native('parseJson')(importstr '&lt;file&gt;')</code></p>
+
+<p>The JSONNET is evaluated as-is after setting the <code>qbec.io/env</code> extension variable to the environment name in question.</p>
 
 <h2 id="converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</h2>
 
@@ -817,6 +830,22 @@ containing an array of outputs.</li>
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -892,7 +921,7 @@ containing an array of outputs.</li>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/reference/gen-metadata/" title="Metadata for K8s objects"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/reference/jsonnet-native-funcs/" title="Jsonnet native functions"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="/reference/diffs-and-patches/" title="Diffs and patches" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
