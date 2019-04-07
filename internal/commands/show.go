@@ -26,7 +26,6 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/sio"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type metaOnly struct {
@@ -81,20 +80,14 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 	}
 }
 
-// showClient is the remote interface needed for show operations.
-type showClient interface {
-	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
-}
-
 type showCommandConfig struct {
-	StdOptions
+	*Config
 	showSecrets     bool
 	format          string
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
 	filterFunc      func() (filterParams, error)
-	clientProvider  func(env string) (showClient, error)
 }
 
 func doShow(args []string, config showCommandConfig) error {
@@ -110,7 +103,7 @@ func doShow(args []string, config showCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config, env, fp)
+	objects, err := filteredObjects(config.Config, env, fp)
 	if err != nil {
 		return err
 	}
@@ -125,11 +118,11 @@ func doShow(args []string, config showCommandConfig) error {
 		if env == model.Baseline {
 			sio.Warnln("cannot sort in apply order for baseline environment")
 		} else {
-			client, err := config.clientProvider(env)
+			client, err := config.Client(env)
 			if err != nil {
 				return err
 			}
-			objects = objsort.Sort(objects, config.SortConfig(client.IsNamespaced))
+			objects = objsort.Sort(objects, sortConfig(client.IsNamespaced))
 		}
 	}
 
@@ -157,7 +150,7 @@ func doShow(args []string, config showCommandConfig) error {
 	}
 }
 
-func newShowCommand(op OptionsProvider) *cobra.Command {
+func newShowCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <environment>",
 		Short:   "show output in YAML or JSON format for one or more components",
@@ -165,9 +158,6 @@ func newShowCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	config := showCommandConfig{
-		clientProvider: func(env string) (showClient, error) {
-			return op().Client(env)
-		},
 		filterFunc: addFilterParams(cmd, true),
 	}
 
@@ -177,7 +167,7 @@ func newShowCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		return wrapError(doShow(args, config))
 	}

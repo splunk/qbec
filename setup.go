@@ -18,140 +18,18 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/chzyer/readline"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/commands"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-type gOpts struct {
-	verbose         int            // verbosity level
-	app             *model.App     // app loaded from file
-	config          vm.Config      // jsonnet VM config
-	k8sConfig       *remote.Config // remote config for k8s, when needed
-	colors          bool           // colorize output
-	yes             bool           // auto-confirm
-	evalConcurrency int            // concurrency of component eval
-}
-
-func (g gOpts) App() *model.App {
-	return g.app
-}
-
-func (g gOpts) VM() *vm.VM {
-	cfg := g.config.WithLibPaths(g.app.Spec.LibPaths)
-	return vm.New(cfg)
-}
-
-func (g gOpts) Colorize() bool {
-	return g.colors
-}
-
-func (g gOpts) Verbosity() int {
-	return g.verbose
-}
-
-func (g gOpts) EvalConcurrency() int {
-	return g.evalConcurrency
-}
-
-type client struct {
-	*remote.Client
-}
-
-func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (remote.Validator, error) {
-	return c.ServerMetadata().ValidatorFor(gvk)
-}
-
-func (c *client) DisplayName(o model.K8sMeta) string {
-	return c.ServerMetadata().DisplayName(o)
-}
-
-func (c *client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
-	return c.ServerMetadata().IsNamespaced(kind)
-}
-
-func (g gOpts) DefaultNamespace(env string) string {
-	envObj := g.app.Spec.Environments[env]
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
-	return ns
-}
-
-func (g gOpts) Client(env string) (commands.Client, error) {
-	envObj, ok := g.app.Spec.Environments[env]
-	if !ok {
-		return nil, fmt.Errorf("get client: invalid environment %q", env)
-	}
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
-	rem, err := g.k8sConfig.Client(remote.ConnectOpts{
-		EnvName:   env,
-		ServerURL: envObj.Server,
-		Namespace: ns,
-		Verbosity: g.verbose,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &client{Client: rem}, nil
-}
-
-func (g gOpts) SortConfig(provider objsort.Namespaced) objsort.Config {
-	return objsort.Config{
-		NamespacedIndicator: func(gvk schema.GroupVersionKind) (bool, error) {
-			ret, err := provider(gvk)
-			if err != nil {
-				return false, err
-			}
-			return ret, nil
-		},
-	}
-}
-
-func (g gOpts) Stdout() io.Writer {
-	return os.Stdout
-}
-
-func (g gOpts) Confirm(context string) error {
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, context)
-	fmt.Fprintln(os.Stderr)
-	if g.yes {
-		return nil
-	}
-	inst, err := readline.New("Do you want to continue [y/n]: ")
-	if err != nil {
-		return err
-	}
-	for {
-		s, err := inst.Readline()
-		if err != nil {
-			return err
-		}
-		if s == "y" {
-			return nil
-		}
-		if s == "n" {
-			return errors.New("canceled")
-		}
-	}
-}
 
 func envOrDefault(name, def string) string {
 	v := os.Getenv(name)
@@ -245,45 +123,46 @@ func setWorkDir(specified string) error {
 // setup sets up all sub-commands for the supplied root command and adds facilities for commands
 // to access common options.
 func setup(root *cobra.Command) {
-	var opts gOpts
+	var cp commands.ConfigFactory
 	var rootDir string
 
-	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:")
+	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
 	cfg := remote.NewConfig(root, "k8s:")
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
-	root.PersistentFlags().IntVarP(&opts.verbose, "verbose", "v", 0, "verbosity level")
-	root.PersistentFlags().BoolVar(&opts.colors, "colors", false, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&opts.yes, "yes", false, "do not prompt for confirmation")
-	root.PersistentFlags().IntVar(&opts.evalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
+	root.PersistentFlags().IntVarP(&cp.Verbosity, "verbose", "v", 0, "verbosity level")
+	root.PersistentFlags().BoolVar(&cp.Colors, "colors", false, "colorize output (set automatically if not specified)")
+	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", false, "do not prompt for confirmation")
+	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
+	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
+
+	var cmdCfg *commands.Config
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() == "version" || cmd.Name() == "init" { // don't make the version command dependent on work dir
+		if cmd.Name() == "version" || cmd.Name() == "init" { // don't make these commands dependent on work dir
 			return nil
 		}
 		if !cmd.Flags().Changed("colors") {
-			opts.colors = isatty.IsTerminal(os.Stdout.Fd())
+			cp.Colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
-		sio.EnableColors = opts.colors
+		sio.EnableColors = cp.Colors
 		if err := setWorkDir(rootDir); err != nil {
 			return err
 		}
-		c, err := model.NewApp("qbec.yaml")
+		app, err := model.NewApp("qbec.yaml")
 		if err != nil {
 			return err
 		}
-		opts.app = c
 		conf, err := vmConfigFn()
 		if err != nil {
 			return err
 		}
-		opts.config = conf
-		opts.k8sConfig = cfg
-		return nil
+		cmdCfg, err = cp.Config(app, conf, cfg)
+		return err
 	}
-	commands.Setup(root, func() commands.StdOptionsWithClient {
-		return opts
+	commands.Setup(root, func() *commands.Config {
+		return cmdCfg
 	})
 }

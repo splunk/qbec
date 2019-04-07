@@ -26,6 +26,31 @@ type Environment struct {
 	Excludes         []string `json:"excludes,omitempty"` // additional components to exclude for this env
 }
 
+// Var is a base variable.
+type Var struct {
+	Name   string `json:"name"`             // variable name
+	Secret bool   `json:"secret,omitempty"` // true if the variable is a secret
+}
+
+// TopLevelVar is a variable that is set as a TLA in the jsonnet VM. Note that there is no provision to set
+// a default value - default values should be set in the jsonnet code instead.
+type TopLevelVar struct {
+	Var
+	Components []string `json:"components,omitempty"` // the components for which this TLA is applicable
+}
+
+// ExternalVar is a variable that is set as an extVar in the jsonnet VM
+type ExternalVar struct {
+	Var
+	Default interface{} `json:"default,omitempty"` // the default value to use if none specified on the command line.
+}
+
+// Variables is a collection of external and top-level variables.
+type Variables struct {
+	External []ExternalVar `json:"external,omitempty"` // collection of ext vars
+	TopLevel []TopLevelVar `json:"topLevel,omitempty"` // collection of TLAs
+}
+
 // AppMeta is the simplified metadata object for a qbec app.
 type AppMeta struct {
 	// required: true
@@ -39,6 +64,8 @@ type AppSpec struct {
 	// standard file containing parameters for all environments returning correct values based on qbec.io/env external
 	// variable, defaults to params.libsonnet
 	ParamsFile string `json:"paramsFile,omitempty"`
+	// the interface for jsonnet variables.
+	Vars Variables `json:"vars,omitempty"`
 	// set of environments for the app
 	// required: true
 	Environments map[string]Environment `json:"environments"`

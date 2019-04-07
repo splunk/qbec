@@ -25,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -71,15 +70,9 @@ func (v *validatorStats) errors(s string) {
 	v.Errors = append(v.Errors, s)
 }
 
-// validateClient is the remote interface needed for validate operations.
-type validateClient interface {
-	DisplayName(o model.K8sMeta) string
-	ValidatorFor(gvk schema.GroupVersionKind) (remote.Validator, error)
-}
-
 type validator struct {
 	w                      io.Writer
-	client                 validateClient
+	client                 Client
 	stats                  validatorStats
 	red, green, dim, reset string
 }
@@ -112,7 +105,7 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	return nil
 }
 
-func validateObjects(objs []model.K8sLocalObject, client validateClient, parallel int, colors bool, out io.Writer) error {
+func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, colors bool, out io.Writer) error {
 	v := &validator{
 		w:      &lockWriter{Writer: out},
 		client: client,
@@ -138,10 +131,9 @@ func validateObjects(objs []model.K8sLocalObject, client validateClient, paralle
 }
 
 type validateCommandConfig struct {
-	StdOptions
-	parallel       int
-	filterFunc     func() (filterParams, error)
-	clientProvider func(env string) (validateClient, error)
+	*Config
+	parallel   int
+	filterFunc func() (filterParams, error)
 }
 
 func doValidate(args []string, config validateCommandConfig) error {
@@ -156,11 +148,11 @@ func doValidate(args []string, config validateCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config, env, fp)
+	objects, err := filteredObjects(config.Config, env, fp)
 	if err != nil {
 		return err
 	}
-	client, err := config.clientProvider(env)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
@@ -168,7 +160,7 @@ func doValidate(args []string, config validateCommandConfig) error {
 
 }
 
-func newValidateCommand(op OptionsProvider) *cobra.Command {
+func newValidateCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "validate <environment>",
 		Short:   "validate one or more components against the spec of a kubernetes cluster",
@@ -176,15 +168,12 @@ func newValidateCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	config := validateCommandConfig{
-		clientProvider: func(env string) (validateClient, error) {
-			return op().Client(env)
-		},
 		filterFunc: addFilterParams(cmd, true),
 	}
 
 	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doValidate(args, config))
 	}
 	return cmd

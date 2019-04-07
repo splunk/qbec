@@ -66,6 +66,8 @@ definitions:
           standard file containing parameters for all environments returning correct values based on qbec.io/env external
           variable, defaults to params.libsonnet
         type: string
+      vars:
+        $ref: "#/definitions/qbec.io.v1alpha1.Variables"
     required:
     - environments
     title: AppSpec is the user-supplied configuration of the qbec app.
@@ -88,4 +90,50 @@ definitions:
     title: Environment points to a specific destination and has its own set of runtime
       parameters.
     type: object
+  qbec.io.v1alpha1.ExternalVar:
+    additionalProperties: false
+    type: object
+    properties:
+      default:
+        nullable: true
+      name:
+        type: string
+      secret:
+        type: boolean
+    required:
+      - name
+    title: ExternalVar is a variable that is set as an extVar in the jsonnet
+      VM
+  qbec.io.v1alpha1.TopLevelVar:
+    additionalProperties: false
+    type: object
+    properties:
+      components:
+        type: array
+        items:
+          type: string
+        minItems: 1
+      name:
+        type: string
+      secret:
+        type: boolean
+    required:
+    - name
+    - components
+    title: |-
+      TopLevelVar is a variable that is set as a TLA in the jsonnet VM. Note that there is no provision to set
+      a default value - default values should be set in the jsonnet code instead.
+  qbec.io.v1alpha1.Variables:
+    additionalProperties: false
+    type: object
+    title: Variables is a collection of external and top-level variables.
+    properties:
+      external:
+        type: array
+        items:
+          $ref: "#/definitions/qbec.io.v1alpha1.ExternalVar"
+      topLevel:
+        type: array
+        items:
+          $ref: "#/definitions/qbec.io.v1alpha1.TopLevelVar"
 

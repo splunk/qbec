@@ -35,21 +35,33 @@ const (
 	maxDisplayErrors   = 3
 )
 
+// VMConfigFunc is a function that returns a VM configuration containing only the
+// specified top-level variables of interest.
+type VMConfigFunc func(tlaVars []string) vm.Config
+
 // Context is the evaluation context
 type Context struct {
-	App         string // the application for which the evaluation is done
-	Env         string // the environment for which the evaluation is done
-	VM          *vm.VM // the base VM to use for eval
-	Verbose     bool   // show generated code
-	Concurrency int    // concurrent components to evaluate, default 5
+	App         string       // the application for which the evaluation is done
+	Env         string       // the environment for which the evaluation is done
+	VMConfig    VMConfigFunc // the base VM config to use for eval
+	Verbose     bool         // show generated code
+	Concurrency int          // concurrent components to evaluate, default 5
 }
+
+func (c Context) vm(tlas []string) *vm.VM {
+	fn := c.VMConfig
+	if fn == nil {
+		fn = defaultFunc
+	}
+	cfg := fn(tlas).WithVars(map[string]string{model.QbecNames.EnvVarName: c.Env})
+	return vm.New(cfg)
+}
+
+var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
 
 // Components evaluates the specified components using the specific runtime
 // parameters file and returns the result.
 func Components(components []model.Component, ctx Context) ([]model.K8sLocalObject, error) {
-	if ctx.VM == nil {
-		ctx.VM = vm.New(vm.Config{})
-	}
 	componentMap, err := evalComponents(components, ctx)
 	if err != nil {
 		return nil, err
@@ -64,12 +76,7 @@ func Components(components []model.Component, ctx Context) ([]model.K8sLocalObje
 // Params evaluates the supplied parameters file in the supplied VM and
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
-	baseVM := ctx.VM
-	if baseVM == nil {
-		baseVM = vm.New(vm.Config{})
-	}
-	cfg := baseVM.Config().WithVars(map[string]string{model.QbecNames.EnvVarName: ctx.Env})
-	jvm := vm.New(cfg)
+	jvm := ctx.vm(nil)
 	code := fmt.Sprintf("import '%s'", file)
 	if ctx.Verbose {
 		sio.Debugln("Eval params:\n" + code)
@@ -88,7 +95,8 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 	return ret, nil
 }
 
-func evalComponent(jvm *vm.VM, c model.Component) (interface{}, error) {
+func evalComponent(ctx Context, c model.Component) (interface{}, error) {
+	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
 	contextFile := c.File
 	switch {
@@ -141,13 +149,11 @@ func evalComponents(list []model.Component, ctx Context) (map[string]interface{}
 	var wg sync.WaitGroup
 	wg.Add(concurrency)
 
-	cfg := ctx.VM.Config().WithVars(map[string]string{model.QbecNames.EnvVarName: ctx.Env})
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			defer wg.Done()
-			jvm := vm.New(cfg)
 			for c := range ch {
-				obj, err := evalComponent(jvm, c)
+				obj, err := evalComponent(ctx, c)
 				l.Lock()
 				if err != nil {
 					errs = append(errs, err)

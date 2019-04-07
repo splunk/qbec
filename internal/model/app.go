@@ -48,8 +48,9 @@ var supportedExtensions = map[string]bool{
 
 // Component is a file that contains objects to be applied to a cluster.
 type Component struct {
-	Name string // component name
-	File string // path to component file
+	Name         string   // component name
+	File         string   // path to component file
+	TopLevelVars []string // the top-level variables used by the component
 }
 
 // App is a qbec application wrapped with some runtime attributes.
@@ -103,6 +104,12 @@ func NewApp(file string) (*App, error) {
 	if err := app.verifyEnvAndComponentReferences(); err != nil {
 		return nil, err
 	}
+	if err := app.verifyVariables(); err != nil {
+		return nil, err
+	}
+
+	app.updateComponentTopLevelVars()
+
 	app.defaultComponents = make(map[string]Component, len(app.allComponents))
 	for k, v := range app.allComponents {
 		app.defaultComponents[k] = v
@@ -199,6 +206,25 @@ func (a *App) ComponentsForEnvironment(env string, includes, excludes []string) 
 	return toList(subret), nil
 }
 
+// DeclaredVars returns defaults for all declared external variables, keyed by variable name.
+func (a *App) DeclaredVars() map[string]interface{} {
+	ret := map[string]interface{}{}
+	for _, v := range a.Spec.Vars.External {
+		ret[v.Name] = v.Default
+	}
+	return ret
+}
+
+// DeclaredTopLevelVars returns a map of all declared TLA variables, keyed by variable name.
+// The values are always `true`.
+func (a *App) DeclaredTopLevelVars() map[string]interface{} {
+	ret := map[string]interface{}{}
+	for _, v := range a.Spec.Vars.TopLevel {
+		ret[v.Name] = true
+	}
+	return ret
+}
+
 // loadComponents loads metadata for all components for the app.
 // The data is returned as a map keyed by component name. It does _not_ recurse
 // into subdirectories.
@@ -279,8 +305,47 @@ func (a *App) verifyEnvAndComponentReferences() error {
 			}
 		}
 	}
+
+	for _, tla := range a.Spec.Vars.TopLevel {
+		localVerify("components for TLA "+tla.Name, tla.Components)
+	}
+
 	if len(errs) > 0 {
 		return fmt.Errorf("invalid component references\n:\t%s", strings.Join(errs, "\n\t"))
 	}
 	return nil
+}
+
+func (a *App) verifyVariables() error {
+	seenTLA := map[string]bool{}
+	for _, v := range a.Spec.Vars.TopLevel {
+		if seenTLA[v.Name] {
+			return fmt.Errorf("duplicate top-level variable %s", v.Name)
+		}
+		seenTLA[v.Name] = true
+	}
+	seenVar := map[string]bool{}
+	for _, v := range a.Spec.Vars.External {
+		if seenVar[v.Name] {
+			return fmt.Errorf("duplicate external variable %s", v.Name)
+		}
+		seenVar[v.Name] = true
+	}
+	return nil
+}
+
+func (a *App) updateComponentTopLevelVars() {
+	componentTLAMap := map[string][]string{}
+
+	for _, tla := range a.Spec.Vars.TopLevel {
+		for _, comp := range tla.Components {
+			componentTLAMap[comp] = append(componentTLAMap[comp], tla.Name)
+		}
+	}
+
+	for name, tlas := range componentTLAMap {
+		comp := a.allComponents[name]
+		comp.TopLevelVars = tlas
+		a.allComponents[name] = comp
+	}
 }

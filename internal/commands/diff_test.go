@@ -78,7 +78,7 @@ func TestDiffBasicNoDiffs(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "bar"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "-k", "configmaps", "--ignore-all-annotations", "--ignore-all-labels", "--show-deletes=false")
 	require.Nil(t, err)
 }
@@ -87,7 +87,7 @@ func TestDiffBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--show-deletes=false")
 	require.NotNil(t, err)
 	stats := s.outputStats()
@@ -104,7 +104,7 @@ func TestDiffBasicNoLabels(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-all-labels", "-S", "--show-deletes=false")
 	require.NotNil(t, err)
 	a := assert.New(t)
@@ -119,7 +119,7 @@ func TestDiffBasicNoSpecificLabels(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-label", "qbec.io/environment", "--show-deletes=false")
 	require.NotNil(t, err)
 	a := assert.New(t)
@@ -131,7 +131,7 @@ func TestDiffBasicNoSpecificAnnotation(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-annotation", "ann/foo", "--show-deletes=false")
 	require.NotNil(t, err)
 	a := assert.New(t)
@@ -143,7 +143,7 @@ func TestDiffBasicNoAnnotations(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
-	s.opts.client.getFunc = d.get
+	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-all-annotations", "--show-deletes=false")
 	require.NotNil(t, err)
 	a := assert.New(t)

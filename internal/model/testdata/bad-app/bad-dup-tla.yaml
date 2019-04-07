@@ -1,0 +1,15 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: test-app
+spec:
+  vars:
+    topLevel:
+      - name: foo
+        components: [ 'a' ]
+      - name: foo
+        components: [ 'a' ]
+  environments:
+    prod:
+      server: http://baseline-server
+

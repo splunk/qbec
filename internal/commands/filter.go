@@ -54,22 +54,21 @@ func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filter
 	}
 }
 
-func allObjects(req StdOptions, env string) ([]model.K8sLocalObject, error) {
-	return filteredObjects(req, env, filterParams{kindFilter: nil})
+func allObjects(cfg *Config, env string) ([]model.K8sLocalObject, error) {
+	return filteredObjects(cfg, env, filterParams{kindFilter: nil})
 }
 
-func filteredObjects(req StdOptions, env string, fp filterParams) ([]model.K8sLocalObject, error) {
-	components, err := req.App().ComponentsForEnvironment(env, fp.includes, fp.excludes)
+func filteredObjects(cfg *Config, env string, fp filterParams) ([]model.K8sLocalObject, error) {
+	components, err := cfg.App().ComponentsForEnvironment(env, fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err
 	}
-	jvm := req.VM()
 	output, err := eval.Components(components, eval.Context{
-		App:         req.App().Name(),
+		App:         cfg.App().Name(),
 		Env:         env,
-		VM:          jvm,
-		Verbose:     req.Verbosity() > 1,
-		Concurrency: req.EvalConcurrency(),
+		VMConfig:    cfg.VMConfig,
+		Verbose:     cfg.Verbosity() > 1,
+		Concurrency: cfg.EvalConcurrency(),
 	})
 	if err != nil {
 		return nil, err

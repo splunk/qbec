@@ -31,7 +31,7 @@ func TestApplyBasic(t *testing.T) {
 	defer s.reset()
 	first := true
 	var captured remote.SyncOptions
-	s.opts.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts
@@ -62,7 +62,7 @@ func TestApplyFlags(t *testing.T) {
 	defer s.reset()
 	first := true
 	var captured remote.SyncOptions
-	s.opts.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts

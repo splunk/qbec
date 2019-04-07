@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/vm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -191,7 +190,6 @@ func TestEvalComponentsEdges(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ret, err := evalComponents(test.components, Context{
 				Env:         "dev",
-				VM:          vm.New(vm.Config{}),
 				Concurrency: test.concurrency,
 			})
 			test.asserter(t, ret, err)
@@ -205,7 +203,7 @@ func TestEvalComponentsBadJson(t *testing.T) {
 			Name: "bad",
 			File: "testdata/components/bad.json",
 		},
-	}, Context{Env: "dev", VM: vm.New(vm.Config{})})
+	}, Context{Env: "dev"})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "invalid character")
 }
@@ -216,7 +214,7 @@ func TestEvalComponentsBadYaml(t *testing.T) {
 			Name: "bad",
 			File: "testdata/components/bad.yaml",
 		},
-	}, Context{Env: "dev", VM: vm.New(vm.Config{})})
+	}, Context{Env: "dev"})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "did not find expected node content")
 }
@@ -227,7 +225,7 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 			Name: "bad",
 			File: "testdata/components/bad-objects.yaml",
 		},
-	}, Context{Env: "dev", VM: vm.New(vm.Config{})})
+	}, Context{Env: "dev"})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `unexpected type for object (string) at path "$.bad[0].foo"`)
 }

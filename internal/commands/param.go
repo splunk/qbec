@@ -33,13 +33,13 @@ import (
 
 var maxDisplayValueLength = 1024
 
-func newParamCommand(op OptionsProvider) *cobra.Command {
+func newParamCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "param <subcommand>",
 		Short:   "parameter lists and diffs",
 		Aliases: []string{"params"},
 	}
-	cmd.AddCommand(newParamListCommand(op), newParamDiffCommand(op))
+	cmd.AddCommand(newParamListCommand(cp), newParamDiffCommand(cp))
 	return cmd
 }
 
@@ -121,7 +121,7 @@ func extractComponentParams(paramsObject map[string]interface{}, fp filterParams
 }
 
 type paramListCommandConfig struct {
-	StdOptions
+	*Config
 	format     string
 	filterFunc func() (filterParams, error)
 }
@@ -136,12 +136,11 @@ func doParamList(args []string, config paramListCommandConfig) error {
 		return fmt.Errorf("invalid environment %q", env)
 	}
 	paramsFile := config.App().Spec.ParamsFile
-	vm := config.VM()
 	paramsObject, err := eval.Params(paramsFile, eval.Context{
-		VM:      vm,
-		App:     config.App().Name(),
-		Env:     env,
-		Verbose: config.Verbosity() > 1,
+		VMConfig: config.VMConfig,
+		App:      config.App().Name(),
+		Env:      env,
+		Verbose:  config.Verbosity() > 1,
 	})
 	if err != nil {
 		return err
@@ -157,7 +156,7 @@ func doParamList(args []string, config paramListCommandConfig) error {
 	return listParams(components, config.format != "", config.format, config.Stdout())
 }
 
-func newParamListCommand(op OptionsProvider) *cobra.Command {
+func newParamListCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list [-c component]...  <environment>|_",
 		Short:   "list all parameters for an environment, optionally for a subset of components",
@@ -168,14 +167,14 @@ func newParamListCommand(op OptionsProvider) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doParamList(args, config))
 	}
 	return cmd
 }
 
 type paramDiffCommandConfig struct {
-	StdOptions
+	*Config
 	filterFunc func() (filterParams, error)
 }
 
@@ -202,12 +201,11 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 			return "", "", fmt.Errorf("invalid environment %q", env)
 		}
 		paramsFile := config.App().Spec.ParamsFile
-		vm := config.VM()
 		paramsObject, err := eval.Params(paramsFile, eval.Context{
-			VM:      vm,
-			App:     config.App().Name(),
-			Env:     env,
-			Verbose: config.Verbosity() > 1,
+			VMConfig: config.VMConfig,
+			App:      config.App().Name(),
+			Env:      env,
+			Verbose:  config.Verbosity() > 1,
 		})
 		if err != nil {
 			return "", "", err
@@ -248,7 +246,7 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 
 }
 
-func newParamDiffCommand(op OptionsProvider) *cobra.Command {
+func newParamDiffCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diff [-c component]... <environment>|_ [<environment>|_]",
 		Short:   "diff parameter lists across two environments or between the baseline (use _ for baseline) and an environment",
@@ -260,7 +258,7 @@ func newParamDiffCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doParamDiff(args, config))
 	}
 	return cmd

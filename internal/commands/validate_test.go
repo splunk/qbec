@@ -47,7 +47,7 @@ func factory(gvk schema.GroupVersionKind) (remote.Validator, error) {
 func TestValidateAll(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	s.opts.client.validatorFunc = factory
+	s.client.validatorFunc = factory
 	err := s.executeCommand("validate", "dev")
 	require.NotNil(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`✔ ClusterRole::allow-root-psp-policy is valid`))
@@ -121,7 +121,7 @@ func TestValidateNegative(t *testing.T) {
 			name: "errors",
 			args: []string{"validate", "dev"},
 			init: func(s *scaffold) {
-				s.opts.client.validatorFunc = func(gvk schema.GroupVersionKind) (remote.Validator, error) {
+				s.client.validatorFunc = func(gvk schema.GroupVersionKind) (remote.Validator, error) {
 					return nil, fmt.Errorf("no validator for you")
 				}
 			},

@@ -32,7 +32,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
@@ -100,64 +99,6 @@ func (c *client) Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, err
 	return nil, errors.New("not implemented")
 }
 
-type opts struct {
-	app         *model.App
-	client      *client
-	colorize    bool
-	verbosity   int
-	out         io.Writer
-	defaultNs   string
-	concurrency int
-}
-
-func (o *opts) App() *model.App {
-	return o.app
-}
-
-func (o *opts) VM() *vm.VM {
-	cfg := vm.Config{}.WithLibPaths(o.app.Spec.LibPaths)
-	jvm := vm.New(cfg)
-	return jvm
-}
-
-func (o *opts) Colorize() bool {
-	return o.colorize
-}
-
-func (o *opts) Verbosity() int {
-	return o.verbosity
-}
-
-func (o *opts) SortConfig(provider objsort.Namespaced) objsort.Config {
-	return objsort.Config{
-		NamespacedIndicator: provider,
-	}
-}
-
-func (o *opts) DefaultNamespace(env string) string {
-	if o.defaultNs == "" {
-		return "default"
-	}
-	return o.defaultNs
-}
-
-func (o *opts) Client(env string) (Client, error) {
-	return o.client, nil
-}
-
-func (o *opts) EvalConcurrency() int {
-	return o.concurrency
-}
-
-func (o *opts) Stdout() io.Writer {
-	return o.out
-}
-
-func (o *opts) Confirm(msg string) error {
-	fmt.Fprintln(os.Stderr, msg)
-	return nil
-}
-
 func setPwd(t *testing.T, dir string) func() {
 	wd, err := os.Getwd()
 	require.Nil(t, err)
@@ -173,7 +114,7 @@ func setPwd(t *testing.T, dir string) func() {
 
 type scaffold struct {
 	t          *testing.T
-	opts       *opts
+	client     *client
 	outCapture *bytes.Buffer
 	errCapture *bytes.Buffer
 	reset      func()
@@ -282,21 +223,26 @@ func newScaffold(t *testing.T) *scaffold {
 	app, err := model.NewApp("qbec.yaml")
 	require.Nil(t, err)
 	out := bytes.NewBuffer(nil)
-	opts := &opts{
-		app:    app,
-		client: &client{},
-		out:    out,
+
+	c := &client{}
+	clientProvider := func(env string) (Client, error) { return c, nil }
+
+	cp := ConfigFactory{
+		Stdout:      out,
+		SkipConfirm: true,
+		Colors:      false,
 	}
+	config, err := cp.internalConfig(app, vm.Config{}, clientProvider)
 	cmd := &cobra.Command{
 		Use: "qbec-test",
 	}
-	Setup(cmd, func() StdOptionsWithClient { return opts })
+	Setup(cmd, func() *Config { return config })
 	cmd.SetOutput(out)
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = true
 	s := &scaffold{
 		t:          t,
-		opts:       opts,
+		client:     c,
 		outCapture: out,
 		errCapture: bytes.NewBuffer(nil),
 		cmd:        cmd,
