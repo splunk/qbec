@@ -29,44 +29,182 @@ import (
 
 // Config is the desired configuration of the Jsonnet VM.
 type Config struct {
-	Vars             map[string]string // variables keyed by name
-	CodeVars         map[string]string // code variables keyed by name
-	TopLevelVars     map[string]string // TLA vars keyed by name
-	TopLevelCodeVars map[string]string // TLA code vars keyed by name
-	Importer         jsonnet.Importer  // optional custom importer - default is the filesystem importer
-	LibPaths         []string          // library paths in filesystem, ignored when a custom importer is specified
+	vars             map[string]string // string variables keyed by name
+	codeVars         map[string]string // code variables keyed by name
+	topLevelVars     map[string]string // TLA string vars keyed by name
+	topLevelCodeVars map[string]string // TLA code vars keyed by name
+	importer         jsonnet.Importer  // optional custom importer - default is the filesystem importer
+	libPaths         []string          // library paths in filesystem, ignored when a custom importer is specified
 }
 
-// WithCodeVars creates a new config that is the clone of this one with the additional code variables in its
-// environment.
+func copyArray(in []string) []string {
+	var ret []string
+	for _, p := range in {
+		ret = append(ret, p)
+	}
+	return ret
+}
+
+func copyMap(m map[string]string) map[string]string {
+	ret := map[string]string{}
+	if m == nil {
+		return nil
+	}
+	for k, v := range m {
+		ret[k] = v
+	}
+	return ret
+}
+
+func copyMapNonNil(m map[string]string) map[string]string {
+	ret := copyMap(m)
+	if ret == nil {
+		ret = map[string]string{}
+	}
+	return ret
+}
+
+// Clone creates a clone of this config.
+func (c Config) clone() Config {
+	ret := Config{
+		importer: c.importer,
+	}
+	ret.vars = copyMap(c.vars)
+	ret.codeVars = copyMap(c.codeVars)
+	ret.topLevelVars = copyMap(c.topLevelVars)
+	ret.topLevelCodeVars = copyMap(c.topLevelCodeVars)
+	ret.libPaths = copyArray(c.libPaths)
+	return ret
+}
+
+// Vars returns the string external variables defined for this config.
+func (c Config) Vars() map[string]string {
+	return copyMapNonNil(c.vars)
+}
+
+// CodeVars returns the code external variables defined for this config.
+func (c Config) CodeVars() map[string]string {
+	return copyMapNonNil(c.codeVars)
+}
+
+// TopLevelVars returns the string top-level variables defined for this config.
+func (c Config) TopLevelVars() map[string]string {
+	return copyMapNonNil(c.topLevelVars)
+}
+
+// TopLevelCodeVars returns the code top-level variables defined for this config.
+func (c Config) TopLevelCodeVars() map[string]string {
+	return copyMapNonNil(c.topLevelCodeVars)
+}
+
+// LibPaths returns the library paths for this config.
+func (c Config) LibPaths() []string {
+	return copyArray(c.libPaths)
+}
+
+func keyExists(m map[string]string, key string) bool {
+	if m == nil {
+		return false
+	}
+	_, ok := m[key]
+	return ok
+}
+
+// HasVar returns true if the specified external variable is defined.
+func (c Config) HasVar(name string) bool {
+	return keyExists(c.vars, name) || keyExists(c.codeVars, name)
+}
+
+// HasTopLevelVar returns true if the specified TLA variable is defined.
+func (c Config) HasTopLevelVar(name string) bool {
+	return keyExists(c.topLevelVars, name) || keyExists(c.topLevelCodeVars, name)
+}
+
+// WithoutTopLevel returns a config that does not have any top level variables set.
+func (c Config) WithoutTopLevel() Config {
+	if len(c.topLevelCodeVars) == 0 && len(c.topLevelVars) == 0 {
+		return c
+	}
+	clone := c.clone()
+	clone.topLevelVars = nil
+	clone.topLevelCodeVars = nil
+	return clone
+}
+
+// WithCodeVars returns a config with additional code variables in its environment.
 func (c Config) WithCodeVars(add map[string]string) Config {
-	clone := c
-	if clone.CodeVars == nil {
-		clone.CodeVars = map[string]string{}
+	if len(add) == 0 {
+		return c
+	}
+	clone := c.clone()
+	if clone.codeVars == nil {
+		clone.codeVars = map[string]string{}
 	}
 	for k, v := range add {
-		clone.CodeVars[k] = v
+		clone.codeVars[k] = v
 	}
 	return clone
 }
 
-// WithVars creates a new config that is the clone of this one with the additional variables in its
-// environment.
+// WithTopLevelCodeVars returns a config with additional top-level code variables in its environment.
+func (c Config) WithTopLevelCodeVars(add map[string]string) Config {
+	if len(add) == 0 {
+		return c
+	}
+	clone := c.clone()
+	if clone.topLevelCodeVars == nil {
+		clone.topLevelCodeVars = map[string]string{}
+	}
+	for k, v := range add {
+		clone.topLevelCodeVars[k] = v
+	}
+	return clone
+}
+
+// WithVars returns a config with additional string variables in its environment.
 func (c Config) WithVars(add map[string]string) Config {
-	clone := c
-	if clone.Vars == nil {
-		clone.Vars = map[string]string{}
+	if len(add) == 0 {
+		return c
+	}
+	clone := c.clone()
+	if clone.vars == nil {
+		clone.vars = map[string]string{}
 	}
 	for k, v := range add {
-		clone.Vars[k] = v
+		clone.vars[k] = v
 	}
 	return clone
 }
 
-// WithLibPaths create a new config that is the clone of this one with additional library paths.
+// WithTopLevelVars returns a config with additional top-level string variables in its environment.
+func (c Config) WithTopLevelVars(add map[string]string) Config {
+	if len(add) == 0 {
+		return c
+	}
+	clone := c.clone()
+	if clone.topLevelVars == nil {
+		clone.topLevelVars = map[string]string{}
+	}
+	for k, v := range add {
+		clone.topLevelVars[k] = v
+	}
+	return clone
+}
+
+// WithLibPaths returns a config with additional library paths.
 func (c Config) WithLibPaths(paths []string) Config {
-	clone := c
-	clone.LibPaths = append(clone.LibPaths, paths...)
+	if len(paths) == 0 {
+		return c
+	}
+	clone := c.clone()
+	clone.libPaths = append(clone.libPaths, paths...)
+	return clone
+}
+
+// WithImporter returns a config with the supplied importer.
+func (c Config) WithImporter(importer jsonnet.Importer) Config {
+	clone := c.clone()
+	clone.importer = importer
 	return clone
 }
 
@@ -118,7 +256,7 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 
 // ConfigFromCommandParams attaches VM related flags to the specified command and returns
 // a function that provides the config based on command line flags.
-func ConfigFromCommandParams(cmd *cobra.Command, prefix string) func() (Config, error) {
+func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) func() (Config, error) {
 	var (
 		extStrings strFiles
 		extCodes   strFiles
@@ -127,30 +265,38 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string) func() (Config, 
 		paths      []string
 	)
 	fs := cmd.PersistentFlags()
-	fs.StringArrayVar(&extStrings.strings, prefix+"ext-str", nil, "external string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	if addShortcuts {
+		fs.StringArrayVarP(&extStrings.strings, prefix+"ext-str", "V", nil, "external string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	} else {
+		fs.StringArrayVar(&extStrings.strings, prefix+"ext-str", nil, "external string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	}
 	fs.StringArrayVar(&extStrings.files, prefix+"ext-str-file", nil, "external string from file: <var>=<filename>")
 	fs.StringArrayVar(&extCodes.strings, prefix+"ext-code", nil, "external code: <var>=[val], if <val> is omitted, get from environment var <var>")
 	fs.StringArrayVar(&extCodes.files, prefix+"ext-code-file", nil, "external code from file: <var>=<filename>")
-	fs.StringArrayVar(&tlaStrings.strings, prefix+"tla-str", nil, "top-level string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	if addShortcuts {
+		fs.StringArrayVarP(&tlaStrings.strings, prefix+"tla-str", "A", nil, "top-level string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	} else {
+		fs.StringArrayVar(&tlaStrings.strings, prefix+"tla-str", nil, "top-level string: <var>=[val], if <val> is omitted, get from environment var <var>")
+	}
 	fs.StringArrayVar(&tlaStrings.files, prefix+"tla-str-file", nil, "top-level string from file: <var>=<filename>")
 	fs.StringArrayVar(&tlaCodes.strings, prefix+"tla-code", nil, "top-level code: <var>=[val], if <val> is omitted, get from environment var <var>")
 	fs.StringArrayVar(&tlaCodes.files, prefix+"tla-code-file", nil, "top-level code from file: <var>=<filename>")
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")
 
 	return func() (c Config, err error) {
-		if c.Vars, err = getValues("ext-str", extStrings); err != nil {
+		if c.vars, err = getValues("ext-str", extStrings); err != nil {
 			return
 		}
-		if c.CodeVars, err = getValues("ext-code", extCodes); err != nil {
+		if c.codeVars, err = getValues("ext-code", extCodes); err != nil {
 			return
 		}
-		if c.TopLevelVars, err = getValues("tla-str", tlaStrings); err != nil {
+		if c.topLevelVars, err = getValues("tla-str", tlaStrings); err != nil {
 			return
 		}
-		if c.TopLevelCodeVars, err = getValues("tla-code", tlaCodes); err != nil {
+		if c.topLevelCodeVars, err = getValues("tla-code", tlaCodes); err != nil {
 			return
 		}
-		c.LibPaths = paths
+		c.libPaths = paths
 		return
 	}
 }
@@ -173,15 +319,15 @@ func New(config Config) *VM {
 			}
 		}
 	}
-	registerVars(config.Vars, vm.ExtVar)
-	registerVars(config.CodeVars, vm.ExtCode)
-	registerVars(config.TopLevelVars, vm.TLAVar)
-	registerVars(config.TopLevelCodeVars, vm.TLACode)
-	if config.Importer != nil {
-		vm.Importer(config.Importer)
+	registerVars(config.vars, vm.ExtVar)
+	registerVars(config.codeVars, vm.ExtCode)
+	registerVars(config.topLevelVars, vm.TLAVar)
+	registerVars(config.topLevelCodeVars, vm.TLACode)
+	if config.importer != nil {
+		vm.Importer(config.importer)
 	} else {
 		vm.Importer(&jsonnet.FileImporter{
-			JPaths: config.LibPaths,
+			JPaths: config.libPaths,
 		})
 	}
 	return &VM{VM: vm, config: config}

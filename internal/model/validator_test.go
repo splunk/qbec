@@ -32,6 +32,17 @@ metadata:
 spec:
   excludes:
     - a
+  vars:
+    external:
+      - name: foo
+        secret: true
+        default: 10
+      - name: bar
+        default: { foo: { bar : { baz : 10 } } }
+    topLevel:
+      - name: foo
+        secret: true
+        components: [ 'a', 'b' ]
   environments:
     dev:
       server: "https://dev-server"
@@ -151,6 +162,22 @@ func TestValidatorNegative(t *testing.T) {
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
 				assert.Equal(t, ".excludes in body is a forbidden property", errs[0].Error())
+			},
+		},
+		{
+			name: "no components for TLA",
+			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "App", metadata: { name: "foo"}, spec: { vars: { topLevel: [ { name: 'foo' } ] }, environments: { dev: { server: "https://dev" } } } } }`,
+			asserter: func(t *testing.T, errs []error) {
+				require.Equal(t, 1, len(errs))
+				assert.Equal(t, "spec.vars.topLevel.components in body is required", errs[0].Error())
+			},
+		},
+		{
+			name: "empty components for TLA",
+			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "App", metadata: { name: "foo"}, spec: { vars: { topLevel: [ { name: 'foo', components: [] } ] }, environments: { dev: { server: "https://dev" } } } } }`,
+			asserter: func(t *testing.T, errs []error) {
+				require.Equal(t, 1, len(errs))
+				assert.Equal(t, "spec.vars.topLevel.components in body should have at least 1 items", errs[0].Error())
 			},
 		},
 	}

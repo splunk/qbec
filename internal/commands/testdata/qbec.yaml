@@ -1,0 +1,21 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: app1
+spec:
+  libPaths:
+    - lib
+  vars:
+    topLevel:
+      - name: tlaFoo
+        components: [ 'c1' ]
+    external:
+      - name: extFoo
+        default: 'baz'
+      - name: extBar
+        default: { bar: 'quux' }
+  environments:
+    dev:
+      server: https://dev-server
+      defaultNamespace: kube-system

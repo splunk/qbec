@@ -28,12 +28,12 @@ import (
 	"github.com/splunk/qbec/internal/model"
 )
 
-func newComponentCommand(op OptionsProvider) *cobra.Command {
+func newComponentCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "component <subcommand>",
 		Short: "component lists and diffs",
 	}
-	cmd.AddCommand(newComponentListCommand(op), newComponentDiffCommand(op))
+	cmd.AddCommand(newComponentListCommand(cp), newComponentDiffCommand(cp))
 	return cmd
 }
 
@@ -64,7 +64,7 @@ func listComponents(components []model.Component, formatSpecified bool, format s
 }
 
 type componentListCommandConfig struct {
-	StdOptions
+	*Config
 	format  string
 	objects bool
 }
@@ -75,7 +75,7 @@ func doComponentList(args []string, config componentListCommandConfig) error {
 	}
 	env := args[0]
 	if config.objects {
-		objects, err := filteredObjects(config, env, filterParams{})
+		objects, err := filteredObjects(config.Config, env, filterParams{})
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func doComponentList(args []string, config componentListCommandConfig) error {
 	return listComponents(components, config.format != "", config.format, config.Stdout())
 }
 
-func newComponentListCommand(op OptionsProvider) *cobra.Command {
+func newComponentListCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list [-objects] <environment>",
 		Short:   "list all components for an environment, optionally listing all objects as well",
@@ -100,14 +100,14 @@ func newComponentListCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doComponentList(args, config))
 	}
 	return cmd
 }
 
 type componentDiffCommandConfig struct {
-	StdOptions
+	*Config
 	objects bool
 }
 
@@ -142,7 +142,7 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 	}
 
 	getObjects := func(env string) (str string, name string, err error) {
-		objs, err := filteredObjects(config, env, filterParams{})
+		objs, err := filteredObjects(config.Config, env, filterParams{})
 		if err != nil {
 			return
 		}
@@ -189,7 +189,7 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 	return nil
 }
 
-func newComponentDiffCommand(op OptionsProvider) *cobra.Command {
+func newComponentDiffCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diff [-objects] <environment>|_ [<environment>|_]",
 		Short:   "diff component lists across two environments or between the baseline (use _ for baseline) and an environment",
@@ -200,7 +200,7 @@ func newComponentDiffCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.objects, "objects", "O", false, "set to true to also list objects in each component")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doComponentDiff(args, config))
 	}
 	return cmd

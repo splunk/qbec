@@ -18,11 +18,13 @@ package model
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var cm = `
@@ -68,6 +70,11 @@ func TestK8sObject(t *testing.T) {
 	a.Equal("v1", obj.GetObjectKind().GroupVersionKind().Version)
 	a.Equal("ConfigMap", obj.GetObjectKind().GroupVersionKind().Kind)
 	a.NotNil(obj.ToUnstructured())
+	a.Equal("/v1, Kind=ConfigMap:ns1:cm", fmt.Sprint(obj))
+	b, err := json.Marshal(obj)
+	require.Nil(t, err)
+	s := string(b)
+	a.Contains(s, `"foo":"bar"`)
 }
 
 func TestK8sLocalObject(t *testing.T) {

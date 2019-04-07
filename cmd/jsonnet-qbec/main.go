@@ -61,7 +61,7 @@ func main() {
 			}
 		},
 	}
-	configInit = vm.ConfigFromCommandParams(root, "")
+	configInit = vm.ConfigFromCommandParams(root, "", true)
 	if err := root.Execute(); err != nil {
 		log.Fatalln(err)
 	}

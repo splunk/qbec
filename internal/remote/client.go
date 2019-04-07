@@ -96,6 +96,21 @@ func (c *Client) ServerMetadata() *ServerMetadata {
 	return c.sm
 }
 
+// ValidatorFor returns a validator for the supplied group version kind.
+func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
+	return c.ServerMetadata().ValidatorFor(gvk)
+}
+
+// DisplayName returns the display name of the supplied K8s object.
+func (c *Client) DisplayName(o model.K8sMeta) string {
+	return c.ServerMetadata().DisplayName(o)
+}
+
+// IsNamespaced returns if the supplied group version kind is namespaced.
+func (c *Client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
+	return c.ServerMetadata().IsNamespaced(kind)
+}
+
 // Get returns the remote object matching the supplied metadata as an unstructured bag of attributes.
 func (c *Client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
 	rc, err := c.resourceInterfaceWithDefaultNs(obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace())

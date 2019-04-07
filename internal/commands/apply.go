@@ -49,20 +49,11 @@ func (a *applyStats) update(name string, s *remote.SyncResult) {
 	}
 }
 
-// applyClient is the remote interface needed for apply operations.
-type applyClient interface {
-	listClient
-	DisplayName(o model.K8sMeta) string
-	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
-}
-
 type applyCommandConfig struct {
-	StdOptions
-	syncOptions    remote.SyncOptions
-	gc             bool
-	filterFunc     func() (filterParams, error)
-	clientProvider func(env string) (applyClient, error)
+	*Config
+	syncOptions remote.SyncOptions
+	gc          bool
+	filterFunc  func() (filterParams, error)
 }
 
 func doApply(args []string, config applyCommandConfig) error {
@@ -77,12 +68,12 @@ func doApply(args []string, config applyCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config, env, fp)
+	objects, err := filteredObjects(config.Config, env, fp)
 	if err != nil {
 		return err
 	}
 
-	client, err := config.clientProvider(env)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
@@ -90,7 +81,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
 	if config.gc {
-		all, err := allObjects(config, env)
+		all, err := allObjects(config.Config, env)
 		if err != nil {
 			return err
 		}
@@ -113,7 +104,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	// continue with apply
-	objects = objsort.Sort(objects, config.SortConfig(client.IsNamespaced))
+	objects = objsort.Sort(objects, sortConfig(client.IsNamespaced))
 
 	opts := config.syncOptions
 	dryRun := ""
@@ -156,7 +147,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 	}
 
-	deletions = objsort.SortMeta(deletions, config.SortConfig(client.IsNamespaced))
+	deletions = objsort.SortMeta(deletions, sortConfig(client.IsNamespaced))
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
@@ -177,7 +168,7 @@ func doApply(args []string, config applyCommandConfig) error {
 
 }
 
-func newApplyCommand(op OptionsProvider) *cobra.Command {
+func newApplyCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "apply [-n] <environment>",
 		Short:   "apply one or more components to a Kubernetes cluster",
@@ -185,9 +176,6 @@ func newApplyCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	config := applyCommandConfig{
-		clientProvider: func(env string) (applyClient, error) {
-			return op().Client(env)
-		},
 		filterFunc: addFilterParams(cmd, true),
 	}
 
@@ -197,7 +185,7 @@ func newApplyCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doApply(args, config))
 	}
 	return cmd

@@ -114,16 +114,9 @@ func (d *diffStats) done() {
 	sort.Strings(d.Errors)
 }
 
-// diffClient is the remote interface needed for show operations.
-type diffClient interface {
-	listClient
-	DisplayName(o model.K8sMeta) string
-	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
-}
-
 type differ struct {
 	w           io.Writer
-	client      diffClient
+	client      Client
 	opts        diff.Options
 	stats       diffStats
 	ignores     diffIgnores
@@ -207,14 +200,13 @@ func (d *differ) diff(ob model.K8sLocalObject) error {
 }
 
 type diffCommandConfig struct {
-	StdOptions
-	showDeletions  bool
-	showSecrets    bool
-	parallel       int
-	contextLines   int
-	di             diffIgnores
-	filterFunc     func() (filterParams, error)
-	clientProvider func(env string) (diffClient, error)
+	*Config
+	showDeletions bool
+	showSecrets   bool
+	parallel      int
+	contextLines  int
+	di            diffIgnores
+	filterFunc    func() (filterParams, error)
 }
 
 func doDiff(args []string, config diffCommandConfig) error {
@@ -231,19 +223,19 @@ func doDiff(args []string, config diffCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(config, env, fp)
+	objects, err := filteredObjects(config.Config, env, fp)
 	if err != nil {
 		return err
 	}
 
-	client, err := config.clientProvider(env)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
 
 	var lister lister = &stubLister{}
 	if config.showDeletions {
-		all, err := allObjects(config, env)
+		all, err := allObjects(config.Config, env)
 		if err != nil {
 			return err
 		}
@@ -262,7 +254,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		})
 	}
 
-	objects = objsort.Sort(objects, config.SortConfig(client.IsNamespaced))
+	objects = objsort.Sort(objects, sortConfig(client.IsNamespaced))
 
 	// since the 0 value of context is turned to 3 by the diff library,
 	// special case to turn 0 into a negative number so that zero means zero.
@@ -314,7 +306,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 	}
 }
 
-func newDiffCommand(op OptionsProvider) *cobra.Command {
+func newDiffCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diff <environment>",
 		Short:   "diff one or more components against objects in a Kubernetes cluster",
@@ -322,9 +314,6 @@ func newDiffCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	config := diffCommandConfig{
-		clientProvider: func(env string) (diffClient, error) {
-			return op().Client(env)
-		},
 		filterFunc: addFilterParams(cmd, true),
 	}
 	cmd.Flags().BoolVar(&config.showDeletions, "show-deletes", true, "include deletions in diff")
@@ -337,7 +326,7 @@ func newDiffCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doDiff(args, config))
 	}
 	return cmd

@@ -27,10 +27,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -82,19 +80,6 @@ func wrapError(err error) error {
 	return newRuntimeError(err)
 }
 
-// StdOptions provides standardized access to information available to every command.
-type StdOptions interface {
-	App() *model.App                                       // the app loaded for the command
-	VM() *vm.VM                                            // the base VM constructed out of command line args and potentially app information
-	Colorize() bool                                        // returns if colorized output is needed
-	Verbosity() int                                        // returns the verbosity level
-	SortConfig(provider objsort.Namespaced) objsort.Config // returns the apply sort config potentially using hints from the app
-	Stdout() io.Writer                                     // output to write to
-	DefaultNamespace(env string) string                    // the default namespace for the supplied environment
-	Confirm(context string) error                          // confirmation function for dangerous operations
-	EvalConcurrency() int                                  // the concurrency using which to evaluate components
-}
-
 // Client encapsulates all remote operations needed for the superset of all commands.
 type Client interface {
 	DisplayName(o model.K8sMeta) string
@@ -106,24 +91,18 @@ type Client interface {
 	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 }
 
-// StdOptionsWithClient provides a remote client in addition to standard options.
-type StdOptionsWithClient interface {
-	StdOptions                         // base options
-	Client(env string) (Client, error) // a client valid for the supplied environment
-}
-
-// OptionsProvider provides standard configuration available to all commands
-type OptionsProvider func() StdOptionsWithClient
+// ConfigProvider provides standard configuration available to all commands
+type ConfigProvider func() *Config
 
 // Setup sets up all subcommands for the supplied root command.
-func Setup(root *cobra.Command, op OptionsProvider) {
-	root.AddCommand(newApplyCommand(op))
-	root.AddCommand(newValidateCommand(op))
-	root.AddCommand(newShowCommand(op))
-	root.AddCommand(newDiffCommand(op))
-	root.AddCommand(newDeleteCommand(op))
-	root.AddCommand(newComponentCommand(op))
-	root.AddCommand(newParamCommand(op))
+func Setup(root *cobra.Command, cp ConfigProvider) {
+	root.AddCommand(newApplyCommand(cp))
+	root.AddCommand(newValidateCommand(cp))
+	root.AddCommand(newShowCommand(cp))
+	root.AddCommand(newDiffCommand(cp))
+	root.AddCommand(newDeleteCommand(cp))
+	root.AddCommand(newComponentCommand(cp))
+	root.AddCommand(newParamCommand(cp))
 	root.AddCommand(newInitCommand())
 }
 

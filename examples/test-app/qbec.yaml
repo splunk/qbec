@@ -10,6 +10,13 @@ spec:
   - lib
   excludes:
   - service2
+  vars:
+    topLevel:
+      - name: tlaFoo
+        components: [ 'service2' ]
+    external:
+      - name: externalFoo
+        default: 'bar'
   environments:
     dev:
       server: https://dev-server

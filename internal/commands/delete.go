@@ -26,19 +26,11 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 )
 
-// deleteClient is the remote interface needed for delete operations.
-type deleteClient interface {
-	listClient
-	DisplayName(o model.K8sMeta) string
-	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
-}
-
 type deleteCommandConfig struct {
-	StdOptions
-	dryRun         bool
-	useLocal       bool
-	filterFunc     func() (filterParams, error)
-	clientProvider func(env string) (deleteClient, error)
+	*Config
+	dryRun     bool
+	useLocal   bool
+	filterFunc func() (filterParams, error)
 }
 
 func doDelete(args []string, config deleteCommandConfig) error {
@@ -54,14 +46,14 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		return err
 	}
 
-	client, err := config.clientProvider(env)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(config, env, fp)
+		objects, err := filteredObjects(config.Config, env, fp)
 		if err != nil {
 			return err
 		}
@@ -69,7 +61,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			deletions = append(deletions, o)
 		}
 	} else {
-		all, err := allObjects(config, env)
+		all, err := allObjects(config.Config, env)
 		if err != nil {
 			return err
 		}
@@ -100,7 +92,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	}
 
 	// process deletions
-	deletions = objsort.SortMeta(deletions, config.SortConfig(client.IsNamespaced))
+	deletions = objsort.SortMeta(deletions, sortConfig(client.IsNamespaced))
 
 	if !config.dryRun && len(deletions) > 0 {
 		msg := fmt.Sprintf("will delete %d objects", len(deletions))
@@ -129,7 +121,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	return nil
 }
 
-func newDeleteCommand(op OptionsProvider) *cobra.Command {
+func newDeleteCommand(cp ConfigProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete [-n] <environment>",
 		Short:   "delete one or more components from a Kubernetes cluster",
@@ -137,9 +129,6 @@ func newDeleteCommand(op OptionsProvider) *cobra.Command {
 	}
 
 	config := deleteCommandConfig{
-		clientProvider: func(env string) (deleteClient, error) {
-			return op().Client(env)
-		},
 		filterFunc: addFilterParams(cmd, true),
 	}
 
@@ -147,7 +136,7 @@ func newDeleteCommand(op OptionsProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.useLocal, "local", false, "use local object names to delete, do not derive list from server")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.StdOptions = op()
+		config.Config = cp()
 		return wrapError(doDelete(args, config))
 	}
 	return cmd

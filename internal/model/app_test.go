@@ -46,6 +46,7 @@ func TestAppSimple(t *testing.T) {
 	app, err := NewApp("qbec.yaml")
 	require.Nil(t, err)
 	a := assert.New(t)
+	a.Equal("example1", app.Name())
 	a.Equal(2, len(app.Spec.Environments))
 	a.Contains(app.Spec.Environments, "dev")
 	a.Contains(app.Spec.Environments, "prod")
@@ -86,6 +87,14 @@ func TestAppSimple(t *testing.T) {
 	comps, err = app.ComponentsForEnvironment("dev", []string{"service1"}, nil)
 	require.Nil(t, err)
 	require.Equal(t, 0, len(comps))
+
+	a.EqualValues(map[string]interface{}{
+		"externalFoo": "bar",
+	}, app.DeclaredVars())
+
+	a.EqualValues(map[string]interface{}{
+		"tlaFoo": true,
+	}, app.DeclaredTopLevelVars())
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -206,6 +215,18 @@ func TestAppNegative(t *testing.T) {
 			file: "bad-env-name.yaml",
 			asserter: func(t *testing.T, err error) {
 				assert.Contains(t, err.Error(), "invalid environment foo/bar, must match")
+			},
+		},
+		{
+			file: "bad-dup-tla.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "duplicate top-level variable foo")
+			},
+		},
+		{
+			file: "bad-dup-ext.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "duplicate external variable foo")
 			},
 		},
 	}
