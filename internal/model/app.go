@@ -56,13 +56,14 @@ type Component struct {
 // App is a qbec application wrapped with some runtime attributes.
 type App struct {
 	QbecApp
+	tag               string               // the tag to be used for the current command invocation
 	root              string               // derived root directory of the app
 	allComponents     map[string]Component // all components whether or not included anywhere
 	defaultComponents map[string]Component // all components enabled by default
 }
 
 // NewApp returns an app loading its details from the supplied file.
-func NewApp(file string) (*App, error) {
+func NewApp(file string, tag string) (*App, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -117,6 +118,14 @@ func NewApp(file string) (*App, error) {
 	for _, k := range app.Spec.Excludes {
 		delete(app.defaultComponents, k)
 	}
+
+	if tag != "" {
+		if !reLabelValue.MatchString(tag) {
+			return nil, fmt.Errorf("invalid tag name '%s', must match %v", tag, reLabelValue)
+		}
+	}
+
+	app.tag = tag
 	return &app, nil
 }
 
@@ -132,6 +141,11 @@ func (a *App) setupDefaults() {
 // Name returns the name of the application.
 func (a *App) Name() string {
 	return a.Metadata.Name
+}
+
+// Tag returns the tag to be used for the current invocation.
+func (a *App) Tag() string {
+	return a.tag
 }
 
 // ComponentsForEnvironment returns a slice of components for the specified
@@ -276,7 +290,7 @@ func (a *App) verifyComponentList(src string, comps []string) error {
 	return nil
 }
 
-var reEnvName = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`) // XXX: duplicated in swagger
+var reLabelValue = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`) // XXX: duplicated in swagger
 
 func (a *App) verifyEnvAndComponentReferences() error {
 	var errs []string
@@ -290,8 +304,8 @@ func (a *App) verifyEnvAndComponentReferences() error {
 		if e == Baseline {
 			return fmt.Errorf("cannot use _ as an environment name since it has a special meaning")
 		}
-		if !reEnvName.MatchString(e) {
-			return fmt.Errorf("invalid environment %s, must match %s", e, reEnvName)
+		if !reLabelValue.MatchString(e) {
+			return fmt.Errorf("invalid environment %s, must match %s", e, reLabelValue)
 		}
 		localVerify(e+" inclusions", env.Includes)
 		localVerify(e+" exclusions", env.Excludes)

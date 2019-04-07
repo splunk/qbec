@@ -125,6 +125,7 @@ func setWorkDir(specified string) error {
 func setup(root *cobra.Command) {
 	var cp commands.ConfigFactory
 	var rootDir string
+	var appTag string
 
 	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
 	cfg := remote.NewConfig(root, "k8s:")
@@ -135,7 +136,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", false, "do not prompt for confirmation")
 	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
 	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
-
+	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
@@ -151,7 +152,7 @@ func setup(root *cobra.Command) {
 		if err := setWorkDir(rootDir); err != nil {
 			return err
 		}
-		app, err := model.NewApp("qbec.yaml")
+		app, err := model.NewApp("qbec.yaml", appTag)
 		if err != nil {
 			return err
 		}
