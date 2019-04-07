@@ -32,6 +32,7 @@ type objectKey struct {
 type basicObject struct {
 	objectKey
 	app       string
+	tag       string
 	component string
 	env       string
 }
@@ -44,6 +45,7 @@ func (b *basicObject) GetKind() string                                 { return 
 func (b *basicObject) GetNamespace() string                            { return b.namespace }
 func (b *basicObject) GetName() string                                 { return b.name }
 func (b *basicObject) Application() string                             { return b.app }
+func (b *basicObject) Tag() string                                     { return b.tag }
 func (b *basicObject) Component() string                               { return b.component }
 func (b *basicObject) Environment() string                             { return b.env }
 
@@ -135,6 +137,7 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 	resultObject := &basicObject{
 		objectKey: key,
 		app:       object.Application(),
+		tag:       object.Tag(),
 		component: object.Component(),
 		env:       object.Environment(),
 	}

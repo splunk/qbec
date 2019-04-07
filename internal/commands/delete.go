@@ -75,6 +75,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		}
 		lister.start(nil, remote.ListQueryConfig{
 			Application:     config.App().Name(),
+			Tag:             config.App().Tag(),
 			Environment:     env,
 			ComponentFilter: cf,
 			KindFilter:      fp.kindFilter,

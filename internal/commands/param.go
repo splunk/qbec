@@ -139,6 +139,7 @@ func doParamList(args []string, config paramListCommandConfig) error {
 	paramsObject, err := eval.Params(paramsFile, eval.Context{
 		VMConfig: config.VMConfig,
 		App:      config.App().Name(),
+		Tag:      config.App().Tag(),
 		Env:      env,
 		Verbose:  config.Verbosity() > 1,
 	})
@@ -204,6 +205,7 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 		paramsObject, err := eval.Params(paramsFile, eval.Context{
 			VMConfig: config.VMConfig,
 			App:      config.App().Name(),
+			Tag:      config.App().Tag(),
 			Env:      env,
 			Verbose:  config.Verbosity() > 1,
 		})

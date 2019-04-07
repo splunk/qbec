@@ -139,6 +139,7 @@ type ListQueryScope struct {
 // ListQueryConfig is the config with which to execute list queries.
 type ListQueryConfig struct {
 	Application string // must be non-blank
+	Tag         string // may be blank
 	Environment string // must be non-blank
 	ListQueryScope
 	ComponentFilter     model.Filter // filters for object component

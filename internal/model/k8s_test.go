@@ -78,16 +78,35 @@ func TestK8sObject(t *testing.T) {
 }
 
 func TestK8sLocalObject(t *testing.T) {
-	obj := NewK8sLocalObject(toData(cm), "app1", "c1", "e1")
+	obj := NewK8sLocalObject(toData(cm), "app1", "", "c1", "e1")
 	a := assert.New(t)
 	a.Equal("app1", obj.Application())
 	a.Equal("c1", obj.Component())
 	a.Equal("e1", obj.Environment())
+	a.Equal("", obj.Tag())
+	labels := obj.ToUnstructured().GetLabels()
+	a.Equal("app1", labels[QbecNames.ApplicationLabel])
+	a.Equal("e1", labels[QbecNames.EnvironmentLabel])
+	_, ok := labels[QbecNames.TagLabel]
+	a.False(ok)
+}
+
+func TestK8sLocalObjectWithTag(t *testing.T) {
+	obj := NewK8sLocalObject(toData(cm), "app1", "t1", "c1", "e1")
+	a := assert.New(t)
+	a.Equal("app1", obj.Application())
+	a.Equal("c1", obj.Component())
+	a.Equal("e1", obj.Environment())
+	a.Equal("t1", obj.Tag())
+	labels := obj.ToUnstructured().GetLabels()
+	a.Equal("app1", labels[QbecNames.ApplicationLabel])
+	a.Equal("e1", labels[QbecNames.EnvironmentLabel])
+	a.Equal("t1", labels[QbecNames.TagLabel])
 }
 
 func TestSecrets(t *testing.T) {
-	cmObj := NewK8sLocalObject(toData(cm), "app1", "c1", "e1")
-	secretObj := NewK8sLocalObject(toData(secret), "app1", "c1", "e1")
+	cmObj := NewK8sLocalObject(toData(cm), "app1", "", "c1", "e1")
+	secretObj := NewK8sLocalObject(toData(secret), "", "app1", "c1", "e1")
 	a := assert.New(t)
 	a.False(HasSensitiveInfo(cmObj.ToUnstructured()))
 	a.True(HasSensitiveInfo(secretObj.ToUnstructured()))

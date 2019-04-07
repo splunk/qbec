@@ -104,6 +104,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 		lister.start(all, remote.ListQueryConfig{
 			Application:     config.App().Name(),
+			Tag:             config.App().Tag(),
 			Environment:     env,
 			KindFilter:      fp.kindFilter,
 			ComponentFilter: cf,

@@ -65,6 +65,7 @@ func filteredObjects(cfg *Config, env string, fp filterParams) ([]model.K8sLocal
 	}
 	output, err := eval.Components(components, eval.Context{
 		App:         cfg.App().Name(),
+		Tag:         cfg.App().Tag(),
 		Env:         env,
 		VMConfig:    cfg.VMConfig,
 		Verbose:     cfg.Verbosity() > 1,

@@ -115,7 +115,7 @@ func (k qbecPristine) createFromPristine(pristine model.K8sLocalObject) (model.K
 	}
 	annotations[model.QbecNames.PristineAnnotation] = zipped
 	annotated.SetAnnotations(annotations)
-	return model.NewK8sLocalObject(annotated.Object, pristine.Application(), pristine.Component(), pristine.Environment()), nil
+	return model.NewK8sLocalObject(annotated.Object, pristine.Application(), pristine.Tag(), pristine.Component(), pristine.Environment()), nil
 }
 
 type fallbackPristine struct{}

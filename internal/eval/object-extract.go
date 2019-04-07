@@ -46,6 +46,7 @@ func str(data map[string]interface{}, attr string) string {
 
 type walker struct {
 	app  string
+	tag  string
 	env  string
 	data interface{}
 }
@@ -77,7 +78,7 @@ func (w *walker) walkObjects(path string, component string, data interface{}) ([
 				}
 				ret = append(ret, objects...)
 			} else {
-				ret = append(ret, model.NewK8sLocalObject(t, w.app, component, w.env))
+				ret = append(ret, model.NewK8sLocalObject(t, w.app, w.tag, component, w.env))
 			}
 			return ret, nil
 		}
@@ -101,8 +102,8 @@ func (w *walker) walkObjects(path string, component string, data interface{}) ([
 	return ret, nil
 }
 
-func k8sObjectsFromJSON(data map[string]interface{}, app, env string) ([]model.K8sLocalObject, error) {
-	w := walker{app: app, env: env, data: data}
+func k8sObjectsFromJSON(data map[string]interface{}, app, tag, env string) ([]model.K8sLocalObject, error) {
+	w := walker{app: app, tag: tag, env: env, data: data}
 	ret, err := w.walk()
 	if err != nil {
 		return nil, err

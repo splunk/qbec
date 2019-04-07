@@ -42,6 +42,7 @@ type VMConfigFunc func(tlaVars []string) vm.Config
 // Context is the evaluation context
 type Context struct {
 	App         string       // the application for which the evaluation is done
+	Tag         string       // the gc tag if present
 	Env         string       // the environment for which the evaluation is done
 	VMConfig    VMConfigFunc // the base VM config to use for eval
 	Verbose     bool         // show generated code
@@ -53,7 +54,10 @@ func (c Context) vm(tlas []string) *vm.VM {
 	if fn == nil {
 		fn = defaultFunc
 	}
-	cfg := fn(tlas).WithVars(map[string]string{model.QbecNames.EnvVarName: c.Env})
+	cfg := fn(tlas).WithVars(map[string]string{
+		model.QbecNames.EnvVarName: c.Env,
+		model.QbecNames.TagVarName: c.Tag,
+	})
 	return vm.New(cfg)
 }
 
@@ -66,7 +70,7 @@ func Components(components []model.Component, ctx Context) ([]model.K8sLocalObje
 	if err != nil {
 		return nil, err
 	}
-	objs, err := k8sObjectsFromJSON(componentMap, ctx.App, ctx.Env)
+	objs, err := k8sObjectsFromJSON(componentMap, ctx.App, ctx.Tag, ctx.Env)
 	if err != nil {
 		return nil, errors.Wrap(err, "extract objects")
 	}
