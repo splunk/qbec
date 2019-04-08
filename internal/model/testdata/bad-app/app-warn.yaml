@@ -3,6 +3,7 @@ kind: App
 metadata:
   name: test-app
 spec:
+  namespaceTagSuffix: true
   excludes:
   - a
   environments:

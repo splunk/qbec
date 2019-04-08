@@ -96,7 +96,18 @@ func TestAppSimple(t *testing.T) {
 		"tlaFoo": true,
 	}, app.DeclaredTopLevelVars())
 
+	u, err := app.ServerURL("dev")
+	require.Nil(t, err)
+	a.Equal("https://dev-server", u)
+	a.Equal("default", app.DefaultNamespace("dev"))
 	a.Equal("", app.Tag())
+
+	_, err = app.ServerURL("devx")
+	require.NotNil(t, err)
+	a.Equal(`invalid environment "devx"`, err.Error())
+
+	a.Equal("params.libsonnet", app.ParamsFile())
+	a.EqualValues([]string{"lib"}, app.LibPaths())
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -126,6 +137,7 @@ func TestAppWarnings(t *testing.T) {
 	a.Contains(buf.String(), "[warn] component a excluded from prod is already excluded by default")
 
 	a.Equal("foobar", app.Tag())
+	a.Equal("default-foobar", app.DefaultNamespace("dev"))
 }
 
 func TestAppComponentLoadNegative(t *testing.T) {
