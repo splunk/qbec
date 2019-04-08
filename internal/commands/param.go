@@ -131,11 +131,13 @@ func doParamList(args []string, config paramListCommandConfig) error {
 		return newUsageError("exactly one environment required")
 	}
 	env := args[0]
-	_, ok := config.App().Spec.Environments[env]
-	if env != "_" && !ok {
-		return fmt.Errorf("invalid environment %q", env)
+	if env != "_" {
+		_, err := config.App().ServerURL(env)
+		if err != nil {
+			return err
+		}
 	}
-	paramsFile := config.App().Spec.ParamsFile
+	paramsFile := config.App().ParamsFile()
 	paramsObject, err := eval.Params(paramsFile, eval.Context{
 		VMConfig: config.VMConfig,
 		App:      config.App().Name(),
@@ -197,11 +199,13 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 		return err
 	}
 	getParams := func(env string) (str string, name string, err error) {
-		_, ok := config.App().Spec.Environments[env]
-		if env != "_" && !ok {
-			return "", "", fmt.Errorf("invalid environment %q", env)
+		if env != "_" {
+			_, err := config.App().ServerURL(env)
+			if err != nil {
+				return "", "", err
+			}
 		}
-		paramsFile := config.App().Spec.ParamsFile
+		paramsFile := config.App().ParamsFile()
 		paramsObject, err := eval.Params(paramsFile, eval.Context{
 			VMConfig: config.VMConfig,
 			App:      config.App().Name(),

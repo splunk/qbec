@@ -241,7 +241,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		}
 		cf, _ := model.NewComponentFilter(fp.includes, fp.excludes)
 		var scope remote.ListQueryScope
-		lister, scope, err = newRemoteLister(client, all, config.DefaultNamespace(env))
+		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}

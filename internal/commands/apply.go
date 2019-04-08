@@ -94,7 +94,7 @@ func doApply(args []string, config applyCommandConfig) error {
 			return err
 		}
 		var scope remote.ListQueryScope
-		lister, scope, err = newRemoteLister(client, all, config.DefaultNamespace(env))
+		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}

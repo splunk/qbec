@@ -56,8 +56,8 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal(7, cfg.EvalConcurrency())
 	a.Equal(app, cfg.App())
 	a.True(cfg.Colorize())
-	a.Equal("kube-system", cfg.DefaultNamespace("dev"))
-	a.Equal("default", cfg.DefaultNamespace("prod"))
+	a.Equal("kube-system", cfg.app.DefaultNamespace("dev"))
+	a.Equal("default", cfg.app.DefaultNamespace("prod"))
 	a.Nil(cfg.Confirm("we will destroy you"))
 
 	testVMC := cfg.VMConfig([]string{"tlaFoo", "tlaBar"})

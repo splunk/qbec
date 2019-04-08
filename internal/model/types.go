@@ -73,6 +73,8 @@ type AppSpec struct {
 	Excludes []string `json:"excludes,omitempty"`
 	// list of library paths to add to the jsonnet VM at evaluation
 	LibPaths []string `json:"libPaths,omitempty"`
+	// automatically suffix default namespace defined for environment when app-tag provided.
+	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
 }
 
 // QbecApp is a set of components that can be applied to multiple environments with tweaked runtime configurations.

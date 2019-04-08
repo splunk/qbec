@@ -69,7 +69,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		lister, scope, err := newRemoteLister(client, all, config.DefaultNamespace(env))
+		lister, scope, err := newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}

@@ -68,6 +68,9 @@ definitions:
         type: string
       vars:
         $ref: "#/definitions/qbec.io.v1alpha1.Variables"
+      namespaceTagSuffix:
+        description: suffix default namespace when app-tag provided, with the supplied tag
+        type: boolean
     required:
     - environments
     title: AppSpec is the user-supplied configuration of the qbec app.

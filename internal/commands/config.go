@@ -18,13 +18,13 @@ package commands
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -44,17 +44,14 @@ type stdClientProvider struct {
 
 // Client returns a client for the supplied environment.
 func (s stdClientProvider) Client(env string) (Client, error) {
-	envObj, ok := s.app.Spec.Environments[env]
-	if !ok {
-		return nil, fmt.Errorf("get client: invalid environment %q", env)
+	server, err := s.app.ServerURL(env)
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
 	}
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
+	ns := s.app.DefaultNamespace(env)
 	rem, err := s.config.Client(remote.ConnectOpts{
 		EnvName:   env,
-		ServerURL: envObj.Server,
+		ServerURL: server,
 		Namespace: ns,
 		Verbosity: s.verbosity,
 	})
@@ -138,7 +135,7 @@ func (c *Config) init(strict bool) error {
 	var msgs []string
 	c.tlaVars = c.vmc.TopLevelVars()
 	c.tlaCodeVars = c.vmc.TopLevelCodeVars()
-	c.vmc = c.vmc.WithLibPaths(c.app.Spec.LibPaths)
+	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
 
 	vars := c.vmc.Vars()
 	codeVars := c.vmc.CodeVars()
@@ -237,16 +234,6 @@ func (c Config) VMConfig(tlaVars []string) vm.Config {
 		}
 	}
 	return cfg.WithTopLevelVars(addStrs).WithTopLevelCodeVars(addCodes)
-}
-
-// DefaultNamespace returns the default namespace for the supplied environment.
-func (c Config) DefaultNamespace(env string) string {
-	envObj := c.app.Spec.Environments[env]
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
-	return ns
 }
 
 // Client returns a client for the supplied environment
