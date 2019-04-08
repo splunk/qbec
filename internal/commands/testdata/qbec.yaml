@@ -6,6 +6,7 @@ metadata:
 spec:
   libPaths:
     - lib
+  namespaceTagSuffix: true
   vars:
     topLevel:
       - name: tlaFoo

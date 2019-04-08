@@ -44,6 +44,7 @@ type Context struct {
 	App         string       // the application for which the evaluation is done
 	Tag         string       // the gc tag if present
 	Env         string       // the environment for which the evaluation is done
+	DefaultNs   string       // the default namespace to expose as an external variable
 	VMConfig    VMConfigFunc // the base VM config to use for eval
 	Verbose     bool         // show generated code
 	Concurrency int          // concurrent components to evaluate, default 5
@@ -55,8 +56,9 @@ func (c Context) vm(tlas []string) *vm.VM {
 		fn = defaultFunc
 	}
 	cfg := fn(tlas).WithVars(map[string]string{
-		model.QbecNames.EnvVarName: c.Env,
-		model.QbecNames.TagVarName: c.Tag,
+		model.QbecNames.EnvVarName:       c.Env,
+		model.QbecNames.TagVarName:       c.Tag,
+		model.QbecNames.DefaultNsVarName: c.DefaultNs,
 	})
 	return vm.New(cfg)
 }

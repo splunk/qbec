@@ -28,6 +28,7 @@ var QbecNames = struct {
 	ParamsCodeVarName   string // the name of the code variable that stores env params
 	EnvVarName          string // the name of the external variable that has the environment name
 	TagVarName          string // the name of the external variable that has the tag name
+	DefaultNsVarName    string // the name of the external variable that has the default namespace
 }{
 	ApplicationLabel:    qbecLeading + "/application",
 	TagLabel:            qbecLeading + "/tag",
@@ -37,4 +38,5 @@ var QbecNames = struct {
 	ParamsCodeVarName:   qbecLeading + "/params",
 	EnvVarName:          qbecLeading + "/env",
 	TagVarName:          qbecLeading + "/tag",
+	DefaultNsVarName:    qbecLeading + "/defaultNs",
 }

@@ -25,6 +25,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -205,8 +206,21 @@ func (c *Config) init(strict bool) error {
 // App returns the application object loaded for this run.
 func (c Config) App() *model.App { return c.app }
 
-// VMConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c Config) VMConfig(tlaVars []string) vm.Config {
+// EvalContext returns the evaluation context for the supplied environment.
+func (c Config) EvalContext(env string) eval.Context {
+	return eval.Context{
+		App:         c.App().Name(),
+		Tag:         c.App().Tag(),
+		Env:         env,
+		DefaultNs:   c.app.DefaultNamespace(env),
+		VMConfig:    c.vmConfig,
+		Verbose:     c.Verbosity() > 1,
+		Concurrency: c.EvalConcurrency(),
+	}
+}
+
+// vmConfig returns the VM configuration that only has the supplied top-level arguments.
+func (c Config) vmConfig(tlaVars []string) vm.Config {
 	cfg := c.vmc.WithoutTopLevel()
 
 	// common case to avoid useless object creation. If no required vars
