@@ -78,6 +78,14 @@ func doApply(args []string, config applyCommandConfig) error {
 		return err
 	}
 
+	opts := config.syncOptions
+	if !opts.DryRun && len(objects) > 0 {
+		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))
+		if err := config.Confirm(msg); err != nil {
+			return err
+		}
+	}
+
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
 	if config.gc {
@@ -106,17 +114,9 @@ func doApply(args []string, config applyCommandConfig) error {
 	// continue with apply
 	objects = objsort.Sort(objects, sortConfig(client.IsNamespaced))
 
-	opts := config.syncOptions
 	dryRun := ""
 	if opts.DryRun {
 		dryRun = "[dry-run] "
-	}
-
-	if !opts.DryRun && len(objects) > 0 {
-		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))
-		if err := config.Confirm(msg); err != nil {
-			return err
-		}
 	}
 
 	var stats applyStats
