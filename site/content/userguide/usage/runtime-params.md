@@ -103,7 +103,7 @@ then you can use them in your components or runtime parameter config object, lik
 and specify real values on the qbec command-line:
 
 ```bash
-export service_secret=XXX
+export service1_secret=XXX
 qbec apply dev --vm:ext-str service1_image_tag=1.0.3 --vm:ext-str service1_secret
 ```
 
