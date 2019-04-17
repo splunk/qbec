@@ -60,7 +60,7 @@ kind filters passed to the command.
 
 ### Step 3: List remote objects
   * If source objects affect a single namespace, query that namespace for all server-side objects having
-    labels that match the qbec application and environment.
+    labels that match the qbec application and environment (and tag, if specified for the command).
   * If multiple namespaces, list objects across all namespaces using label filters. This is done for
     efficiency and assumes that the user has list permissions across namespaces. There is currently
     no way to control this behavior (i.e. listing objects one namespace at a time)
