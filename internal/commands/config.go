@@ -29,6 +29,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -186,6 +187,10 @@ func (c *Config) init(strict bool) error {
 
 	for k, v := range declaredExternals {
 		if c.vmc.HasVar(k) {
+			continue
+		}
+		if v == nil {
+			sio.Warnf("no/ nil default specified for variable %q\n", k)
 			continue
 		}
 		switch t := v.(type) {

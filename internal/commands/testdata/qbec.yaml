@@ -16,6 +16,7 @@ spec:
         default: 'baz'
       - name: extBar
         default: { bar: 'quux' }
+      - name: noDefault
   environments:
     dev:
       server: https://dev-server

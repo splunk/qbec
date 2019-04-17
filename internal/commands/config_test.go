@@ -83,7 +83,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	vmc := vm.Config{}
 
 	vmc = vmc.WithTopLevelVars(map[string]string{"tlaFoo": "xxx"})
-	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy"})
+	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
 
 	f := ConfigFactory{
 		StrictVars: true,
