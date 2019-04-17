@@ -132,7 +132,7 @@ In this case you would code your `service1.jsonnet` component as follows:
 
 ```jsonnet
 function (service1Tag='latest', service1Secret='changeme') (
-    // for example: return an array containing a seret and a deployment
+    // for example: return an array containing a secret and a deployment
     [
         {
             apiVersion: 'v1',
