@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Home :: Qbec</title>
+    <title>Branch builds and CI :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/">
+  <body class="" data-url="/userguide/usage/branches-and-ci/">
     <nav id="sidebar" class="">
 
 
@@ -105,7 +105,7 @@
   
     
     <li data-nav-id="/userguide/" title="User guide" class="dd-item 
-        
+        parent
         
         
         ">
@@ -170,7 +170,7 @@
   
     
     <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
-        
+        parent
         
         
         ">
@@ -251,7 +251,7 @@
  
   
     
-      <li data-nav-id="/userguide/usage/branches-and-ci/" title="Branch builds and CI" class="dd-item ">
+      <li data-nav-id="/userguide/usage/branches-and-ci/" title="Branch builds and CI" class="dd-item active">
         <a href="/userguide/usage/branches-and-ci/">
         Branch builds and CI
         
@@ -518,58 +518,207 @@
         <div id="overlay"></div>
         <div class="padding highlightable">
               
+              <div>
+                <div id="top-bar">
+                
+                  
+                  
+                  
+                  <div id="top-github-link">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/branches-and-ci.md" target="blank">
+                      <i class="fas fa-code-branch"></i>
+                      <span id="top-github-link-text">Edit this page</span>
+                    </a>
+                  </div>
+                  
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/userguide/'>User guide</a> > <a href='/userguide/usage/'>Using qbec</a> > Branch builds and CI
+          
+         
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#rules-of-engagement">Rules of engagement</a></li>
+<li><a href="#usage-pattern-1-create-a-test-namespace-for-every-branch">Usage pattern 1: create a test namespace for every branch</a></li>
+<li><a href="#usage-pattern-2-mangle-every-object-s-name">Usage pattern 2: mangle every object&rsquo;s name</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
 
         
-          <div id="chapter">
-        
         <div id="body-inner">
+          
+            <h1>Branch builds and CI</h1>
           
 
         
 
-<span id="sidebar-toggle-span">
-<a href="#" id="sidebar-toggle" data-sidebar-toggle=""><i class="fas fa-bars"></i> navigation</a>
-</span>
-
- 
 
 
-<h1 id="9884-qbec">&#9884; qbec</h1>
 
-<p><em>a tool to configure and create Kubernetes objects on multiple environments</em></p>
+<p>You have created jsonnet components, a <code>qbec.yaml</code> file and declared a dev environment. These are
+good enough for local development and/ or commits to a master branch. Now you are looking for a
+way to create objects with slightly different names as part of functional tests of your pull request builds.</p>
 
-<p>qbec (pronounced like the <a href="https://en.wikipedia.org/wiki/Quebec">Canadian province</a>) is a command line tool that
-allows you to create Kubernetes objects on multiple Kubernetes clusters and/ or namespaces configured for
-the target environment in question.</p>
+<p>You want to ensure that each branch build runs in its own &ldquo;scope&rdquo; and does not interfere with your master builds.
+Specifically, you don&rsquo;t want GC to run amok and delete objects that it was never meant to delete.</p>
 
-<p>It is based on <a href="https://jsonnet.org">jsonnet</a> and is similar to other tools in the same space like
-<a href="https://github.com/ksonnet/kubecfg">kubecfg</a> and <a href="https://ksonnet.io/">ksonnet</a>.
-If you already know what the other tools do, read <a href="comparison-with-other-tools/">the comparison document</a> to understand
-how qbec is different from them. Otherwise read the <a href="userguide/">user guide</a>.</p>
+<p>qbec provides a command-line argument called <code>--app-tag</code> that allows you to create a set of objects scoped
+for the application, environment, <em>and tag</em>. Leaving out the tag for the master deploy creates its own
+&ldquo;tagless&rdquo; scope.</p>
 
-<h2 id="features">Features</h2>
+<p>The app-tag feature provides the following facilities:</p>
 
 <ul>
-<li>Deploy across multiple clusters and/ or namespaces</li>
-<li>Deploy cluster-scoped objects (useful for cluster admins)</li>
-<li>Track configurations with version control</li>
-<li>Specify environment-specific component lists</li>
-<li>Apply component and kind filters to commands</li>
-<li>Automatic garbage collection for deleted and renamed objects.</li>
-<li>Usable, safe and secure by default.
-
-<ul>
-<li>Remote commands that change cluster state require confirmation.</li>
-<li>Secrets are automatically hidden and never appear in any output.</li>
-<li>Performant (limited by the speed of the jsonnet libraries you use)</li>
-</ul></li>
+<li>GC is scoped to a tag such that it doesn&rsquo;t try to delete mainline objects or objects created with other tags.</li>
+<li>It exposes the tag value as a jsonnet external variable (<code>qbec.io/tag</code>) so your components can use this to create per-tag objects with unique
+names.</li>
+<li>It exposes the name of the default namespace used for the run (<code>qbec.io/defaultNs</code>) and, on request, can automatically
+suffix this value for you.
+<br /></li>
 </ul>
 
-<p><a href="getting-started/">Get started</a>.</p>
+<h2 id="rules-of-engagement">Rules of engagement</h2>
+
+<p>To be able to use this feature:</p>
+
+<ul>
+<li><p>You can only create namespaced objects. The only cluster scoped object you can create is a namespace itself.
+This feature is not meant to be used with cluster scoped objects.</p></li>
+
+<li><p>You must either modify the name of <em>every</em> object you create based on the supplied tag name <em>or</em>
+create a new namespace for every tag and create the objects in it. Failure to do so will cause non-deterministic and
+unexpected GC behavior.</p></li>
+
+<li><p>The tag passed to qbec cannot have special characters like <code>/</code>. It must conform to what can be used as a label
+value in Kubernetes. qbec will validate this and will not let you proceed otherwise.</p></li>
+</ul>
+
+<h2 id="usage-pattern-1-create-a-test-namespace-for-every-branch">Usage pattern 1: create a test namespace for every branch</h2>
+
+<p>This is the simpler usage pattern that requires you to have permissions to create new namespaces on the cluster.
+You would do the following:</p>
+
+<ul>
+<li>Set the <code>namespaceTagSuffix</code> attribute under <code>spec</code> to <code>true</code> in <code>qbec.yaml</code>.</li>
+<li>Leave out the <code>namespace</code> attribute from all your Kubernetes objects.</li>
+<li>Create the namespace itself like so:</li>
+</ul>
+
+<pre><code class="language-jsonnet">{
+    apiVersion: 'v1',
+    kind: 'Namespace',
+    metadata: {
+        name: std.extVar('qbec.io/defaultNs'),
+    },
+}
+</code></pre>
+
+<p>For your master deploy you would do a <code>qbec apply env</code> as usual.</p>
+
+<p>For a branch deploy for the <code>foo</code>  branch, you would run the command as <code>qbec apply --app-tag=foo env</code></p>
+
+<p>Note that the environment is the same in both cases, assuming you are using the same cluster for both runs.</p>
+
+<p>Assuming that the default namespace declared in <code>qbec.yaml</code> is <code>my-ns</code> the default namespace seen by your component
+will be <code>my-ns</code> for the tagless run and <code>my-ns-foo</code> for the tagged run.</p>
+
+<p>Once you are done with tests, you can now delete the branch-specific objects by running
+<code>qbec delete --app-tag=foo env</code>.</p>
+
+<h2 id="usage-pattern-2-mangle-every-object-s-name">Usage pattern 2: mangle every object&rsquo;s name</h2>
+
+<p>This is slightly more involved but is your only option if you do not have permissions to create namespaces on the cluster.
+You would do the following:</p>
+
+<ul>
+<li>Leave out the <code>namespace</code> attribute from all your Kubernetes objects.</li>
+<li>Write a helper function that generates a name, like so:</li>
+</ul>
+
+<pre><code class="language-jsonnet">local makeName = function (baseName) (
+    local tag = std.extVar('qbec.io/tag');
+    if tag == '' then baseName else baseName + '-' + tag
+);
+</code></pre>
+
+<ul>
+<li>Code your components to use this function for assigning object names</li>
+</ul>
+
+<pre><code class="language-jsonnet">{
+    apiVersion: 'v1',
+    kind: 'ConfigMap'
+    metadata: {
+        name: makeName('my-cm'),
+    },
+    data: { foo: 'bar' }
+}
+</code></pre>
+
+<p>For your master deploy you would do a <code>qbec apply env</code> as usual.</p>
+
+<p>For a branch deploy for the <code>foo</code>  branch, you would run the command as <code>qbec apply --app-tag=foo env</code></p>
+
+<p>Note that the environment is the same in both cases, assuming you are using the same cluster for both runs.</p>
+
+<p>Once you are done with tests, you can now delete the branch-specific objects by running
+<code>qbec delete --app-tag=foo env</code>.</p>
+
+
+<footer class=" footline" >
 	
-  
-        
-            </div> 
+</footer>
+
+
         
         </div> 
         
@@ -620,6 +769,7 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
+                    
                 
                 
 
@@ -634,6 +784,9 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -667,6 +820,7 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
+                    
                 
                 
 
@@ -680,21 +834,8 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
                         
-            
-            
-                
+                        
                     
                 
                 
@@ -743,6 +884,26 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
             
                 
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -914,8 +1075,10 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
 	 
 	 
 		
+			<a class="nav nav-prev" href="/userguide/usage/runtime-params/" title="Runtime parameters"> <i class="fa fa-chevron-left"></i></a>
 		
-			<a class="nav nav-next" href="/getting-started/" title="Getting started" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+			<a class="nav nav-next" href="/userguide/usage/commands/" title="Running qbec commands" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

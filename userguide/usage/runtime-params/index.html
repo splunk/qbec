@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Home :: Qbec</title>
+    <title>Runtime parameters :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/">
+  <body class="" data-url="/userguide/usage/runtime-params/">
     <nav id="sidebar" class="">
 
 
@@ -105,7 +105,7 @@
   
     
     <li data-nav-id="/userguide/" title="User guide" class="dd-item 
-        
+        parent
         
         
         ">
@@ -170,7 +170,7 @@
   
     
     <li data-nav-id="/userguide/usage/" title="Using qbec" class="dd-item 
-        
+        parent
         
         
         ">
@@ -232,7 +232,7 @@
  
   
     
-      <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
+      <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item active">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
         
@@ -518,58 +518,279 @@
         <div id="overlay"></div>
         <div class="padding highlightable">
               
+              <div>
+                <div id="top-bar">
+                
+                  
+                  
+                  
+                  <div id="top-github-link">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/runtime-params.md" target="blank">
+                      <i class="fas fa-code-branch"></i>
+                      <span id="top-github-link-text">Edit this page</span>
+                    </a>
+                  </div>
+                  
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/userguide/'>User guide</a> > <a href='/userguide/usage/'>Using qbec</a> > Runtime parameters
+          
+         
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#using-qbec-io-env">Using qbec.io/env</a></li>
+<li><a href="#using-jsonnet-external-variables">Using jsonnet external variables</a></li>
+<li><a href="#using-top-level-jsonnet-variables">Using top-level jsonnet variables</a>
+<ul>
+<li><a href="#notes-on-usage">Notes on usage</a></li>
+</ul></li>
+<li><a href="#strict-mode">Strict mode</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
 
         
-          <div id="chapter">
-        
         <div id="body-inner">
+          
+            <h1>Runtime parameters</h1>
           
 
         
 
-<span id="sidebar-toggle-span">
-<a href="#" id="sidebar-toggle" data-sidebar-toggle=""><i class="fas fa-bars"></i> navigation</a>
-</span>
-
- 
 
 
-<h1 id="9884-qbec">&#9884; qbec</h1>
 
-<p><em>a tool to configure and create Kubernetes objects on multiple environments</em></p>
+<p>Runtime parameters are values that differ across environments, change over time, or are secrets that should not
+be casually revealed.</p>
 
-<p>qbec (pronounced like the <a href="https://en.wikipedia.org/wiki/Quebec">Canadian province</a>) is a command line tool that
-allows you to create Kubernetes objects on multiple Kubernetes clusters and/ or namespaces configured for
-the target environment in question.</p>
+<p>Properties like replicas of a deployment per environment, cluster level endpoints etc. are usually known in advance and
+should be checked into source code.</p>
 
-<p>It is based on <a href="https://jsonnet.org">jsonnet</a> and is similar to other tools in the same space like
-<a href="https://github.com/ksonnet/kubecfg">kubecfg</a> and <a href="https://ksonnet.io/">ksonnet</a>.
-If you already know what the other tools do, read <a href="comparison-with-other-tools/">the comparison document</a> to understand
-how qbec is different from them. Otherwise read the <a href="userguide/">user guide</a>.</p>
+<p>Some parameters cannot be checked into source code. These include tags for images produced by a CI build whose value
+should be subsequently used in the same build for a deployment, environment-specific secrets, etc.</p>
 
-<h2 id="features">Features</h2>
+<p>qbec provides the following facilities for runtime parameters.</p>
 
 <ul>
-<li>Deploy across multiple clusters and/ or namespaces</li>
-<li>Deploy cluster-scoped objects (useful for cluster admins)</li>
-<li>Track configurations with version control</li>
-<li>Specify environment-specific component lists</li>
-<li>Apply component and kind filters to commands</li>
-<li>Automatic garbage collection for deleted and renamed objects.</li>
-<li>Usable, safe and secure by default.
-
-<ul>
-<li>Remote commands that change cluster state require confirmation.</li>
-<li>Secrets are automatically hidden and never appear in any output.</li>
-<li>Performant (limited by the speed of the jsonnet libraries you use)</li>
-</ul></li>
+<li>it exposes the external variable <code>qbec.io/env</code> that contains the name of the environment used for the command.
+This mechanism allows you to parameterize values that are known in advance for an environment.</li>
+<li>it allows you to declare jsonnet <em>external variables</em> in <code>qbec.yaml</code> with default values. Values for external
+variables can be supplied on the command line. Default values are used when declared variables have not be set.
+This mechanism allows you to develop components locally without having to specify variables on the command line
+for every invocation and still set them explicitly when you actually apply the objects to the cluster.</li>
+<li>it allows you to declare jsonnet <em>top-level variables</em> in <code>qbec.yaml</code> and associate them with components to which
+they should be passed. In this case, you set defaults for these variables in the jsonnet code itself.</li>
 </ul>
 
-<p><a href="getting-started/">Get started</a>.</p>
+<p>The <a href="https://jsonnet.org/learning/tutorial.html#parameterize-entire-config">jsonnet tutorial</a> explains external
+and top-level variables in detail along with the pros and cons of each.</p>
+
+<p>Let&rsquo;s examine each of these in turn.</p>
+
+<h2 id="using-qbec-io-env">Using qbec.io/env</h2>
+
+<p>You can access this variable using the <code>std.extVar</code> function of the jsonnet standard library and customize parameters.
+This allows you to create a parameters object that can be imported by your components.</p>
+
+<pre><code class="language-jsonnet">local env = std.extVar('qbec.io/env'); // get the value of the environment
+
+// define baseline parameters
+local baseParams = {
+    components: {
+        service1: {
+            replicas: 1,
+        },
+    },
+};
+
+// define parameters per environment
+local paramsByEnv = {
+
+    _: baseParams, // the baseline environment used by qbec for some commands
+
+    dev: baseParams {
+        components+: {
+            service1+: {
+                replicas: 2,
+            },
+        },
+    },
+
+    prod: baseParams {
+        components+: {
+            service1+: {
+                replicas: 3,
+            },
+        },
+    },
+};
+
+// return value for correct environment
+if std.objectHas(paramsByEnv, env) then paramsByEnv[env] else error 'environment ' + env ' not defined in ' + std.thisFile
+ 
+</code></pre>
+
+<p>When there are many components and values, the above code can be split up into multiple files with each file
+returning the object for a specific environment and the top-level file then <code>import</code>s the other files.</p>
+
+<p>Since variables and values are checked into source code when using this method, this is the most explicit way to
+set parameters and should be used as much as possible.</p>
+
+<h2 id="using-jsonnet-external-variables">Using jsonnet external variables</h2>
+
+<p>You declare the external variable(s) that you expect in <code>qbec.yaml</code>.</p>
+
+<pre><code class="language-yaml">spec:
+    vars:
+      external:
+        - name: service1_image_tag
+          default: latest
+
+        - name: service1_secret
+          default: changeme # fake value
+          secret: true # qbec debug logs will not print this value in cleartext
+</code></pre>
+
+<p>then you can use them in your components or runtime parameter config object, like so:</p>
+
+<pre><code class="language-jsonnet">    local imageTag = std.extVar('service1_image_tag');
+</code></pre>
+
+<p>and specify real values on the qbec command-line:</p>
+
+<pre><code class="language-bash">export service_secret=XXX
+qbec apply dev --vm:ext-str service1_image_tag=1.0.3 --vm:ext-str service1_secret
+</code></pre>
+
+<p>Note that we are explicitly setting the image tag to 1.0.3 but not providing the value for the secret on the command
+line. This causes qbec to set the secret value from the environment variable with the same name. This is the preferred
+method for passing in secrets.</p>
+
+<h2 id="using-top-level-jsonnet-variables">Using top-level jsonnet variables</h2>
+
+<p>You declare the top-level variable(s) used in your code associating them with the components that need them.</p>
+
+<pre><code class="language-yaml">spec:
+    vars:
+      topLevel:
+        - name: service1Tag
+          components: [ 'service1' ]
+
+        - name: service1Secret
+          components: [ 'service1' ]
+          secret: true # qbec debug logs will not print this value in cleartext
+</code></pre>
+
+<p>In this case you would code your <code>service1.jsonnet</code> component as follows:</p>
+
+<pre><code class="language-jsonnet">function (serviceTag='latest', serviceSecret='changeme') (
+    // for example: return an array containing a seret and a deployment
+    [
+        {
+            apiVersion: 'v1',
+            kind: 'Secret',
+            metadata: {
+                name: 'my-secret',
+            },
+            data: {
+                token: std.base64(serviceSecret),
+            },
+        },
+        // ... etc
+    ]
+)
+</code></pre>
+
+<p>and specify real values on the qbec command-line:</p>
+
+<pre><code class="language-bash">export service_secret=XXX
+qbec apply dev --vm:tla-str service1_image_tag=1.0.3 --vm:tla-str service1_secret
+</code></pre>
+
+<h3 id="notes-on-usage">Notes on usage</h3>
+
+<ul>
+<li>Values (and defaults) need not be strings. They can be numbers, booleans or objects. In this case, you need to use the
+<code>--vm:ext-code foo=true</code> or <code>--vm:tla-code foo=true</code> syntax. In the preceding examples, this will pass in a
+true value that is a boolean instead of the string &ldquo;true&rdquo;. Use this judiciously. Requiring code variables might limit
+your ability to define such variables in your IDE which may only allow string variables.</li>
+<li>Excessive use of variables introduces cognitive overhead and reliance on qbec&rsquo;s defaulting features.
+A few declarations are ok but think twice before defining tens of such variables.</li>
+<li>Prefer to declare all external variables used by your components (qbec doesn&rsquo;t <em>require</em> you to define them) so that
+the external interface of your app is documented. This will also allow you to enable strict mode.</li>
+<li>You cannot share the name of a top-level variable across different components to mean different things. For example,
+you cannot have a top-level argument called <code>imageTag</code> for 2 different services that need different image tags.</li>
+<li>Defaults for external variables cannot be <code>null</code>. This is because qbec cannot tell the difference between a
+default that was not specified versus one that was explicitly set to <code>null</code>.</li>
+</ul>
+
+<h2 id="strict-mode">Strict mode</h2>
+
+<p>The <code>--strict-vars</code> flag for qbec commands can help you ensure correctness of your qbec command line invocation.
+When this option is set, qbec:</p>
+
+<ul>
+<li>requires <em>all</em> declared values to be set on the command line</li>
+<li>disallows undeclared variables to be set</li>
+</ul>
+
+<p>This is a good option to set for CI builds to ensure that the build breaks if someone introduces a new variable
+but fails to set a value for it for the <code>apply</code> command, or if the variable name has a typo.</p>
+
+
+<footer class=" footline" >
 	
-  
-        
-            </div> 
+</footer>
+
+
         
         </div> 
         
@@ -620,6 +841,7 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
+                    
                 
                 
 
@@ -634,6 +856,9 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -667,6 +892,7 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
+                    
                 
                 
 
@@ -679,6 +905,9 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -712,6 +941,7 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
                 
                     
+                    
                 
                 
 
@@ -727,6 +957,9 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -914,8 +1147,10 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
 	 
 	 
 		
+			<a class="nav nav-prev" href="/userguide/usage/authoring/" title="Create components"> <i class="fa fa-chevron-left"></i></a>
 		
-			<a class="nav nav-next" href="/getting-started/" title="Getting started" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+			<a class="nav nav-next" href="/userguide/usage/branches-and-ci/" title="Branch builds and CI" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

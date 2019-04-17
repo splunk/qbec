@@ -232,6 +232,44 @@
  
   
     
+      <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
+        <a href="/userguide/usage/runtime-params/">
+        Runtime parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/branches-and-ci/" title="Branch builds and CI" class="dd-item ">
+        <a href="/userguide/usage/branches-and-ci/">
+        Branch builds and CI
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
         <a href="/userguide/usage/commands/">
         Running qbec commands
@@ -540,7 +578,9 @@
 <li><a href="#application-manifest">Application manifest</a></li>
 <li><a href="#environment-specific-component-lists">Environment-specific component lists</a></li>
 <li><a href="#baseline-environment">Baseline environment</a></li>
-<li><a href="#runtime-configuration">Runtime configuration</a></li>
+<li><a href="#basic-runtime-configuration">Basic runtime configuration</a></li>
+<li><a href="#late-bound-configuration">Late-bound configuration</a></li>
+<li><a href="#creating-objects-with-different-names-for-branch-builds">Creating objects with different names for branch builds</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -633,14 +673,13 @@ component to be applied there.</li>
 adds a baseline environment called <code>_</code> that can be used for commands that operate locally and do not
 affect a cluster. These commands include <code>show</code>, as well as the <code>component</code> and <code>param</code> subcommands.</p>
 
-<h2 id="runtime-configuration">Runtime configuration</h2>
+<h2 id="basic-runtime-configuration">Basic runtime configuration</h2>
 
 <p>Different environments need different runtime parameters. These can include, among other things, replica counts,
 image versions, specialized config maps, different secrets and so forth.</p>
 
 <p>qbec sets a jsonnet variable called <code>qbec.io/env</code> to the environment name when it loads your components
-for an environment.
-You can use the value of this variable to return different runtime parameters per environment.
+for an environment.  You can use the value of this variable to return different runtime parameters per environment.
 Note that for some invocations, the environment may be set to <code>_</code> (representing baseline) and your code
 should be able to handle this correctly and return default values.</p>
 
@@ -648,7 +687,24 @@ should be able to handle this correctly and return default values.</p>
 The main commands like <code>apply</code>, <code>show</code>,  and <code>diff</code> will work independent of how you set up your runtime parameters.</p>
 
 <p>That said, the <code>param</code> subcommands expect runtime configuration to be set up in a specific way.
-More information on this can be found in the <a href="../usage/basic">folders and files</a> section of the user-guide.</p>
+More information on this can be found in the <a href="../usage/basic">folders and files</a> section of the user guide.</p>
+
+<h2 id="late-bound-configuration">Late-bound configuration</h2>
+
+<p>Some configuration parameters like image tags of an image that was just built to be used for the deployment,
+or secrets cannot be checked into source code. For these situations, qbec provides a way to declare jsonnet variables
+that need to be passed in with default values to be used when they are not.</p>
+
+<p>This allows you to not have to <em>always</em> pass in these extra arguments when developing components locally and still
+be able to parameterize them in, say, your CI build. More information on this feature can be found in the
+<a href="../usage/runtime-params">runtime parameters</a> section of the user guide.</p>
+
+<h2 id="creating-objects-with-different-names-for-branch-builds">Creating objects with different names for branch builds</h2>
+
+<p>qbec provides support that allows you to use the same component and environment definitions for
+creating objects with different names (or namespaces) for branch builds and garbage collect them without
+affecting your mainline objects. More information on this feature can be found in
+the <a href="../usage/branches-and-ci">branch builds and CI</a> section of the user guide.</p>
 
 
 <footer class=" footline" >
@@ -768,6 +824,38 @@ More information on this can be found in the <a href="../usage/basic">folders an
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

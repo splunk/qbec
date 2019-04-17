@@ -232,6 +232,44 @@
  
   
     
+      <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
+        <a href="/userguide/usage/runtime-params/">
+        Runtime parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/branches-and-ci/" title="Branch builds and CI" class="dd-item ">
+        <a href="/userguide/usage/branches-and-ci/">
+        Branch builds and CI
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
         <a href="/userguide/usage/commands/">
         Running qbec commands
@@ -564,12 +602,13 @@
 <p>All Kubernetes objects produced by qbec have the following labels associated with them:</p>
 
 <ul>
-<li><code>qbec.io/application</code> - the app name from <code>qbec.yaml</code></li>
-<li><code>qhec.io/environment</code> - the environment name in <code>qbec.yaml</code> for which the object was created</li>
+<li><code>qbec.io/application</code> - the app name from <code>qbec.yaml</code>.</li>
+<li><code>qbec.io/environment</code> - the environment name in <code>qbec.yaml</code> for which the object was created.</li>
+<li><code>qbec.io/tag</code> - the <code>--app-tag</code> parameter passed in on the command line. This label is only set when non-blank.</li>
 </ul>
 
 <p>The labels are used to efficiently find all cluster objects for a specific app and environment
-for garbage collection.</p>
+(and tag, if specified) for garbage collection.</p>
 
 <div class="notices note" ><p>If you rename an app, environment, or component, garbage collection for the next immediate run of <code>qbec apply</code> may
 not work correctly. Subsequent apply operations will then work as usual since the object labels will be updated with
@@ -707,6 +746,38 @@ diffs.</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

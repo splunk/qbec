@@ -232,6 +232,44 @@
  
   
     
+      <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
+        <a href="/userguide/usage/runtime-params/">
+        Runtime parameters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/userguide/usage/branches-and-ci/" title="Branch builds and CI" class="dd-item ">
+        <a href="/userguide/usage/branches-and-ci/">
+        Branch builds and CI
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/commands/" title="Running qbec commands" class="dd-item ">
         <a href="/userguide/usage/commands/">
         Running qbec commands
@@ -576,7 +614,20 @@ upto a specific concurrency.</li>
 
 <p>The JSON file is parsed as: <code>std.native('parseJson')(importstr '&lt;file&gt;')</code></p>
 
-<p>The JSONNET is evaluated as-is after setting the <code>qbec.io/env</code> extension variable to the environment name in question.</p>
+<p>The JSONNET is evaluated in a VM instance as-is. In this case:</p>
+
+<ul>
+<li>the <code>qbec.io/env</code> extension variable is set to the environment name in question.</li>
+<li>the <code>qbec.io/tag</code> extension variable is set to the <code>--app-tag</code> argument passed to the command line (or the empty
+string, if it wasn&rsquo;t)</li>
+<li>the <code>qbec.io/defaultNs</code> variable is set to the default namespace for the environment. This is typically the namespace
+defined in the <code>qbec.yaml</code> file for the environment. If the <code>namespaceTagSuffix</code> attribute in <code>qbec.yaml</code> is set to
+<code>true</code> <em>and</em> an <code>--app-tag</code> argument was specified for the command, the namespace from <code>qbec.yaml</code>
+is suffixed with the tag with a hyphen in between.</li>
+<li>all external variables specified from the command line are set.</li>
+<li>default values for external variables declared in <code>qbec.yaml</code> but not specified on the command line are set.</li>
+<li>all top level variables associated with the component are set, if specified.</li>
+</ul>
 
 <h2 id="converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</h2>
 
@@ -705,6 +756,38 @@ containing an array of outputs.</li>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

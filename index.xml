@@ -59,8 +59,7 @@ apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must
       
       <guid>http://qbec.io/reference/gen-metadata/</guid>
       <description>Labels All Kubernetes objects produced by qbec have the following labels associated with them:
- qbec.io/application - the app name from qbec.yaml qhec.io/environment - the environment name in qbec.yaml for which the object was created  The labels are used to efficiently find all cluster objects for a specific app and environment for garbage collection.
-If you rename an app, environment, or component, garbage collection for the next immediate run of qbec apply may not work correctly.</description>
+ qbec.io/application - the app name from qbec.yaml. qbec.io/environment - the environment name in qbec.yaml for which the object was created. qbec.io/tag - the --app-tag parameter passed in on the command line. This label is only set when non-blank.  The labels are used to efficiently find all cluster objects for a specific app and environment (and tag, if specified) for garbage collection.</description>
     </item>
     
     <item>
@@ -94,6 +93,27 @@ Jsonnet evaluation This works as follows:
       <description>qbec uses the following concepts.
 Components Components are the source code that you write that represent Kubernetes objects. A component is single source file that produces a collection of logically related Kubernetes objects. You implement components by writing jsonnet, YAML or JSON files.
 It is also valid for a component to return an empty set of objects if runtime parameters determine that nothing should be installed for a specific target environment.</description>
+    </item>
+    
+    <item>
+      <title>Runtime parameters</title>
+      <link>http://qbec.io/userguide/usage/runtime-params/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/runtime-params/</guid>
+      <description>Runtime parameters are values that differ across environments, change over time, or are secrets that should not be casually revealed.
+Properties like replicas of a deployment per environment, cluster level endpoints etc. are usually known in advance and should be checked into source code.
+Some parameters cannot be checked into source code. These include tags for images produced by a CI build whose value should be subsequently used in the same build for a deployment, environment-specific secrets, etc.</description>
+    </item>
+    
+    <item>
+      <title>Branch builds and CI</title>
+      <link>http://qbec.io/userguide/usage/branches-and-ci/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/branches-and-ci/</guid>
+      <description>You have created jsonnet components, a qbec.yaml file and declared a dev environment. These are good enough for local development and/ or commits to a master branch. Now you are looking for a way to create objects with slightly different names as part of functional tests of your pull request builds.
+You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;rdquo; and does not interfere with your master builds.</description>
     </item>
     
     <item>

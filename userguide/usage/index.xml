@@ -32,6 +32,27 @@ k8s-yaml-patch, for example, is a jsonnet library that allows you to load YAML d
     </item>
     
     <item>
+      <title>Runtime parameters</title>
+      <link>http://qbec.io/userguide/usage/runtime-params/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/runtime-params/</guid>
+      <description>Runtime parameters are values that differ across environments, change over time, or are secrets that should not be casually revealed.
+Properties like replicas of a deployment per environment, cluster level endpoints etc. are usually known in advance and should be checked into source code.
+Some parameters cannot be checked into source code. These include tags for images produced by a CI build whose value should be subsequently used in the same build for a deployment, environment-specific secrets, etc.</description>
+    </item>
+    
+    <item>
+      <title>Branch builds and CI</title>
+      <link>http://qbec.io/userguide/usage/branches-and-ci/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/branches-and-ci/</guid>
+      <description>You have created jsonnet components, a qbec.yaml file and declared a dev environment. These are good enough for local development and/ or commits to a master branch. Now you are looking for a way to create objects with slightly different names as part of functional tests of your pull request builds.
+You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;rdquo; and does not interfere with your master builds.</description>
+    </item>
+    
+    <item>
       <title>Running qbec commands</title>
       <link>http://qbec.io/userguide/usage/commands/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
