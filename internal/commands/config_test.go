@@ -31,7 +31,7 @@ func TestConfigCreate(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml")
+	app, err := model.NewApp("qbec.yaml", "t1")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
@@ -56,11 +56,18 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal(7, cfg.EvalConcurrency())
 	a.Equal(app, cfg.App())
 	a.True(cfg.Colorize())
-	a.Equal("kube-system", cfg.DefaultNamespace("dev"))
-	a.Equal("default", cfg.DefaultNamespace("prod"))
+	a.Equal("kube-system-t1", cfg.app.DefaultNamespace("dev"))
+	a.Equal("default-t1", cfg.app.DefaultNamespace("prod"))
 	a.Nil(cfg.Confirm("we will destroy you"))
 
-	testVMC := cfg.VMConfig([]string{"tlaFoo", "tlaBar"})
+	ctx := cfg.EvalContext("dev")
+	a.Equal("app1", ctx.App)
+	a.Equal("dev", ctx.Env)
+	a.Equal("t1", ctx.Tag)
+	a.Equal("kube-system-t1", ctx.DefaultNs)
+	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
+
+	testVMC := ctx.VMConfig([]string{"tlaFoo", "tlaBar"})
 	a.EqualValues(map[string]string{"tlaFoo": "xxx"}, testVMC.TopLevelVars())
 	a.EqualValues(map[string]string{"tlaBar": "true"}, testVMC.TopLevelCodeVars())
 	a.EqualValues(map[string]string{"extFoo": "xxx"}, testVMC.Vars())
@@ -70,13 +77,13 @@ func TestConfigCreate(t *testing.T) {
 func TestConfigStrictVarsPass(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml")
+	app, err := model.NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
 	vmc = vmc.WithTopLevelVars(map[string]string{"tlaFoo": "xxx"})
-	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy"})
+	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
 
 	f := ConfigFactory{
 		StrictVars: true,
@@ -90,7 +97,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml")
+	app, err := model.NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
@@ -120,7 +127,7 @@ func TestConfigConfirm(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml")
+	app, err := model.NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}

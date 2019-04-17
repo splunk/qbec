@@ -94,7 +94,7 @@ func doApply(args []string, config applyCommandConfig) error {
 			return err
 		}
 		var scope remote.ListQueryScope
-		lister, scope, err = newRemoteLister(client, all, config.DefaultNamespace(env))
+		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}
@@ -104,6 +104,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 		lister.start(all, remote.ListQueryConfig{
 			Application:     config.App().Name(),
+			Tag:             config.App().Tag(),
 			Environment:     env,
 			KindFilter:      fp.kindFilter,
 			ComponentFilter: cf,

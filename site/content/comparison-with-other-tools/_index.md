@@ -53,7 +53,8 @@ component filters work uniformly in all cases when component lists are formally 
 
 * kubecfg does not create any jsonnet variables by default
 * ksonnet creates 2 code variables `__ksonnet/components` and `__ksonnet/params` 
-* qbec creates a string variable `qbec.io/env` that has the environment name
+* qbec creates a string variable `qbec.io/env` that has the environment name. In newer releases, it also [exports
+  some additional variables](../reference/component-evaluation).
 
 See the runtime configuration section for pros and cons
 

@@ -127,7 +127,7 @@ func TestMetadataOther(t *testing.T) {
 	a.Equal("namespaces foobar", name)
 
 	ob := loadObject(t, "ns-good.json")
-	name = sm.DisplayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "c1", "dev"))
+	name = sm.DisplayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "", "c1", "dev"))
 	a.Equal("namespaces foobar (source c1)", name)
 }
 

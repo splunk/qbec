@@ -15,11 +15,11 @@ to use jsonnet.
 for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and
 return them for qbec use. 
 
-If you use the above or any other library, the correct way to integrate it with qbec for now is to use
-the [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler) and download the dependencies
-locally to a `vendor` directory and add this directory to the `libPaths` array in `qbec.yaml`.
+If you use the above or any other library, the correct way to integrate it with qbec is to use
+the [jsonnet bundler](https://github.com/jsonnet-bundler/jsonnet-bundler). download the dependencies
+locally to a `vendor` directory, and add this directory to the `libPaths` array in `qbec.yaml`.
+You will then be able to use these dependencies in your jsonnet code.
 
-You will then be able to use these dependencies in your jsonnet codebase.
 
 
 

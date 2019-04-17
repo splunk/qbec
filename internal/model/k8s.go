@@ -46,6 +46,7 @@ type QbecMeta interface {
 	Application() string // the application name
 	Component() string   // the component name
 	Environment() string // the environment name
+	Tag() string         // the GC Tag name
 }
 
 // K8sQbecMeta has K8s as well as qbec metadata.
@@ -70,10 +71,11 @@ type K8sLocalObject interface {
 
 type ko struct {
 	*unstructured.Unstructured
-	app, comp, env string
+	app, comp, tag, env string
 }
 
 func (k *ko) Application() string                        { return k.app }
+func (k *ko) Tag() string                                { return k.tag }
 func (k *ko) Component() string                          { return k.comp }
 func (k *ko) Environment() string                        { return k.env }
 func (k *ko) MarshalJSON() ([]byte, error)               { return json.Marshal(k.Unstructured) }
@@ -92,14 +94,17 @@ func NewK8sObject(data map[string]interface{}) K8sObject {
 
 // NewK8sLocalObject wraps a K8sLocalObject implementation around the unstructured object data specified as a bag
 // of attributes for the supplied application, component and environment.
-func NewK8sLocalObject(data map[string]interface{}, app, component, env string) K8sLocalObject {
+func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env string) K8sLocalObject {
 	base := &unstructured.Unstructured{Object: data}
-	ret := &ko{Unstructured: base, app: app, comp: component, env: env}
+	ret := &ko{Unstructured: base, app: app, tag: tag, comp: component, env: env}
 	labels := base.GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	labels[QbecNames.ApplicationLabel] = app
+	if tag != "" {
+		labels[QbecNames.TagLabel] = tag
+	}
 	labels[QbecNames.EnvironmentLabel] = env
 	base.SetLabels(labels)
 
@@ -169,5 +174,5 @@ func HideSensitiveLocalInfo(in K8sLocalObject) (K8sLocalObject, bool) {
 	if !changed {
 		return in, false
 	}
-	return NewK8sLocalObject(obj.Object, in.Application(), in.Component(), in.Environment()), true
+	return NewK8sLocalObject(obj.Object, in.Application(), in.Tag(), in.Component(), in.Environment()), true
 }

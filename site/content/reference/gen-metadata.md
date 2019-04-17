@@ -7,11 +7,12 @@ weight: 12
 
 All Kubernetes objects produced by qbec have the following labels associated with them:
 
-* `qbec.io/application` - the app name from `qbec.yaml`
-* `qhec.io/environment` - the environment name in `qbec.yaml` for which the object was created
+* `qbec.io/application` - the app name from `qbec.yaml`.
+* `qbec.io/environment` - the environment name in `qbec.yaml` for which the object was created.
+* `qbec.io/tag` - the `--app-tag` parameter passed in on the command line. This label is only set when non-blank.
 
 The labels are used to efficiently find all cluster objects for a specific app and environment
-for garbage collection. 
+(and tag, if specified) for garbage collection. 
 
 {{% notice note %}}
 If you rename an app, environment, or component, garbage collection for the next immediate run of `qbec apply` may

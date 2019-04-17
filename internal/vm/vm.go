@@ -222,8 +222,8 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 			ret[parts[0]] = parts[1]
 			return nil
 		}
-		v := os.Getenv(s)
-		if v == "" {
+		v, ok := os.LookupEnv(s)
+		if !ok {
 			return fmt.Errorf("%s no value found from environment for %s", name, s)
 		}
 		ret[s] = v

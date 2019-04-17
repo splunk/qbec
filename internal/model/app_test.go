@@ -43,13 +43,13 @@ func setPwd(t *testing.T, dir string) func() {
 func TestAppSimple(t *testing.T) {
 	reset := setPwd(t, "../../examples/test-app")
 	defer reset()
-	app, err := NewApp("qbec.yaml")
+	app, err := NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.Equal("example1", app.Name())
-	a.Equal(2, len(app.Spec.Environments))
-	a.Contains(app.Spec.Environments, "dev")
-	a.Contains(app.Spec.Environments, "prod")
+	a.Equal(2, len(app.inner.Spec.Environments))
+	a.Contains(app.inner.Spec.Environments, "dev")
+	a.Contains(app.inner.Spec.Environments, "prod")
 	a.Equal(3, len(app.allComponents))
 	a.Equal(2, len(app.defaultComponents))
 	a.Contains(app.allComponents, "service2")
@@ -95,6 +95,19 @@ func TestAppSimple(t *testing.T) {
 	a.EqualValues(map[string]interface{}{
 		"tlaFoo": true,
 	}, app.DeclaredTopLevelVars())
+
+	u, err := app.ServerURL("dev")
+	require.Nil(t, err)
+	a.Equal("https://dev-server", u)
+	a.Equal("default", app.DefaultNamespace("dev"))
+	a.Equal("", app.Tag())
+
+	_, err = app.ServerURL("devx")
+	require.NotNil(t, err)
+	a.Equal(`invalid environment "devx"`, err.Error())
+
+	a.Equal("params.libsonnet", app.ParamsFile())
+	a.EqualValues([]string{"lib"}, app.LibPaths())
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -106,7 +119,7 @@ func TestAppWarnings(t *testing.T) {
 	sio.EnableColors = false
 	reset := setPwd(t, "./testdata/bad-app")
 	defer reset()
-	app, err := NewApp("app-warn.yaml")
+	app, err := NewApp("app-warn.yaml", "foobar")
 	require.Nil(t, err)
 
 	a := assert.New(t)
@@ -122,12 +135,15 @@ func TestAppWarnings(t *testing.T) {
 	_, err = app.ComponentsForEnvironment("prod", nil, nil)
 	require.Nil(t, err)
 	a.Contains(buf.String(), "[warn] component a excluded from prod is already excluded by default")
+
+	a.Equal("foobar", app.Tag())
+	a.Equal("default-foobar", app.DefaultNamespace("dev"))
 }
 
 func TestAppComponentLoadNegative(t *testing.T) {
 	reset := setPwd(t, "../../examples/test-app")
 	defer reset()
-	app, err := NewApp("qbec.yaml")
+	app, err := NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	a := assert.New(t)
 
@@ -154,6 +170,7 @@ func TestAppNegative(t *testing.T) {
 
 	tests := []struct {
 		name     string
+		tag      string
 		file     string
 		asserter func(t *testing.T, err error)
 	}{
@@ -229,11 +246,18 @@ func TestAppNegative(t *testing.T) {
 				assert.Contains(t, err.Error(), "duplicate external variable foo")
 			},
 		},
+		{
+			file: "app-warn.yaml",
+			tag:  "-foobar",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid tag name '-foobar', must match")
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
-			_, err := NewApp(test.file)
+			_, err := NewApp(test.file, test.tag)
 			require.NotNil(t, err)
 			test.asserter(t, err)
 		})

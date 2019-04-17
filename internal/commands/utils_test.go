@@ -220,7 +220,7 @@ func (s *scaffold) outputStats() map[string]interface{} {
 
 func newScaffold(t *testing.T) *scaffold {
 	reset := setPwd(t, "../../examples/test-app")
-	app, err := model.NewApp("qbec.yaml")
+	app, err := model.NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	out := bytes.NewBuffer(nil)
 

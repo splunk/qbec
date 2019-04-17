@@ -57,8 +57,14 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("get resource interface for %s", gvk))
 	}
+	ls := fmt.Sprintf("%s=%s,%s=%s", model.QbecNames.ApplicationLabel, o.scope.Application, model.QbecNames.EnvironmentLabel, o.scope.Environment)
+	if o.scope.Tag == "" {
+		ls = fmt.Sprintf("%s,!%s", ls, model.QbecNames.TagLabel)
+	} else {
+		ls = fmt.Sprintf("%s,%s=%s", ls, model.QbecNames.TagLabel, o.scope.Tag)
+	}
 	list, err := xface.List(metav1.ListOptions{
-		LabelSelector:        fmt.Sprintf("%s=%s,%s=%s", model.QbecNames.ApplicationLabel, o.scope.Application, model.QbecNames.EnvironmentLabel, o.scope.Environment),
+		LabelSelector:        ls,
 		IncludeUninitialized: true,
 	})
 	if err != nil {

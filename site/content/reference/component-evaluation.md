@@ -18,7 +18,18 @@ The YAML file is parsed as: `std.native('parseYaml')(importstr '<file>')`
 
 The JSON file is parsed as: `std.native('parseJson')(importstr '<file>')`
 
-The JSONNET is evaluated as-is after setting the `qbec.io/env` extension variable to the environment name in question.
+The JSONNET is evaluated in a VM instance as-is. In this case:
+ 
+* the `qbec.io/env` extension variable is set to the environment name in question.
+* the `qbec.io/tag` extension variable is set to the `--app-tag` argument passed to the command line (or the empty
+  string, if it wasn't)
+* the `qbec.io/defaultNs` variable is set to the default namespace for the environment. This is typically the namespace
+  defined in the `qbec.yaml` file for the environment. If the `namespaceTagSuffix` attribute in `qbec.yaml` is set to
+  `true` _and_ an `--app-tag` argument was specified for the command, the namespace from `qbec.yaml` 
+   is suffixed with the tag with a hyphen in between.
+* all external variables specified from the command line are set. 
+* default values for external variables declared in `qbec.yaml` but not specified on the command line are set.
+* all top level variables associated with the component are set, if specified.
 
 ## Converting component output to Kubernetes objects
 

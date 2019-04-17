@@ -21,16 +21,22 @@ const qbecLeading = "qbec.io"
 // QbecNames is the set of names used by Qbec.
 var QbecNames = struct {
 	ApplicationLabel    string // the label to use for tagging an object with an application name
+	TagLabel            string // the label to use for tagging an object with a scoped GC tag
 	ComponentAnnotation string // the label to use for tagging an object with a component
 	EnvironmentLabel    string // the label to use for tagging an object with an annotation
 	PristineAnnotation  string // the annotation to use for storing the pristine object
 	ParamsCodeVarName   string // the name of the code variable that stores env params
 	EnvVarName          string // the name of the external variable that has the environment name
+	TagVarName          string // the name of the external variable that has the tag name
+	DefaultNsVarName    string // the name of the external variable that has the default namespace
 }{
 	ApplicationLabel:    qbecLeading + "/application",
+	TagLabel:            qbecLeading + "/tag",
 	ComponentAnnotation: qbecLeading + "/component",
 	EnvironmentLabel:    qbecLeading + "/environment",
 	PristineAnnotation:  qbecLeading + "/last-applied",
 	ParamsCodeVarName:   qbecLeading + "/params",
 	EnvVarName:          qbecLeading + "/env",
+	TagVarName:          qbecLeading + "/tag",
+	DefaultNsVarName:    qbecLeading + "/defaultNs",
 }

@@ -26,8 +26,10 @@ import (
 
 func TestEvalParams(t *testing.T) {
 	paramsMap, err := Params("testdata/params.libsonnet", Context{
-		Env:     "dev",
-		Verbose: true,
+		Env:       "dev",
+		Tag:       "t1",
+		DefaultNs: "foobar",
+		Verbose:   true,
 	})
 	require.Nil(t, err)
 	a := assert.New(t)
@@ -36,6 +38,8 @@ func TestEvalParams(t *testing.T) {
 	base, ok := comps["base"].(map[string]interface{})
 	require.True(t, ok)
 	a.EqualValues("dev", base["env"])
+	a.EqualValues("foobar", base["ns"])
+	a.EqualValues("t1", base["tag"])
 }
 
 func TestEvalParamsNegative(t *testing.T) {

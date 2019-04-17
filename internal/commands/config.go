@@ -18,16 +18,18 @@ package commands
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -44,17 +46,14 @@ type stdClientProvider struct {
 
 // Client returns a client for the supplied environment.
 func (s stdClientProvider) Client(env string) (Client, error) {
-	envObj, ok := s.app.Spec.Environments[env]
-	if !ok {
-		return nil, fmt.Errorf("get client: invalid environment %q", env)
+	server, err := s.app.ServerURL(env)
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
 	}
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
+	ns := s.app.DefaultNamespace(env)
 	rem, err := s.config.Client(remote.ConnectOpts{
 		EnvName:   env,
-		ServerURL: envObj.Server,
+		ServerURL: server,
 		Namespace: ns,
 		Verbosity: s.verbosity,
 	})
@@ -138,7 +137,7 @@ func (c *Config) init(strict bool) error {
 	var msgs []string
 	c.tlaVars = c.vmc.TopLevelVars()
 	c.tlaCodeVars = c.vmc.TopLevelCodeVars()
-	c.vmc = c.vmc.WithLibPaths(c.app.Spec.LibPaths)
+	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
 
 	vars := c.vmc.Vars()
 	codeVars := c.vmc.CodeVars()
@@ -190,6 +189,10 @@ func (c *Config) init(strict bool) error {
 		if c.vmc.HasVar(k) {
 			continue
 		}
+		if v == nil {
+			sio.Warnf("no/ nil default specified for variable %q\n", k)
+			continue
+		}
 		switch t := v.(type) {
 		case string:
 			addStrings[k] = t
@@ -208,8 +211,21 @@ func (c *Config) init(strict bool) error {
 // App returns the application object loaded for this run.
 func (c Config) App() *model.App { return c.app }
 
-// VMConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c Config) VMConfig(tlaVars []string) vm.Config {
+// EvalContext returns the evaluation context for the supplied environment.
+func (c Config) EvalContext(env string) eval.Context {
+	return eval.Context{
+		App:         c.App().Name(),
+		Tag:         c.App().Tag(),
+		Env:         env,
+		DefaultNs:   c.app.DefaultNamespace(env),
+		VMConfig:    c.vmConfig,
+		Verbose:     c.Verbosity() > 1,
+		Concurrency: c.EvalConcurrency(),
+	}
+}
+
+// vmConfig returns the VM configuration that only has the supplied top-level arguments.
+func (c Config) vmConfig(tlaVars []string) vm.Config {
 	cfg := c.vmc.WithoutTopLevel()
 
 	// common case to avoid useless object creation. If no required vars
@@ -237,16 +253,6 @@ func (c Config) VMConfig(tlaVars []string) vm.Config {
 		}
 	}
 	return cfg.WithTopLevelVars(addStrs).WithTopLevelCodeVars(addCodes)
-}
-
-// DefaultNamespace returns the default namespace for the supplied environment.
-func (c Config) DefaultNamespace(env string) string {
-	envObj := c.app.Spec.Environments[env]
-	ns := envObj.DefaultNamespace
-	if ns == "" {
-		ns = "default"
-	}
-	return ns
 }
 
 // Client returns a client for the supplied environment

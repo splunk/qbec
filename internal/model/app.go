@@ -55,14 +55,15 @@ type Component struct {
 
 // App is a qbec application wrapped with some runtime attributes.
 type App struct {
-	QbecApp
+	inner             QbecApp              // the app object from serialization
+	tag               string               // the tag to be used for the current command invocation
 	root              string               // derived root directory of the app
 	allComponents     map[string]Component // all components whether or not included anywhere
 	defaultComponents map[string]Component // all components enabled by default
 }
 
 // NewApp returns an app loading its details from the supplied file.
-func NewApp(file string) (*App, error) {
+func NewApp(file string, tag string) (*App, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ func NewApp(file string) (*App, error) {
 		return nil, fmt.Errorf("%d schema validation error(s): %s", len(errs), strings.Join(msgs, "\n"))
 	}
 
-	app := App{QbecApp: qApp}
+	app := App{inner: qApp}
 	dir := filepath.Dir(file)
 	if !filepath.IsAbs(dir) {
 		var err error
@@ -114,24 +115,81 @@ func NewApp(file string) (*App, error) {
 	for k, v := range app.allComponents {
 		app.defaultComponents[k] = v
 	}
-	for _, k := range app.Spec.Excludes {
+	for _, k := range app.inner.Spec.Excludes {
 		delete(app.defaultComponents, k)
 	}
+
+	if tag != "" {
+		if !reLabelValue.MatchString(tag) {
+			return nil, fmt.Errorf("invalid tag name '%s', must match %v", tag, reLabelValue)
+		}
+	}
+
+	app.tag = tag
 	return &app, nil
 }
 
 func (a *App) setupDefaults() {
-	if a.Spec.ComponentsDir == "" {
-		a.Spec.ComponentsDir = DefaultComponentsDir
+	if a.inner.Spec.ComponentsDir == "" {
+		a.inner.Spec.ComponentsDir = DefaultComponentsDir
 	}
-	if a.Spec.ParamsFile == "" {
-		a.Spec.ParamsFile = DefaultParamsFile
+	if a.inner.Spec.ParamsFile == "" {
+		a.inner.Spec.ParamsFile = DefaultParamsFile
 	}
 }
 
 // Name returns the name of the application.
 func (a *App) Name() string {
-	return a.Metadata.Name
+	return a.inner.Metadata.Name
+}
+
+// Tag returns the tag to be used for the current invocation.
+func (a *App) Tag() string {
+	return a.tag
+}
+
+// ParamsFile returns the runtime parameters file for the app.
+func (a *App) ParamsFile() string {
+	return a.inner.Spec.ParamsFile
+}
+
+// LibPaths returns the library paths set up for the app.
+func (a *App) LibPaths() []string {
+	return a.inner.Spec.LibPaths
+}
+
+func (a *App) envObject(env string) (Environment, error) {
+	envObj, ok := a.inner.Spec.Environments[env]
+	if !ok {
+		return envObj, fmt.Errorf("invalid environment %q", env)
+	}
+	return envObj, nil
+}
+
+// ServerURL returns the server URL for the supplied environment.
+func (a *App) ServerURL(env string) (string, error) {
+	e, err := a.envObject(env)
+	if err != nil {
+		return "", err
+	}
+	return e.Server, nil
+}
+
+// DefaultNamespace returns the default namespace for the environment, potentially
+// suffixing it with any app-tag, if configured.
+func (a *App) DefaultNamespace(env string) string {
+	envObj, ok := a.inner.Spec.Environments[env]
+	var ns string
+	if ok {
+		ns = envObj.DefaultNamespace
+	}
+	if ns == "" {
+		ns = "default"
+	}
+	if a.tag != "" && a.inner.Spec.NamespaceTagSuffix {
+		ns += "-" + a.tag
+	}
+	return ns
 }
 
 // ComponentsForEnvironment returns a slice of components for the specified
@@ -167,9 +225,9 @@ func (a *App) ComponentsForEnvironment(env string, includes, excludes []string) 
 			ret[k] = v
 		}
 	} else {
-		e, ok := a.Spec.Environments[env]
-		if !ok {
-			return nil, fmt.Errorf("invalid environment %q", env)
+		e, err := a.envObject(env)
+		if err != nil {
+			return nil, err
 		}
 		for k, v := range a.defaultComponents {
 			ret[k] = v
@@ -209,7 +267,7 @@ func (a *App) ComponentsForEnvironment(env string, includes, excludes []string) 
 // DeclaredVars returns defaults for all declared external variables, keyed by variable name.
 func (a *App) DeclaredVars() map[string]interface{} {
 	ret := map[string]interface{}{}
-	for _, v := range a.Spec.Vars.External {
+	for _, v := range a.inner.Spec.Vars.External {
 		ret[v.Name] = v.Default
 	}
 	return ret
@@ -219,7 +277,7 @@ func (a *App) DeclaredVars() map[string]interface{} {
 // The values are always `true`.
 func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 	ret := map[string]interface{}{}
-	for _, v := range a.Spec.Vars.TopLevel {
+	for _, v := range a.inner.Spec.Vars.TopLevel {
 		ret[v.Name] = true
 	}
 	return ret
@@ -230,7 +288,7 @@ func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 // into subdirectories.
 func (a *App) loadComponents() (map[string]Component, error) {
 	var list []Component
-	dir := strings.TrimSuffix(filepath.Clean(a.Spec.ComponentsDir), "/")
+	dir := strings.TrimSuffix(filepath.Clean(a.inner.Spec.ComponentsDir), "/")
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -276,7 +334,7 @@ func (a *App) verifyComponentList(src string, comps []string) error {
 	return nil
 }
 
-var reEnvName = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`) // XXX: duplicated in swagger
+var reLabelValue = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$`) // XXX: duplicated in swagger
 
 func (a *App) verifyEnvAndComponentReferences() error {
 	var errs []string
@@ -285,13 +343,13 @@ func (a *App) verifyEnvAndComponentReferences() error {
 			errs = append(errs, err.Error())
 		}
 	}
-	localVerify("default exclusions", a.Spec.Excludes)
-	for e, env := range a.Spec.Environments {
+	localVerify("default exclusions", a.inner.Spec.Excludes)
+	for e, env := range a.inner.Spec.Environments {
 		if e == Baseline {
 			return fmt.Errorf("cannot use _ as an environment name since it has a special meaning")
 		}
-		if !reEnvName.MatchString(e) {
-			return fmt.Errorf("invalid environment %s, must match %s", e, reEnvName)
+		if !reLabelValue.MatchString(e) {
+			return fmt.Errorf("invalid environment %s, must match %s", e, reLabelValue)
 		}
 		localVerify(e+" inclusions", env.Includes)
 		localVerify(e+" exclusions", env.Excludes)
@@ -306,7 +364,7 @@ func (a *App) verifyEnvAndComponentReferences() error {
 		}
 	}
 
-	for _, tla := range a.Spec.Vars.TopLevel {
+	for _, tla := range a.inner.Spec.Vars.TopLevel {
 		localVerify("components for TLA "+tla.Name, tla.Components)
 	}
 
@@ -318,14 +376,14 @@ func (a *App) verifyEnvAndComponentReferences() error {
 
 func (a *App) verifyVariables() error {
 	seenTLA := map[string]bool{}
-	for _, v := range a.Spec.Vars.TopLevel {
+	for _, v := range a.inner.Spec.Vars.TopLevel {
 		if seenTLA[v.Name] {
 			return fmt.Errorf("duplicate top-level variable %s", v.Name)
 		}
 		seenTLA[v.Name] = true
 	}
 	seenVar := map[string]bool{}
-	for _, v := range a.Spec.Vars.External {
+	for _, v := range a.inner.Spec.Vars.External {
 		if seenVar[v.Name] {
 			return fmt.Errorf("duplicate external variable %s", v.Name)
 		}
@@ -337,7 +395,7 @@ func (a *App) verifyVariables() error {
 func (a *App) updateComponentTopLevelVars() {
 	componentTLAMap := map[string][]string{}
 
-	for _, tla := range a.Spec.Vars.TopLevel {
+	for _, tla := range a.inner.Spec.Vars.TopLevel {
 		for _, comp := range tla.Components {
 			componentTLAMap[comp] = append(componentTLAMap[comp], tla.Name)
 		}

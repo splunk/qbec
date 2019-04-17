@@ -68,14 +68,13 @@ In addition to the environments you define in the application manifest (see belo
 adds a baseline environment called `_` that can be used for commands that operate locally and do not
 affect a cluster. These commands include `show`, as well as the `component` and `param` subcommands.
 
-## Runtime configuration
+## Basic runtime configuration
 
 Different environments need different runtime parameters. These can include, among other things, replica counts,
 image versions, specialized config maps, different secrets and so forth. 
 
 qbec sets a jsonnet variable called `qbec.io/env` to the environment name when it loads your components 
-for an environment. 
-You can use the value of this variable to return different runtime parameters per environment.
+for an environment.  You can use the value of this variable to return different runtime parameters per environment.
 Note that for some invocations, the environment may be set to `_` (representing baseline) and your code
 should be able to handle this correctly and return default values.
 
@@ -83,6 +82,21 @@ qbec doesn't really mandate a specific file structure to define params.
 The main commands like `apply`, `show`,  and `diff` will work independent of how you set up your runtime parameters.
 
 That said, the `param` subcommands expect runtime configuration to be set up in a specific way.
-More information on this can be found in the [folders and files](../usage/basic) section of the user-guide.
+More information on this can be found in the [folders and files](../usage/basic) section of the user guide.
 
+## Late-bound configuration
 
+Some configuration parameters like image tags of an image that was just built to be used for the deployment,
+or secrets cannot be checked into source code. For these situations, qbec provides a way to declare jsonnet variables
+that need to be passed in with default values to be used when they are not. 
+
+This allows you to not have to _always_ pass in these extra arguments when developing components locally and still
+be able to parameterize them in, say, your CI build. More information on this feature can be found in the 
+[runtime parameters](../usage/runtime-params) section of the user guide.
+
+## Creating objects with different names for branch builds
+
+qbec provides support that allows you to use the same component and environment definitions for 
+creating objects with different names (or namespaces) for branch builds and garbage collect them without 
+affecting your mainline objects. More information on this feature can be found in 
+the [branch builds and CI](../usage/branches-and-ci) section of the user guide.

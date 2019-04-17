@@ -131,17 +131,14 @@ func doParamList(args []string, config paramListCommandConfig) error {
 		return newUsageError("exactly one environment required")
 	}
 	env := args[0]
-	_, ok := config.App().Spec.Environments[env]
-	if env != "_" && !ok {
-		return fmt.Errorf("invalid environment %q", env)
+	if env != model.Baseline {
+		_, err := config.App().ServerURL(env)
+		if err != nil {
+			return err
+		}
 	}
-	paramsFile := config.App().Spec.ParamsFile
-	paramsObject, err := eval.Params(paramsFile, eval.Context{
-		VMConfig: config.VMConfig,
-		App:      config.App().Name(),
-		Env:      env,
-		Verbose:  config.Verbosity() > 1,
-	})
+	paramsFile := config.App().ParamsFile()
+	paramsObject, err := eval.Params(paramsFile, config.EvalContext(env))
 	if err != nil {
 		return err
 	}
@@ -196,17 +193,14 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 		return err
 	}
 	getParams := func(env string) (str string, name string, err error) {
-		_, ok := config.App().Spec.Environments[env]
-		if env != "_" && !ok {
-			return "", "", fmt.Errorf("invalid environment %q", env)
+		if env != model.Baseline {
+			_, err := config.App().ServerURL(env)
+			if err != nil {
+				return "", "", err
+			}
 		}
-		paramsFile := config.App().Spec.ParamsFile
-		paramsObject, err := eval.Params(paramsFile, eval.Context{
-			VMConfig: config.VMConfig,
-			App:      config.App().Name(),
-			Env:      env,
-			Verbose:  config.Verbosity() > 1,
-		})
+		paramsFile := config.App().ParamsFile()
+		paramsObject, err := eval.Params(paramsFile, config.EvalContext(env))
 		if err != nil {
 			return "", "", err
 		}
