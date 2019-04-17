@@ -24,6 +24,8 @@ how qbec is different from them. Otherwise read the [user guide](userguide/).
 * Specify environment-specific component lists
 * Apply component and kind filters to commands
 * Automatic garbage collection for deleted and renamed objects.
+* Integrate with jsonnet external and top-level variables for late-bound configuration
+* Create differently named objects for branch builds and garbage collect in that limited scope.
 * Usable, safe and secure by default.
   * Remote commands that change cluster state require confirmation.
   * Secrets are automatically hidden and never appear in any output.

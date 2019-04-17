@@ -131,7 +131,7 @@ spec:
 In this case you would code your `service1.jsonnet` component as follows:
 
 ```jsonnet
-function (serviceTag='latest', serviceSecret='changeme') (
+function (service1Tag='latest', service1Secret='changeme') (
     // for example: return an array containing a seret and a deployment
     [
         {
@@ -141,7 +141,7 @@ function (serviceTag='latest', serviceSecret='changeme') (
                 name: 'my-secret',
             },
             data: {
-                token: std.base64(serviceSecret),
+                token: std.base64(service1Secret),
             },
         },
         // ... etc
@@ -152,8 +152,8 @@ function (serviceTag='latest', serviceSecret='changeme') (
 and specify real values on the qbec command-line:
 
 ```bash
-export service_secret=XXX
-qbec apply dev --vm:tla-str service1_image_tag=1.0.3 --vm:tla-str service1_secret
+export service1Secret=XXX
+qbec apply dev --vm:tla-str service1Tag=1.0.3 --vm:tla-str service1Secret
 ```
 
 ### Notes on usage
