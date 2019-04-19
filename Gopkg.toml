@@ -66,6 +66,14 @@
     name = "github.com/chzyer/readline" # MIT license
     version = "v1.4"
 
+[[override]]
+    name = "github.com/golang/protobuf"
+    version = "v1.3.1"
+
+[[override]]
+    name = "github.com/Azure/go-autorest"
+    revision = "d4e6b95c12a08b4de2d48b45d5b4d594e5d32fab"
+
 [prune]
   go-tests = true
   unused-packages = true
