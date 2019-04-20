@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.6.3 (Apr 20, 2019)
+
+* correctly configure the Kubernetes client such that auth plugins are supported. There are no features in this release.
+
 ## v0.6.2 (Apr 16, 2019)
 
 * add support for [declaring and defaulting jsonnet variables](https://github.com/splunk/qbec/pull/10) including TLAs
