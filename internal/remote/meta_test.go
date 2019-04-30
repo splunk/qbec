@@ -93,19 +93,58 @@ func loadObject(t *testing.T, file string) model.K8sObject {
 func TestMetadataCanonical(t *testing.T) {
 	a := assert.New(t)
 	sm := getServerMetadata(t, 2)
-	expected := schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"}
 
-	canon, err := sm.canonicalGroupVersionKind(expected)
-	require.Nil(t, err)
-	a.EqualValues(expected, canon)
+	canonDeployment := schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"}
 
-	canon, err = sm.canonicalGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"})
-	require.Nil(t, err)
-	a.EqualValues(expected, canon)
+	tests := []struct {
+		name     string
+		expected schema.GroupVersionKind
+		input    schema.GroupVersionKind
+	}{
+		{
+			name:     "v1beta1-deployment",
+			expected: canonDeployment,
+			input:    schema.GroupVersionKind{Group: "apps", Version: "v1beta1", Kind: "Deployment"},
+		},
+		{
+			name:     "v1-deployment",
+			expected: canonDeployment,
+			input:    schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
+		},
+		{
+			name:     "self-deployment",
+			expected: canonDeployment,
+			input:    canonDeployment,
+		},
+		{
+			name:     "v1beta2-replicaset",
+			expected: schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "ReplicaSet"},
+			input:    schema.GroupVersionKind{Group: "apps", Version: "v1beta2", Kind: "ReplicaSet"},
+		},
+		{
+			name:     "self-replicaset",
+			expected: schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "ReplicaSet"},
+			input:    schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "ReplicaSet"},
+		},
+		{
+			name:     "self-cronjob",
+			expected: schema.GroupVersionKind{Group: "batch", Version: "v1beta1", Kind: "CronJob"},
+			input:    schema.GroupVersionKind{Group: "batch", Version: "v1beta1", Kind: "CronJob"},
+		},
+		{
+			name:     "self-job",
+			expected: schema.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
+			input:    schema.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
+		},
+	}
 
-	canon, err = sm.canonicalGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1beta1", Kind: "Deployment"})
-	require.Nil(t, err)
-	a.EqualValues(expected, canon)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			canon, err := sm.canonicalGroupVersionKind(test.input)
+			require.Nil(t, err)
+			a.EqualValues(test.expected, canon)
+		})
+	}
 }
 
 func TestMetadataOther(t *testing.T) {
