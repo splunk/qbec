@@ -70,7 +70,7 @@ func (d *disco) OpenAPISchema() (*openapi_v2.Document, error) {
 	return &doc, nil
 }
 
-func getServerMetadata(t *testing.T, verbosity int) *ServerMetadata {
+func getServerMetadata(t *testing.T, verbosity int) *serverMetadata {
 	var d disco
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "metadata.json"))
 	require.Nil(t, err)
@@ -150,30 +150,30 @@ func TestMetadataCanonical(t *testing.T) {
 func TestMetadataOther(t *testing.T) {
 	a := assert.New(t)
 	sm := getServerMetadata(t, 0)
-	n, err := sm.IsNamespaced(schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"})
+	n, err := sm.isNamespaced(schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"})
 	require.Nil(t, err)
 	a.True(n)
 
-	n, err = sm.IsNamespaced(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
+	n, err = sm.isNamespaced(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
 	require.Nil(t, err)
 	a.False(n)
 
-	_, err = sm.IsNamespaced(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	_, err = sm.isNamespaced(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
 	a.Equal("server does not recognize gvk /v1, Kind=FooBar", err.Error())
 
-	name := sm.DisplayName(loadObject(t, "ns-good.json"))
+	name := sm.displayName(loadObject(t, "ns-good.json"))
 	a.Equal("namespaces foobar", name)
 
 	ob := loadObject(t, "ns-good.json")
-	name = sm.DisplayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "", "c1", "dev"))
+	name = sm.displayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "", "c1", "dev"))
 	a.Equal("namespaces foobar (source c1)", name)
 }
 
 func TestMetadataValidator(t *testing.T) {
 	a := assert.New(t)
 	sm := getServerMetadata(t, 0)
-	v, err := sm.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
+	v, err := sm.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
 	require.Nil(t, err)
 	errs := v.Validate(loadObject(t, "ns-good.json").ToUnstructured())
 	require.Nil(t, errs)
@@ -183,7 +183,7 @@ func TestMetadataValidator(t *testing.T) {
 	a.Equal(1, len(errs))
 	a.Contains(errs[0].Error(), `unknown field "foo"`)
 
-	_, err = sm.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	_, err = sm.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
 	a.Equal(ErrSchemaNotFound, err)
 
