@@ -35,6 +35,8 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi"
 )
 
+var requiredVerbs = []string{"create", "delete", "get", "list"}
+
 // Validator validates documents of a specific type.
 type Validator interface {
 	// Validate validates the supplied object and returns a slice of validation errors.
@@ -101,8 +103,8 @@ type minimalDiscovery interface {
 	OpenAPISchema() (*openapi_v2.Document, error)
 }
 
-// ServerMetadata provides metadata information for a K8s cluster.
-type ServerMetadata struct {
+// serverMetadata provides metadata information for a K8s cluster.
+type serverMetadata struct {
 	disco     minimalDiscovery
 	registry  map[schema.GroupVersionKind]*gvkInfo
 	defaultNs string
@@ -111,8 +113,8 @@ type ServerMetadata struct {
 	verbosity int
 }
 
-func newServerMetadata(disco minimalDiscovery, defaultNs string, verbosity int) (*ServerMetadata, error) {
-	sm := &ServerMetadata{
+func newServerMetadata(disco minimalDiscovery, defaultNs string, verbosity int) (*serverMetadata, error) {
+	sm := &serverMetadata{
 		disco:     disco,
 		registry:  map[schema.GroupVersionKind]*gvkInfo{},
 		defaultNs: defaultNs,
@@ -124,7 +126,7 @@ func newServerMetadata(disco minimalDiscovery, defaultNs string, verbosity int) 
 	return sm, nil
 }
 
-func (sm *ServerMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error) {
+func (sm *serverMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error) {
 	res, ok := sm.registry[gvk]
 	if !ok {
 		return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
@@ -132,8 +134,8 @@ func (sm *ServerMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error)
 	return res, nil
 }
 
-// ValidatorFor returns a validator for the supplied GroupVersionKind.
-func (sm *ServerMetadata) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
+// validatorFor returns a validator for the supplied GroupVersionKind.
+func (sm *serverMetadata) validatorFor(gvk schema.GroupVersionKind) (Validator, error) {
 	_, v, err := sm.openAPIResources()
 	if err != nil {
 		return nil, err
@@ -141,9 +143,9 @@ func (sm *ServerMetadata) ValidatorFor(gvk schema.GroupVersionKind) (Validator, 
 	return v.validatorFor(gvk)
 }
 
-// DisplayName returns a display name for the supplied object in a format that mimics
+// displayName returns a display name for the supplied object in a format that mimics
 // phrases that can be pasted into kubectl commands.
-func (sm *ServerMetadata) DisplayName(o model.K8sMeta) string {
+func (sm *serverMetadata) displayName(o model.K8sMeta) string {
 	gvk := o.GetObjectKind().GroupVersionKind()
 	info := sm.registry[gvk]
 
@@ -181,9 +183,9 @@ func (sm *ServerMetadata) DisplayName(o model.K8sMeta) string {
 	return name
 }
 
-// IsNamespaced returns true if the resource corresponding to the supplied
+// isNamespaced returns true if the resource corresponding to the supplied
 // GroupVersionKind is namespaced.
-func (sm *ServerMetadata) IsNamespaced(gvk schema.GroupVersionKind) (bool, error) {
+func (sm *serverMetadata) isNamespaced(gvk schema.GroupVersionKind) (bool, error) {
 	info, err := sm.infoFor(gvk)
 	if err != nil {
 		return false, err
@@ -191,7 +193,7 @@ func (sm *ServerMetadata) IsNamespaced(gvk schema.GroupVersionKind) (bool, error
 	return info.resource.Namespaced, nil
 }
 
-func (sm *ServerMetadata) collectTypes(filter func(*gvkInfo) bool) []schema.GroupVersionKind {
+func (sm *serverMetadata) collectTypes(filter func(*gvkInfo) bool) []schema.GroupVersionKind {
 	canonicalTypes := map[schema.GroupVersionKind]bool{}
 	for _, t := range sm.registry {
 		canonicalTypes[t.canonical] = true
@@ -209,17 +211,17 @@ func (sm *ServerMetadata) collectTypes(filter func(*gvkInfo) bool) []schema.Grou
 	return ret
 }
 
-func (sm *ServerMetadata) namespacedTypes() []schema.GroupVersionKind {
+func (sm *serverMetadata) namespacedTypes() []schema.GroupVersionKind {
 	return sm.collectTypes(func(info *gvkInfo) bool { return info.resource.Namespaced })
 }
 
-func (sm *ServerMetadata) clusterTypes() []schema.GroupVersionKind {
+func (sm *serverMetadata) clusterTypes() []schema.GroupVersionKind {
 	return sm.collectTypes(func(info *gvkInfo) bool { return !info.resource.Namespaced })
 }
 
 // canonicalGroupVersionKind provides the preferred/ canonical group version kind for the supplied input.
 // It takes aliases into account (e.g. extensions/Deployment same as apps/Deployment) for doing so.
-func (sm *ServerMetadata) canonicalGroupVersionKind(gvk schema.GroupVersionKind) (schema.GroupVersionKind, error) {
+func (sm *serverMetadata) canonicalGroupVersionKind(gvk schema.GroupVersionKind) (schema.GroupVersionKind, error) {
 	info, err := sm.infoFor(gvk)
 	if err != nil {
 		return gvk, err
@@ -265,8 +267,7 @@ var equivalences = []equivalence{
 }
 
 func eligibleResource(r metav1.APIResource) bool {
-	needed := []string{"create", "delete", "get", "list"}
-	for _, n := range needed {
+	for _, n := range requiredVerbs {
 		found := false
 		for _, v := range r.Verbs {
 			if n == v {
@@ -323,7 +324,7 @@ func (r *resolver) resolve(disco minimalDiscovery) {
 	r.tracker = tracker
 }
 
-func (sm *ServerMetadata) init() error {
+func (sm *serverMetadata) init() error {
 	start := time.Now()
 	groups, err := sm.disco.ServerGroups()
 	if err != nil {
@@ -445,7 +446,7 @@ func (sm *ServerMetadata) init() error {
 	return nil
 }
 
-func (sm *ServerMetadata) openAPIResources() (openapi.Resources, *validators, error) {
+func (sm *serverMetadata) openAPIResources() (openapi.Resources, *validators, error) {
 	sm.ol.Lock()
 	defer sm.ol.Unlock()
 	ret := sm.oResult

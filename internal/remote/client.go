@@ -67,7 +67,7 @@ type internalSyncOptions struct {
 // Client is a thick remote client that provides high-level operations for commands as opposed to
 // granular ones.
 type Client struct {
-	sm           *ServerMetadata                  // the server metadata loaded once and never updated
+	sm           *serverMetadata                  // the server metadata loaded once and never updated
 	pool         dynamic.ClientPool               // the client pool for resource interfaces
 	disco        minimalDiscovery                 // the discovery interface
 	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
@@ -91,24 +91,19 @@ func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns s
 	return c, nil
 }
 
-// ServerMetadata returns server metadata for the cluster that this client connects to.
-func (c *Client) ServerMetadata() *ServerMetadata {
-	return c.sm
-}
-
 // ValidatorFor returns a validator for the supplied group version kind.
 func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
-	return c.ServerMetadata().ValidatorFor(gvk)
+	return c.sm.validatorFor(gvk)
 }
 
 // DisplayName returns the display name of the supplied K8s object.
 func (c *Client) DisplayName(o model.K8sMeta) string {
-	return c.ServerMetadata().DisplayName(o)
+	return c.sm.displayName(o)
 }
 
 // IsNamespaced returns if the supplied group version kind is namespaced.
 func (c *Client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
-	return c.ServerMetadata().IsNamespaced(kind)
+	return c.sm.isNamespaced(kind)
 }
 
 // Get returns the remote object matching the supplied metadata as an unstructured bag of attributes.
@@ -315,7 +310,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 
 	defer func() {
 		if finalError != nil {
-			finalError = errors.Wrap(finalError, "sync "+c.sm.DisplayName(original))
+			finalError = errors.Wrap(finalError, "sync "+c.sm.displayName(original))
 		}
 	}()
 
@@ -423,7 +418,7 @@ func (c *Client) Delete(obj model.K8sMeta, dryRun bool) (_ *SyncResult, finalErr
 	}
 	defer func() {
 		if finalError != nil {
-			finalError = errors.Wrap(finalError, "delete "+c.sm.DisplayName(obj))
+			finalError = errors.Wrap(finalError, "delete "+c.sm.displayName(obj))
 		}
 	}()
 
