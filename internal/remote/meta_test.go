@@ -24,8 +24,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/googleapis/gnostic/OpenAPIv2"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -56,18 +54,6 @@ func (d *disco) ServerResourcesForGroupVersion(groupVersion string) (*metav1.API
 		return nil, fmt.Errorf("no resources for %s", groupVersion)
 	}
 	return rl, nil
-}
-
-func (d *disco) OpenAPISchema() (*openapi_v2.Document, error) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "swagger-2.0.0.pb-v1"))
-	if err != nil {
-		return nil, err
-	}
-	var doc openapi_v2.Document
-	if err := proto.Unmarshal(b, &doc); err != nil {
-		return nil, err
-	}
-	return &doc, nil
 }
 
 func getServerMetadata(t *testing.T, verbosity int) *serverMetadata {
@@ -168,23 +154,4 @@ func TestMetadataOther(t *testing.T) {
 	ob := loadObject(t, "ns-good.json")
 	name = sm.displayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "", "c1", "dev"))
 	a.Equal("namespaces foobar (source c1)", name)
-}
-
-func TestMetadataValidator(t *testing.T) {
-	a := assert.New(t)
-	sm := getServerMetadata(t, 0)
-	v, err := sm.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
-	require.Nil(t, err)
-	errs := v.Validate(loadObject(t, "ns-good.json").ToUnstructured())
-	require.Nil(t, errs)
-
-	errs = v.Validate(loadObject(t, "ns-bad.json").ToUnstructured())
-	require.NotNil(t, errs)
-	a.Equal(1, len(errs))
-	a.Contains(errs[0].Error(), `unknown field "foo"`)
-
-	_, err = sm.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
-	require.NotNil(t, err)
-	a.Equal(ErrSchemaNotFound, err)
-
 }

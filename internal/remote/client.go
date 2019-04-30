@@ -68,6 +68,7 @@ type internalSyncOptions struct {
 // granular ones.
 type Client struct {
 	sm           *serverMetadata                  // the server metadata loaded once and never updated
+	ss           *serverSchema                    // the server schema
 	pool         dynamic.ClientPool               // the client pool for resource interfaces
 	disco        minimalDiscovery                 // the discovery interface
 	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
@@ -80,8 +81,10 @@ func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns s
 	if err != nil {
 		return nil, errors.Wrap(err, "get server metadata")
 	}
+	ss := newServerSchema(disco)
 	c := &Client{
 		sm:           sm,
+		ss:           ss,
 		pool:         pool,
 		disco:        disco,
 		defaultNs:    ns,
@@ -93,7 +96,7 @@ func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns s
 
 // ValidatorFor returns a validator for the supplied group version kind.
 func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
-	return c.sm.validatorFor(gvk)
+	return c.ss.validatorFor(gvk)
 }
 
 // DisplayName returns the display name of the supplied K8s object.
@@ -516,7 +519,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 }
 
 func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
-	res, _, err := c.sm.openAPIResources()
+	res, _, err := c.ss.openAPIResources()
 	if err != nil {
 		sio.Warnln("get open API resources", err)
 	}
