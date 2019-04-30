@@ -239,12 +239,20 @@ var equivalences = []equivalence{
 		gk2: schema.GroupKind{Group: "extensions", Kind: "NetworkPolicy"},
 	},
 	{
+		gk1: schema.GroupKind{Group: "networking.k8s.io", Kind: "Ingress"},
+		gk2: schema.GroupKind{Group: "extensions", Kind: "Ingress"},
+	},
+	{
 		gk1: schema.GroupKind{Group: "apps", Kind: "Deployment"},
 		gk2: schema.GroupKind{Group: "extensions", Kind: "Deployment"},
 	},
 	{
 		gk1: schema.GroupKind{Group: "apps", Kind: "DaemonSet"},
 		gk2: schema.GroupKind{Group: "extensions", Kind: "DaemonSet"},
+	},
+	{
+		gk1: schema.GroupKind{Group: "apps", Kind: "ReplicaSet"},
+		gk2: schema.GroupKind{Group: "extensions", Kind: "ReplicaSet"},
 	},
 	{
 		gk1: schema.GroupKind{Group: "", Kind: "Event"},
