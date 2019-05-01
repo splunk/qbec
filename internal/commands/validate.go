@@ -24,7 +24,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/remote/k8smeta"
 )
 
 const (
@@ -81,7 +81,7 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	name := v.client.DisplayName(obj)
 	schema, err := v.client.ValidatorFor(obj.GetObjectKind().GroupVersionKind())
 	if err != nil {
-		if err == remote.ErrSchemaNotFound {
+		if err == k8smeta.ErrSchemaNotFound {
 			fmt.Fprintf(v.w, "%s%s %s: no schema found, cannot validate%s\n", v.dim, unicodeQuestion, name, v.reset)
 			v.stats.unknown(name)
 			return nil

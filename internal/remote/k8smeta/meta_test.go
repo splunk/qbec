@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package remote
+package k8smeta
 
 import (
 	"encoding/json"
@@ -57,16 +57,16 @@ func (d *disco) ServerResourcesForGroupVersion(groupVersion string) (*metav1.API
 	return rl, nil
 }
 
-func getServerMetadata(t *testing.T, verbosity int) *serverMetadata {
+func getServerMetadata(t *testing.T, verbosity int) *Resources {
 	var d disco
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "metadata.json"))
 	require.Nil(t, err)
 	err = json.Unmarshal(b, &d)
 	require.Nil(t, err)
-	sm, err := newServerMetadata(&d, nil)
+	sm, err := NewResources(&d, ResourceOpts{})
 	require.Nil(t, err)
 	if verbosity > 0 {
-		sm.dump(sio.Debugln)
+		sm.Dump(sio.Debugln)
 	}
 	return sm
 }
@@ -130,7 +130,7 @@ func TestMetadataCanonical(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			canon, err := sm.canonicalGroupVersionKind(test.input)
+			canon, err := sm.CanonicalGroupVersionKind(test.input)
 			require.Nil(t, err)
 			a.EqualValues(test.expected, canon)
 		})
@@ -138,17 +138,16 @@ func TestMetadataCanonical(t *testing.T) {
 }
 
 func TestMetadataOther(t *testing.T) {
-	a := assert.New(t)
 	sm := getServerMetadata(t, 0)
-	n, err := sm.isNamespaced(schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"})
-	require.Nil(t, err)
-	a.True(n)
+	res := sm.APIResource(schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Deployment"})
+	require.NotNil(t, res)
 
-	n, err = sm.isNamespaced(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
-	require.Nil(t, err)
-	a.False(n)
+	res = sm.APIResource(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
+	require.NotNil(t, res)
 
-	_, err = sm.isNamespaced(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	res = sm.APIResource(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	require.Nil(t, res)
+
+	_, err := sm.CanonicalGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
-	a.Equal("server does not recognize gvk /v1, Kind=FooBar", err.Error())
 }

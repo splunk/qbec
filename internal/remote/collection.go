@@ -50,7 +50,7 @@ func (b *basicObject) Component() string                               { return 
 func (b *basicObject) Environment() string                             { return b.env }
 
 type collectMetadata interface {
-	isNamespaced(gvk schema.GroupVersionKind) (bool, error)
+	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
 	canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.GroupVersionKind, error)
 }
 
@@ -117,7 +117,7 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 	if err != nil {
 		return err
 	}
-	namespaced, err := c.meta.isNamespaced(canonicalGVK)
+	namespaced, err := c.meta.IsNamespaced(canonicalGVK)
 	if err != nil {
 		return err
 	}
