@@ -23,73 +23,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/googleapis/gnostic/OpenAPIv2"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/kube-openapi/pkg/util/proto"
-	"k8s.io/kube-openapi/pkg/util/proto/validation"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi"
 )
 
 var requiredVerbs = []string{"create", "delete", "get", "list"}
-
-// Validator validates documents of a specific type.
-type Validator interface {
-	// Validate validates the supplied object and returns a slice of validation errors.
-	Validate(obj *unstructured.Unstructured) []error
-}
-
-// vsSchema implements Validator
-type vsSchema struct {
-	proto.Schema
-}
-
-func (v *vsSchema) Validate(obj *unstructured.Unstructured) []error {
-	gvk := obj.GroupVersionKind()
-	return validation.ValidateModel(obj.UnstructuredContent(), v.Schema, fmt.Sprintf("%s.%s", gvk.Version, gvk.Kind))
-}
-
-type schemaResult struct {
-	validator Validator
-	err       error
-}
-
-// validators produces Validator instances for k8s types.
-type validators struct {
-	res   openapi.Resources
-	l     sync.Mutex
-	cache map[schema.GroupVersionKind]*schemaResult
-}
-
-func (v *validators) validatorFor(gvk schema.GroupVersionKind) (Validator, error) {
-	v.l.Lock()
-	defer v.l.Unlock()
-	sr := v.cache[gvk]
-	if sr == nil {
-		var err error
-		valSchema := v.res.LookupResource(gvk)
-		if valSchema == nil {
-			err = ErrSchemaNotFound
-		}
-		sr = &schemaResult{
-			validator: &vsSchema{valSchema},
-			err:       err,
-		}
-		v.cache[gvk] = sr
-	}
-	return sr.validator, sr.err
-}
-
-// openapiResourceResult is the cached result of retrieving an openAPI doc from the server.
-type openapiResourceResult struct {
-	res        openapi.Resources
-	validators *validators
-	err        error
-}
 
 // gvkInfo is all the information we need for k8s types as represented by group-version-kind.
 type gvkInfo struct {
@@ -100,7 +41,6 @@ type gvkInfo struct {
 type minimalDiscovery interface {
 	ServerGroups() (*metav1.APIGroupList, error)
 	ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error)
-	OpenAPISchema() (*openapi_v2.Document, error)
 }
 
 // serverMetadata provides metadata information for a K8s cluster.
@@ -132,15 +72,6 @@ func (sm *serverMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error)
 		return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
 	}
 	return res, nil
-}
-
-// validatorFor returns a validator for the supplied GroupVersionKind.
-func (sm *serverMetadata) validatorFor(gvk schema.GroupVersionKind) (Validator, error) {
-	_, v, err := sm.openAPIResources()
-	if err != nil {
-		return nil, err
-	}
-	return v.validatorFor(gvk)
 }
 
 // displayName returns a display name for the supplied object in a format that mimics
@@ -444,32 +375,4 @@ func (sm *serverMetadata) init() error {
 	duration := time.Now().Sub(start).Round(time.Millisecond)
 	sio.Debugln("cluster metadata load took", duration)
 	return nil
-}
-
-func (sm *serverMetadata) openAPIResources() (openapi.Resources, *validators, error) {
-	sm.ol.Lock()
-	defer sm.ol.Unlock()
-	ret := sm.oResult
-	if ret != nil {
-		return ret.res, ret.validators, ret.err
-	}
-	handle := func(r openapi.Resources, err error) (openapi.Resources, *validators, error) {
-		sm.oResult = &openapiResourceResult{res: r, err: err}
-		if err == nil {
-			sm.oResult.validators = &validators{
-				res:   r,
-				cache: map[schema.GroupVersionKind]*schemaResult{},
-			}
-		}
-		return sm.oResult.res, sm.oResult.validators, sm.oResult.err
-	}
-	doc, err := sm.disco.OpenAPISchema()
-	if err != nil {
-		return handle(nil, errors.Wrap(err, "Open API doc from server"))
-	}
-	res, err := openapi.NewOpenAPIData(doc)
-	if err != nil {
-		return handle(nil, errors.Wrap(err, "get resources from validator"))
-	}
-	return handle(res, nil)
 }
