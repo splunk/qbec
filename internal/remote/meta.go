@@ -18,19 +18,15 @@ package remote
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/sio"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-var requiredVerbs = []string{"create", "delete", "get", "list"}
 
 // gvkInfo is all the information we need for k8s types as represented by group-version-kind.
 type gvkInfo struct {
@@ -38,29 +34,24 @@ type gvkInfo struct {
 	resource  metav1.APIResource      // the API resource for the gvk
 }
 
-type minimalDiscovery interface {
+type typeDiscovery interface {
 	ServerGroups() (*metav1.APIGroupList, error)
 	ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error)
 }
 
 // serverMetadata provides metadata information for a K8s cluster.
 type serverMetadata struct {
-	disco     minimalDiscovery
-	registry  map[schema.GroupVersionKind]*gvkInfo
-	defaultNs string
-	ol        sync.Mutex
-	oResult   *openapiResourceResult
-	verbosity int
+	disco    typeDiscovery
+	registry map[schema.GroupVersionKind]*gvkInfo
 }
 
-func newServerMetadata(disco minimalDiscovery, defaultNs string, verbosity int) (*serverMetadata, error) {
+func newServerMetadata(disco typeDiscovery, warnFn func(...interface{})) (*serverMetadata, error) {
 	sm := &serverMetadata{
-		disco:     disco,
-		registry:  map[schema.GroupVersionKind]*gvkInfo{},
-		defaultNs: defaultNs,
-		verbosity: verbosity,
+		disco:    disco,
+		registry: map[schema.GroupVersionKind]*gvkInfo{},
 	}
-	if err := sm.init(); err != nil {
+	requiredVerbs := []string{"create", "delete", "get", "list"}
+	if err := sm.init(requiredVerbs, warnFn); err != nil {
 		return nil, err
 	}
 	return sm, nil
@@ -72,46 +63,6 @@ func (sm *serverMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error)
 		return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
 	}
 	return res, nil
-}
-
-// displayName returns a display name for the supplied object in a format that mimics
-// phrases that can be pasted into kubectl commands.
-func (sm *serverMetadata) displayName(o model.K8sMeta) string {
-	gvk := o.GetObjectKind().GroupVersionKind()
-	info := sm.registry[gvk]
-
-	displayType := func() string {
-		if info != nil {
-			return info.resource.Name
-		}
-		return strings.ToLower(gvk.Kind)
-	}
-
-	displayName := func() string {
-		ns := o.GetNamespace()
-		name := o.GetName()
-		if info != nil {
-			if info.resource.Namespaced {
-				if ns == "" {
-					ns = sm.defaultNs
-				}
-			} else {
-				ns = ""
-			}
-		}
-		if ns == "" {
-			return name
-		}
-		return name + " -n " + ns
-	}
-	name := fmt.Sprintf("%s %s", displayType(), displayName())
-	if l, ok := o.(model.K8sLocalObject); ok {
-		comp := l.Component()
-		if comp != "" {
-			name += fmt.Sprintf(" (source %s)", comp)
-		}
-	}
-	return name
 }
 
 // isNamespaced returns true if the resource corresponding to the supplied
@@ -197,7 +148,7 @@ var equivalences = []equivalence{
 	},
 }
 
-func eligibleResource(r metav1.APIResource) bool {
+func eligibleResource(r metav1.APIResource, requiredVerbs []string) bool {
 	for _, n := range requiredVerbs {
 		found := false
 		for _, v := range r.Verbs {
@@ -214,6 +165,8 @@ func eligibleResource(r metav1.APIResource) bool {
 }
 
 type resolver struct {
+	warnFn           func(...interface{})
+	requiredVerbs    []string
 	group            string
 	version          string
 	groupVersion     string
@@ -223,19 +176,22 @@ type resolver struct {
 	err              error
 }
 
-func (r *resolver) resolve(disco minimalDiscovery) {
+func (r *resolver) resolve(disco typeDiscovery) {
+	if r.warnFn == nil {
+		r.warnFn = func(args ...interface{}) { fmt.Fprintln(os.Stderr, args...) }
+	}
 	reg := map[schema.GroupVersionKind]*gvkInfo{}
 	tracker := map[schema.GroupKind][]schema.GroupVersionKind{}
 	list, err := disco.ServerResourcesForGroupVersion(r.groupVersion)
 	if err != nil {
-		sio.Warnln("error getting resources for type", r.groupVersion, ":", err)
+		r.warnFn("error getting resources for type", r.groupVersion, ":", err)
 	}
 	if list != nil {
 		for _, res := range list.APIResources {
 			if strings.Contains(res.Name, "/") { // ignore sub-resources
 				continue
 			}
-			if !eligibleResource(res) { // remove stuff we cannot create and delete
+			if !eligibleResource(res, r.requiredVerbs) { // remove stuff we cannot create and delete
 				continue
 			}
 			kindName := res.Kind
@@ -255,8 +211,7 @@ func (r *resolver) resolve(disco minimalDiscovery) {
 	r.tracker = tracker
 }
 
-func (sm *serverMetadata) init() error {
-	start := time.Now()
+func (sm *serverMetadata) init(requiredVerbs []string, warnFn func(...interface{})) error {
 	groups, err := sm.disco.ServerGroups()
 	if err != nil {
 		return errors.Wrap(err, "get server groups")
@@ -274,6 +229,8 @@ func (sm *serverMetadata) init() error {
 		for _, gv := range group.Versions {
 			versionName := gv.Version
 			resolvers = append(resolvers, &resolver{
+				warnFn:           warnFn,
+				requiredVerbs:    requiredVerbs,
 				group:            groupName,
 				version:          versionName,
 				preferredVersion: preferredVersionName,
@@ -352,27 +309,25 @@ func (sm *serverMetadata) init() error {
 	}
 
 	sm.registry = reg
-	if sm.verbosity > 0 {
-		var display []string
-		for k, v := range reg {
-			l := fmt.Sprintf("%s/%s:%s", k.Group, k.Version, k.Kind)
-			r := fmt.Sprintf("%s/%s:%s", v.canonical.Group, v.canonical.Version, v.canonical.Kind)
-			ns := "cluster scoped"
-			if v.resource.Namespaced {
-				ns = "namespaced"
-			}
-			display = append(display, fmt.Sprintf("\t%-70s => %s (%s)", l, r, ns))
-		}
-		sort.Strings(display)
-		sio.Debugln()
-		sio.Debugln("group version kind map:")
-		for _, line := range display {
-			sio.Debugln(line)
-		}
-		sio.Debugln()
-	}
-
-	duration := time.Now().Sub(start).Round(time.Millisecond)
-	sio.Debugln("cluster metadata load took", duration)
 	return nil
+}
+
+func (sm *serverMetadata) dump(println func(...interface{})) {
+	var display []string
+	for k, v := range sm.registry {
+		l := fmt.Sprintf("%s/%s:%s", k.Group, k.Version, k.Kind)
+		r := fmt.Sprintf("%s/%s:%s", v.canonical.Group, v.canonical.Version, v.canonical.Kind)
+		ns := "cluster scoped"
+		if v.resource.Namespaced {
+			ns = "namespaced"
+		}
+		display = append(display, fmt.Sprintf("\t%-70s => %s (%s)", l, r, ns))
+	}
+	sort.Strings(display)
+	println()
+	println("group version kind map:")
+	for _, line := range display {
+		println(line)
+	}
+	println()
 }

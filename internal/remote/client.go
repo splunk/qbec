@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jonboulle/clockwork"
@@ -70,17 +71,24 @@ type Client struct {
 	sm           *serverMetadata                  // the server metadata loaded once and never updated
 	ss           *serverSchema                    // the server schema
 	pool         dynamic.ClientPool               // the client pool for resource interfaces
-	disco        minimalDiscovery                 // the discovery interface
+	disco        typeDiscovery                    // the discovery interface
 	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
 	verbosity    int                              // log verbosity
 	dynamicTypes map[schema.GroupVersionKind]bool // crds seen by this client
 }
 
 func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns string, verbosity int) (*Client, error) {
-	sm, err := newServerMetadata(disco, ns, verbosity)
+	start := time.Now()
+	sm, err := newServerMetadata(disco, sio.Warnln)
 	if err != nil {
 		return nil, errors.Wrap(err, "get server metadata")
 	}
+	if verbosity > 0 {
+		sm.dump(sio.Debugln)
+	}
+	duration := time.Now().Sub(start).Round(time.Millisecond)
+	sio.Debugln("cluster metadata load took", duration)
+
 	ss := newServerSchema(disco)
 	c := &Client{
 		sm:           sm,
@@ -101,7 +109,42 @@ func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
 
 // DisplayName returns the display name of the supplied K8s object.
 func (c *Client) DisplayName(o model.K8sMeta) string {
-	return c.sm.displayName(o)
+	sm := c.sm
+	gvk := o.GetObjectKind().GroupVersionKind()
+	info := sm.registry[gvk]
+
+	displayType := func() string {
+		if info != nil {
+			return info.resource.Name
+		}
+		return strings.ToLower(gvk.Kind)
+	}
+
+	displayName := func() string {
+		ns := o.GetNamespace()
+		name := o.GetName()
+		if info != nil {
+			if info.resource.Namespaced {
+				if ns == "" {
+					ns = c.defaultNs
+				}
+			} else {
+				ns = ""
+			}
+		}
+		if ns == "" {
+			return name
+		}
+		return name + " -n " + ns
+	}
+	name := fmt.Sprintf("%s %s", displayType(), displayName())
+	if l, ok := o.(model.K8sLocalObject); ok {
+		comp := l.Component()
+		if comp != "" {
+			name += fmt.Sprintf(" (source %s)", comp)
+		}
+	}
+	return name
 }
 
 // IsNamespaced returns if the supplied group version kind is namespaced.
@@ -313,7 +356,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 
 	defer func() {
 		if finalError != nil {
-			finalError = errors.Wrap(finalError, "sync "+c.sm.displayName(original))
+			finalError = errors.Wrap(finalError, "sync "+c.DisplayName(original))
 		}
 	}()
 
@@ -421,7 +464,7 @@ func (c *Client) Delete(obj model.K8sMeta, dryRun bool) (_ *SyncResult, finalErr
 	}
 	defer func() {
 		if finalError != nil {
-			finalError = errors.Wrap(finalError, "delete "+c.sm.displayName(obj))
+			finalError = errors.Wrap(finalError, "delete "+c.DisplayName(obj))
 		}
 	}()
 

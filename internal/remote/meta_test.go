@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,8 +63,11 @@ func getServerMetadata(t *testing.T, verbosity int) *serverMetadata {
 	require.Nil(t, err)
 	err = json.Unmarshal(b, &d)
 	require.Nil(t, err)
-	sm, err := newServerMetadata(&d, "foobar", verbosity)
+	sm, err := newServerMetadata(&d, nil)
 	require.Nil(t, err)
+	if verbosity > 0 {
+		sm.dump(sio.Debugln)
+	}
 	return sm
 }
 
@@ -147,11 +151,4 @@ func TestMetadataOther(t *testing.T) {
 	_, err = sm.isNamespaced(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
 	a.Equal("server does not recognize gvk /v1, Kind=FooBar", err.Error())
-
-	name := sm.displayName(loadObject(t, "ns-good.json"))
-	a.Equal("namespaces foobar", name)
-
-	ob := loadObject(t, "ns-good.json")
-	name = sm.displayName(model.NewK8sLocalObject(ob.ToUnstructured().Object, "app1", "", "c1", "dev"))
-	a.Equal("namespaces foobar (source c1)", name)
 }
