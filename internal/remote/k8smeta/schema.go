@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package remote
+package k8smeta
 
 import (
 	"fmt"
@@ -28,6 +28,9 @@ import (
 	"k8s.io/kube-openapi/pkg/util/proto/validation"
 	"k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi"
 )
+
+// ErrSchemaNotFound is returned when a schema could not be found.
+var ErrSchemaNotFound = errors.New("schema not found") // returned when a validation schema is not found
 
 // Validator validates documents of a specific type.
 type Validator interface {
@@ -83,24 +86,28 @@ type openapiResourceResult struct {
 	err        error
 }
 
-type serverSchema struct {
-	ol      sync.Mutex
-	oResult *openapiResourceResult
-	disco   schemaDiscovery
-}
-
-type schemaDiscovery interface {
+// SchemaDiscovery is the minimal interface needed to discover the server schema.
+type SchemaDiscovery interface {
 	OpenAPISchema() (*openapi_v2.Document, error)
 }
 
-func newServerSchema(disco schemaDiscovery) *serverSchema {
-	return &serverSchema{
+// ServerSchema is a representation of the resource schema of a Kubernetes server.
+type ServerSchema struct {
+	ol      sync.Mutex
+	oResult *openapiResourceResult
+	disco   SchemaDiscovery
+}
+
+// NewServerSchema returns a server schema that can supply validators for the given discovery
+// interface.
+func NewServerSchema(disco SchemaDiscovery) *ServerSchema {
+	return &ServerSchema{
 		disco: disco,
 	}
 }
 
-// validatorFor returns a validator for the supplied GroupVersionKind.
-func (ss *serverSchema) validatorFor(gvk schema.GroupVersionKind) (Validator, error) {
+// ValidatorFor returns a validator for the supplied GroupVersionKind.
+func (ss *ServerSchema) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
 	_, v, err := ss.openAPIResources()
 	if err != nil {
 		return nil, err
@@ -108,7 +115,13 @@ func (ss *serverSchema) validatorFor(gvk schema.GroupVersionKind) (Validator, er
 	return v.validatorFor(gvk)
 }
 
-func (ss *serverSchema) openAPIResources() (openapi.Resources, *validators, error) {
+// OpenAPIResources returns the OpenAPI resources for the server.
+func (ss *ServerSchema) OpenAPIResources() (openapi.Resources, error) {
+	r, _, err := ss.openAPIResources()
+	return r, err
+}
+
+func (ss *ServerSchema) openAPIResources() (openapi.Resources, *validators, error) {
 	ss.ol.Lock()
 	defer ss.ol.Unlock()
 	ret := ss.oResult

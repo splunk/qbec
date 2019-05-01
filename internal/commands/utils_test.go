@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ type client struct {
 	nsFunc        func(kind schema.GroupVersionKind) (bool, error)
 	getFunc       func(obj model.K8sMeta) (*unstructured.Unstructured, error)
 	syncFunc      func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	validatorFunc func(gvk schema.GroupVersionKind) (remote.Validator, error)
+	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	listExtraFunc func(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
 	deleteFunc    func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 }
@@ -78,7 +79,7 @@ func (c *client) Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remot
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (remote.Validator, error) {
+func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
 	if c.validatorFunc != nil {
 		return c.validatorFunc(gvk)
 	}

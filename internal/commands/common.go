@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -86,7 +87,7 @@ type Client interface {
 	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
 	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
 	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	ValidatorFor(gvk schema.GroupVersionKind) (remote.Validator, error)
+	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
 	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 }

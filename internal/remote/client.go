@@ -26,6 +26,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +47,6 @@ const (
 var (
 	ErrForbidden        = errors.New("forbidden")             // returned due to an authn/ authz error
 	ErrNotFound         = errors.New("not found")             // returned when a remote object does not exist
-	ErrSchemaNotFound   = errors.New("schema not found")      // returned when a validation schema is not found
 	errMetadataNotFound = errors.New("server type not found") // returned when metadata could not be found for a gvk
 )
 
@@ -68,10 +68,10 @@ type internalSyncOptions struct {
 // Client is a thick remote client that provides high-level operations for commands as opposed to
 // granular ones.
 type Client struct {
-	sm           *serverMetadata                  // the server metadata loaded once and never updated
-	ss           *serverSchema                    // the server schema
+	resources    *k8smeta.Resources               // the server metadata loaded once and never updated
+	schema       *k8smeta.ServerSchema            // the server schema
 	pool         dynamic.ClientPool               // the client pool for resource interfaces
-	disco        typeDiscovery                    // the discovery interface
+	disco        k8smeta.ResourceDiscovery        // the discovery interface
 	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
 	verbosity    int                              // log verbosity
 	dynamicTypes map[schema.GroupVersionKind]bool // crds seen by this client
@@ -79,20 +79,20 @@ type Client struct {
 
 func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns string, verbosity int) (*Client, error) {
 	start := time.Now()
-	sm, err := newServerMetadata(disco, sio.Warnln)
+	resources, err := k8smeta.NewResources(disco, k8smeta.ResourceOpts{WarnFn: sio.Warnln})
 	if err != nil {
 		return nil, errors.Wrap(err, "get server metadata")
 	}
 	if verbosity > 0 {
-		sm.dump(sio.Debugln)
+		resources.Dump(sio.Debugln)
 	}
 	duration := time.Now().Sub(start).Round(time.Millisecond)
 	sio.Debugln("cluster metadata load took", duration)
 
-	ss := newServerSchema(disco)
+	ss := k8smeta.NewServerSchema(disco)
 	c := &Client{
-		sm:           sm,
-		ss:           ss,
+		resources:    resources,
+		schema:       ss,
 		pool:         pool,
 		disco:        disco,
 		defaultNs:    ns,
@@ -103,19 +103,19 @@ func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns s
 }
 
 // ValidatorFor returns a validator for the supplied group version kind.
-func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
-	return c.ss.validatorFor(gvk)
+func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
+	return c.schema.ValidatorFor(gvk)
 }
 
 // DisplayName returns the display name of the supplied K8s object.
 func (c *Client) DisplayName(o model.K8sMeta) string {
-	sm := c.sm
+	sm := c.resources
 	gvk := o.GetObjectKind().GroupVersionKind()
-	info := sm.registry[gvk]
+	info := sm.APIResource(gvk)
 
 	displayType := func() string {
 		if info != nil {
-			return info.resource.Name
+			return info.Name
 		}
 		return strings.ToLower(gvk.Kind)
 	}
@@ -124,7 +124,7 @@ func (c *Client) DisplayName(o model.K8sMeta) string {
 		ns := o.GetNamespace()
 		name := o.GetName()
 		if info != nil {
-			if info.resource.Namespaced {
+			if info.Namespaced {
 				if ns == "" {
 					ns = c.defaultNs
 				}
@@ -147,9 +147,25 @@ func (c *Client) DisplayName(o model.K8sMeta) string {
 	return name
 }
 
+func (c *Client) apiResourceFor(gvk schema.GroupVersionKind) (*metav1.APIResource, error) {
+	info := c.resources.APIResource(gvk)
+	if info == nil {
+		return nil, fmt.Errorf("resource not found for %s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
+	}
+	return info, nil
+}
+
 // IsNamespaced returns if the supplied group version kind is namespaced.
-func (c *Client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
-	return c.sm.isNamespaced(kind)
+func (c *Client) IsNamespaced(gvk schema.GroupVersionKind) (bool, error) {
+	res, err := c.apiResourceFor(gvk)
+	if err != nil {
+		return false, err
+	}
+	return res.Namespaced, nil
+}
+
+func (c *Client) canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.GroupVersionKind, error) {
+	return c.resources.CanonicalGroupVersionKind(in)
 }
 
 // Get returns the remote object matching the supplied metadata as an unstructured bag of attributes.
@@ -201,7 +217,7 @@ func (c *Client) ListExtraObjects(ignore []model.K8sQbecMeta, scope ListQueryCon
 		cf, _ := model.NewComponentFilter(nil, nil)
 		scope.ComponentFilter = cf
 	}
-	ignoreCollection := newCollection(c.defaultNs, c.sm)
+	ignoreCollection := newCollection(c.defaultNs, c)
 	for _, obj := range ignore {
 		if !scope.KindFilter.ShouldInclude(obj.GetKind()) {
 			continue
@@ -229,15 +245,25 @@ func (c *Client) ListExtraObjects(ignore []model.K8sQbecMeta, scope ListQueryCon
 		return ret
 	}
 
+	var namespacedTypes, clusterTypes []schema.GroupVersionKind
+	for _, v := range c.resources.CanonicalResources() {
+		gvk := schema.GroupVersionKind{Group: v.Group, Version: v.Version, Kind: v.Kind}
+		if v.Namespaced {
+			namespacedTypes = append(namespacedTypes, gvk)
+		} else {
+			clusterTypes = append(clusterTypes, gvk)
+		}
+	}
+
 	qc := queryConfig{
 		scope:            scope,
 		resourceProvider: c.resourceInterface,
-		namespacedTypes:  filterEligibleTypes(c.sm.namespacedTypes()),
-		clusterTypes:     filterEligibleTypes(c.sm.clusterTypes()),
+		namespacedTypes:  filterEligibleTypes(namespacedTypes),
+		clusterTypes:     filterEligibleTypes(clusterTypes),
 		verbosity:        c.verbosity,
 	}
 	ol := objectLister{qc}
-	coll := newCollection(c.defaultNs, c.sm)
+	coll := newCollection(c.defaultNs, c)
 	if err := ol.serverObjects(coll); err != nil {
 		return nil, err
 	}
@@ -512,15 +538,12 @@ func (c *Client) resourceInterface(gvk schema.GroupVersionKind, namespace string
 	if err != nil {
 		return nil, err
 	}
-	info, err := c.sm.infoFor(gvk)
-	var res *metav1.APIResource
+	res, err := c.apiResourceFor(gvk)
 	if err != nil { // could be a resource for a CRD that was just created, re-query discovery
 		res, err = c.jitResource(gvk)
 		if err != nil {
 			return nil, errMetadataNotFound
 		}
-	} else {
-		res = &info.resource
 	}
 	return client.Resource(res, namespace), nil
 }
@@ -562,7 +585,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 }
 
 func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
-	res, _, err := c.ss.openAPIResources()
+	res, err := c.schema.OpenAPIResources()
 	if err != nil {
 		sio.Warnln("get open API resources", err)
 	}

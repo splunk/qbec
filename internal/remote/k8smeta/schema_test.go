@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package remote
+package k8smeta
 
 import (
 	"io/ioutil"
@@ -44,8 +44,8 @@ func (d sd) OpenAPISchema() (*openapi_v2.Document, error) {
 
 func TestMetadataValidator(t *testing.T) {
 	a := assert.New(t)
-	ss := newServerSchema(sd{})
-	v, err := ss.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
+	ss := NewServerSchema(sd{})
+	v, err := ss.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
 	require.Nil(t, err)
 	errs := v.Validate(loadObject(t, "ns-good.json").ToUnstructured())
 	require.Nil(t, errs)
@@ -55,7 +55,7 @@ func TestMetadataValidator(t *testing.T) {
 	a.Equal(1, len(errs))
 	a.Contains(errs[0].Error(), `unknown field "foo"`)
 
-	_, err = ss.validatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	_, err = ss.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
 	a.Equal(ErrSchemaNotFound, err)
 

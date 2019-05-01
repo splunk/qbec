@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package remote
+package k8smeta
 
 import (
 	"fmt"
@@ -28,87 +28,116 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+var defaultVerbs = []string{"create", "delete", "get", "list"}
+
 // gvkInfo is all the information we need for k8s types as represented by group-version-kind.
 type gvkInfo struct {
 	canonical schema.GroupVersionKind // the preferred gvk that includes aliasing (e.g. extensions/v1beta1 => apps/v1)
 	resource  metav1.APIResource      // the API resource for the gvk
 }
 
-type typeDiscovery interface {
+// ResourceDiscovery is the minimal interface required to gather information on
+// server resources.
+type ResourceDiscovery interface {
 	ServerGroups() (*metav1.APIGroupList, error)
 	ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error)
 }
 
-// serverMetadata provides metadata information for a K8s cluster.
-type serverMetadata struct {
-	disco    typeDiscovery
+// Resources provides resource information for a K8s cluster.
+type Resources struct {
+	disco    ResourceDiscovery
 	registry map[schema.GroupVersionKind]*gvkInfo
 }
 
-func newServerMetadata(disco typeDiscovery, warnFn func(...interface{})) (*serverMetadata, error) {
-	sm := &serverMetadata{
+// ResourceOpts is optional information for loading resources.
+type ResourceOpts struct {
+	RequiredVerbs []string             // verbs that a resource must support in order to be loaded. Defaults to create/delete/get/list
+	WarnFn        func(...interface{}) // a function that can print warnings in the resource discovery.
+}
+
+func (o *ResourceOpts) setDefaults() {
+	if o.WarnFn == nil {
+		o.WarnFn = func(args ...interface{}) {
+			fmt.Fprintln(os.Stderr, args...)
+		}
+	}
+	if len(o.RequiredVerbs) == 0 {
+		o.RequiredVerbs = defaultVerbs
+	}
+}
+
+// NewResources loads server resources using the supplied discovery interface.
+func NewResources(disco ResourceDiscovery, opts ResourceOpts) (*Resources, error) {
+	sm := &Resources{
 		disco:    disco,
 		registry: map[schema.GroupVersionKind]*gvkInfo{},
 	}
-	requiredVerbs := []string{"create", "delete", "get", "list"}
-	if err := sm.init(requiredVerbs, warnFn); err != nil {
+	opts.setDefaults()
+	if err := sm.init(opts); err != nil {
 		return nil, err
 	}
 	return sm, nil
 }
 
-func (sm *serverMetadata) infoFor(gvk schema.GroupVersionKind) (*gvkInfo, error) {
-	res, ok := sm.registry[gvk]
+// APIResource returns the API resource for the supplied group version kind or nil
+// if no resource could be found.
+func (r *Resources) APIResource(gvk schema.GroupVersionKind) *metav1.APIResource {
+	r0, ok := r.registry[gvk]
 	if !ok {
-		return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
+		return nil
 	}
-	return res, nil
+	res := r0.resource
+	return &res
 }
 
-// isNamespaced returns true if the resource corresponding to the supplied
-// GroupVersionKind is namespaced.
-func (sm *serverMetadata) isNamespaced(gvk schema.GroupVersionKind) (bool, error) {
-	info, err := sm.infoFor(gvk)
-	if err != nil {
-		return false, err
+// CanonicalResources returns a map of API resources keyed by group-kind.
+func (r *Resources) CanonicalResources() map[schema.GroupKind]metav1.APIResource {
+	canonical := map[schema.GroupVersionKind]bool{}
+	for _, v := range r.registry {
+		canonical[v.canonical] = true
 	}
-	return info.resource.Namespaced, nil
-}
 
-func (sm *serverMetadata) collectTypes(filter func(*gvkInfo) bool) []schema.GroupVersionKind {
-	canonicalTypes := map[schema.GroupVersionKind]bool{}
-	for _, t := range sm.registry {
-		canonicalTypes[t.canonical] = true
-	}
-	var ret []schema.GroupVersionKind
-	for t := range canonicalTypes {
-		info := sm.registry[t]
-		if info == nil {
-			panic(fmt.Errorf("no info for %s", t))
-		}
-		if filter(info) {
-			ret = append(ret, t)
-		}
+	ret := map[schema.GroupKind]metav1.APIResource{}
+	for k := range canonical {
+		r0 := r.registry[k]
+		res := r0.resource
+		res.Group = k.Group
+		res.Version = k.Version
+		res.Kind = k.Kind
+		ret[k.GroupKind()] = res
 	}
 	return ret
 }
 
-func (sm *serverMetadata) namespacedTypes() []schema.GroupVersionKind {
-	return sm.collectTypes(func(info *gvkInfo) bool { return info.resource.Namespaced })
-}
-
-func (sm *serverMetadata) clusterTypes() []schema.GroupVersionKind {
-	return sm.collectTypes(func(info *gvkInfo) bool { return !info.resource.Namespaced })
-}
-
-// canonicalGroupVersionKind provides the preferred/ canonical group version kind for the supplied input.
+// CanonicalGroupVersionKind provides the preferred/ canonical group version kind for the supplied input.
 // It takes aliases into account (e.g. extensions/Deployment same as apps/Deployment) for doing so.
-func (sm *serverMetadata) canonicalGroupVersionKind(gvk schema.GroupVersionKind) (schema.GroupVersionKind, error) {
-	info, err := sm.infoFor(gvk)
-	if err != nil {
-		return gvk, err
+func (r *Resources) CanonicalGroupVersionKind(gvk schema.GroupVersionKind) (schema.GroupVersionKind, error) {
+	res, ok := r.registry[gvk]
+	if !ok {
+		return gvk, fmt.Errorf("server does not recognize gvk %s", gvk)
 	}
-	return info.canonical, nil
+	return res.canonical, nil
+}
+
+// Dump dumps resource mappings using the supplied println function.
+func (r *Resources) Dump(println func(...interface{})) {
+	var display []string
+	for k, v := range r.registry {
+		l := fmt.Sprintf("%s/%s:%s", k.Group, k.Version, k.Kind)
+		r := fmt.Sprintf("%s/%s:%s", v.canonical.Group, v.canonical.Version, v.canonical.Kind)
+		ns := "cluster scoped"
+		if v.resource.Namespaced {
+			ns = "namespaced"
+		}
+		display = append(display, fmt.Sprintf("\t%-70s => %s (%s)", l, r, ns))
+	}
+	sort.Strings(display)
+	println()
+	println("group version kind map:")
+	for _, line := range display {
+		println(line)
+	}
+	println()
 }
 
 type equivalence struct {
@@ -176,7 +205,7 @@ type resolver struct {
 	err              error
 }
 
-func (r *resolver) resolve(disco typeDiscovery) {
+func (r *resolver) resolve(disco ResourceDiscovery) {
 	if r.warnFn == nil {
 		r.warnFn = func(args ...interface{}) { fmt.Fprintln(os.Stderr, args...) }
 	}
@@ -191,19 +220,22 @@ func (r *resolver) resolve(disco typeDiscovery) {
 			if strings.Contains(res.Name, "/") { // ignore sub-resources
 				continue
 			}
-			if !eligibleResource(res, r.requiredVerbs) { // remove stuff we cannot create and delete
+			if !eligibleResource(res, r.requiredVerbs) { // remove stuff we cannot manipulate.
 				continue
 			}
-			kindName := res.Kind
-			gvk := schema.GroupVersionKind{Group: r.group, Version: r.version, Kind: kindName}
+
+			// backfill the gv into res
+			res.Group = r.group
+			res.Version = r.version
+			gvk := schema.GroupVersionKind{Group: res.Group, Version: res.Version, Kind: res.Kind}
 			// the canonical version of the type may not be correct at this stage if the preferred group version
 			// does not have the specific kind. We will fix these anomalies later when all objects have been loaded
 			// and are known.
 			reg[gvk] = &gvkInfo{
-				canonical: schema.GroupVersionKind{Group: r.group, Version: r.preferredVersion, Kind: kindName},
+				canonical: schema.GroupVersionKind{Group: r.group, Version: r.preferredVersion, Kind: res.Kind},
 				resource:  res,
 			}
-			gk := schema.GroupKind{Group: r.group, Kind: kindName}
+			gk := schema.GroupKind{Group: r.group, Kind: res.Kind}
 			tracker[gk] = append(tracker[gk], gvk)
 		}
 	}
@@ -211,8 +243,8 @@ func (r *resolver) resolve(disco typeDiscovery) {
 	r.tracker = tracker
 }
 
-func (sm *serverMetadata) init(requiredVerbs []string, warnFn func(...interface{})) error {
-	groups, err := sm.disco.ServerGroups()
+func (r *Resources) init(opts ResourceOpts) error {
+	groups, err := r.disco.ServerGroups()
 	if err != nil {
 		return errors.Wrap(err, "get server groups")
 	}
@@ -229,8 +261,8 @@ func (sm *serverMetadata) init(requiredVerbs []string, warnFn func(...interface{
 		for _, gv := range group.Versions {
 			versionName := gv.Version
 			resolvers = append(resolvers, &resolver{
-				warnFn:           warnFn,
-				requiredVerbs:    requiredVerbs,
+				warnFn:           opts.WarnFn,
+				requiredVerbs:    opts.RequiredVerbs,
 				group:            groupName,
 				version:          versionName,
 				preferredVersion: preferredVersionName,
@@ -241,11 +273,11 @@ func (sm *serverMetadata) init(requiredVerbs []string, warnFn func(...interface{
 
 	var wg sync.WaitGroup
 	wg.Add(len(resolvers))
-	for _, r := range resolvers {
+	for _, r0 := range resolvers {
 		go func(resolver *resolver) {
 			defer wg.Done()
-			resolver.resolve(sm.disco)
-		}(r)
+			resolver.resolve(r.disco)
+		}(r0)
 	}
 	wg.Wait()
 
@@ -308,26 +340,6 @@ func (sm *serverMetadata) init(requiredVerbs []string, warnFn func(...interface{
 		}
 	}
 
-	sm.registry = reg
+	r.registry = reg
 	return nil
-}
-
-func (sm *serverMetadata) dump(println func(...interface{})) {
-	var display []string
-	for k, v := range sm.registry {
-		l := fmt.Sprintf("%s/%s:%s", k.Group, k.Version, k.Kind)
-		r := fmt.Sprintf("%s/%s:%s", v.canonical.Group, v.canonical.Version, v.canonical.Kind)
-		ns := "cluster scoped"
-		if v.resource.Namespaced {
-			ns = "namespaced"
-		}
-		display = append(display, fmt.Sprintf("\t%-70s => %s (%s)", l, r, ns))
-	}
-	sort.Strings(display)
-	println()
-	println("group version kind map:")
-	for _, line := range display {
-		println(line)
-	}
-	println()
 }
