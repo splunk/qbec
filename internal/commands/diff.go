@@ -22,6 +22,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/model"
@@ -124,79 +125,130 @@ type differ struct {
 	verbose     int
 }
 
-func (d *differ) names(ob model.K8sQbecMeta) (name, leftName, rightName string) {
+func (d *differ) names(ob model.K8sMeta) (name, leftName, rightName string) {
 	name = d.client.DisplayName(ob)
 	leftName = "live " + name
 	rightName = "config " + name
 	return
 }
 
-func (d *differ) fakeDiff(ob model.K8sQbecMeta, leftContent, rightContent string) error {
-	w := d.w
-	name, leftName, rightName := d.names(ob)
-	fileOpts := d.opts
-	fileOpts.LeftName = leftName
-	fileOpts.RightName = rightName
-	b, err := diff.Strings(leftContent, rightContent, fileOpts)
-	if err != nil {
-		sio.Errorf("error diffing %s, %v\n", name, err)
-		d.stats.errors(name)
-		return err
+type namedUn struct {
+	name string
+	obj  *unstructured.Unstructured
+}
+
+// writeDiff writes the diff between the left and right objects. Either of these
+// objects may be nil in which case the supplied object text is diffed against
+// a blank string. Care must be taken to ensure that only a single write is made to the writer for every invocation.
+// Otherwise output will be interleaved across diffs.
+func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
+	asYaml := func(obj interface{}) (string, error) {
+		b, err := yaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
 	}
-	fmt.Fprintln(w, string(b))
+	addLeader := func(s, leader string) string {
+		l := fmt.Sprintf("#\n# %s\n#\n", leader)
+		return l + s
+	}
+	defer func() {
+		if finalErr != nil {
+			d.stats.errors(name)
+			sio.Errorf("error diffing %s, %v\n", name, finalErr)
+		}
+	}()
+
+	fileOpts := d.opts
+	fileOpts.LeftName = left.name
+	fileOpts.RightName = right.name
+	switch {
+	case left.obj == nil && &right.obj == nil:
+		return fmt.Errorf("internal error: both left and right objects were nil for diff")
+	case left.obj != nil && right.obj != nil:
+		b, err := diff.Objects(left.obj, right.obj, fileOpts)
+		if err != nil {
+			return err
+		}
+		if len(b) == 0 {
+			if d.verbose > 0 {
+				fmt.Fprintf(d.w, "%s unchanged\n", name)
+			}
+			d.stats.same(name)
+		} else {
+			fmt.Fprintln(d.w, string(b))
+			d.stats.changed(name)
+		}
+	case left.obj == nil:
+		rightContent, err := asYaml(right.obj)
+		if err != nil {
+			return err
+		}
+		rightContent = addLeader(rightContent, "object doesn't exist on the server")
+		b, err := diff.Strings("", rightContent, fileOpts)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(d.w, string(b))
+		d.stats.added(name)
+	default:
+		leftContent, err := asYaml(left.obj)
+		if err != nil {
+			return err
+		}
+		leftContent = addLeader(leftContent, "object doesn't exist locally")
+		b, err := diff.Strings(leftContent, "", fileOpts)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(d.w, string(b))
+		d.stats.deleted(name)
+	}
 	return nil
 }
 
 // diff diffs the supplied object with its remote version and writes output to its writer.
-// Care must be taken to ensure  that only a single write is made to the writer for every invocation.
-// Otherwise output will be interleaved across diffs.
-func (d *differ) diff(ob model.K8sLocalObject) error {
-	w := d.w
+// The local version is found by downcasting the supplied metadata to a local object.
+// This cast should succeed for all but the deletion use case.
+func (d *differ) diff(ob model.K8sMeta) error {
 	name, leftName, rightName := d.names(ob)
 
 	remoteObject, err := d.client.Get(ob)
-	if err != nil {
-		if err == remote.ErrNotFound {
-			d.stats.added(name)
-			return d.fakeDiff(ob, "", "\nobject doesn't exist on the server")
-		}
+	if err != nil && err != remote.ErrNotFound {
 		d.stats.errors(name)
 		sio.Errorf("error fetching %s, %v\n", name, err)
 		return err
 	}
 
-	left, source := remote.GetPristineVersionForDiff(remoteObject)
-	leftName += " (source: " + source + ")"
-	right := ob.ToUnstructured()
-
-	if !d.showSecrets {
-		left, _ = model.HideSensitiveInfo(left)
-		right, _ = model.HideSensitiveInfo(right)
-	}
-
-	d.ignores.preprocess(left)
-	d.ignores.preprocess(right)
-
-	fileOpts := d.opts
-	fileOpts.LeftName = leftName
-	fileOpts.RightName = rightName
-	b, err := diff.Objects(left, right, fileOpts)
-	if err != nil {
-		sio.Errorf("error diffing %s, %v\n", name, err)
-		d.stats.errors(name)
-		return err
-	}
-
-	if len(b) == 0 {
-		if d.verbose > 0 {
-			fmt.Fprintf(w, "%s unchanged\n", name)
+	fixup := func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		if u == nil {
+			return u
 		}
-		d.stats.same(name)
-	} else {
-		fmt.Fprintln(w, string(b))
-		d.stats.changed(name)
+		if !d.showSecrets {
+			u, _ = model.HideSensitiveInfo(u)
+		}
+		d.ignores.preprocess(u)
+		return u
 	}
-	return nil
+
+	var left, right *unstructured.Unstructured
+	if err == nil {
+		var source string
+		left, source = remote.GetPristineVersionForDiff(remoteObject)
+		leftName += " (source: " + source + ")"
+	}
+	left = fixup(left)
+
+	if r, ok := ob.(model.K8sObject); ok {
+		right = fixup(r.ToUnstructured())
+	}
+	return d.writeDiff(name, namedUn{name: leftName, obj: left}, namedUn{name: rightName, obj: right})
+}
+
+// diffLocal adapts the diff method to run as a parallel worker.
+func (d *differ) diffLocal(ob model.K8sLocalObject) error {
+	return d.diff(ob)
 }
 
 type diffCommandConfig struct {
@@ -273,7 +325,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		showSecrets: config.showSecrets,
 		verbose:     config.Verbosity(),
 	}
-	dErr := runInParallel(objects, d.diff, config.parallel)
+	dErr := runInParallel(objects, d.diffLocal, config.parallel)
 
 	var listErr error
 	if dErr == nil {
@@ -282,9 +334,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 			listErr = err
 		} else {
 			for _, ob := range extra {
-				name := client.DisplayName(ob)
-				d.stats.deleted(name)
-				if err := d.fakeDiff(ob, "\nobject doesn't exist locally", ""); err != nil {
+				if err := d.diff(ob); err != nil {
 					return err
 				}
 			}

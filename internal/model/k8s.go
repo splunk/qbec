@@ -151,6 +151,9 @@ func HasSensitiveInfo(obj *unstructured.Unstructured) bool {
 // was modified from the original object. When no modifications are needed, the original object
 // is returned as-is.
 func HideSensitiveInfo(obj *unstructured.Unstructured) (*unstructured.Unstructured, bool) {
+	if obj == nil {
+		return obj, false
+	}
 	if !HasSensitiveInfo(obj) {
 		return obj, false
 	}
