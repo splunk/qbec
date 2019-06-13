@@ -1,6 +1,11 @@
 Changelog
 ---
 
+# v0.6.4 (Jun 13, 2019)
+
+* enhance diffs to show content that will be added and removed rather than single lines that said 'object not on sever',
+  'object not present locally' etc.
+
 ## v0.6.3 (Apr 20, 2019)
 
 * correctly configure the Kubernetes client such that auth plugins are supported. There are no features in this release.
