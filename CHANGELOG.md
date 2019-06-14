@@ -1,6 +1,10 @@
 Changelog
 ---
 
+# v0.6.5 (Jun 14, 2019)
+
+* add `--silent` option to validate to suppress success/ unknown type messages
+
 # v0.6.4 (Jun 13, 2019)
 
 * enhance diffs to show content that will be added and removed rather than single lines that said 'object not on sever',
