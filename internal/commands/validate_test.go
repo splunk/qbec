@@ -56,6 +56,18 @@ func TestValidateAll(t *testing.T) {
 	s.assertOutputLineMatch(regexp.MustCompile(`- bad config map`))
 }
 
+func TestValidateSilent(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	s.client.validatorFunc = factory
+	err := s.executeCommand("validate", "dev", "--silent")
+	require.NotNil(t, err)
+	s.assertOutputLineNoMatch(regexp.MustCompile(`✔ ClusterRole::allow-root-psp-policy is valid`))
+	s.assertOutputLineNoMatch(regexp.MustCompile(`\? PodSecurityPolicy::100-default: no schema found, cannot validate`))
+	s.assertOutputLineMatch(regexp.MustCompile(`✘ ConfigMap:bar-system:svc2-cm is invalid`))
+	s.assertOutputLineMatch(regexp.MustCompile(`- bad config map`))
+}
+
 func TestValidateNegative(t *testing.T) {
 	tests := []struct {
 		name     string

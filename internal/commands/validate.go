@@ -75,6 +75,7 @@ type validator struct {
 	client                 Client
 	stats                  validatorStats
 	red, green, dim, reset string
+	silent                 bool
 }
 
 func (v *validator) validate(obj model.K8sLocalObject) error {
@@ -82,7 +83,9 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	schema, err := v.client.ValidatorFor(obj.GetObjectKind().GroupVersionKind())
 	if err != nil {
 		if err == k8smeta.ErrSchemaNotFound {
-			fmt.Fprintf(v.w, "%s%s %s: no schema found, cannot validate%s\n", v.dim, unicodeQuestion, name, v.reset)
+			if !v.silent {
+				fmt.Fprintf(v.w, "%s%s %s: no schema found, cannot validate%s\n", v.dim, unicodeQuestion, name, v.reset)
+			}
 			v.stats.unknown(name)
 			return nil
 		}
@@ -92,7 +95,9 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	}
 	errs := schema.Validate(obj.ToUnstructured())
 	if len(errs) == 0 {
-		fmt.Fprintf(v.w, "%s%s %s is valid%s\n", v.green, unicodeCheck, name, v.reset)
+		if !v.silent {
+			fmt.Fprintf(v.w, "%s%s %s is valid%s\n", v.green, unicodeCheck, name, v.reset)
+		}
 		v.stats.valid(name)
 		return nil
 	}
@@ -105,10 +110,11 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	return nil
 }
 
-func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, colors bool, out io.Writer) error {
+func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, colors bool, out io.Writer, silent bool) error {
 	v := &validator{
 		w:      &lockWriter{Writer: out},
 		client: client,
+		silent: silent,
 	}
 	if colors {
 		v.green = escGreen
@@ -133,6 +139,7 @@ func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, c
 type validateCommandConfig struct {
 	*Config
 	parallel   int
+	silent     bool
 	filterFunc func() (filterParams, error)
 }
 
@@ -156,7 +163,7 @@ func doValidate(args []string, config validateCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	return validateObjects(objects, client, config.parallel, config.Colorize(), config.Stdout())
+	return validateObjects(objects, client, config.parallel, config.Colorize(), config.Stdout(), config.silent)
 
 }
 
@@ -172,6 +179,7 @@ func newValidateCommand(cp ConfigProvider) *cobra.Command {
 	}
 
 	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
+	cmd.Flags().BoolVar(&config.silent, "silent", false, "do not print success messages for every object")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.Config = cp()
 		return wrapError(doValidate(args, config))
