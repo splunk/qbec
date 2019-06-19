@@ -1,6 +1,10 @@
 Changelog
 ---
 
+# v0.6.6 (Jun 19, 2019)
+
+* add global options to pass in a list of string var definitions from a file
+
 # v0.6.5 (Jun 14, 2019)
 
 * add `--silent` option to validate to suppress success/ unknown type messages
