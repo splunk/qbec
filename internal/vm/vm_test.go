@@ -40,6 +40,8 @@ type result struct {
 	LibPath2   code   `json:"libpath2"`
 	InlineStr  string `json:"inlineStr"`
 	InlineCode bool   `json:"inlineCode"`
+	ListVar1   string `json:"listVar1"`
+	ListVar2   string `json:"listVar2"`
 }
 
 var evalCode = `
@@ -52,6 +54,8 @@ function (tlaStr,tlaCode) {
 	libPath2: import 'libcode2.libsonnet',
 	inlineStr: std.extVar('inlineStr'),
 	inlineCode: std.extVar('inlineCode'),
+	listVar1: std.extVar('listVar1'),
+	listVar2: std.extVar('listVar2'),
 }
 `
 
@@ -134,9 +138,12 @@ func TestVMConfig(t *testing.T) {
 		"--vm:tla-str=tlaStr=tlafoo",
 		"--vm:tla-code=tlaCode=true",
 		"--vm:jpath=testdata/lib1",
+		"--vm:ext-str-list=testdata/vars.txt",
 	})
 	os.Setenv("extStr", "envFoo")
-	defer os.Setenv("extStr", "")
+	defer os.Unsetenv("extStr")
+	os.Setenv("listVar2", "l2")
+	defer os.Unsetenv("listVar2")
 	err := cmd.Execute()
 	require.Nil(t, err)
 	var r result
@@ -151,6 +158,8 @@ func TestVMConfig(t *testing.T) {
 		LibPath2:   code{Foo: "lc2foo", Bar: "lc2bar"},
 		InlineStr:  "ifoo",
 		InlineCode: true,
+		ListVar1:   "l1",
+		ListVar2:   "l2",
 	}, r)
 }
 
@@ -187,9 +196,12 @@ func TestVMShorthandConfig(t *testing.T) {
 		"tlaStr=tlafoo",
 		"--vm:tla-code=tlaCode=true",
 		"--vm:jpath=testdata/lib1",
+		"--vm:ext-str-list=testdata/vars.txt",
 	})
 	os.Setenv("extStr", "envFoo")
-	defer os.Setenv("extStr", "")
+	defer os.Unsetenv("extStr")
+	os.Setenv("listVar2", "l2")
+	defer os.Unsetenv("listVar2")
 	err := cmd.Execute()
 	require.Nil(t, err)
 	var r result
@@ -204,6 +216,8 @@ func TestVMShorthandConfig(t *testing.T) {
 		LibPath2:   code{Foo: "lc2foo", Bar: "lc2bar"},
 		InlineStr:  "ifoo",
 		InlineCode: true,
+		ListVar1:   "l1",
+		ListVar2:   "l2",
 	}, r)
 }
 
@@ -292,6 +306,22 @@ func TestVMNegative(t *testing.T) {
 			asserter: func(a *assert.Assertions, err error) {
 				require.NotNil(t, err)
 				a.Contains(err.Error(), "unknown shorthand flag: 'A'")
+			},
+		},
+		{
+			name: "ext-list-bad-file",
+			args: []string{"show", "--vm:ext-str-list=no-such-file"},
+			asserter: func(a *assert.Assertions, err error) {
+				require.NotNil(t, err)
+				a.Contains(err.Error(), "no such file or directory")
+			},
+		},
+		{
+			name: "ext-list-bad-file",
+			args: []string{"show", "--vm:ext-str-list=testdata/vars.txt"},
+			asserter: func(a *assert.Assertions, err error) {
+				require.NotNil(t, err)
+				a.Contains(err.Error(), "process list testdata/vars.txt, line 3: no value found from environment for listVar2")
 			},
 		},
 	}
