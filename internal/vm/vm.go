@@ -18,12 +18,15 @@
 package vm
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/google/go-jsonnet"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -211,12 +214,13 @@ func (c Config) WithImporter(importer jsonnet.Importer) Config {
 type strFiles struct {
 	strings []string
 	files   []string
+	lists   []string
 }
 
 func getValues(name string, s strFiles) (map[string]string, error) {
 	ret := map[string]string{}
 
-	processStr := func(s string) error {
+	processStr := func(s string, ctx string) error {
 		parts := strings.SplitN(s, "=", 2)
 		if len(parts) == 2 {
 			ret[parts[0]] = parts[1]
@@ -224,7 +228,7 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 		}
 		v, ok := os.LookupEnv(s)
 		if !ok {
-			return fmt.Errorf("%s no value found from environment for %s", name, s)
+			return fmt.Errorf("%sno value found from environment for %s", ctx, s)
 		}
 		ret[s] = v
 		return nil
@@ -241,8 +245,35 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 		ret[parts[0]] = string(b)
 		return nil
 	}
+	processList := func(l string) error {
+		b, err := ioutil.ReadFile(l)
+		if err != nil {
+			return err
+		}
+		scanner := bufio.NewScanner(bytes.NewReader(b))
+		num := 0
+		for scanner.Scan() {
+			num++
+			line := scanner.Text()
+			if line != "" {
+				err := processStr(line, "")
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("process list %s, line %d", l, num))
+				}
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("process list %s", l))
+		}
+		return nil
+	}
+	for _, s := range s.lists {
+		if err := processList(s); err != nil {
+			return nil, err
+		}
+	}
 	for _, s := range s.strings {
-		if err := processStr(s); err != nil {
+		if err := processStr(s, name+" "); err != nil {
 			return nil, err
 		}
 	}
@@ -271,6 +302,7 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts boo
 		fs.StringArrayVar(&extStrings.strings, prefix+"ext-str", nil, "external string: <var>=[val], if <val> is omitted, get from environment var <var>")
 	}
 	fs.StringArrayVar(&extStrings.files, prefix+"ext-str-file", nil, "external string from file: <var>=<filename>")
+	fs.StringArrayVar(&extStrings.lists, prefix+"ext-str-list", nil, "file containing lines of the form <var>[=<val>]")
 	fs.StringArrayVar(&extCodes.strings, prefix+"ext-code", nil, "external code: <var>=[val], if <val> is omitted, get from environment var <var>")
 	fs.StringArrayVar(&extCodes.files, prefix+"ext-code-file", nil, "external code from file: <var>=<filename>")
 	if addShortcuts {
@@ -279,6 +311,7 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts boo
 		fs.StringArrayVar(&tlaStrings.strings, prefix+"tla-str", nil, "top-level string: <var>=[val], if <val> is omitted, get from environment var <var>")
 	}
 	fs.StringArrayVar(&tlaStrings.files, prefix+"tla-str-file", nil, "top-level string from file: <var>=<filename>")
+	fs.StringArrayVar(&tlaStrings.lists, prefix+"tla-str-list", nil, "file containing lines of the form <var>[=<val>]")
 	fs.StringArrayVar(&tlaCodes.strings, prefix+"tla-code", nil, "top-level code: <var>=[val], if <val> is omitted, get from environment var <var>")
 	fs.StringArrayVar(&tlaCodes.files, prefix+"tla-code-file", nil, "top-level code from file: <var>=<filename>")
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")

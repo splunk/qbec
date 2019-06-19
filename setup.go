@@ -158,7 +158,7 @@ func setup(root *cobra.Command) {
 		}
 		conf, err := vmConfigFn()
 		if err != nil {
-			return err
+			return commands.NewRuntimeError(err)
 		}
 		cmdCfg, err = cp.Config(app, conf, cfg)
 		return err

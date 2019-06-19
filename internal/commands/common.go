@@ -57,8 +57,8 @@ type runtimeError struct {
 	error
 }
 
-// newRuntimeError returns a runtime error
-func newRuntimeError(err error) error {
+// NewRuntimeError returns a runtime error
+func NewRuntimeError(err error) error {
 	return &runtimeError{
 		error: err,
 	}
@@ -78,7 +78,7 @@ func wrapError(err error) error {
 	if isUsageError(err) {
 		return err
 	}
-	return newRuntimeError(err)
+	return NewRuntimeError(err)
 }
 
 // Client encapsulates all remote operations needed for the superset of all commands.

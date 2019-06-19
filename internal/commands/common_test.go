@@ -120,7 +120,7 @@ func TestUsageError(t *testing.T) {
 }
 
 func TestRuntimeError(t *testing.T) {
-	re := newRuntimeError(errors.New("foobar"))
+	re := NewRuntimeError(errors.New("foobar"))
 	a := assert.New(t)
 	a.True(IsRuntimeError(re))
 	a.False(isUsageError(re))
