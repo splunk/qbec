@@ -227,8 +227,11 @@ func (s *scaffold) outputStats() map[string]interface{} {
 	return data.Stats
 }
 
-func newScaffold(t *testing.T) *scaffold {
-	reset := setPwd(t, "../../examples/test-app")
+func newCustomScaffold(t *testing.T, dir string) *scaffold {
+	if dir == "" {
+		dir = "../../examples/test-app"
+	}
+	reset := setPwd(t, dir)
 	app, err := model.NewApp("qbec.yaml", "")
 	require.Nil(t, err)
 	out := bytes.NewBuffer(nil)
@@ -266,4 +269,9 @@ func newScaffold(t *testing.T) *scaffold {
 		sio.EnableColors = oldColors
 	}
 	return s
+
+}
+
+func newScaffold(t *testing.T) *scaffold {
+	return newCustomScaffold(t, "")
 }

@@ -74,6 +74,7 @@ func TestValidateNegative(t *testing.T) {
 		args     []string
 		init     func(s *scaffold)
 		asserter func(s *scaffold, err error)
+		dir      string
 	}{
 		{
 			name: "no env",
@@ -121,6 +122,26 @@ func TestValidateNegative(t *testing.T) {
 			},
 		},
 		{
+			name: "duplicate objects",
+			dir:  "testdata/dups",
+			args: []string{"validate", "dev"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(IsRuntimeError(err))
+				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
+			},
+		},
+		{
+			name: "duplicate objects even with filters",
+			dir:  "testdata/dups",
+			args: []string{"validate", "dev", "-K", "configmap"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(IsRuntimeError(err))
+				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
+			},
+		},
+		{
 			name: "baseline",
 			args: []string{"validate", "_"},
 			asserter: func(s *scaffold, err error) {
@@ -147,8 +168,9 @@ func TestValidateNegative(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := newScaffold(t)
+			s := newCustomScaffold(t, test.dir)
 			defer s.reset()
+			s.client.validatorFunc = factory
 			if test.init != nil {
 				test.init(s)
 			}
