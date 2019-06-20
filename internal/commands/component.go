@@ -75,7 +75,7 @@ func doComponentList(args []string, config componentListCommandConfig) error {
 	}
 	env := args[0]
 	if config.objects {
-		objects, err := filteredObjects(config.Config, env, filterParams{})
+		objects, err := filteredObjects(config.Config, env, nil, filterParams{})
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 	}
 
 	getObjects := func(env string) (str string, name string, err error) {
-		objs, err := filteredObjects(config.Config, env, filterParams{})
+		objs, err := filteredObjects(config.Config, env, nil, filterParams{})
 		if err != nil {
 			return
 		}

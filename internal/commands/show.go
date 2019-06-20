@@ -103,7 +103,15 @@ func doShow(args []string, config showCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.Config, env, fp)
+
+	// shallow duplicate check
+	keyFunc := func(obj model.K8sMeta) string {
+		gvk := obj.GetObjectKind().GroupVersionKind()
+		ns := obj.GetNamespace()
+		return fmt.Sprintf("%s:%s:%s:%s", gvk.Group, gvk.Kind, ns, obj.GetName())
+	}
+
+	objects, err := filteredObjects(config.Config, env, keyFunc, fp)
 	if err != nil {
 		return err
 	}

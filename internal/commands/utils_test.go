@@ -49,6 +49,7 @@ type client struct {
 	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	listExtraFunc func(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
 	deleteFunc    func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
+	objectKeyFunc func(obj model.K8sMeta) string
 }
 
 func (c *client) DisplayName(o model.K8sMeta) string {
@@ -98,6 +99,13 @@ func (c *client) Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, err
 		return c.deleteFunc(obj, dryRun)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (c *client) ObjectKey(obj model.K8sMeta) string {
+	if c.objectKeyFunc != nil {
+		return c.objectKeyFunc(obj)
+	}
+	return fmt.Sprintf("%s:%s:%s:%s", obj.GetObjectKind().GroupVersionKind().Group, obj.GetKind(), obj.GetNamespace(), obj.GetName())
 }
 
 func setPwd(t *testing.T, dir string) func() {

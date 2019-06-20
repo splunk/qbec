@@ -155,11 +155,11 @@ func doValidate(args []string, config validateCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.Config, env, fp)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
-	client, err := config.Client(env)
+	objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}

@@ -90,6 +90,7 @@ type Client interface {
 	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
 	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
+	ObjectKey(obj model.K8sMeta) string
 }
 
 // ConfigProvider provides standard configuration available to all commands
