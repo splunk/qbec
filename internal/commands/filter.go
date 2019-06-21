@@ -17,6 +17,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
@@ -54,17 +56,50 @@ func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filter
 	}
 }
 
+// keyFunc is a function that provides a string key for an object
+type keyFunc func(object model.K8sMeta) string
+
 func allObjects(cfg *Config, env string) ([]model.K8sLocalObject, error) {
-	return filteredObjects(cfg, env, filterParams{kindFilter: nil})
+	return filteredObjects(cfg, env, nil, filterParams{kindFilter: nil})
 }
 
-func filteredObjects(cfg *Config, env string, fp filterParams) ([]model.K8sLocalObject, error) {
+func displayName(obj model.K8sLocalObject) string {
+	group := obj.GetObjectKind().GroupVersionKind().Group
+	if group != "" {
+		group += "/"
+	}
+	ns := obj.GetNamespace()
+	if ns != "" {
+		ns += "/"
+	}
+	return fmt.Sprintf("%s%s %s%s (component: %s)", group, obj.GetKind(), ns, obj.GetName(), obj.Component())
+}
+
+func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
+	if kf == nil {
+		return nil
+	}
+	objectsByKey := map[string]model.K8sLocalObject{}
+	for _, o := range objects {
+		key := kf(o)
+		if prev, ok := objectsByKey[key]; ok {
+			return fmt.Errorf("duplicate objects %s and %s", displayName(prev), displayName(o))
+		}
+		objectsByKey[key] = o
+	}
+	return nil
+}
+
+func filteredObjects(cfg *Config, env string, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
 	components, err := cfg.App().ComponentsForEnvironment(env, fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err
 	}
 	output, err := eval.Components(components, cfg.EvalContext(env))
 	if err != nil {
+		return nil, err
+	}
+	if err := checkDuplicates(output, kf); err != nil {
 		return nil, err
 	}
 	of := fp.kindFilter

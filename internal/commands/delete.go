@@ -53,7 +53,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(config.Config, env, fp)
+		objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
 		if err != nil {
 			return err
 		}

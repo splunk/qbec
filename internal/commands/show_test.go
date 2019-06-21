@@ -199,6 +199,7 @@ func TestShowNegative(t *testing.T) {
 		name     string
 		args     []string
 		asserter func(s *scaffold, err error)
+		dir      string
 	}{
 		{
 			name: "no env",
@@ -254,10 +255,20 @@ func TestShowNegative(t *testing.T) {
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
 			},
 		},
+		{
+			name: "duplicate objects",
+			args: []string{"show", "dev"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(IsRuntimeError(err))
+				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
+			},
+			dir: "testdata/dups",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := newScaffold(t)
+			s := newCustomScaffold(t, test.dir)
 			defer s.reset()
 			err := s.executeCommand(test.args...)
 			require.NotNil(t, err)

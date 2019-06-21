@@ -275,12 +275,12 @@ func doDiff(args []string, config diffCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(config.Config, env, fp)
+	client, err := config.Client(env)
 	if err != nil {
 		return err
 	}
 
-	client, err := config.Client(env)
+	objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}

@@ -107,6 +107,25 @@ func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, e
 	return c.schema.ValidatorFor(gvk)
 }
 
+// objectNamespace returns the namespace for the specified object. It returns a blank
+// string when the object is cluster-scoped. For namespace-scoped objects it returns
+// the default namespace when the object does not have one set. It does not fail if the
+// object type is not known and just returns whatever is specified for the object.
+func (c *Client) objectNamespace(o model.K8sMeta) string {
+	info := c.resources.APIResource(o.GetObjectKind().GroupVersionKind())
+	ns := o.GetNamespace()
+	if info != nil {
+		if info.Namespaced {
+			if ns == "" {
+				ns = c.defaultNs
+			}
+		} else {
+			ns = ""
+		}
+	}
+	return ns
+}
+
 // DisplayName returns the display name of the supplied K8s object.
 func (c *Client) DisplayName(o model.K8sMeta) string {
 	sm := c.resources
@@ -121,17 +140,8 @@ func (c *Client) DisplayName(o model.K8sMeta) string {
 	}
 
 	displayName := func() string {
-		ns := o.GetNamespace()
+		ns := c.objectNamespace(o)
 		name := o.GetName()
-		if info != nil {
-			if info.Namespaced {
-				if ns == "" {
-					ns = c.defaultNs
-				}
-			} else {
-				ns = ""
-			}
-		}
 		if ns == "" {
 			return name
 		}
@@ -185,6 +195,18 @@ func (c *Client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 	return u, nil
+}
+
+// ObjectKey returns a string key for the supplied object that includes its group-kind,
+// namespace and name. Input values are used in case canonical values cannot be derived
+// (e.g. for custom resources whose CRDs haven't yet been created).
+func (c *Client) ObjectKey(obj model.K8sMeta) string {
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if canon, err := c.resources.CanonicalGroupVersionKind(gvk); err == nil {
+		gvk = canon
+	}
+	ns := c.objectNamespace(obj)
+	return fmt.Sprintf("%s:%s:%s:%s", gvk.Group, gvk.Kind, ns, obj.GetName())
 }
 
 // ListQueryScope defines the scope at which list queries need to be executed.
