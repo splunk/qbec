@@ -1,15 +1,22 @@
 Changelog
 ---
 
-# v0.6.6 (Jun 19, 2019)
+## v0.7.0 (Jun 20, 2019)
+
+safety feature: add duplicate checks to disallow more than one object with the same API group, kind, namespace and name.
+
+These checks occur before any component or kind filtering and cannot be suppressed. To this end, this release _may_
+be backwards-incompatible if you already have duplicate objects in your component list.
+
+## v0.6.6 (Jun 19, 2019)
 
 * add global options to pass in a list of string var definitions from a file
 
-# v0.6.5 (Jun 14, 2019)
+## v0.6.5 (Jun 14, 2019)
 
 * add `--silent` option to validate to suppress success/ unknown type messages
 
-# v0.6.4 (Jun 13, 2019)
+## v0.6.4 (Jun 13, 2019)
 
 * enhance diffs to show content that will be added and removed rather than single lines that said 'object not on sever',
   'object not present locally' etc.
