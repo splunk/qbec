@@ -169,7 +169,6 @@ func TestAppNegative(t *testing.T) {
 	defer reset()
 
 	tests := []struct {
-		name     string
 		tag      string
 		file     string
 		asserter func(t *testing.T, err error)

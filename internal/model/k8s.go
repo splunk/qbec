@@ -134,7 +134,7 @@ func init() {
 func obfuscate(value string) string {
 	realValue := randomPrefix + ":" + value
 	h := sha256.New()
-	h.Write([]byte(realValue))
+	_, _ = h.Write([]byte(realValue)) // guaranteed to never fail per docs
 	shasum := h.Sum(nil)
 	return fmt.Sprintf("redacted.%s", base64.RawURLEncoding.EncodeToString(shasum))
 }
