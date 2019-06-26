@@ -110,7 +110,7 @@ func (r *remoteLister) start(ignores []model.K8sLocalObject, config remote.ListQ
 		}
 		start := time.Now()
 		list, err := r.client.ListExtraObjects(filtered, config)
-		r.ch <- listResult{data: list, err: err, duration: time.Now().Sub(start).Round(time.Millisecond)}
+		r.ch <- listResult{data: list, err: err, duration: time.Since(start).Round(time.Millisecond)}
 	}()
 }
 
@@ -124,9 +124,7 @@ func (r *remoteLister) results() ([]model.K8sQbecMeta, error) {
 	}
 	sio.Debugf("server objects load took %v\n", lr.duration)
 	var ret []model.K8sQbecMeta
-	for _, ob := range lr.data {
-		ret = append(ret, ob)
-	}
+	ret = append(ret, lr.data...)
 	return ret, nil
 
 }

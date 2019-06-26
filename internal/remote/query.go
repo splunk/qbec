@@ -50,7 +50,7 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 	startTime := time.Now()
 	defer func() {
 		if o.verbosity > 0 {
-			sio.Debugf("list objects: type=%s,namespace=%q took %v\n", gvk, namespace, time.Now().Sub(startTime).Round(time.Millisecond))
+			sio.Debugf("list objects: type=%s,namespace=%q took %v\n", gvk, namespace, time.Since(startTime).Round(time.Millisecond))
 		}
 	}()
 	xface, err := o.resourceProvider(gvk, namespace)

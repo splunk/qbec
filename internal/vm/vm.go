@@ -41,11 +41,7 @@ type Config struct {
 }
 
 func copyArray(in []string) []string {
-	var ret []string
-	for _, p := range in {
-		ret = append(ret, p)
-	}
-	return ret
+	return append([]string{}, in...)
 }
 
 func copyMap(m map[string]string) map[string]string {
@@ -346,10 +342,8 @@ func New(config Config) *VM {
 	vm := jsonnet.MakeVM()
 	registerNativeFuncs(vm)
 	registerVars := func(m map[string]string, registrar func(k, v string)) {
-		if m != nil {
-			for k, v := range m {
-				registrar(k, v)
-			}
+		for k, v := range m {
+			registrar(k, v)
 		}
 	}
 	registerVars(config.vars, vm.ExtVar)

@@ -119,7 +119,7 @@ func main() {
 	default:
 		sio.Println()
 		cmd.Example = "" // do not print examples when there is a usage error
-		cmd.Usage()
+		_ = cmd.Usage()
 		sio.Println()
 	}
 	sio.Errorln(err)

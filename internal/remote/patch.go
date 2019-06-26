@@ -231,7 +231,8 @@ func (p *patcher) patch(serverObj *unstructured.Unstructured, desired model.K8sO
 		if i > triesBeforeBackOff {
 			p.backOff.Sleep(backOffPeriod)
 		}
-		ri, err := p.provider(gvk, namespace)
+		var ri dynamic.ResourceInterface
+		ri, err = p.provider(gvk, namespace)
 		if err != nil {
 			return nil, err
 		}

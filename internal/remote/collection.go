@@ -17,8 +17,6 @@
 package remote
 
 import (
-	"sort"
-
 	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -72,6 +70,7 @@ func newCollection(defaultNs string, meta collectMetadata) *collection {
 	}
 }
 
+/*
 type collectionStats struct {
 	namespaces            []string                  // distinct namespaces across all objects
 	namespacedObjectCount int                       // count of namespaced objects
@@ -110,6 +109,7 @@ func (c *collection) stats() collectionStats {
 	})
 	return ret
 }
+*/
 
 // add adds the supplied object potentially transforming its gvk to its canonical form.
 func (c *collection) add(object model.K8sQbecMeta) error {

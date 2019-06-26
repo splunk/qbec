@@ -130,10 +130,6 @@ type scaffold struct {
 	cmd        *cobra.Command
 }
 
-func (s *scaffold) output() io.Writer {
-	return s.outCapture
-}
-
 func (s *scaffold) stdout() string {
 	return s.outCapture.String()
 }
@@ -207,13 +203,6 @@ func (s *scaffold) assertErrorLineMatch(r *regexp.Regexp) {
 	}
 }
 
-func (s *scaffold) assertErrorLineNoMatch(r *regexp.Regexp) {
-	b := s.testMatch(s.stderr(), r)
-	if b {
-		s.t.Errorf("[unexpected] error line matches: %v", r)
-	}
-}
-
 func (s *scaffold) outputStats() map[string]interface{} {
 	out := s.stdout()
 	pos := strings.LastIndex(out, "---")
@@ -245,6 +234,8 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		Colors:      false,
 	}
 	config, err := cp.internalConfig(app, vm.Config{}, clientProvider)
+	require.Nil(t, err)
+
 	cmd := &cobra.Command{
 		Use: "qbec-test",
 	}

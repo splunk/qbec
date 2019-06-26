@@ -86,7 +86,7 @@ func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns s
 	if verbosity > 0 {
 		resources.Dump(sio.Debugln)
 	}
-	duration := time.Now().Sub(start).Round(time.Millisecond)
+	duration := time.Since(start).Round(time.Millisecond)
 	sio.Debugln("cluster metadata load took", duration)
 
 	ss := k8smeta.NewServerSchema(disco)

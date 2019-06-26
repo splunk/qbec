@@ -65,6 +65,7 @@ expandHelmTemplate(
 
 	var output []cmOrSecret
 	err = json.Unmarshal([]byte(code), &output)
+	require.Nil(t, err)
 
 	require.Equal(t, 2, len(output))
 
