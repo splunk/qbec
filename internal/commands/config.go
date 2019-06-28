@@ -37,6 +37,8 @@ import (
 // clientProvider returns a client for the supplied environment.
 type clientProvider func(env string) (Client, error)
 
+type kubeAttrsProvider func(env string) (*remote.KubeAttributes, error)
+
 // stdClientProvider provides clients based on the supplied Kubernetes config
 type stdClientProvider struct {
 	app       *model.App
@@ -63,6 +65,24 @@ func (s stdClientProvider) Client(env string) (Client, error) {
 	return rem, nil
 }
 
+func (s stdClientProvider) Attrs(env string) (*remote.KubeAttributes, error) {
+	server, err := s.app.ServerURL(env)
+	if err != nil {
+		return nil, errors.Wrap(err, "get kubernetes attrs")
+	}
+	ns := s.app.DefaultNamespace(env)
+	rem, err := s.config.KubeAttributes(remote.ConnectOpts{
+		EnvName:   env,
+		ServerURL: server,
+		Namespace: ns,
+		Verbosity: s.verbosity,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rem, nil
+}
+
 // ConfigFactory provides a config.
 type ConfigFactory struct {
 	Stdout          io.Writer //standard output for command
@@ -74,7 +94,7 @@ type ConfigFactory struct {
 	StrictVars      bool      // strict mode for variable evaluation
 }
 
-func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider) (*Config, error) {
+func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*Config, error) {
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
@@ -89,6 +109,7 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 		app:             app,
 		vmc:             vmConfig,
 		clp:             clp,
+		attrsp:          kp,
 		colors:          cp.Colors,
 		yes:             cp.SkipConfirm,
 		evalConcurrency: cp.EvalConcurrency,
@@ -110,7 +131,7 @@ func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig 
 		config:    remoteConfig,
 		verbosity: cp.Verbosity,
 	}
-	return cp.internalConfig(app, vmConfig, scp.Client)
+	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }
 
 // Config is the command configuration.
@@ -120,6 +141,7 @@ type Config struct {
 	tlaVars         map[string]string // all top level string vars specified for the command
 	tlaCodeVars     map[string]string // all top level code vars specified for the command
 	clp             clientProvider    // the client provider
+	attrsp          kubeAttrsProvider // the kubernetes attribute provider
 	colors          bool              // colorize output
 	yes             bool              // auto-confirm
 	evalConcurrency int               // concurrency of component eval
@@ -258,6 +280,11 @@ func (c Config) vmConfig(tlaVars []string) vm.Config {
 // Client returns a client for the supplied environment
 func (c Config) Client(env string) (Client, error) {
 	return c.clp(env)
+}
+
+// KubeAttributes returns the kubernetes attributes for the supplied environment
+func (c Config) KubeAttributes(env string) (*remote.KubeAttributes, error) {
+	return c.attrsp(env)
 }
 
 // Colorize returns true if output needs to be colorized.

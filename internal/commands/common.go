@@ -105,6 +105,7 @@ func Setup(root *cobra.Command, cp ConfigProvider) {
 	root.AddCommand(newDeleteCommand(cp))
 	root.AddCommand(newComponentCommand(cp))
 	root.AddCommand(newParamCommand(cp))
+	root.AddCommand(newEnvCommand(cp))
 	root.AddCommand(newInitCommand())
 }
 

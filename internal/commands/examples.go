@@ -120,3 +120,17 @@ func paramDiffExamples() string {
 		newExample("param diff dev prod", "show differences in parameter values  between dev and prod"),
 	)
 }
+
+func envListExamples() string {
+	return exampleHelp(
+		newExample("env list", "list all environment names, one per line in sorted order"),
+		newExample("env list -o json", "list all enviroments in JSON format, (use -o yaml for YAML)"),
+	)
+}
+
+func envVarsExamples() string {
+	return exampleHelp(
+		newExample("env vars <env>", "print kubernetes variables for env in eval format, run as `eval $(qbec env vars env)`"),
+		newExample("env vars -o json", "print kubernetes variables for env in JSON format, (use -o yaml for YAML)"),
+	)
+}

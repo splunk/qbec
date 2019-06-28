@@ -227,13 +227,20 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 
 	c := &client{}
 	clientProvider := func(env string) (Client, error) { return c, nil }
-
+	attrsProvider := func(env string) (*remote.KubeAttributes, error) {
+		return &remote.KubeAttributes{
+			Context:    "foo",
+			ConfigFile: "kube.config",
+			Namespace:  "my-ns",
+			Cluster:    "dev.server.com",
+		}, nil
+	}
 	cp := ConfigFactory{
 		Stdout:      out,
 		SkipConfirm: true,
 		Colors:      false,
 	}
-	config, err := cp.internalConfig(app, vm.Config{}, clientProvider)
+	config, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider)
 	require.Nil(t, err)
 
 	cmd := &cobra.Command{

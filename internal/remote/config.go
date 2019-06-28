@@ -19,6 +19,8 @@ package remote
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -101,6 +103,30 @@ func (c *Config) overrideCluster(kc clientcmd.ClientConfig, opts ConnectOpts) er
 		}
 	}
 	return fmt.Errorf("unable to find any cluster with URL %q  (for env %s) in the kube config", opts.ServerURL, opts.EnvName)
+}
+
+// KubeAttributes is a collection k8s attributes pertaining to an connection.
+type KubeAttributes struct {
+	ConfigFile string `json:"configFile"` // the kubeconfig file or a list of such file separated by the list path separator
+	Context    string `json:"context"`    // the context to use, if known
+	Cluster    string `json:"cluster"`    // the cluster to use, always set
+	Namespace  string `json:"namespace"`  // the nanespace to use
+}
+
+// KubeAttributes returns client attributes for the supplied connection options.
+func (c *Config) KubeAttributes(opts ConnectOpts) (*KubeAttributes, error) {
+	if c.kubeconfig == nil {
+		c.kubeconfig = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(c.loadingRules, c.overrides)
+	}
+	if err := c.overrideCluster(c.kubeconfig, opts); err != nil {
+		return nil, err
+	}
+	return &KubeAttributes{
+		ConfigFile: strings.Join(c.loadingRules.Precedence, string(filepath.ListSeparator)),
+		Cluster:    c.overrides.Context.Cluster,
+		Context:    c.overrides.CurrentContext,
+		Namespace:  opts.Namespace,
+	}, nil
 }
 
 // Client returns a client that correctly points to the server as specified in the connection options.
