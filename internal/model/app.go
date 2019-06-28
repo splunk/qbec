@@ -264,6 +264,10 @@ func (a *App) ComponentsForEnvironment(env string, includes, excludes []string) 
 	return toList(subret), nil
 }
 
+func (a *App) Environments() map[string]Environment {
+	return a.inner.Spec.Environments
+}
+
 // DeclaredVars returns defaults for all declared external variables, keyed by variable name.
 func (a *App) DeclaredVars() map[string]interface{} {
 	ret := map[string]interface{}{}
