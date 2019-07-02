@@ -225,7 +225,7 @@
   version = "v1.3.1"
 
 [[projects]]
-  digest = "1:b72c8ef795e79b80e0a1405566d7ec07b3f465114d2b3f66b4de1f1699fdbe5c"
+  digest = "1:ae9159e8ed8c974de05448c643a52525aacd504ab699f82d897b2ffac036873a"
   name = "github.com/google/go-jsonnet"
   packages = [
     ".",
@@ -233,8 +233,8 @@
     "parser",
   ]
   pruneopts = "UT"
-  revision = "6144c57d2a054b72ff46219f655bf863b940e174"
-  version = "v0.11.2"
+  revision = "0d560aff58806e4abfbada4b2879b7ac8a35ffc3"
+  version = "v0.13.0"
 
 [[projects]]
   digest = "1:a6181aca1fd5e27103f9a920876f29ac72854df7345a39f3b01e61c8c94cc8af"
