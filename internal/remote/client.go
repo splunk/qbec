@@ -217,36 +217,27 @@ type ListQueryScope struct {
 
 // ListQueryConfig is the config with which to execute list queries.
 type ListQueryConfig struct {
-	Application string // must be non-blank
-	Tag         string // may be blank
-	Environment string // must be non-blank
-	ListQueryScope
-	ComponentFilter     model.Filter // filters for object component
+	Application         string       // must be non-blank
+	Tag                 string       // may be blank
+	Environment         string       // must be non-blank
+	ListQueryScope                   // the query scope for namespaces and non-namespaced resources
 	KindFilter          model.Filter // filters for object kind
 	Concurrency         int          // concurrent queries to execute
 	DisableAllNsQueries bool         // do not perform list queries across namespaces when multiple namespaces in picture
 }
 
-// ListExtraObjects returns all objects for the application and environment that do not belong to the ignore list
-// supplied. The ignore list is usually the unfiltered list of all objects belonging to all components for an
-// environment.
-func (c *Client) ListExtraObjects(ignore []model.K8sQbecMeta, scope ListQueryConfig) ([]model.K8sQbecMeta, error) {
+// Collection represents a set of k8s objects with the ability to remove a subset of objects from it.
+type Collection interface {
+	Remove(obj []model.K8sQbecMeta) error // remove all objects represented by the input list
+	ToList() []model.K8sQbecMeta          // return a list of remaining objects
+}
+
+// ListObjects returns all objects for the application and environment for the namespace /cluster scopes
+// and kind filtering indicated by the query configuration.
+func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 	if scope.KindFilter == nil {
 		kf, _ := model.NewKindFilter(nil, nil)
 		scope.KindFilter = kf
-	}
-	if scope.ComponentFilter == nil {
-		cf, _ := model.NewComponentFilter(nil, nil)
-		scope.ComponentFilter = cf
-	}
-	ignoreCollection := newCollection(c.defaultNs, c)
-	for _, obj := range ignore {
-		if !scope.KindFilter.ShouldInclude(obj.GetKind()) {
-			continue
-		}
-		if err := ignoreCollection.add(obj); err != nil {
-			return nil, errors.Wrap(err, "add retained object")
-		}
 	}
 
 	// handle special cases
@@ -289,15 +280,7 @@ func (c *Client) ListExtraObjects(ignore []model.K8sQbecMeta, scope ListQueryCon
 	if err := ol.serverObjects(coll); err != nil {
 		return nil, err
 	}
-
-	baseList := coll.subtract(ignoreCollection).toList()
-	var ret []model.K8sQbecMeta
-	for _, ob := range baseList {
-		if scope.ComponentFilter.ShouldInclude(ob.Component()) {
-			ret = append(ret, ob)
-		}
-	}
-	return ret, nil
+	return coll, nil
 }
 
 type updateResult struct {

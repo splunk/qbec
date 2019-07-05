@@ -16,7 +16,27 @@
             name: name,
         },
         data: vars,
-    }
+    },
+    deployment(namespace, name, image):: {
+        apiVersion: 'apps/v1',
+        kind: 'Deployment',
+        metadata: {
+            namespace: namespace,
+            name: name,
+        },
+        spec: {
+            template: {
+                spec: {
+                    containers: [
+                    {
+                        name: 'main',
+                        image: image,
+                    },
+                    ],
+                },
+            },
+        },
+    },
 }
 
 

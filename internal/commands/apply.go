@@ -87,8 +87,9 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
+	var all []model.K8sLocalObject
 	if config.gc {
-		all, err := allObjects(config.Config, env)
+		all, err = allObjects(config.Config, env)
 		if err != nil {
 			return err
 		}
@@ -97,17 +98,12 @@ func doApply(args []string, config applyCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		cf, err := model.NewComponentFilter(fp.includes, fp.excludes)
-		if err != nil {
-			return err
-		}
-		lister.start(all, remote.ListQueryConfig{
-			Application:     config.App().Name(),
-			Tag:             config.App().Tag(),
-			Environment:     env,
-			KindFilter:      fp.kindFilter,
-			ComponentFilter: cf,
-			ListQueryScope:  scope,
+		lister.start(remote.ListQueryConfig{
+			Application:    config.App().Name(),
+			Tag:            config.App().Tag(),
+			Environment:    env,
+			KindFilter:     fp.kindFilter,
+			ListQueryScope: scope,
 		})
 	}
 
@@ -135,7 +131,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	// process deletions
-	deletions, err := lister.results()
+	deletions, err := lister.deletions(all, fp.Includes)
 	if err != nil {
 		return err
 	}

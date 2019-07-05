@@ -286,24 +286,23 @@ func doDiff(args []string, config diffCommandConfig) error {
 	}
 
 	var lister lister = &stubLister{}
+	var all []model.K8sLocalObject
 	if config.showDeletions {
-		all, err := allObjects(config.Config, env)
+		all, err = allObjects(config.Config, env)
 		if err != nil {
 			return err
 		}
-		cf, _ := model.NewComponentFilter(fp.includes, fp.excludes)
 		var scope remote.ListQueryScope
 		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}
-		lister.start(all, remote.ListQueryConfig{
-			Application:     config.App().Name(),
-			Tag:             config.App().Tag(),
-			Environment:     env,
-			KindFilter:      fp.kindFilter,
-			ComponentFilter: cf,
-			ListQueryScope:  scope,
+		lister.start(remote.ListQueryConfig{
+			Application:    config.App().Name(),
+			Tag:            config.App().Tag(),
+			Environment:    env,
+			KindFilter:     fp.kindFilter,
+			ListQueryScope: scope,
 		})
 	}
 
@@ -329,7 +328,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 
 	var listErr error
 	if dErr == nil {
-		extra, err := lister.results()
+		extra, err := lister.deletions(all, fp.Includes)
 		if err != nil {
 			listErr = err
 		} else {

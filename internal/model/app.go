@@ -264,6 +264,7 @@ func (a *App) ComponentsForEnvironment(env string, includes, excludes []string) 
 	return toList(subret), nil
 }
 
+// Environments returns the environments defined for the app.
 func (a *App) Environments() map[string]Environment {
 	return a.inner.Spec.Environments
 }

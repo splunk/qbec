@@ -65,23 +65,18 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		cf, err := model.NewComponentFilter(fp.includes, fp.excludes)
-		if err != nil {
-			return err
-		}
 		lister, scope, err := newRemoteLister(client, all, config.app.DefaultNamespace(env))
 		if err != nil {
 			return err
 		}
-		lister.start(nil, remote.ListQueryConfig{
-			Application:     config.App().Name(),
-			Tag:             config.App().Tag(),
-			Environment:     env,
-			ComponentFilter: cf,
-			KindFilter:      fp.kindFilter,
-			ListQueryScope:  scope,
+		lister.start(remote.ListQueryConfig{
+			Application:    config.App().Name(),
+			Tag:            config.App().Tag(),
+			Environment:    env,
+			KindFilter:     fp.kindFilter,
+			ListQueryScope: scope,
 		})
-		deletions, err = lister.results()
+		deletions, err = lister.deletions(nil, fp.Includes)
 		if err != nil {
 			return err
 		}

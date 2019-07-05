@@ -18,6 +18,7 @@ package commands
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,12 +43,72 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
+type objectKey struct {
+	gvk       schema.GroupVersionKind
+	namespace string
+	name      string
+}
+
+func (o objectKey) GroupVersionKind() schema.GroupVersionKind { return o.gvk }
+func (o objectKey) GetKind() string                           { return o.gvk.Kind }
+func (o objectKey) GetNamespace() string                      { return o.namespace }
+func (o objectKey) GetName() string                           { return o.name }
+
+type basicObject struct {
+	objectKey
+	app       string
+	tag       string
+	component string
+	env       string
+}
+
+func (b *basicObject) Application() string { return b.app }
+func (b *basicObject) Tag() string         { return b.tag }
+func (b *basicObject) Component() string   { return b.component }
+func (b *basicObject) Environment() string { return b.env }
+
+type coll struct {
+	data map[objectKey]model.K8sQbecMeta
+}
+
+func (c *coll) add(objs ...*basicObject) {
+	if c.data == nil {
+		c.data = map[objectKey]model.K8sQbecMeta{}
+	}
+	for _, o := range objs {
+		c.data[o.objectKey] = o
+	}
+}
+
+func (c *coll) Remove(objs []model.K8sQbecMeta) error {
+	removeMap := map[objectKey]bool{}
+	for _, o := range objs {
+		removeMap[objectKey{gvk: o.GroupVersionKind(), namespace: o.GetNamespace(), name: o.GetName()}] = true
+	}
+	retainedSet := map[objectKey]model.K8sQbecMeta{}
+	for k, v := range c.data {
+		if !removeMap[k] {
+			retainedSet[k] = v
+		}
+	}
+	c.data = retainedSet
+	return nil
+}
+
+func (c *coll) ToList() []model.K8sQbecMeta {
+	var ret []model.K8sQbecMeta
+	for _, v := range c.data {
+		ret = append(ret, v)
+	}
+	return ret
+}
+
 type client struct {
 	nsFunc        func(kind schema.GroupVersionKind) (bool, error)
 	getFunc       func(obj model.K8sMeta) (*unstructured.Unstructured, error)
 	syncFunc      func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
 	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	listExtraFunc func(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
+	listFunc      func(scope remote.ListQueryConfig) (remote.Collection, error)
 	deleteFunc    func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 	objectKeyFunc func(obj model.K8sMeta) string
 }
@@ -87,9 +148,9 @@ func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, e
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error) {
-	if c.listExtraFunc != nil {
-		return c.listExtraFunc(ignore, scope)
+func (c *client) ListObjects(scope remote.ListQueryConfig) (remote.Collection, error) {
+	if c.listFunc != nil {
+		return c.listFunc(scope)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -272,4 +333,93 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 
 func newScaffold(t *testing.T) *scaffold {
 	return newCustomScaffold(t, "")
+}
+
+type dg struct {
+	cmValue     string
+	secretValue string
+}
+
+func (d *dg) get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
+	switch {
+	case obj.GetName() == "svc2-cm":
+		return &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "ConfigMap",
+				"metadata": map[string]interface{}{
+					"creationTimestamp": "xxx",
+					"namespace":         "bar-system",
+					"name":              "svc2-cm",
+					"annotations": map[string]interface{}{
+						"ann/foo": "bar",
+						"ann/bar": "baz",
+					},
+				},
+				"data": map[string]interface{}{
+					"foo": d.cmValue,
+				},
+			},
+		}, nil
+	case obj.GetName() == "svc2-secret":
+		return &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Secret",
+				"metadata": map[string]interface{}{
+					"creationTimestamp": "xxx",
+					"namespace":         "bar-system",
+					"name":              "svc2-secret",
+				},
+				"data": map[string]interface{}{
+					"foo": base64.StdEncoding.EncodeToString([]byte(d.secretValue)),
+				},
+			},
+		}, nil
+	case obj.GetName() == "svc2-previous-deploy":
+		return &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "apps/v1",
+				"kind":       "Deployment",
+				"metadata": map[string]interface{}{
+					"creationTimestamp": "xxx",
+					"namespace":         "bar-system",
+					"name":              "svc2-previous-deploy",
+				},
+				"spec": map[string]interface{}{
+					"foo": "bar",
+				},
+			},
+		}, nil
+	default:
+		return nil, remote.ErrNotFound
+	}
+
+}
+
+func stdLister(_ remote.ListQueryConfig) (remote.Collection, error) {
+	c := &coll{}
+	c.add(
+		&basicObject{
+			objectKey: objectKey{
+				gvk:       schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
+				namespace: "bar-system",
+				name:      "svc2-deploy",
+			},
+			component: "service1", // deliberate mismatch
+			app:       "app",
+			env:       "dev",
+		},
+		&basicObject{
+			objectKey: objectKey{
+				gvk:       schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
+				namespace: "bar-system",
+				name:      "svc2-previous-deploy",
+			},
+			component: "service2",
+			app:       "app",
+			env:       "dev",
+		},
+	)
+	return c, nil
 }

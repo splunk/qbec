@@ -88,7 +88,7 @@ type Client interface {
 	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
 	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
 	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
+	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
 	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 	ObjectKey(obj model.K8sMeta) string
 }

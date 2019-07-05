@@ -27,6 +27,11 @@ type objectKey struct {
 	name      string
 }
 
+func (o objectKey) GroupVersionKind() schema.GroupVersionKind { return o.gvk }
+func (o objectKey) GetKind() string                           { return o.gvk.Kind }
+func (o objectKey) GetNamespace() string                      { return o.namespace }
+func (o objectKey) GetName() string                           { return o.name }
+
 type basicObject struct {
 	objectKey
 	app       string
@@ -35,17 +40,12 @@ type basicObject struct {
 	env       string
 }
 
-func (b *basicObject) GroupVersionKind() schema.GroupVersionKind { return b.gvk }
-func (b *basicObject) GetKind() string                           { return b.gvk.Kind }
-func (b *basicObject) GetNamespace() string                      { return b.namespace }
-func (b *basicObject) GetName() string                           { return b.name }
-func (b *basicObject) Application() string                       { return b.app }
-func (b *basicObject) Tag() string                               { return b.tag }
-func (b *basicObject) Component() string                         { return b.component }
-func (b *basicObject) Environment() string                       { return b.env }
+func (b *basicObject) Application() string { return b.app }
+func (b *basicObject) Tag() string         { return b.tag }
+func (b *basicObject) Component() string   { return b.component }
+func (b *basicObject) Environment() string { return b.env }
 
 type collectMetadata interface {
-	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
 	objectNamespace(obj model.K8sMeta) string
 	canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.GroupVersionKind, error)
 }
@@ -66,47 +66,6 @@ func newCollection(defaultNs string, meta collectMetadata) *collection {
 		objects:   map[objectKey]model.K8sQbecMeta{},
 	}
 }
-
-/*
-type collectionStats struct {
-	namespaces            []string                  // distinct namespaces across all objects
-	namespacedObjectCount int                       // count of namespaced objects
-	clusterObjectCount    int                       // count of cluster objects
-	types                 []schema.GroupVersionKind // distinct types
-}
-
-func (c *collection) stats() collectionStats {
-	var ret collectionStats
-	seenGVK := map[schema.GroupVersionKind]bool{}
-	seenNS := map[string]bool{}
-	for _, v := range c.objects {
-		ns := v.GetNamespace()
-		if ns == "" {
-			ret.clusterObjectCount++
-		} else {
-			ret.namespacedObjectCount++
-		}
-		seenNS[ns] = true
-		seenGVK[v.GroupVersionKind()] = true
-	}
-	for k := range seenNS {
-		ret.namespaces = append(ret.namespaces, k)
-	}
-	sort.Strings(ret.namespaces)
-	for k := range seenGVK {
-		ret.types = append(ret.types, k)
-	}
-	sort.Slice(ret.types, func(i, j int) bool {
-		left := ret.types[i]
-		right := ret.types[j]
-		if left.Group < right.Group {
-			return true
-		}
-		return left.Kind < right.Kind
-	})
-	return ret
-}
-*/
 
 // add adds the supplied object potentially transforming its gvk to its canonical form.
 func (c *collection) add(object model.K8sQbecMeta) error {
@@ -132,20 +91,27 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 	return nil
 }
 
-// subtract returns a collection of objects present in the receiver's collection but missing in the
-// supplied one.
-func (c *collection) subtract(other *collection) *collection {
-	ret := newCollection(c.defaultNs, c.meta)
-	for k, v := range c.objects {
-		if _, ok := other.objects[k]; !ok {
-			ret.objects[k] = v
+// Remove removes objects from its internal collection for each
+// matching object supplied.
+func (c *collection) Remove(objs []model.K8sQbecMeta) error {
+	sub := newCollection(c.defaultNs, c.meta)
+	for _, o := range objs {
+		if err := sub.add(o); err != nil {
+			return err
 		}
 	}
-	return ret
+	retainedSet := map[objectKey]model.K8sQbecMeta{}
+	for k, v := range c.objects {
+		if _, ok := sub.objects[k]; !ok {
+			retainedSet[k] = v
+		}
+	}
+	c.objects = retainedSet
+	return nil
 }
 
-// toList returns the list of objects in this collection in arbitrary order.
-func (c *collection) toList() []model.K8sQbecMeta {
+// ToList returns the list of objects in this collection in arbitrary order.
+func (c *collection) ToList() []model.K8sQbecMeta {
 	var ret []model.K8sQbecMeta
 	for _, v := range c.objects {
 		ret = append(ret, v)
