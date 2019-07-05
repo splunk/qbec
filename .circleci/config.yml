@@ -1,0 +1,30 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: /go/src/github.com/splunk/qbec
+    docker:
+      - image: circleci/golang:1.12
+    environment:
+      - GOCACHE: /tmp/go/cache
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: make install-ci install
+      - run:
+          name: Build
+          command: DEP_FLAGS="-v -vendor-only" make get build
+      - run:
+          name: Test
+          command: make test
+      - run:
+          name: Lint
+          command: LINT_FLAGS="-v" make lint
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+      - build: {}
+

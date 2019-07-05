@@ -10,12 +10,15 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 
+DEP_FLAGS ?= ""
+LINT_FLAGS ?= ""
+
 .PHONY: all
 all: get build lint test
 
 .PHONY: get
 get:
-	dep ensure
+	dep ensure $(DEP_FLAGS)
 
 .PHONY: build
 build:
@@ -28,13 +31,14 @@ test:
 .PHONY: lint
 lint:
 	go list ./... | grep -v vendor | xargs go vet
-	go list ./... | grep -v vendor | xargs golint
+	golangci-lint run $(LINT_FLAGS) .
 
 .PHONY: install-ci
 install-ci:
 	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
 	tar -xvzf helm.tar.gz
 	mv linux-amd64/helm $(GOPATH)/bin/
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.17.1
 
 .PHONY: install
 install:
