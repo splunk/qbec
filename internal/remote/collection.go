@@ -45,7 +45,6 @@ func (b *basicObject) Component() string                         { return b.comp
 func (b *basicObject) Environment() string                       { return b.env }
 
 type collectMetadata interface {
-	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
 	objectNamespace(obj model.K8sMeta) string
 	canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.GroupVersionKind, error)
 }
@@ -132,20 +131,27 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 	return nil
 }
 
-// subtract returns a collection of objects present in the receiver's collection but missing in the
-// supplied one.
-func (c *collection) subtract(other *collection) *collection {
-	ret := newCollection(c.defaultNs, c.meta)
-	for k, v := range c.objects {
-		if _, ok := other.objects[k]; !ok {
-			ret.objects[k] = v
+// Remove removes objects from its internal collection for each
+// matching object supplied.
+func (c *collection) Remove(objs []model.K8sQbecMeta) error {
+	sub := newCollection(c.defaultNs, c.meta)
+	for _, o := range objs {
+		if err := sub.add(o); err != nil {
+			return err
 		}
 	}
-	return ret
+	retainedSet := map[objectKey]model.K8sQbecMeta{}
+	for k, v := range c.objects {
+		if _, ok := sub.objects[k]; !ok {
+			retainedSet[k] = v
+		}
+	}
+	c.objects = retainedSet
+	return nil
 }
 
-// toList returns the list of objects in this collection in arbitrary order.
-func (c *collection) toList() []model.K8sQbecMeta {
+// ToList returns the list of objects in this collection in arbitrary order.
+func (c *collection) ToList() []model.K8sQbecMeta {
 	var ret []model.K8sQbecMeta
 	for _, v := range c.objects {
 		ret = append(ret, v)

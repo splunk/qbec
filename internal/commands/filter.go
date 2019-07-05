@@ -26,9 +26,20 @@ import (
 )
 
 type filterParams struct {
-	includes   []string
-	excludes   []string
-	kindFilter model.Filter
+	includes        []string
+	excludes        []string
+	kindFilter      model.Filter
+	componentFilter model.Filter
+}
+
+func (f filterParams) Includes(o model.K8sQbecMeta) bool {
+	if !(f.kindFilter == nil || f.kindFilter.ShouldInclude(o.GetKind())) {
+		return false
+	}
+	if !(f.componentFilter == nil || f.componentFilter.ShouldInclude(o.Component())) {
+		return false
+	}
+	return true
 }
 
 func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filterParams, error) {

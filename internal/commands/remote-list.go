@@ -28,27 +28,30 @@ import (
 
 type listClient interface {
 	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
-	ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
+	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
 }
 
 type lister interface {
-	start(ignore []model.K8sLocalObject, scope remote.ListQueryConfig)
-	results() ([]model.K8sQbecMeta, error)
+	start(config remote.ListQueryConfig)
+	deletions(ignore []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error)
 }
 
 type stubLister struct{}
 
-func (s *stubLister) start(ignore []model.K8sLocalObject, config remote.ListQueryConfig) {}
-func (s *stubLister) results() ([]model.K8sQbecMeta, error)                              { return nil, nil }
+func (s *stubLister) start(config remote.ListQueryConfig) {}
+func (s *stubLister) deletions(ignore []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error) {
+	return nil, nil
+}
 
 type remoteLister struct {
 	client       listClient
 	ch           chan listResult
 	unknownTypes map[schema.GroupVersionKind]bool
+	cfg          remote.ListQueryConfig
 }
 
 type listResult struct {
-	data     []model.K8sQbecMeta
+	data     remote.Collection
 	duration time.Duration
 	err      error
 }
@@ -99,22 +102,16 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 		nil
 }
 
-func (r *remoteLister) start(ignores []model.K8sLocalObject, config remote.ListQueryConfig) {
+func (r *remoteLister) start(config remote.ListQueryConfig) {
+	r.cfg = config
 	go func() {
-		var filtered []model.K8sQbecMeta
-		for _, o := range ignores {
-			gvk := o.GroupVersionKind()
-			if !r.unknownTypes[gvk] {
-				filtered = append(filtered, o)
-			}
-		}
 		start := time.Now()
-		list, err := r.client.ListExtraObjects(filtered, config)
+		list, err := r.client.ListObjects(config)
 		r.ch <- listResult{data: list, err: err, duration: time.Since(start).Round(time.Millisecond)}
 	}()
 }
 
-func (r *remoteLister) results() ([]model.K8sQbecMeta, error) {
+func (r *remoteLister) deletions(all []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error) {
 	if len(r.ch) == 0 {
 		sio.Debugln("waiting for deletion list to be returned")
 	}
@@ -123,8 +120,36 @@ func (r *remoteLister) results() ([]model.K8sQbecMeta, error) {
 		return nil, lr.err
 	}
 	sio.Debugf("server objects load took %v\n", lr.duration)
-	var ret []model.K8sQbecMeta
-	ret = append(ret, lr.data...)
-	return ret, nil
 
+	cfg := r.cfg
+	if cfg.KindFilter == nil {
+		f, _ := model.NewKindFilter(nil, nil)
+		cfg.KindFilter = f
+	}
+
+	var removals []model.K8sQbecMeta
+	for _, c := range all {
+		if r.unknownTypes[c.GroupVersionKind()] {
+			continue
+		}
+		if !cfg.KindFilter.ShouldInclude(c.GetKind()) {
+			continue
+		}
+		removals = append(removals, c)
+	}
+
+	coll := lr.data
+	if err := coll.Remove(removals); err != nil {
+		return nil, err
+	}
+
+	retained := coll.ToList()
+	var ret []model.K8sQbecMeta
+	for _, o := range retained {
+		if filter(o) {
+			ret = append(ret, o)
+		}
+	}
+
+	return ret, nil
 }

@@ -47,7 +47,7 @@ type client struct {
 	getFunc       func(obj model.K8sMeta) (*unstructured.Unstructured, error)
 	syncFunc      func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
 	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	listExtraFunc func(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error)
+	listFunc      func(scope remote.ListQueryConfig) (remote.Collection, error)
 	deleteFunc    func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 	objectKeyFunc func(obj model.K8sMeta) string
 }
@@ -87,9 +87,9 @@ func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, e
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) ListExtraObjects(ignore []model.K8sQbecMeta, scope remote.ListQueryConfig) ([]model.K8sQbecMeta, error) {
-	if c.listExtraFunc != nil {
-		return c.listExtraFunc(ignore, scope)
+func (c *client) ListObjects(scope remote.ListQueryConfig) (remote.Collection, error) {
+	if c.listFunc != nil {
+		return c.listFunc(scope)
 	}
 	return nil, errors.New("not implemented")
 }
