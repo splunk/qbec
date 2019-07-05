@@ -80,7 +80,7 @@ type validator struct {
 
 func (v *validator) validate(obj model.K8sLocalObject) error {
 	name := v.client.DisplayName(obj)
-	schema, err := v.client.ValidatorFor(obj.GetObjectKind().GroupVersionKind())
+	schema, err := v.client.ValidatorFor(obj.GroupVersionKind())
 	if err != nil {
 		if err == k8smeta.ErrSchemaNotFound {
 			if !v.silent {

@@ -35,17 +35,14 @@ type basicObject struct {
 	env       string
 }
 
-func (b *basicObject) GetObjectKind() schema.ObjectKind                { return b }
-func (b *basicObject) GroupVersionKind() schema.GroupVersionKind       { return b.gvk }
-func (b *basicObject) GetGroupVersionKind() schema.GroupVersionKind    { return b.gvk }
-func (b *basicObject) SetGroupVersionKind(gvk schema.GroupVersionKind) { b.gvk = gvk }
-func (b *basicObject) GetKind() string                                 { return b.gvk.Kind }
-func (b *basicObject) GetNamespace() string                            { return b.namespace }
-func (b *basicObject) GetName() string                                 { return b.name }
-func (b *basicObject) Application() string                             { return b.app }
-func (b *basicObject) Tag() string                                     { return b.tag }
-func (b *basicObject) Component() string                               { return b.component }
-func (b *basicObject) Environment() string                             { return b.env }
+func (b *basicObject) GroupVersionKind() schema.GroupVersionKind { return b.gvk }
+func (b *basicObject) GetKind() string                           { return b.gvk.Kind }
+func (b *basicObject) GetNamespace() string                      { return b.namespace }
+func (b *basicObject) GetName() string                           { return b.name }
+func (b *basicObject) Application() string                       { return b.app }
+func (b *basicObject) Tag() string                               { return b.tag }
+func (b *basicObject) Component() string                         { return b.component }
+func (b *basicObject) Environment() string                       { return b.env }
 
 type collectMetadata interface {
 	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
@@ -90,7 +87,7 @@ func (c *collection) stats() collectionStats {
 			ret.namespacedObjectCount++
 		}
 		seenNS[ns] = true
-		seenGVK[v.GetObjectKind().GroupVersionKind()] = true
+		seenGVK[v.GroupVersionKind()] = true
 	}
 	for k := range seenNS {
 		ret.namespaces = append(ret.namespaces, k)
@@ -113,7 +110,7 @@ func (c *collection) stats() collectionStats {
 
 // add adds the supplied object potentially transforming its gvk to its canonical form.
 func (c *collection) add(object model.K8sQbecMeta) error {
-	gvk := object.GetObjectKind().GroupVersionKind()
+	gvk := object.GroupVersionKind()
 	canonicalGVK, err := c.meta.canonicalGroupVersionKind(gvk)
 	if err != nil {
 		return err
