@@ -1,7 +1,7 @@
 qbec
 ---
 
-[![Build Status](https://travis-ci.org/splunk/qbec.svg?branch=master)](https://travis-ci.org/splunk/qbec)
+[![Build Status](https://circleci.com/gh/splunk/qbec.svg?style=svg)](https://circleci.com/gh/splunk/qbec)
 [![Go Report Card](https://goreportcard.com/badge/github.com/splunk/qbec)](https://goreportcard.com/report/github.com/splunk/qbec)
 
 
