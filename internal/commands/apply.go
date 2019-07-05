@@ -56,6 +56,15 @@ type applyCommandConfig struct {
 	filterFunc  func() (filterParams, error)
 }
 
+type nameWrap struct {
+	name string
+	model.K8sLocalObject
+}
+
+func (nw nameWrap) GetName() string {
+	return nw.name
+}
+
 func doApply(args []string, config applyCommandConfig) error {
 	if len(args) != 1 {
 		return newUsageError("exactly one environment required")
@@ -88,10 +97,16 @@ func doApply(args []string, config applyCommandConfig) error {
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
 	var all []model.K8sLocalObject
+	var retainObjects []model.K8sLocalObject
 	if config.gc {
 		all, err = allObjects(config.Config, env)
 		if err != nil {
 			return err
+		}
+		for _, o := range all {
+			if o.GetName() != "" {
+				retainObjects = append(retainObjects, o)
+			}
 		}
 		var scope remote.ListQueryScope
 		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
@@ -117,11 +132,15 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	var stats applyStats
 	for _, ob := range objects {
-		name := client.DisplayName(ob)
 		res, err := client.Sync(ob, opts)
 		if err != nil {
 			return err
 		}
+		if res.GeneratedName != "" {
+			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
+			retainObjects = append(retainObjects, ob)
+		}
+		name := client.DisplayName(ob)
 		stats.update(name, res)
 		show := res.Type != remote.SyncObjectsIdentical || config.Verbosity() > 0
 		if show {
@@ -131,7 +150,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	// process deletions
-	deletions, err := lister.deletions(all, fp.Includes)
+	deletions, err := lister.deletions(retainObjects, fp.Includes)
 	if err != nil {
 		return err
 	}

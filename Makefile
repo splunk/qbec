@@ -10,8 +10,8 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 
-DEP_FLAGS ?= ""
-LINT_FLAGS ?= ""
+DEP_FLAGS ?=
+LINT_FLAGS ?=
 
 .PHONY: all
 all: get build lint test
@@ -26,11 +26,12 @@ build:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -race ./...
 
 .PHONY: lint
 lint:
 	go list ./... | grep -v vendor | xargs go vet
+	go list ./... | grep -v vendor | xargs golint
 	golangci-lint run $(LINT_FLAGS) .
 
 .PHONY: install-ci

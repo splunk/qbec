@@ -185,7 +185,11 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 		if err != nil {
 			return err
 		}
-		rightContent = addLeader(rightContent, "object doesn't exist on the server")
+		leaderComment := "object doesn't exist on the server"
+		if right.obj.GetName() == "" {
+			leaderComment += " (generated name)"
+		}
+		rightContent = addLeader(rightContent, leaderComment)
 		b, err := diff.Strings("", rightContent, fileOpts)
 		if err != nil {
 			return err
@@ -214,11 +218,16 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 func (d *differ) diff(ob model.K8sMeta) error {
 	name, leftName, rightName := d.names(ob)
 
-	remoteObject, err := d.client.Get(ob)
-	if err != nil && err != remote.ErrNotFound {
-		d.stats.errors(name)
-		sio.Errorf("error fetching %s, %v\n", name, err)
-		return err
+	var remoteObject *unstructured.Unstructured
+	var err error
+
+	if ob.GetName() != "" {
+		remoteObject, err = d.client.Get(ob)
+		if err != nil && err != remote.ErrNotFound {
+			d.stats.errors(name)
+			sio.Errorf("error fetching %s, %v\n", name, err)
+			return err
+		}
 	}
 
 	fixup := func(u *unstructured.Unstructured) *unstructured.Unstructured {
@@ -233,7 +242,7 @@ func (d *differ) diff(ob model.K8sMeta) error {
 	}
 
 	var left, right *unstructured.Unstructured
-	if err == nil {
+	if remoteObject != nil {
 		var source string
 		left, source = remote.GetPristineVersionForDiff(remoteObject)
 		leftName += " (source: " + source + ")"
@@ -287,10 +296,16 @@ func doDiff(args []string, config diffCommandConfig) error {
 
 	var lister lister = &stubLister{}
 	var all []model.K8sLocalObject
+	var retainObjects []model.K8sLocalObject
 	if config.showDeletions {
 		all, err = allObjects(config.Config, env)
 		if err != nil {
 			return err
+		}
+		for _, o := range all {
+			if o.GetName() != "" {
+				retainObjects = append(retainObjects, o)
+			}
 		}
 		var scope remote.ListQueryScope
 		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
@@ -328,7 +343,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 
 	var listErr error
 	if dErr == nil {
-		extra, err := lister.deletions(all, fp.Includes)
+		extra, err := lister.deletions(retainObjects, fp.Includes)
 		if err != nil {
 			listErr = err
 		} else {

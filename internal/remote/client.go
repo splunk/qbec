@@ -141,7 +141,7 @@ func (c *Client) DisplayName(o model.K8sMeta) string {
 
 	displayName := func() string {
 		ns := c.objectNamespace(o)
-		name := o.GetName()
+		name := model.NameForDisplay(o)
 		if ns == "" {
 			return name
 		}
@@ -284,12 +284,13 @@ func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 }
 
 type updateResult struct {
-	SkipReason   string          `json:"skip,omitempty"`
-	Operation    string          `json:"operation,omitempty"`
-	Source       string          `json:"source,omitempty"`
-	Kind         types.PatchType `json:"kind,omitempty"`
-	DisplayPatch string          `json:"patch,omitempty"`
-	patch        []byte
+	SkipReason    string          `json:"skip,omitempty"`
+	Operation     string          `json:"operation,omitempty"`
+	Source        string          `json:"source,omitempty"`
+	Kind          types.PatchType `json:"kind,omitempty"`
+	DisplayPatch  string          `json:"patch,omitempty"`
+	GeneratedName string          `json:"generatedName,omitempty"`
+	patch         []byte
 }
 
 func (u *updateResult) String() string {
@@ -314,8 +315,9 @@ func (u *updateResult) toSyncResult() *SyncResult {
 		}
 	case u.Operation == opCreate:
 		return &SyncResult{
-			Type:    SyncCreated,
-			Details: u.String(),
+			Type:          SyncCreated,
+			GeneratedName: u.GeneratedName, // only set when name actually generated
+			Details:       u.String(),
 		}
 	case u.Operation == opUpdate:
 		return &SyncResult{
@@ -343,8 +345,9 @@ const (
 // SyncResult is the result of a sync operation. There is no difference in the output for a real versus
 // a dry-run.
 type SyncResult struct {
-	Type    SyncResultType // the result type
-	Details string         // additional details that are safe to print to console (e.g. no secrets)
+	Type          SyncResultType // the result type
+	GeneratedName string         // the actual name of an object that has generateName set
+	Details       string         // additional details that are safe to print to console (e.g. no secrets)
 }
 
 func extractCustomTypes(obj model.K8sObject) (schema.GroupVersionKind, error) {
@@ -419,8 +422,15 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 
 func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
 	gvk := original.GroupVersionKind()
-	remObj, objErr := c.Get(original)
+	var remObj *unstructured.Unstructured
+	var objErr error
+	if original.GetName() != "" {
+		remObj, objErr = c.Get(original)
+	}
 	switch {
+	// empty name, always create
+	case original.GetName() == "":
+		break
 	// ignore object not found errors
 	case objErr == ErrNotFound:
 		break
@@ -582,9 +592,12 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource interface")
 	}
-	_, err = ri.Create(obj.ToUnstructured())
+	out, err := ri.Create(obj.ToUnstructured())
 	if err != nil {
 		return nil, err
+	}
+	if obj.GetName() == "" {
+		result.GeneratedName = out.GetName()
 	}
 	return result, nil
 }

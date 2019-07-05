@@ -52,17 +52,19 @@ func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filter
 		cmd.Flags().StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
 	}
 	return func() (filterParams, error) {
-		if len(includes) > 0 && len(excludes) > 0 {
-			return filterParams{}, newUsageError("cannot include as well as exclude components, specify one or the other")
-		}
 		of, err := model.NewKindFilter(kindIncludes, kindExcludes)
 		if err != nil {
 			return filterParams{}, newUsageError(err.Error())
 		}
+		cf, err := model.NewComponentFilter(includes, excludes)
+		if err != nil {
+			return filterParams{}, newUsageError(err.Error())
+		}
 		return filterParams{
-			includes:   includes,
-			excludes:   excludes,
-			kindFilter: of,
+			includes:        includes,
+			excludes:        excludes,
+			kindFilter:      of,
+			componentFilter: cf,
 		}, nil
 	}
 }
@@ -92,6 +94,9 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 	}
 	objectsByKey := map[string]model.K8sLocalObject{}
 	for _, o := range objects {
+		if o.GetName() == "" { // generated name
+			continue
+		}
 		key := kf(o)
 		if prev, ok := objectsByKey[key]; ok {
 			return fmt.Errorf("duplicate objects %s and %s", displayName(prev), displayName(o))

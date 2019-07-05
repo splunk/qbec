@@ -34,6 +34,17 @@ type K8sMeta interface {
 	GroupVersionKind() schema.GroupVersionKind
 	GetNamespace() string
 	GetName() string
+	GetGenerateName() string
+}
+
+// NameForDisplay returns the local name of the metadata object, taking
+// generated names into account.
+func NameForDisplay(m K8sMeta) string {
+	name := m.GetName()
+	if name != "" {
+		return name
+	}
+	return m.GetGenerateName() + "<xxxxx>"
 }
 
 // QbecMeta provides qbec metadata.
@@ -79,18 +90,24 @@ func (k *ko) String() string {
 	return fmt.Sprintf("%s:%s:%s", k.GroupVersionKind(), k.GetNamespace(), k.GetName())
 }
 
+func toUnstructured(data map[string]interface{}) *unstructured.Unstructured {
+	base := &unstructured.Unstructured{Object: data}
+	if base.GetName() != "" && base.GetGenerateName() != "" { // if a name is specified for the object, nuke its generated name since it won't be used
+		base.SetGenerateName("")
+	}
+	return base
+}
+
 // NewK8sObject wraps a K8sObject implementation around the unstructured object data specified as a bag
 // of attributes.
 func NewK8sObject(data map[string]interface{}) K8sObject {
-	base := &unstructured.Unstructured{Object: data}
-	ret := &ko{Unstructured: base}
-	return ret
+	return &ko{Unstructured: toUnstructured(data)}
 }
 
 // NewK8sLocalObject wraps a K8sLocalObject implementation around the unstructured object data specified as a bag
 // of attributes for the supplied application, component and environment.
 func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env string) K8sLocalObject {
-	base := &unstructured.Unstructured{Object: data}
+	base := toUnstructured(data)
 	ret := &ko{Unstructured: base, app: app, tag: tag, comp: component, env: env}
 	labels := base.GetLabels()
 	if labels == nil {
