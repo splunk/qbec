@@ -40,7 +40,7 @@ func TestSimpleObject(t *testing.T) {
 	a := assert.New(t)
 	a.Equal("comp1", o.Component())
 	a.Equal("dev", o.Environment())
-	a.Equal("ConfigMap", o.GetObjectKind().GroupVersionKind().Kind)
+	a.Equal("ConfigMap", o.GroupVersionKind().Kind)
 }
 
 func TestDeepObjectNesting(t *testing.T) {
@@ -75,5 +75,5 @@ func TestDeepObjectNesting(t *testing.T) {
 	a := assert.New(t)
 	a.Equal("comp1", o.Component())
 	a.Equal("dev", o.Environment())
-	a.Equal("ConfigMap", o.GetObjectKind().GroupVersionKind().Kind)
+	a.Equal("ConfigMap", o.GroupVersionKind().Kind)
 }

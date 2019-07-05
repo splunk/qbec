@@ -157,7 +157,7 @@ func (p *patcher) getPatchContents(serverObj *unstructured.Unstructured, desired
 	var lookupPatchMeta strategicpatch.LookupPatchMeta
 	var sch oapi.Schema
 	patchContext := fmt.Sprintf("creating patch with:\npristine:\n%s\ndesired:\n%s\nserver:\n%s\nfor:", ser.pristine, ser.desired, ser.server)
-	gvk := serverObj.GetObjectKind().GroupVersionKind()
+	gvk := serverObj.GroupVersionKind()
 
 	// prefer open API if available to create a strategic merge patch
 	if p.openAPILookup != nil {
@@ -212,7 +212,7 @@ func (p *patcher) patchSimple(serverObj *unstructured.Unstructured, desired mode
 	if result.SkipReason != "" {
 		return
 	}
-	gvk := serverObj.GetObjectKind().GroupVersionKind()
+	gvk := serverObj.GroupVersionKind()
 	ri, err := p.provider(gvk, serverObj.GetNamespace())
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error getting update interface for %v", gvk))
@@ -222,7 +222,7 @@ func (p *patcher) patchSimple(serverObj *unstructured.Unstructured, desired mode
 }
 
 func (p *patcher) patch(serverObj *unstructured.Unstructured, desired model.K8sObject) (*updateResult, error) {
-	gvk := serverObj.GetObjectKind().GroupVersionKind()
+	gvk := serverObj.GroupVersionKind()
 	namespace := serverObj.GetNamespace()
 	name := serverObj.GetName()
 	var getErr error

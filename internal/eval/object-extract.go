@@ -111,8 +111,8 @@ func k8sObjectsFromJSON(data map[string]interface{}, app, tag, env string) ([]mo
 	sort.Slice(ret, func(i, j int) bool {
 		left := ret[i]
 		right := ret[j]
-		leftKey := fmt.Sprintf("%s:%s:%s:%s", left.Component(), left.GetNamespace(), left.GetObjectKind().GroupVersionKind().Kind, left.GetName())
-		rightKey := fmt.Sprintf("%s:%s:%s:%s", right.Component(), right.GetNamespace(), right.GetObjectKind().GroupVersionKind().Kind, right.GetName())
+		leftKey := fmt.Sprintf("%s:%s:%s:%s", left.Component(), left.GetNamespace(), left.GroupVersionKind().Kind, left.GetName())
+		rightKey := fmt.Sprintf("%s:%s:%s:%s", right.Component(), right.GetNamespace(), right.GroupVersionKind().Kind, right.GetName())
 		return leftKey < rightKey
 	})
 	return ret, nil

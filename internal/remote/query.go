@@ -108,7 +108,7 @@ outer:
 		}
 		mm := &basicObject{
 			objectKey: objectKey{
-				gvk:       obj.GetObjectKind().GroupVersionKind(),
+				gvk:       un.GroupVersionKind(),
 				namespace: un.GetNamespace(),
 				name:      un.GetName(),
 			},

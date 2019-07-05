@@ -112,7 +112,7 @@ func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, e
 // the default namespace when the object does not have one set. It does not fail if the
 // object type is not known and just returns whatever is specified for the object.
 func (c *Client) objectNamespace(o model.K8sMeta) string {
-	info := c.resources.APIResource(o.GetObjectKind().GroupVersionKind())
+	info := c.resources.APIResource(o.GroupVersionKind())
 	ns := o.GetNamespace()
 	if info != nil {
 		if info.Namespaced {
@@ -129,7 +129,7 @@ func (c *Client) objectNamespace(o model.K8sMeta) string {
 // DisplayName returns the display name of the supplied K8s object.
 func (c *Client) DisplayName(o model.K8sMeta) string {
 	sm := c.resources
-	gvk := o.GetObjectKind().GroupVersionKind()
+	gvk := o.GroupVersionKind()
 	info := sm.APIResource(gvk)
 
 	displayType := func() string {
@@ -180,7 +180,7 @@ func (c *Client) canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.G
 
 // Get returns the remote object matching the supplied metadata as an unstructured bag of attributes.
 func (c *Client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
-	rc, err := c.resourceInterfaceWithDefaultNs(obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace())
+	rc, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (c *Client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
 // namespace and name. Input values are used in case canonical values cannot be derived
 // (e.g. for custom resources whose CRDs haven't yet been created).
 func (c *Client) ObjectKey(obj model.K8sMeta) string {
-	gvk := obj.GetObjectKind().GroupVersionKind()
+	gvk := obj.GroupVersionKind()
 	if canon, err := c.resources.CanonicalGroupVersionKind(gvk); err == nil {
 		gvk = canon
 	}
@@ -408,7 +408,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 		}
 	}()
 
-	gvk := original.GetObjectKind().GroupVersionKind()
+	gvk := original.GroupVersionKind()
 	if gvk.Kind == "CustomResourceDefinition" && gvk.Group == "apiextensions.k8s.io" {
 		t, err := extractCustomTypes(original)
 		if err != nil {
@@ -435,7 +435,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 }
 
 func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
-	gvk := original.GetObjectKind().GroupVersionKind()
+	gvk := original.GroupVersionKind()
 	remObj, objErr := c.Get(original)
 	switch {
 	// ignore object not found errors
@@ -516,7 +516,7 @@ func (c *Client) Delete(obj model.K8sMeta, dryRun bool) (_ *SyncResult, finalErr
 		}
 	}()
 
-	ri, err := c.resourceInterfaceWithDefaultNs(obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace())
+	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource interface")
 	}
@@ -595,7 +595,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	if opts.DryRun {
 		return result, nil
 	}
-	ri, err := c.resourceInterfaceWithDefaultNs(obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace())
+	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource interface")
 	}

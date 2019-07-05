@@ -105,7 +105,7 @@ func (c *client) ObjectKey(obj model.K8sMeta) string {
 	if c.objectKeyFunc != nil {
 		return c.objectKeyFunc(obj)
 	}
-	return fmt.Sprintf("%s:%s:%s:%s", obj.GetObjectKind().GroupVersionKind().Group, obj.GetKind(), obj.GetNamespace(), obj.GetName())
+	return fmt.Sprintf("%s:%s:%s:%s", obj.GroupVersionKind().Group, obj.GetKind(), obj.GetNamespace(), obj.GetName())
 }
 
 func setPwd(t *testing.T, dir string) func() {

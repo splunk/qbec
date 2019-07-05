@@ -62,11 +62,11 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 
 	clusterObjects := false
 	for _, o := range allObjects {
-		kind := o.GetObjectKind().GroupVersionKind()
+		kind := o.GroupVersionKind()
 		b, err := client.IsNamespaced(kind)
 		if err != nil {
 			if !unknown[kind] {
-				sio.Warnf("unable to get metadata for %v, continue\n", o.GetObjectKind().GroupVersionKind())
+				sio.Warnf("unable to get metadata for %v, continue\n", o.GroupVersionKind())
 				unknown[kind] = true
 			}
 			continue
@@ -103,7 +103,7 @@ func (r *remoteLister) start(ignores []model.K8sLocalObject, config remote.ListQ
 	go func() {
 		var filtered []model.K8sQbecMeta
 		for _, o := range ignores {
-			gvk := o.GetObjectKind().GroupVersionKind()
+			gvk := o.GroupVersionKind()
 			if !r.unknownTypes[gvk] {
 				filtered = append(filtered, o)
 			}

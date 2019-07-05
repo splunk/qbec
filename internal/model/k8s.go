@@ -27,16 +27,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// K8sKind is something that has a kind.
-type K8sKind interface {
-	GetKind() string
-}
-
 // K8sMeta is the minimum metadata needed for an object and is satisfied by
 // an unstructured.Unstructured instance.
 type K8sMeta interface {
-	K8sKind
-	GetObjectKind() schema.ObjectKind
+	GetKind() string
+	GroupVersionKind() schema.GroupVersionKind
 	GetNamespace() string
 	GetName() string
 }
@@ -81,7 +76,7 @@ func (k *ko) Environment() string                        { return k.env }
 func (k *ko) MarshalJSON() ([]byte, error)               { return json.Marshal(k.Unstructured) }
 func (k *ko) ToUnstructured() *unstructured.Unstructured { return k.Unstructured }
 func (k *ko) String() string {
-	return fmt.Sprintf("%s:%s:%s", k.GetObjectKind().GroupVersionKind(), k.GetNamespace(), k.GetName())
+	return fmt.Sprintf("%s:%s:%s", k.GroupVersionKind(), k.GetNamespace(), k.GetName())
 }
 
 // NewK8sObject wraps a K8sObject implementation around the unstructured object data specified as a bag

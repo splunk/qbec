@@ -33,7 +33,7 @@ type metaOnly struct {
 }
 
 func (n *metaOnly) MarshalJSON() ([]byte, error) {
-	gvk := n.GetObjectKind().GroupVersionKind()
+	gvk := n.GroupVersionKind()
 	m := map[string]string{
 		"apiVersion":  gvk.GroupVersion().String(),
 		"component":   n.Component(),
@@ -51,7 +51,7 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 	if !formatSpecified { // render as table
 		fmt.Fprintf(w, "%-30s %-30s %-40s %s\n", "COMPONENT", "KIND", "NAME", "NAMESPACE")
 		for _, o := range objects {
-			fmt.Fprintf(w, "%-30s %-30s %-40s %s\n", o.Component(), o.GetObjectKind().GroupVersionKind().Kind, o.GetName(), o.GetNamespace())
+			fmt.Fprintf(w, "%-30s %-30s %-40s %s\n", o.Component(), o.GroupVersionKind().Kind, o.GetName(), o.GetNamespace())
 		}
 		return nil
 	}
@@ -106,7 +106,7 @@ func doShow(args []string, config showCommandConfig) error {
 
 	// shallow duplicate check
 	keyFunc := func(obj model.K8sMeta) string {
-		gvk := obj.GetObjectKind().GroupVersionKind()
+		gvk := obj.GroupVersionKind()
 		ns := obj.GetNamespace()
 		return fmt.Sprintf("%s:%s:%s:%s", gvk.Group, gvk.Kind, ns, obj.GetName())
 	}

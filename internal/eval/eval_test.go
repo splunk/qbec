@@ -74,9 +74,9 @@ func TestEvalComponents(t *testing.T) {
 	obj := objs[0]
 	a.Equal("a", obj.Component())
 	a.Equal("dev", obj.Environment())
-	a.Equal("", obj.GetObjectKind().GroupVersionKind().Group)
-	a.Equal("v1", obj.GetObjectKind().GroupVersionKind().Version)
-	a.Equal("ConfigMap", obj.GetObjectKind().GroupVersionKind().Kind)
+	a.Equal("", obj.GroupVersionKind().Group)
+	a.Equal("v1", obj.GroupVersionKind().Version)
+	a.Equal("ConfigMap", obj.GroupVersionKind().Kind)
 	a.Equal("", obj.GetNamespace())
 	a.Equal("json-config-map", obj.GetName())
 

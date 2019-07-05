@@ -64,7 +64,7 @@ func allObjects(cfg *Config, env string) ([]model.K8sLocalObject, error) {
 }
 
 func displayName(obj model.K8sLocalObject) string {
-	group := obj.GetObjectKind().GroupVersionKind().Group
+	group := obj.GroupVersionKind().Group
 	if group != "" {
 		group += "/"
 	}

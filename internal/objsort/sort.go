@@ -76,7 +76,7 @@ func getOrder(ob model.K8sQbecMeta, config Config) int {
 	if order > 0 {
 		return order
 	}
-	gvk := ob.GetObjectKind().GroupVersionKind()
+	gvk := ob.GroupVersionKind()
 	gk := gvk.GroupKind()
 	if order, ok := SpecifiedOrdering[gk]; ok {
 		return order
