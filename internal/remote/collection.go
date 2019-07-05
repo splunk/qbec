@@ -27,6 +27,11 @@ type objectKey struct {
 	name      string
 }
 
+func (o objectKey) GroupVersionKind() schema.GroupVersionKind { return o.gvk }
+func (o objectKey) GetKind() string                           { return o.gvk.Kind }
+func (o objectKey) GetNamespace() string                      { return o.namespace }
+func (o objectKey) GetName() string                           { return o.name }
+
 type basicObject struct {
 	objectKey
 	app       string
@@ -35,14 +40,10 @@ type basicObject struct {
 	env       string
 }
 
-func (b *basicObject) GroupVersionKind() schema.GroupVersionKind { return b.gvk }
-func (b *basicObject) GetKind() string                           { return b.gvk.Kind }
-func (b *basicObject) GetNamespace() string                      { return b.namespace }
-func (b *basicObject) GetName() string                           { return b.name }
-func (b *basicObject) Application() string                       { return b.app }
-func (b *basicObject) Tag() string                               { return b.tag }
-func (b *basicObject) Component() string                         { return b.component }
-func (b *basicObject) Environment() string                       { return b.env }
+func (b *basicObject) Application() string { return b.app }
+func (b *basicObject) Tag() string         { return b.tag }
+func (b *basicObject) Component() string   { return b.component }
+func (b *basicObject) Environment() string { return b.env }
 
 type collectMetadata interface {
 	objectNamespace(obj model.K8sMeta) string
@@ -65,47 +66,6 @@ func newCollection(defaultNs string, meta collectMetadata) *collection {
 		objects:   map[objectKey]model.K8sQbecMeta{},
 	}
 }
-
-/*
-type collectionStats struct {
-	namespaces            []string                  // distinct namespaces across all objects
-	namespacedObjectCount int                       // count of namespaced objects
-	clusterObjectCount    int                       // count of cluster objects
-	types                 []schema.GroupVersionKind // distinct types
-}
-
-func (c *collection) stats() collectionStats {
-	var ret collectionStats
-	seenGVK := map[schema.GroupVersionKind]bool{}
-	seenNS := map[string]bool{}
-	for _, v := range c.objects {
-		ns := v.GetNamespace()
-		if ns == "" {
-			ret.clusterObjectCount++
-		} else {
-			ret.namespacedObjectCount++
-		}
-		seenNS[ns] = true
-		seenGVK[v.GroupVersionKind()] = true
-	}
-	for k := range seenNS {
-		ret.namespaces = append(ret.namespaces, k)
-	}
-	sort.Strings(ret.namespaces)
-	for k := range seenGVK {
-		ret.types = append(ret.types, k)
-	}
-	sort.Slice(ret.types, func(i, j int) bool {
-		left := ret.types[i]
-		right := ret.types[j]
-		if left.Group < right.Group {
-			return true
-		}
-		return left.Kind < right.Kind
-	})
-	return ret
-}
-*/
 
 // add adds the supplied object potentially transforming its gvk to its canonical form.
 func (c *collection) add(object model.K8sQbecMeta) error {

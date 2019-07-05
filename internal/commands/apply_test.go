@@ -41,19 +41,26 @@ func TestApplyBasic(t *testing.T) {
 			return &remote.SyncResult{Type: remote.SyncUpdated, Details: "data updated"}, nil
 		case obj.GetName() == "svc2-secret":
 			return &remote.SyncResult{Type: remote.SyncCreated, Details: "some yaml"}, nil
+		case obj.GetName() == "svc2-deploy":
+			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
 		default:
 			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
 		}
 	}
-	err := s.executeCommand("apply", "dev", "--gc=false")
+	s.client.listFunc = stdLister
+	s.client.deleteFunc = func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error) {
+		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
+	}
+	err := s.executeCommand("apply", "dev")
 	require.Nil(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.EqualValues(remote.SyncOptions{}, captured)
 	a.True(stats["same"].(float64) > 0)
-	a.EqualValues(7, stats["same"])
+	a.EqualValues(8, stats["same"])
 	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret"}, stats["created"])
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm"}, stats["updated"])
+	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deleted"])
 	s.assertErrorLineMatch(regexp.MustCompile(`sync ConfigMap:bar-system:svc2-cm`))
 }
 

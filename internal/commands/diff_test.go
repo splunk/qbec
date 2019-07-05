@@ -18,61 +18,12 @@ package commands
 
 import (
 	"encoding/base64"
+	"regexp"
 	"testing"
 
-	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/remote"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-type dg struct {
-	cmValue     string
-	secretValue string
-}
-
-func (d *dg) get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
-	switch {
-	case obj.GetName() == "svc2-cm":
-		return &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "ConfigMap",
-				"metadata": map[string]interface{}{
-					"creationTimestamp": "xxx",
-					"namespace":         "bar-system",
-					"name":              "svc2-cm",
-					"annotations": map[string]interface{}{
-						"ann/foo": "bar",
-						"ann/bar": "baz",
-					},
-				},
-				"data": map[string]interface{}{
-					"foo": d.cmValue,
-				},
-			},
-		}, nil
-	case obj.GetName() == "svc2-secret":
-		return &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "Secret",
-				"metadata": map[string]interface{}{
-					"creationTimestamp": "xxx",
-					"namespace":         "bar-system",
-					"name":              "svc2-secret",
-				},
-				"data": map[string]interface{}{
-					"foo": base64.StdEncoding.EncodeToString([]byte(d.secretValue)),
-				},
-			},
-		}, nil
-	default:
-		return nil, remote.ErrNotFound
-	}
-
-}
 
 func TestDiffBasicNoDiffs(t *testing.T) {
 	s := newScaffold(t)
@@ -88,16 +39,39 @@ func TestDiffBasic(t *testing.T) {
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
-	err := s.executeCommand("diff", "dev", "--show-deletes=false")
+	s.client.listFunc = stdLister
+	err := s.executeCommand("diff", "dev")
 	require.NotNil(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
+	a.True(regexp.MustCompile(`\d+ object\(s\) different`).MatchString(err.Error()))
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm", "Secret:bar-system:svc2-secret"}, stats["changes"])
+	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deletions"])
 	secretValue := base64.StdEncoding.EncodeToString([]byte("baz"))
 	redactedValue := base64.RawStdEncoding.EncodeToString([]byte("redacted."))
 	a.Contains(s.stdout(), redactedValue)
 	a.Contains(s.stdout(), "qbec.io/component: service2")
 	a.NotContains(s.stdout(), secretValue)
+}
+
+func TestDiffGetFail(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("diff", "dev", "--parallel=1")
+	require.NotNil(t, err)
+	a := assert.New(t)
+	a.Contains(err.Error(), "not implemented")
+}
+
+func TestDiffListFail(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	d := &dg{cmValue: "baz", secretValue: "baz"}
+	s.client.getFunc = d.get
+	err := s.executeCommand("diff", "dev")
+	require.NotNil(t, err)
+	a := assert.New(t)
+	a.Contains(err.Error(), "not implemented")
 }
 
 func TestDiffBasicNoLabels(t *testing.T) {
