@@ -26,8 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var _ = unstructured.Unstructured{}
-
 func tolerantJSON(data interface{}) string {
 	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
@@ -78,6 +76,15 @@ func (w *walker) walkObjects(path string, component string, data interface{}) ([
 				}
 				ret = append(ret, objects...)
 			} else {
+				u := unstructured.Unstructured{Object: t}
+				name := u.GetName()
+				genName := u.GetGenerateName()
+				if name == "" && genName == "" {
+					return nil, fmt.Errorf("object (%v) did not have a name at path %q, (json=\n%s)",
+						reflect.TypeOf(data),
+						path,
+						tolerantJSON(data))
+				}
 				ret = append(ret, model.NewK8sLocalObject(t, w.app, w.tag, component, w.env))
 			}
 			return ret, nil

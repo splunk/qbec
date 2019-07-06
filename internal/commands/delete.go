@@ -58,7 +58,9 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			return err
 		}
 		for _, o := range objects {
-			deletions = append(deletions, o)
+			if o.GetName() != "" {
+				deletions = append(deletions, o)
+			}
 		}
 	} else {
 		all, err := allObjects(config.Config, env)

@@ -62,10 +62,11 @@ type basicObject struct {
 	env       string
 }
 
-func (b *basicObject) Application() string { return b.app }
-func (b *basicObject) Tag() string         { return b.tag }
-func (b *basicObject) Component() string   { return b.component }
-func (b *basicObject) Environment() string { return b.env }
+func (b *basicObject) Application() string     { return b.app }
+func (b *basicObject) Tag() string             { return b.tag }
+func (b *basicObject) Component() string       { return b.component }
+func (b *basicObject) Environment() string     { return b.env }
+func (b *basicObject) GetGenerateName() string { return "" }
 
 type coll struct {
 	data map[objectKey]model.K8sQbecMeta
@@ -114,7 +115,7 @@ type client struct {
 }
 
 func (c *client) DisplayName(o model.K8sMeta) string {
-	return fmt.Sprintf("%s:%s:%s", o.GetKind(), o.GetNamespace(), o.GetName())
+	return fmt.Sprintf("%s:%s:%s", o.GetKind(), o.GetNamespace(), model.NameForDisplay(o))
 }
 
 func (c *client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
@@ -220,14 +221,15 @@ func (s *scaffold) jsonOutput(data interface{}) error {
 	return json.Unmarshal(s.outCapture.Bytes(), &data)
 }
 
-func (s *scaffold) executeCommand(args ...string) error {
+func (s *scaffold) executeCommand(args ...string) (err error) {
 	s.cmd.SetArgs(args)
 	defer func() {
 		if os.Getenv("QBEC_VERBOSE") != "" {
 			l := log.New(os.Stderr, "", 0)
 			l.Println("Command:", args)
-			l.Println("Output:\n" + s.stdout())
-			l.Println("Error:\n" + s.stderr())
+			l.Println("Stdout:\n" + s.stdout())
+			l.Println("Stderr:\n" + s.stderr())
+			l.Println("Err:", err)
 		}
 	}()
 	return s.cmd.Execute()

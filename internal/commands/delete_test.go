@@ -41,6 +41,22 @@ func TestDeleteRemote(t *testing.T) {
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy", "Deployment:bar-system:svc2-deploy"}, stats["deleted"])
 }
 
+func TestDeleteRemoteComponentFilter(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	d := &dg{cmValue: "baz", secretValue: "baz"}
+	s.client.getFunc = d.get
+	s.client.listFunc = stdLister
+	s.client.deleteFunc = func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error) {
+		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
+	}
+	err := s.executeCommand("delete", "dev", "-c", "service2")
+	require.Nil(t, err)
+	stats := s.outputStats()
+	a := assert.New(t)
+	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deleted"])
+}
+
 func TestDeleteLocal(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()

@@ -17,6 +17,8 @@
 package remote
 
 import (
+	"fmt"
+
 	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -40,10 +42,11 @@ type basicObject struct {
 	env       string
 }
 
-func (b *basicObject) Application() string { return b.app }
-func (b *basicObject) Tag() string         { return b.tag }
-func (b *basicObject) Component() string   { return b.component }
-func (b *basicObject) Environment() string { return b.env }
+func (b *basicObject) Application() string     { return b.app }
+func (b *basicObject) Tag() string             { return b.tag }
+func (b *basicObject) Component() string       { return b.component }
+func (b *basicObject) Environment() string     { return b.env }
+func (b *basicObject) GetGenerateName() string { return "" }
 
 type collectMetadata interface {
 	objectNamespace(obj model.K8sMeta) string
@@ -73,6 +76,9 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 	canonicalGVK, err := c.meta.canonicalGroupVersionKind(gvk)
 	if err != nil {
 		return err
+	}
+	if object.GetName() == "" {
+		return fmt.Errorf("internal error: object %v did not have a name", object)
 	}
 	ns := c.meta.objectNamespace(object)
 	key := objectKey{

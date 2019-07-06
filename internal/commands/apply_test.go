@@ -43,6 +43,8 @@ func TestApplyBasic(t *testing.T) {
 			return &remote.SyncResult{Type: remote.SyncCreated, Details: "some yaml"}, nil
 		case obj.GetName() == "svc2-deploy":
 			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
+		case obj.GetName() == "":
+			return &remote.SyncResult{Type: remote.SyncCreated, GeneratedName: obj.GetGenerateName() + "1234", Details: "created"}, nil
 		default:
 			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
 		}
@@ -58,7 +60,7 @@ func TestApplyBasic(t *testing.T) {
 	a.EqualValues(remote.SyncOptions{}, captured)
 	a.True(stats["same"].(float64) > 0)
 	a.EqualValues(8, stats["same"])
-	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret"}, stats["created"])
+	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret", "Job::tj-1234"}, stats["created"])
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm"}, stats["updated"])
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deleted"])
 	s.assertErrorLineMatch(regexp.MustCompile(`sync ConfigMap:bar-system:svc2-cm`))
