@@ -124,7 +124,7 @@ func paramDiffExamples() string {
 func envListExamples() string {
 	return exampleHelp(
 		newExample("env list", "list all environment names, one per line in sorted order"),
-		newExample("env list -o json", "list all enviroments in JSON format, (use -o yaml for YAML)"),
+		newExample("env list -o json", "list all environments in JSON format, (use -o yaml for YAML)"),
 	)
 }
 
