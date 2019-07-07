@@ -1,6 +1,15 @@
 Changelog
 ---
 
+## v0.7.1 (Jul 7, 2019)
+
+* update `jsonnet` version to `v0.13`
+* add `env list` and `env vars` command to enable arbitrary scripts to iterate over and get cluster information
+  from qbec environments.
+* add [support for transient objects](https://github.com/splunk/qbec/commit/78e778b19e5761c2a530917bd5bba9b7abb6fabf) 
+  that do not have a name but have `generateName` set. Always create such objects and garbage collect the versions of 
+  the object created in previous runs.
+
 ## v0.7.0 (Jun 20, 2019)
 
 safety feature: add duplicate checks to disallow more than one object with the same API group, kind, namespace and name.
