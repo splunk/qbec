@@ -32,6 +32,7 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
 // usageError indicates that the user supplied incorrect arguments or flags to the command.
@@ -91,6 +92,7 @@ type Client interface {
 	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
 	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
 	ObjectKey(obj model.K8sMeta) string
+	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 }
 
 // ConfigProvider provides standard configuration available to all commands
