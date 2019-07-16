@@ -48,16 +48,16 @@ func statusFuncFor(obj model.K8sMeta) statusFunc {
 }
 
 type statusObject struct {
-	obj  model.K8sMeta
-	fn   statusFunc
-	ri   WatchProvider
-	opts WaitOptions
+	obj      model.K8sMeta
+	fn       statusFunc
+	ri       WatchProvider
+	listener StatusListener
 }
 
 func (s *statusObject) wait() (finalErr error) {
 	defer func() {
 		if finalErr != nil {
-			s.opts.Listener.OnError(s.obj, finalErr)
+			s.listener.OnError(s.obj, finalErr)
 		}
 	}()
 	watchXface, err := s.ri(s.obj)
@@ -68,13 +68,13 @@ func (s *statusObject) wait() (finalErr error) {
 	_, err = watch.Until(0, watchXface, func(e watch.Event) (bool, error) {
 		switch e.Type {
 		case watch.Deleted:
-			return false, fmt.Errorf("object was deleted while waiting")
+			return false, fmt.Errorf("object was deleted")
 		case watch.Error:
 			return false, fmt.Errorf("watch error: %v", e.Object)
 		}
 		un, ok := e.Object.(*unstructured.Unstructured)
 		if !ok {
-			return false, fmt.Errorf("dunno how to process watch object of type %v", reflect.TypeOf(e.Object))
+			return false, fmt.Errorf("unexpected watch object type want *unstructured.Unstructured, got %v", reflect.TypeOf(e.Object))
 		}
 		status, err := s.fn(un, 0)
 		if err != nil {
@@ -82,12 +82,9 @@ func (s *statusObject) wait() (finalErr error) {
 		}
 		if prevStatus != *status {
 			prevStatus = *status
-			s.opts.Listener.OnStatusChange(s.obj, prevStatus)
+			s.listener.OnStatusChange(s.obj, prevStatus)
 		}
-		if status.Done {
-			return true, nil
-		}
-		return false, nil
+		return status.Done, nil
 	})
 
 	return err
@@ -127,8 +124,8 @@ func (w *WaitOptions) setupDefaults() {
 }
 
 type multiErrors struct {
-	l      sync.Mutex
-	errors []error
+	l     sync.Mutex
+	count int
 }
 
 func (m *multiErrors) add(err error) {
@@ -137,16 +134,16 @@ func (m *multiErrors) add(err error) {
 	}
 	m.l.Lock()
 	defer m.l.Unlock()
-	m.errors = append(m.errors, err)
+	m.count++
 }
 
 func (m *multiErrors) toSummaryError() error {
 	m.l.Lock()
 	defer m.l.Unlock()
-	if len(m.errors) == 0 {
+	if m.count == 0 {
 		return nil
 	}
-	return fmt.Errorf("%d wait errors", len(m.errors))
+	return fmt.Errorf("%d wait errors", m.count)
 }
 
 // WaitUntilComplete waits for the supplied objects to be ready and returns when they are. An error is returned
@@ -161,7 +158,7 @@ func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptio
 		fn := statusFuncFor(obj)
 		if fn != nil {
 			watchObjects = append(watchObjects, obj)
-			statusObjects = append(statusObjects, &statusObject{obj: obj, fn: fn, ri: ri, opts: opts})
+			statusObjects = append(statusObjects, &statusObject{obj: obj, fn: fn, ri: ri, listener: opts.Listener})
 		}
 	}
 	opts.Listener.OnInit(watchObjects)
@@ -173,13 +170,13 @@ func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptio
 		return nil
 	}
 	var wg sync.WaitGroup
-	var errors multiErrors
+	var errs multiErrors
 
 	wg.Add(len(statusObjects))
 	for _, so := range statusObjects {
 		go func(s *statusObject) {
 			defer wg.Done()
-			errors.add(s.wait())
+			errs.add(s.wait())
 		}(so)
 	}
 
@@ -197,8 +194,8 @@ func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptio
 
 	select {
 	case <-done:
-		return errors.toSummaryError()
+		return errs.toSummaryError()
 	case <-timeout:
-		return fmt.Errorf("rollout wait timed out after %v", opts.Timeout)
+		return fmt.Errorf("wait timed out after %v", opts.Timeout)
 	}
 }

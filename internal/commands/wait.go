@@ -51,7 +51,7 @@ func (w *waitListener) OnInit(objects []model.K8sMeta) {
 	for _, o := range objects {
 		name := w.displayNameFn(o)
 		w.remaining[name] = true
-		sio.Printf("\t- %s\n", w.displayNameFn(o))
+		sio.Printf("  - %s\n", w.displayNameFn(o))
 	}
 	sio.Println()
 }
@@ -87,7 +87,7 @@ func (w *waitListener) OnEnd(err error) {
 	}
 	sio.Printf("%s: rollout not complete for the following %d objects\n", w.since(), len(w.remaining))
 	for name := range w.remaining {
-		sio.Printf("\t- %s\n", name)
+		sio.Printf("  - %s\n", name)
 	}
 }
 
