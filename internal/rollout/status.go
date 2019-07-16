@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -21,11 +20,7 @@ func reserialize(un *unstructured.Unstructured, target interface{}) error {
 	return nil
 }
 
-func revisionCheck(object model.K8sMeta, base *unstructured.Unstructured) error {
-	var revision int64
-	if r, ok := object.(Revisioned); ok {
-		revision = r.Revision()
-	}
+func revisionCheck(base *unstructured.Unstructured, revision int64) error {
 	getRevision := func() (int64, error) {
 		v, ok := base.GetAnnotations()["deployment.kubernetes.io/revision"]
 		if !ok {
@@ -45,11 +40,10 @@ func revisionCheck(object model.K8sMeta, base *unstructured.Unstructured) error 
 	return nil
 }
 
-func deploymentStatus(object model.K8sMeta, base *unstructured.Unstructured) (*ObjectStatus, error) {
-	if err := revisionCheck(object, base); err != nil {
+func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectStatus, error) {
+	if err := revisionCheck(base, revision); err != nil {
 		return nil, err
 	}
-
 	var d struct {
 		Metadata struct {
 			Generation      int64  `json:"generation"`
@@ -97,7 +91,7 @@ func deploymentStatus(object model.K8sMeta, base *unstructured.Unstructured) (*O
 	return ret.withDone(true).withDesc("successfully rolled out"), nil
 }
 
-func daemonsetStatus(_ model.K8sMeta, base *unstructured.Unstructured) (*ObjectStatus, error) {
+func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
 	var d struct {
 		Metadata struct {
 			Generation      int64  `json:"generation"`
@@ -137,7 +131,7 @@ func daemonsetStatus(_ model.K8sMeta, base *unstructured.Unstructured) (*ObjectS
 	return ret.withDone(true).withDesc("successfully rolled out"), nil
 }
 
-func statefulsetStatus(_ model.K8sMeta, base *unstructured.Unstructured) (*ObjectStatus, error) {
+func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
 	var d struct {
 		Metadata struct {
 			Generation      int64  `json:"generation"`

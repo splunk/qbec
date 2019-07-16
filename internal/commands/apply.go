@@ -26,6 +26,7 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/rollout"
 	"github.com/splunk/qbec/internal/sio"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 type applyStats struct {
@@ -67,6 +68,28 @@ type nameWrap struct {
 
 func (nw nameWrap) GetName() string {
 	return nw.name
+}
+
+type revWrap struct {
+	model.K8sMeta
+	revision int64
+}
+
+func (r revWrap) Revision() int64 {
+	return r.revision
+}
+
+type nsWrap struct {
+	model.K8sMeta
+	ns string
+}
+
+func (n nsWrap) GetNamespace() string {
+	base := n.K8sMeta.GetNamespace()
+	if base == "" {
+		return n.ns
+	}
+	return base
 }
 
 func doApply(args []string, config applyCommandConfig) error {
@@ -135,15 +158,16 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	var stats applyStats
-	var changedObjects []model.K8sMeta
+	var changedObjects []model.K8sRevisionedMeta
 
 	for _, ob := range objects {
 		res, err := client.Sync(ob, opts)
 		if err != nil {
 			return err
 		}
+		// TODO: change interface to return revision
 		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
-			changedObjects = append(changedObjects, ob)
+			changedObjects = append(changedObjects, revWrap{K8sMeta: ob, revision: 0})
 		}
 		if res.GeneratedName != "" {
 			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
@@ -189,15 +213,22 @@ func doApply(args []string, config applyCommandConfig) error {
 		sio.Noticeln("** dry-run mode, nothing was actually changed **")
 	}
 
+	defaultNs := config.app.DefaultNamespace(env)
 	if config.wait {
 		wl := &waitListener{
 			out:           config.Stderr(),
 			displayNameFn: client.DisplayName,
 		}
-		return rollout.WaitUntilComplete(changedObjects, client.ResourceInterface, rollout.WaitOptions{
-			Listener: wl,
-			Timeout:  config.waitTimeout,
-		})
+		return rollout.WaitUntilComplete(changedObjects,
+			func(obj model.K8sMeta) (watch.Interface, error) {
+				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
+
+			},
+			rollout.WaitOptions{
+				Listener: wl,
+				Timeout:  config.waitTimeout,
+			},
+		)
 	}
 
 	return nil

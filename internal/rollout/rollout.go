@@ -8,11 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/dynamic"
 )
 
 // Revisioned provides a current object revision and is an optional interface
@@ -37,7 +35,7 @@ func (s *ObjectStatus) withDone(done bool) *ObjectStatus {
 	return s
 }
 
-type statusFunc func(m model.K8sMeta, obj *unstructured.Unstructured) (status *ObjectStatus, err error)
+type statusFunc func(obj *unstructured.Unstructured, revision int64) (status *ObjectStatus, err error)
 
 func statusFuncFor(obj model.K8sMeta) statusFunc {
 	gk := obj.GroupVersionKind().GroupKind()
@@ -56,9 +54,9 @@ func statusFuncFor(obj model.K8sMeta) statusFunc {
 }
 
 type statusObject struct {
-	obj  model.K8sMeta
+	obj  model.K8sRevisionedMeta
 	fn   statusFunc
-	ri   ResourceInterfaceProvider
+	ri   WatchProvider
 	opts WaitOptions
 }
 
@@ -68,14 +66,8 @@ func (s *statusObject) wait() (finalErr error) {
 			s.opts.Listener.OnError(s.obj, finalErr)
 		}
 	}()
-	xface, err := s.ri(s.obj.GroupVersionKind(), s.obj.GetNamespace())
+	watchXface, err := s.ri(s.obj)
 	if err != nil {
-		return errors.Wrap(err, "get resource provider")
-	}
-	watchXface, err := xface.Watch(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf(`metadata.name=%s`, s.obj.GetName()), // TODO: escaping
-	})
-	if err != nil { // TODO: implement fallback to poll with get if watch has permissions issues
 		return errors.Wrap(err, "get watch interface")
 	}
 	var prevStatus ObjectStatus
@@ -90,7 +82,7 @@ func (s *statusObject) wait() (finalErr error) {
 		if !ok {
 			return false, fmt.Errorf("dunno how to process watch object of type %v", reflect.TypeOf(e.Object))
 		}
-		status, err := s.fn(s.obj, un)
+		status, err := s.fn(un, s.obj.Revision())
 		if err != nil {
 			return false, err
 		}
@@ -122,8 +114,8 @@ func (n nopListener) OnStatusChange(object model.K8sMeta, rs ObjectStatus) {}
 func (n nopListener) OnError(object model.K8sMeta, err error)              {}
 func (n nopListener) OnEnd(err error)                                      {}
 
-// ResourceInterfaceProvider provides a resource interface for a specific object type and namespace.
-type ResourceInterfaceProvider func(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
+// WatchProvider provides a resource interface for a specific object type and namespace.
+type WatchProvider func(obj model.K8sMeta) (watch.Interface, error)
 
 // WaitOptions are options to the wait function.
 type WaitOptions struct {
@@ -166,7 +158,7 @@ func (m *multiErrors) toSummaryError() error {
 // WaitUntilComplete waits for the supplied objects to be ready and returns when they are. An error is returned
 // if the function times out before all objects are ready. Any status listener provider is notified of
 // individual status changes during the wait.
-func WaitUntilComplete(objects []model.K8sMeta, ri ResourceInterfaceProvider, opts WaitOptions) (finalErr error) {
+func WaitUntilComplete(objects []model.K8sRevisionedMeta, ri WatchProvider, opts WaitOptions) (finalErr error) {
 	opts.setupDefaults()
 
 	var statusObjects []*statusObject

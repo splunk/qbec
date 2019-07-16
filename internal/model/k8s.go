@@ -37,6 +37,12 @@ type K8sMeta interface {
 	GetGenerateName() string
 }
 
+// K8sRevisionedMeta is basic metadata along with a revision.
+type K8sRevisionedMeta interface {
+	K8sMeta
+	Revision() int64 // 0 implies unknown
+}
+
 // NameForDisplay returns the local name of the metadata object, taking
 // generated names into account.
 func NameForDisplay(m K8sMeta) string {

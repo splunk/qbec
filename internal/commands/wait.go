@@ -17,13 +17,19 @@
 package commands
 
 import (
+	"fmt"
 	"io"
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/rollout"
 	"github.com/splunk/qbec/internal/sio"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 )
 
 type waitListener struct {
@@ -73,14 +79,34 @@ func (w *waitListener) OnEnd(err error) {
 	defer w.l.Unlock()
 	sio.Println()
 	if err == nil {
-		sio.Noticef("%6s: rollout complete\n", w.since())
+		sio.Noticef("%s: rollout complete\n", w.since())
 		return
 	}
 	if len(w.remaining) == 0 {
 		return
 	}
-	sio.Printf("%6s: rollout not complete for the following %d objects\n", w.since(), len(w.remaining))
+	sio.Printf("%s: rollout not complete for the following %d objects\n", w.since(), len(w.remaining))
 	for name := range w.remaining {
 		sio.Printf("\t- %s\n", name)
 	}
+}
+
+type resourceInterfaceProvider func(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
+
+func waitWatcher(ri resourceInterfaceProvider, obj model.K8sMeta) (watch.Interface, error) {
+	in, err := ri(obj.GroupVersionKind(), obj.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrap(err, "get resource provider")
+	}
+	_, err = in.Get(obj.GetName(), metav1.GetOptions{})
+	if err != nil { // object must exist
+		return nil, errors.Wrap(err, "get object")
+	}
+	watchXface, err := in.Watch(metav1.ListOptions{
+		FieldSelector: fmt.Sprintf(`metadata.name=%s`, obj.GetName()), // XXX: escaping
+	})
+	if err != nil { // XXX: implement fallback to poll with get if watch has permissions issues
+		return nil, errors.Wrap(err, "get watch interface")
+	}
+	return watchXface, nil
 }
