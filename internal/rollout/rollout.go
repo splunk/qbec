@@ -13,12 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// Revisioned provides a current object revision and is an optional interface
-// that can be implemented by a K8sMeta object specified for waiting on.
-type Revisioned interface {
-	Revision() int64
-}
-
 // ObjectStatus is the opaque status of an object.
 type ObjectStatus struct {
 	Description string // the description of status for display
@@ -54,7 +48,7 @@ func statusFuncFor(obj model.K8sMeta) statusFunc {
 }
 
 type statusObject struct {
-	obj  model.K8sRevisionedMeta
+	obj  model.K8sMeta
 	fn   statusFunc
 	ri   WatchProvider
 	opts WaitOptions
@@ -82,7 +76,7 @@ func (s *statusObject) wait() (finalErr error) {
 		if !ok {
 			return false, fmt.Errorf("dunno how to process watch object of type %v", reflect.TypeOf(e.Object))
 		}
-		status, err := s.fn(un, s.obj.Revision())
+		status, err := s.fn(un, 0)
 		if err != nil {
 			return false, err
 		}
@@ -158,7 +152,7 @@ func (m *multiErrors) toSummaryError() error {
 // WaitUntilComplete waits for the supplied objects to be ready and returns when they are. An error is returned
 // if the function times out before all objects are ready. Any status listener provider is notified of
 // individual status changes during the wait.
-func WaitUntilComplete(objects []model.K8sRevisionedMeta, ri WatchProvider, opts WaitOptions) (finalErr error) {
+func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptions) (finalErr error) {
 	opts.setupDefaults()
 
 	var statusObjects []*statusObject

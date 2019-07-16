@@ -70,13 +70,8 @@ func (nw nameWrap) GetName() string {
 	return nw.name
 }
 
-type revWrap struct {
+type metaWrap struct {
 	model.K8sMeta
-	revision int64
-}
-
-func (r revWrap) Revision() int64 {
-	return r.revision
 }
 
 type nsWrap struct {
@@ -158,16 +153,15 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	var stats applyStats
-	var changedObjects []model.K8sRevisionedMeta
+	var changedObjects []model.K8sMeta
 
 	for _, ob := range objects {
 		res, err := client.Sync(ob, opts)
 		if err != nil {
 			return err
 		}
-		// TODO: change interface to return revision
 		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
-			changedObjects = append(changedObjects, revWrap{K8sMeta: ob, revision: 0})
+			changedObjects = append(changedObjects, metaWrap{K8sMeta: ob})
 		}
 		if res.GeneratedName != "" {
 			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
