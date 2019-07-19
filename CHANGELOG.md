@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.7.2 (Jul 19, 2019)
+
+* add a `--wait` option to the `apply` command to automatically wait for deployments, daemonsets and 
+  statefulsets to be rolled out before the command exits.
+
 ## v0.7.1 (Jul 7, 2019)
 
 * update `jsonnet` version to `v0.13`
