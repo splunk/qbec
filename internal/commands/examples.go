@@ -48,7 +48,8 @@ func exampleHelp(examples ...example) string {
 
 func applyExamples() string {
 	return exampleHelp(
-		newExample("apply dev", "create/ update all dev components and delete extra objects on the server"),
+		newExample("apply dev --yes --wait", "create/ update all dev components and delete extra objects on the server",
+			"do not ask for confirmation, wait until all objects have a ready status"),
 		newExample("apply -n dev", "show what apply would do for the dev environment"),
 		newExample("apply dev -c redis -K secret", "update all objects except secrets just for the redis component"),
 		newExample("apply dev --gc=false", "only create/ update, do not delete extra objects from the server"),
