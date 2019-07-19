@@ -301,6 +301,11 @@ func (c Config) Stdout() io.Writer {
 	return c.stdout
 }
 
+// Stderr returns the standard error configured for the command.
+func (c Config) Stderr() io.Writer {
+	return c.stderr
+}
+
 // Confirm prompts for confirmation if needed.
 func (c Config) Confirm(context string) error {
 	fmt.Fprintln(c.stderr)

@@ -22,13 +22,42 @@ import (
 
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/rollout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func TestNsWrap(t *testing.T) {
+	obj := model.NewK8sObject(map[string]interface{}{
+		"kind":       "foo",
+		"apiversion": "apps/v1",
+		"metadata": map[string]interface{}{
+			"namespace": "foo",
+			"name":      "foo",
+		},
+	})
+	w := nsWrap{K8sMeta: obj, ns: "bar"}
+	a := assert.New(t)
+	a.Equal("foo", w.GetNamespace())
+	a.Equal("foo", w.GetName())
+	obj = model.NewK8sObject(map[string]interface{}{
+		"kind":       "foo",
+		"apiversion": "apps/v1",
+		"metadata": map[string]interface{}{
+			"name": "foo",
+		},
+	})
+	w = nsWrap{K8sMeta: obj, ns: "bar"}
+	a.Equal("bar", w.GetNamespace())
+	a.Equal("foo", w.GetName())
+}
+
 func TestApplyBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
+	applyWaitFn = func(objects []model.K8sMeta, wp rollout.WatchProvider, opts rollout.WaitOptions) (finalErr error) {
+		return nil
+	}
 	first := true
 	var captured remote.SyncOptions
 	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
@@ -53,7 +82,7 @@ func TestApplyBasic(t *testing.T) {
 	s.client.deleteFunc = func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
-	err := s.executeCommand("apply", "dev")
+	err := s.executeCommand("apply", "dev", "--wait")
 	require.Nil(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)

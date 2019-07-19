@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/dynamic"
 )
 
 type objectKey struct {
@@ -168,6 +169,10 @@ func (c *client) ObjectKey(obj model.K8sMeta) string {
 		return c.objectKeyFunc(obj)
 	}
 	return fmt.Sprintf("%s:%s:%s:%s", obj.GroupVersionKind().Group, obj.GetKind(), obj.GetNamespace(), obj.GetName())
+}
+
+func (c *client) ResourceInterface(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func setPwd(t *testing.T, dir string) func() {

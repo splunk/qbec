@@ -270,7 +270,7 @@ func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 
 	qc := queryConfig{
 		scope:            scope,
-		resourceProvider: c.resourceInterface,
+		resourceProvider: c.ResourceInterface,
 		namespacedTypes:  filterEligibleTypes(namespacedTypes),
 		clusterTypes:     filterEligibleTypes(clusterTypes),
 		verbosity:        c.verbosity,
@@ -548,7 +548,8 @@ func (c *Client) jitResource(gvk schema.GroupVersionKind) (*metav1.APIResource, 
 	return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
 }
 
-func (c *Client) resourceInterface(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
+// ResourceInterface returns a dynamic resource interface for the supplied group version kind and namespace.
+func (c *Client) ResourceInterface(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
 	client, err := c.pool.ClientForGroupVersionKind(gvk)
 	if err != nil {
 		return nil, err
@@ -567,7 +568,7 @@ func (c *Client) resourceInterfaceWithDefaultNs(gvk schema.GroupVersionKind, nam
 	if namespace == "" {
 		namespace = c.defaultNs
 	}
-	return c.resourceInterface(gvk, namespace)
+	return c.ResourceInterface(gvk, namespace)
 }
 
 func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updateResult, error) {

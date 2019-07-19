@@ -1,0 +1,112 @@
+{
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": {
+        "creationTimestamp": "2018-10-09T18:30:32Z",
+        "generation": 7,
+        "annotations": {
+          "test/error": "/json unmarshal/"
+        },
+        "labels": {
+            "alertmanager": "main"
+        },
+        "name": "ss",
+        "namespace": "default",
+        "ownerReferences": [],
+        "resourceVersion": "95295103",
+        "selfLink": "/apis/apps/v1/namespaces/default/statefulsets/ss",
+        "uid": "6822c06e-cbf1-11e8-ba1c-0669aafd7d14"
+    },
+    "spec": {
+        "podManagementPolicy": "OrderedReady",
+        "replicas": 3,
+        "revisionHistoryLimit": 10,
+        "selector": {
+            "matchLabels": {
+                "alertmanager": "main",
+                "app": "alertmanager"
+            }
+        },
+        "serviceName": "alertmanager-operated",
+        "template": {
+            "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                    "alertmanager": "main",
+                    "app": "alertmanager"
+                }
+            },
+            "spec": {
+                "affinity": {
+                    "podAntiAffinity": {
+                        "preferredDuringSchedulingIgnoredDuringExecution": [
+                            {
+                                "podAffinityTerm": {
+                                    "labelSelector": {
+                                        "matchExpressions": [
+                                            {
+                                                "key": "alertmanager",
+                                                "operator": "In",
+                                                "values": [
+                                                    "main"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "topologyKey": "failure-domain.beta.kubernetes.io/zone"
+                                },
+                                "weight": 100
+                            }
+                        ]
+                    }
+                },
+                "containers": [
+                    {
+                        "args": [
+                        ],
+                        "env": [
+                            {
+                                "name": "POD_IP",
+                                "valueFrom": {
+                                    "fieldRef": {
+                                        "apiVersion": "v1",
+                                        "fieldPath": "status.podIP"
+                                    }
+                                }
+                            }
+                        ],
+                        "image": "nginx",
+                        "imagePullPolicy": "IfNotPresent",
+                        "name": "main",
+                        "ports": [
+                            {
+                                "containerPort": 9093,
+                                "name": "web",
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File"
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "restartPolicy": "Always",
+                "schedulerName": "default-scheduler",
+                "terminationGracePeriodSeconds": 0
+            }
+        },
+        "updateStrategy": {
+            "type": "RollingUpdate"
+        }
+    },
+    "status": {
+        "collisionCount": 0,
+        "currentReplicas": 3,
+        "currentRevision": "ss-5fbcc4fd55",
+        "observedGeneration": "xxx",
+        "readyReplicas": 3,
+        "replicas": 3,
+        "updateRevision": "ss-5fbcc4fd55",
+        "updatedReplicas": 3
+    }
+}

@@ -18,12 +18,15 @@ package commands
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
+	"github.com/splunk/qbec/internal/rollout"
 	"github.com/splunk/qbec/internal/sio"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 type applyStats struct {
@@ -53,6 +56,8 @@ type applyCommandConfig struct {
 	*Config
 	syncOptions remote.SyncOptions
 	gc          bool
+	wait        bool
+	waitTimeout time.Duration
 	filterFunc  func() (filterParams, error)
 }
 
@@ -64,6 +69,25 @@ type nameWrap struct {
 func (nw nameWrap) GetName() string {
 	return nw.name
 }
+
+type metaWrap struct {
+	model.K8sMeta
+}
+
+type nsWrap struct {
+	model.K8sMeta
+	ns string
+}
+
+func (n nsWrap) GetNamespace() string {
+	base := n.K8sMeta.GetNamespace()
+	if base == "" {
+		return n.ns
+	}
+	return base
+}
+
+var applyWaitFn = rollout.WaitUntilComplete // allow override in tests
 
 func doApply(args []string, config applyCommandConfig) error {
 	if len(args) != 1 {
@@ -131,10 +155,15 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	var stats applyStats
+	var changedObjects []model.K8sMeta
+
 	for _, ob := range objects {
 		res, err := client.Sync(ob, opts)
 		if err != nil {
 			return err
+		}
+		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
+			changedObjects = append(changedObjects, metaWrap{K8sMeta: ob})
 		}
 		if res.GeneratedName != "" {
 			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
@@ -179,8 +208,25 @@ func doApply(args []string, config applyCommandConfig) error {
 	if opts.DryRun {
 		sio.Noticeln("** dry-run mode, nothing was actually changed **")
 	}
-	return nil
 
+	defaultNs := config.app.DefaultNamespace(env)
+	if config.wait {
+		wl := &waitListener{
+			displayNameFn: client.DisplayName,
+		}
+		return applyWaitFn(changedObjects,
+			func(obj model.K8sMeta) (watch.Interface, error) {
+				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
+
+			},
+			rollout.WaitOptions{
+				Listener: wl,
+				Timeout:  config.waitTimeout,
+			},
+		)
+	}
+
+	return nil
 }
 
 func newApplyCommand(cp ConfigProvider) *cobra.Command {
@@ -198,9 +244,20 @@ func newApplyCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.syncOptions.DryRun, "dry-run", "n", false, "dry-run, do not create/ update resources but show what would happen")
 	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
+	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for objects to be ready")
+	var waitTime string
+	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.Config = cp()
+		var err error
+		config.waitTimeout, err = time.ParseDuration(waitTime)
+		if err != nil {
+			return newUsageError(fmt.Sprintf("invalid wait timeout: %s, %v", waitTime, err))
+		}
+		if config.syncOptions.DryRun {
+			config.wait = false
+		}
 		return wrapError(doApply(args, config))
 	}
 	return cmd
