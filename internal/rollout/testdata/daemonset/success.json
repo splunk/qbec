@@ -1,0 +1,78 @@
+{
+    "apiVersion": "extensions/v1beta1",
+    "kind": "DaemonSet",
+    "metadata": {
+        "annotations": {
+            "test/status": "successfully rolled out",
+            "test/done": "true"
+        },
+        "creationTimestamp": "2018-06-20T06:18:37Z",
+        "generation": 12,
+        "labels": {
+            "app": "nginx"
+        },
+        "name": "nginx",
+        "namespace": "default",
+        "resourceVersion": "95296317",
+        "selfLink": "/apis/extensions/v1beta1/namespaces/default/daemonsets/nginx",
+        "uid": "c466b004-7451-11e8-9551-0a42ecfaa366"
+    },
+    "spec": {
+        "revisionHistoryLimit": 10,
+        "selector": {
+            "matchLabels": {
+                "app": "nginx"
+            }
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "app": "nginx"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "image": "nginx",
+                        "name": "main",
+                        "ports": [
+                            {
+                                "containerPort": 8181,
+                                "hostPort": 8181,
+                                "name": "http",
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "resources": {},
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File"
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "hostNetwork": true,
+                "restartPolicy": "Always",
+                "schedulerName": "default-scheduler",
+                "securityContext": {},
+                "serviceAccount": "default",
+                "serviceAccountName": "default",
+                "terminationGracePeriodSeconds": 30
+            }
+        },
+        "templateGeneration": 11,
+        "updateStrategy": {
+            "rollingUpdate": {
+                "maxUnavailable": 1
+            },
+            "type": "RollingUpdate"
+        }
+    },
+    "status": {
+        "currentNumberScheduled": 3,
+        "desiredNumberScheduled": 3,
+        "numberAvailable": 3,
+        "numberMisscheduled": 0,
+        "numberReady": 3,
+        "observedGeneration": 12,
+        "updatedNumberScheduled": 3
+    }
+}
