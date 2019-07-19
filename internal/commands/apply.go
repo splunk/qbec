@@ -87,6 +87,8 @@ func (n nsWrap) GetNamespace() string {
 	return base
 }
 
+var applyWaitFn = rollout.WaitUntilComplete // allow override in tests
+
 func doApply(args []string, config applyCommandConfig) error {
 	if len(args) != 1 {
 		return newUsageError("exactly one environment required")
@@ -212,7 +214,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		wl := &waitListener{
 			displayNameFn: client.DisplayName,
 		}
-		return rollout.WaitUntilComplete(changedObjects,
+		return applyWaitFn(changedObjects,
 			func(obj model.K8sMeta) (watch.Interface, error) {
 				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
 
