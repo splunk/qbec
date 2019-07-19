@@ -210,7 +210,6 @@ func doApply(args []string, config applyCommandConfig) error {
 	defaultNs := config.app.DefaultNamespace(env)
 	if config.wait {
 		wl := &waitListener{
-			out:           config.Stderr(),
 			displayNameFn: client.DisplayName,
 		}
 		return rollout.WaitUntilComplete(changedObjects,
@@ -254,8 +253,8 @@ func newApplyCommand(cp ConfigProvider) *cobra.Command {
 		if err != nil {
 			return newUsageError(fmt.Sprintf("invalid wait timeout: %s, %v", waitTime, err))
 		}
-		if config.syncOptions.DryRun && config.wait {
-			return newUsageError("cannot specify wait with dry run")
+		if config.syncOptions.DryRun {
+			config.wait = false
 		}
 		return wrapError(doApply(args, config))
 	}

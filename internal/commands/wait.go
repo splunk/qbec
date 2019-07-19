@@ -18,7 +18,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -32,18 +31,19 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+// waitListener listens to rollout status updates and provides feedback to the user.
 type waitListener struct {
-	l             sync.Mutex
-	start         time.Time
-	out           io.Writer
-	remaining     map[string]bool
-	displayNameFn func(meta model.K8sMeta) string
+	start         time.Time                       // start time using which relative progress times are printed
+	displayNameFn func(meta model.K8sMeta) string // MUST produce distinct strings for each object, name used as internal key
+	l             sync.Mutex                      // locks concurrent access to field below
+	remaining     map[string]bool                 // objects not yet marked "done"
 }
 
 func (w *waitListener) since() time.Duration {
 	return time.Since(w.start).Round(time.Second)
 }
 
+// OnInit implements the interface method and prints the name of all objects on which we ware waiting
 func (w *waitListener) OnInit(objects []model.K8sMeta) {
 	w.start = time.Now()
 	w.remaining = map[string]bool{}
@@ -56,38 +56,41 @@ func (w *waitListener) OnInit(objects []model.K8sMeta) {
 	sio.Println()
 }
 
+// OnStatusChange prints the updated status of the object and removes it from the internal list of remaining items
+// if the status is marked done.
 func (w *waitListener) OnStatusChange(object model.K8sMeta, rs rollout.ObjectStatus) {
 	w.l.Lock()
 	defer w.l.Unlock()
 	if rs.Done {
 		name := w.displayNameFn(object)
 		delete(w.remaining, name)
-		sio.Noticef("✓ %6s: %s :: %s (%d remaining)\n", w.since(), w.displayNameFn(object), rs.Description, len(w.remaining))
+		sio.Noticef("✓ %-6s: %s :: %s (%d remaining)\n", w.since(), w.displayNameFn(object), rs.Description, len(w.remaining))
 		return
 	}
-	sio.Debugf("  %6s: %s :: %s\n", w.since(), w.displayNameFn(object), rs.Description)
+	sio.Debugf("  %-6s: %s :: %s\n", w.since(), w.displayNameFn(object), rs.Description)
 }
 
+// OnError prints the error for the object to console.
 func (w *waitListener) OnError(object model.K8sMeta, err error) {
 	w.l.Lock()
 	defer w.l.Unlock()
-	sio.Errorf("%6s: %s :: %v\n", w.since(), w.displayNameFn(object), err)
+	sio.Errorf("%-6s: %s :: %v\n", w.since(), w.displayNameFn(object), err)
 }
 
+// OnEnd prints a list of objects that are not marked complete.
 func (w *waitListener) OnEnd(err error) {
 	w.l.Lock()
 	defer w.l.Unlock()
 	sio.Println()
+	if len(w.remaining) > 0 {
+		sio.Printf("%s: rollout not complete for the following %d objects\n", w.since(), len(w.remaining))
+		for name := range w.remaining {
+			sio.Printf("  - %s\n", name)
+		}
+	}
 	if err == nil {
-		sio.Noticef("%s: rollout complete\n", w.since())
+		sio.Noticef("✓ %s: rollout complete\n", w.since())
 		return
-	}
-	if len(w.remaining) == 0 {
-		return
-	}
-	sio.Printf("%s: rollout not complete for the following %d objects\n", w.since(), len(w.remaining))
-	for name := range w.remaining {
-		sio.Printf("  - %s\n", name)
 	}
 }
 

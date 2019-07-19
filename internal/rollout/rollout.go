@@ -1,3 +1,19 @@
+/*
+   Copyright 2019 Splunk Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package rollout
 
 import (
@@ -9,7 +25,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -29,62 +44,45 @@ func (s *ObjectStatus) withDone(done bool) *ObjectStatus {
 	return s
 }
 
-type statusFunc func(obj *unstructured.Unstructured, revision int64) (status *ObjectStatus, err error)
-
-func statusFuncFor(obj model.K8sMeta) statusFunc {
-	gk := obj.GroupVersionKind().GroupKind()
-	switch gk {
-	case schema.GroupKind{Group: "apps", Kind: "Deployment"},
-		schema.GroupKind{Group: "extensions", Kind: "Deployment"}:
-		return deploymentStatus
-	case schema.GroupKind{Group: "apps", Kind: "DaemonSet"},
-		schema.GroupKind{Group: "extensions", Kind: "DaemonSet"}:
-		return daemonsetStatus
-	case schema.GroupKind{Group: "apps", Kind: "StatefulSet"}:
-		return statefulsetStatus
-	default:
-		return nil
-	}
-}
-
-type statusObject struct {
+type statusTracker struct {
 	obj      model.K8sMeta
 	fn       statusFunc
-	ri       WatchProvider
+	wp       WatchProvider
 	listener StatusListener
 }
 
-func (s *statusObject) wait() (finalErr error) {
+func (s *statusTracker) wait() (finalErr error) {
 	defer func() {
 		if finalErr != nil {
 			s.listener.OnError(s.obj, finalErr)
 		}
 	}()
-	watchXface, err := s.ri(s.obj)
+	watcher, err := s.wp(s.obj)
 	if err != nil {
 		return errors.Wrap(err, "get watch interface")
 	}
 	var prevStatus ObjectStatus
-	_, err = watch.Until(0, watchXface, func(e watch.Event) (bool, error) {
+	_, err = watch.Until(0, watcher, func(e watch.Event) (bool, error) {
 		switch e.Type {
 		case watch.Deleted:
 			return false, fmt.Errorf("object was deleted")
 		case watch.Error:
 			return false, fmt.Errorf("watch error: %v", e.Object)
+		default:
+			un, ok := e.Object.(*unstructured.Unstructured)
+			if !ok {
+				return false, fmt.Errorf("unexpected watch object type: want *unstructured.Unstructured, got %v", reflect.TypeOf(e.Object))
+			}
+			status, err := s.fn(un, 0)
+			if err != nil {
+				return false, err
+			}
+			if prevStatus != *status {
+				prevStatus = *status
+				s.listener.OnStatusChange(s.obj, prevStatus)
+			}
+			return status.Done, nil
 		}
-		un, ok := e.Object.(*unstructured.Unstructured)
-		if !ok {
-			return false, fmt.Errorf("unexpected watch object type want *unstructured.Unstructured, got %v", reflect.TypeOf(e.Object))
-		}
-		status, err := s.fn(un, 0)
-		if err != nil {
-			return false, err
-		}
-		if prevStatus != *status {
-			prevStatus = *status
-			s.listener.OnStatusChange(s.obj, prevStatus)
-		}
-		return status.Done, nil
 	})
 
 	return err
@@ -98,6 +96,7 @@ type StatusListener interface {
 	OnEnd(err error)                                      // end of status updates with final error
 }
 
+// nopListener is the sentinel used when caller doesn't provide a listener.
 type nopListener struct{}
 
 func (n nopListener) OnInit(objects []model.K8sMeta)                       {}
@@ -123,60 +122,68 @@ func (w *WaitOptions) setupDefaults() {
 	}
 }
 
-type multiErrors struct {
+// errCounter tracks a count of seen errors.
+type errCounter struct {
 	l     sync.Mutex
 	count int
 }
 
-func (m *multiErrors) add(err error) {
+func (ec *errCounter) add(err error) {
 	if err == nil {
 		return
 	}
-	m.l.Lock()
-	defer m.l.Unlock()
-	m.count++
+	ec.l.Lock()
+	ec.count++
+	ec.l.Unlock()
 }
 
-func (m *multiErrors) toSummaryError() error {
-	m.l.Lock()
-	defer m.l.Unlock()
-	if m.count == 0 {
+func (ec *errCounter) toSummaryError() error {
+	ec.l.Lock()
+	defer ec.l.Unlock()
+	if ec.count == 0 {
 		return nil
 	}
-	return fmt.Errorf("%d wait errors", m.count)
+	return fmt.Errorf("%d wait errors", ec.count)
 }
+
+// allow standard status function map to be overridden for tests.
+var statusMapper = statusFuncFor
 
 // WaitUntilComplete waits for the supplied objects to be ready and returns when they are. An error is returned
 // if the function times out before all objects are ready. Any status listener provider is notified of
-// individual status changes during the wait.
-func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptions) (finalErr error) {
+// individual status changes and errors during the wait. Individual watches having errors are turned into a
+// aggregate error.
+func WaitUntilComplete(objects []model.K8sMeta, wp WatchProvider, opts WaitOptions) (finalErr error) {
 	opts.setupDefaults()
 
-	var statusObjects []*statusObject
-	var watchObjects []model.K8sMeta
+	var watchObjects []model.K8sMeta // the subset of objects we will actually watch
+	var trackers []*statusTracker    // the list of trackers that we will run
+
+	// extract objects to wait for
 	for _, obj := range objects {
-		fn := statusFuncFor(obj)
+		fn := statusMapper(obj)
 		if fn != nil {
 			watchObjects = append(watchObjects, obj)
-			statusObjects = append(statusObjects, &statusObject{obj: obj, fn: fn, ri: ri, listener: opts.Listener})
+			trackers = append(trackers, &statusTracker{obj: obj, fn: fn, wp: wp, listener: opts.Listener})
 		}
 	}
+	// notify listeners
 	opts.Listener.OnInit(watchObjects)
 	defer func() {
 		opts.Listener.OnEnd(finalErr)
 	}()
 
-	if len(statusObjects) == 0 {
+	if len(trackers) == 0 {
 		return nil
 	}
 	var wg sync.WaitGroup
-	var errs multiErrors
+	var counter errCounter
 
-	wg.Add(len(statusObjects))
-	for _, so := range statusObjects {
-		go func(s *statusObject) {
+	wg.Add(len(trackers))
+	for _, so := range trackers {
+		go func(s *statusTracker) {
 			defer wg.Done()
-			errs.add(s.wait())
+			counter.add(s.wait())
 		}(so)
 	}
 
@@ -194,7 +201,7 @@ func WaitUntilComplete(objects []model.K8sMeta, ri WatchProvider, opts WaitOptio
 
 	select {
 	case <-done:
-		return errs.toSummaryError()
+		return counter.toSummaryError()
 	case <-timeout:
 		return fmt.Errorf("wait timed out after %v", opts.Timeout)
 	}

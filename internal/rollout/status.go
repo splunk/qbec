@@ -1,3 +1,19 @@
+/*
+   Copyright 2019 Splunk Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package rollout
 
 import (
@@ -6,8 +22,32 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+// this file contains the logic of extracting status from specific k8s object types.
+// Logic is kubectl logic but code is our own. In particular we declare the relevant
+// attributes of the objects we need instead of using the code-generated types.
+
+type statusFunc func(obj *unstructured.Unstructured, revision int64) (status *ObjectStatus, err error)
+
+func statusFuncFor(obj model.K8sMeta) statusFunc {
+	gk := obj.GroupVersionKind().GroupKind()
+	switch gk {
+	case schema.GroupKind{Group: "apps", Kind: "Deployment"},
+		schema.GroupKind{Group: "extensions", Kind: "Deployment"}:
+		return deploymentStatus
+	case schema.GroupKind{Group: "apps", Kind: "DaemonSet"},
+		schema.GroupKind{Group: "extensions", Kind: "DaemonSet"}:
+		return daemonsetStatus
+	case schema.GroupKind{Group: "apps", Kind: "StatefulSet"}:
+		return statefulsetStatus
+	default:
+		return nil
+	}
+}
 
 func reserialize(un *unstructured.Unstructured, target interface{}) error {
 	b, err := json.Marshal(un)
@@ -46,22 +86,22 @@ func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectS
 	}
 	var d struct {
 		Metadata struct {
-			Generation      int64  `json:"generation"`
-			ResourceVersion string `json:"resourceVersion"`
-		} `json:"metadata"`
+			Generation      int64
+			ResourceVersion string
+		}
 		Spec struct {
-			Replicas int32 `json:"replicas"`
-		} `json:"spec"`
+			Replicas int32
+		}
 		Status struct {
-			ObservedGeneration int64 `json:"observedGeneration"`
-			Replicas           int32 `json:"replicas"`
-			AvailableReplicas  int32 `json:"availableReplicas"`
-			UpdatedReplicas    int32 `json:"updatedReplicas"`
+			ObservedGeneration int64
+			Replicas           int32
+			AvailableReplicas  int32
+			UpdatedReplicas    int32
 			Conditions         []struct {
-				Type   string `json:"type"`
-				Reason string `json:"reason,omitempty"`
-			} `json:"conditions"`
-		} `json:"status"`
+				Type   string
+				Reason string
+			}
+		}
 	}
 	if err := reserialize(base, &d); err != nil {
 		return nil, err
@@ -94,20 +134,20 @@ func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectS
 func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
 	var d struct {
 		Metadata struct {
-			Generation      int64  `json:"generation"`
-			ResourceVersion string `json:"resourceVersion"`
-		} `json:"metadata"`
+			Generation      int64
+			ResourceVersion string
+		}
 		Spec struct {
 			UpdateStrategy struct {
 				Type string
-			} `json:"updateStrategy"`
-		} `json:"spec"`
+			}
+		}
 		Status struct {
-			DesiredNumberScheduled int32 `json:"desiredNumberScheduled"`
-			UpdatedNumberScheduled int32 `json:"updatedNumberScheduled"`
-			NumberAvailable        int32 `json:"numberAvailable"`
-			ObservedGeneration     int64 `json:"observedGeneration"`
-		} `json:"status"`
+			DesiredNumberScheduled int32
+			UpdatedNumberScheduled int32
+			NumberAvailable        int32
+			ObservedGeneration     int64
+		}
 	}
 	if err := reserialize(base, &d); err != nil {
 		return nil, err
@@ -134,25 +174,25 @@ func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, e
 func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
 	var d struct {
 		Metadata struct {
-			Generation      int64  `json:"generation"`
-			ResourceVersion string `json:"resourceVersion"`
-		} `json:"metadata"`
+			Generation      int64
+			ResourceVersion string
+		}
 		Spec struct {
 			UpdateStrategy struct {
 				Type          string
 				RollingUpdate struct {
-					Partition *int32 `json:"partition"`
-				} `json:"rollingUpdate"`
-			} `json:"updateStrategy"`
-			Replicas *int32 `json:"replicas"`
-		} `json:"spec"`
+					Partition *int32
+				}
+			}
+			Replicas *int32
+		}
 		Status struct {
-			UpdatedReplicas    int32  `json:"updatedReplicas"`
-			ReadyReplicas      int32  `json:"readyReplicas"`
-			CurrentRevision    string `json:"currentRevision"`
-			UpdateRevision     string `json:"updateRevision"`
-			ObservedGeneration int64  `json:"observedGeneration"`
-		} `json:"status"`
+			UpdatedReplicas    int32
+			ReadyReplicas      int32
+			CurrentRevision    string
+			UpdateRevision     string
+			ObservedGeneration int64
+		}
 	}
 	if err := reserialize(base, &d); err != nil {
 		return nil, err
