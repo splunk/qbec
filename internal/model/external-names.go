@@ -16,7 +16,8 @@
 
 package model
 
-const qbecLeading = "qbec.io"
+// QBECMetadataPrefix is the leading path for all metadata set by qbec.
+const QBECMetadataPrefix = "qbec.io/"
 
 // QbecNames is the set of names used by Qbec.
 var QbecNames = struct {
@@ -30,13 +31,13 @@ var QbecNames = struct {
 	TagVarName          string // the name of the external variable that has the tag name
 	DefaultNsVarName    string // the name of the external variable that has the default namespace
 }{
-	ApplicationLabel:    qbecLeading + "/application",
-	TagLabel:            qbecLeading + "/tag",
-	ComponentAnnotation: qbecLeading + "/component",
-	EnvironmentLabel:    qbecLeading + "/environment",
-	PristineAnnotation:  qbecLeading + "/last-applied",
-	ParamsCodeVarName:   qbecLeading + "/params",
-	EnvVarName:          qbecLeading + "/env",
-	TagVarName:          qbecLeading + "/tag",
-	DefaultNsVarName:    qbecLeading + "/defaultNs",
+	ApplicationLabel:    QBECMetadataPrefix + "application",
+	TagLabel:            QBECMetadataPrefix + "tag",
+	ComponentAnnotation: QBECMetadataPrefix + "component",
+	EnvironmentLabel:    QBECMetadataPrefix + "environment",
+	PristineAnnotation:  QBECMetadataPrefix + "last-applied",
+	ParamsCodeVarName:   QBECMetadataPrefix + "params",
+	EnvVarName:          QBECMetadataPrefix + "env",
+	TagVarName:          QBECMetadataPrefix + "tag",
+	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
 }
