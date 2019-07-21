@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+// Package k8smeta implements metadata discovery and normalization of K8s resources.
 package k8smeta
 
 import (

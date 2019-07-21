@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/rollout"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,12 +55,12 @@ func TestWaitListener(t *testing.T) {
 	d1, d2, d3 := testDeployment("d1"), testDeployment("d2"), testDeployment("d3")
 	wl := &waitListener{displayNameFn: testDisplayName}
 	wl.OnInit([]model.K8sMeta{d1, d2, d3})
-	wl.OnStatusChange(d1, rollout.ObjectStatus{Description: "starting d1 rollout"})
-	wl.OnStatusChange(d2, rollout.ObjectStatus{Description: "1 of 2 replicas updated"})
-	wl.OnStatusChange(d3, rollout.ObjectStatus{Description: "waiting for version"})
-	wl.OnStatusChange(d1, rollout.ObjectStatus{Description: "successful rollout", Done: true})
-	wl.OnStatusChange(d2, rollout.ObjectStatus{Description: "successful rollout", Done: true})
-	wl.OnStatusChange(d3, rollout.ObjectStatus{Description: "successful rollout", Done: true})
+	wl.OnStatusChange(d1, types.RolloutStatus{Description: "starting d1 rollout"})
+	wl.OnStatusChange(d2, types.RolloutStatus{Description: "1 of 2 replicas updated"})
+	wl.OnStatusChange(d3, types.RolloutStatus{Description: "waiting for version"})
+	wl.OnStatusChange(d1, types.RolloutStatus{Description: "successful rollout", Done: true})
+	wl.OnStatusChange(d2, types.RolloutStatus{Description: "successful rollout", Done: true})
+	wl.OnStatusChange(d3, types.RolloutStatus{Description: "successful rollout", Done: true})
 
 	wl.OnEnd(nil)
 
@@ -86,11 +86,11 @@ func TestWaitListenerTimeout(t *testing.T) {
 	d1, d2, d3 := testDeployment("d1"), testDeployment("d2"), testDeployment("d3")
 	wl := &waitListener{displayNameFn: testDisplayName}
 	wl.OnInit([]model.K8sMeta{d1, d2, d3})
-	wl.OnStatusChange(d1, rollout.ObjectStatus{Description: "starting d1 rollout"})
-	wl.OnStatusChange(d2, rollout.ObjectStatus{Description: "1 of 2 replicas updated"})
-	wl.OnStatusChange(d3, rollout.ObjectStatus{Description: "waiting for version"})
-	wl.OnStatusChange(d1, rollout.ObjectStatus{Description: "successful rollout", Done: true})
-	wl.OnStatusChange(d2, rollout.ObjectStatus{Description: "successful rollout", Done: true})
+	wl.OnStatusChange(d1, types.RolloutStatus{Description: "starting d1 rollout"})
+	wl.OnStatusChange(d2, types.RolloutStatus{Description: "1 of 2 replicas updated"})
+	wl.OnStatusChange(d3, types.RolloutStatus{Description: "waiting for version"})
+	wl.OnStatusChange(d1, types.RolloutStatus{Description: "successful rollout", Done: true})
+	wl.OnStatusChange(d2, types.RolloutStatus{Description: "successful rollout", Done: true})
 	wl.OnError(d3, fmt.Errorf("d3 missing"))
 
 	wl.OnEnd(fmt.Errorf("1 error"))

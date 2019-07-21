@@ -1,4 +1,4 @@
-package rollout
+package types
 
 import (
 	"encoding/json"
@@ -15,6 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+func TestObjectStatus(t *testing.T) {
+	os := RolloutStatus{}
+	os.withDesc("foo").withDone(true)
+	assert.Equal(t, "foo", os.Description)
+	assert.True(t, os.Done)
+}
+
 func load(t *testing.T, file string) *unstructured.Unstructured {
 	b, err := ioutil.ReadFile(file)
 	require.Nil(t, err)
@@ -24,7 +31,7 @@ func load(t *testing.T, file string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: data}
 }
 
-func checkExpectedStatus(t *testing.T, data *unstructured.Unstructured, rev int64, fn statusFunc) {
+func checkExpectedStatus(t *testing.T, data *unstructured.Unstructured, rev int64, fn RolloutStatusFunc) {
 	a := assert.New(t)
 	expectedDesc := data.GetAnnotations()["test/status"]
 	expectedDone := data.GetAnnotations()["test/done"] == "true"
@@ -61,7 +68,7 @@ func testDir(t *testing.T, dir string) {
 				rev, err = strconv.ParseInt(inputRevStr, 10, 64)
 				require.Nil(t, err)
 			}
-			statusFn := statusFuncFor(model.NewK8sObject(un.Object))
+			statusFn := StatusFuncFor(model.NewK8sObject(un.Object))
 			require.NotNil(t, statusFn)
 			checkExpectedStatus(t, un, rev, statusFn)
 		})
@@ -89,6 +96,6 @@ func TestUnknownObject(t *testing.T) {
 			"name":      "foo",
 		},
 	})
-	statusFn := statusFuncFor(obj)
+	statusFn := StatusFuncFor(obj)
 	require.Nil(t, statusFn)
 }

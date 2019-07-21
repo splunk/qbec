@@ -103,19 +103,3 @@ func TestK8sLocalObjectWithTag(t *testing.T) {
 	a.Equal("e1", labels[QbecNames.EnvironmentLabel])
 	a.Equal("t1", labels[QbecNames.TagLabel])
 }
-
-func TestSecrets(t *testing.T) {
-	cmObj := NewK8sLocalObject(toData(cm), "app1", "", "c1", "e1")
-	secretObj := NewK8sLocalObject(toData(secret), "", "app1", "c1", "e1")
-	a := assert.New(t)
-	a.False(HasSensitiveInfo(cmObj.ToUnstructured()))
-	a.True(HasSensitiveInfo(secretObj.ToUnstructured()))
-	changed, ok := HideSensitiveLocalInfo(cmObj)
-	a.Equal(cmObj, changed)
-	a.False(ok)
-	changed, ok = HideSensitiveLocalInfo(secretObj)
-	a.NotEqual(secretObj, changed)
-	a.True(ok)
-	v := changed.ToUnstructured().Object["data"].(map[string]interface{})["foo"]
-	a.NotEqual(b64, v)
-}

@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+// Package rollout implements waiting for rollout completion of a set of objects.
 package rollout
 
 import (
@@ -24,29 +25,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// ObjectStatus is the opaque status of an object.
-type ObjectStatus struct {
-	Description string // the description of status for display
-	Done        bool   // indicator if the status is "ready"
-}
-
-func (s *ObjectStatus) withDesc(desc string) *ObjectStatus {
-	s.Description = desc
-	return s
-}
-
-func (s *ObjectStatus) withDone(done bool) *ObjectStatus {
-	s.Done = done
-	return s
-}
-
 type statusTracker struct {
 	obj      model.K8sMeta
-	fn       statusFunc
+	fn       types.RolloutStatusFunc
 	wp       WatchProvider
 	listener StatusListener
 }
@@ -61,7 +47,7 @@ func (s *statusTracker) wait() (finalErr error) {
 	if err != nil {
 		return errors.Wrap(err, "get watch interface")
 	}
-	var prevStatus ObjectStatus
+	var prevStatus types.RolloutStatus
 	_, err = watch.Until(0, watcher, func(e watch.Event) (bool, error) {
 		switch e.Type {
 		case watch.Deleted:
@@ -90,19 +76,19 @@ func (s *statusTracker) wait() (finalErr error) {
 
 // StatusListener receives status update callbacks.
 type StatusListener interface {
-	OnInit(objects []model.K8sMeta)                       // the set of objects that are being monitored
-	OnStatusChange(object model.K8sMeta, rs ObjectStatus) // status for specified object
-	OnError(object model.K8sMeta, err error)              // watch error of some kind for specified object
-	OnEnd(err error)                                      // end of status updates with final error
+	OnInit(objects []model.K8sMeta)                              // the set of objects that are being monitored
+	OnStatusChange(object model.K8sMeta, rs types.RolloutStatus) // status for specified object
+	OnError(object model.K8sMeta, err error)                     // watch error of some kind for specified object
+	OnEnd(err error)                                             // end of status updates with final error
 }
 
 // nopListener is the sentinel used when caller doesn't provide a listener.
 type nopListener struct{}
 
-func (n nopListener) OnInit(objects []model.K8sMeta)                       {}
-func (n nopListener) OnStatusChange(object model.K8sMeta, rs ObjectStatus) {}
-func (n nopListener) OnError(object model.K8sMeta, err error)              {}
-func (n nopListener) OnEnd(err error)                                      {}
+func (n nopListener) OnInit(objects []model.K8sMeta)                              {}
+func (n nopListener) OnStatusChange(object model.K8sMeta, rs types.RolloutStatus) {}
+func (n nopListener) OnError(object model.K8sMeta, err error)                     {}
+func (n nopListener) OnEnd(err error)                                             {}
 
 // WatchProvider provides a resource interface for a specific object type and namespace.
 type WatchProvider func(obj model.K8sMeta) (watch.Interface, error)
@@ -147,7 +133,7 @@ func (ec *errCounter) toSummaryError() error {
 }
 
 // allow standard status function map to be overridden for tests.
-var statusMapper = statusFuncFor
+var statusMapper = types.StatusFuncFor
 
 // WaitUntilComplete waits for the supplied objects to be ready and returns when they are. An error is returned
 // if the function times out before all objects are ready. Any status listener provider is notified of
