@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package rollout
+package types
 
 import (
 	"encoding/json"
@@ -27,13 +27,32 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// this file contains the logic of extracting status from specific k8s object types.
+// this file contains the logic of extracting rollout status from specific k8s object types.
 // Logic is kubectl logic but code is our own. In particular we declare the relevant
 // attributes of the objects we need instead of using the code-generated types.
 
-type statusFunc func(obj *unstructured.Unstructured, revision int64) (status *ObjectStatus, err error)
+// RolloutStatus is the opaque rollout status of an object.
+type RolloutStatus struct {
+	Description string // the description of status for display
+	Done        bool   // indicator if the status is "ready"
+}
 
-func statusFuncFor(obj model.K8sMeta) statusFunc {
+func (s *RolloutStatus) withDesc(desc string) *RolloutStatus {
+	s.Description = desc
+	return s
+}
+
+func (s *RolloutStatus) withDone(done bool) *RolloutStatus {
+	s.Done = done
+	return s
+}
+
+// RolloutStatusFunc returns the rollout status for the supplied object.
+type RolloutStatusFunc func(obj *unstructured.Unstructured, revision int64) (status *RolloutStatus, err error)
+
+// StatusFuncFor returns the status function for the specified object or nil
+// if a status function does not exist for it.
+func StatusFuncFor(obj model.K8sMeta) RolloutStatusFunc {
 	gk := obj.GroupVersionKind().GroupKind()
 	switch gk {
 	case schema.GroupKind{Group: "apps", Kind: "Deployment"},
@@ -80,7 +99,7 @@ func revisionCheck(base *unstructured.Unstructured, revision int64) error {
 	return nil
 }
 
-func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectStatus, error) {
+func deploymentStatus(base *unstructured.Unstructured, revision int64) (*RolloutStatus, error) {
 	if err := revisionCheck(base, revision); err != nil {
 		return nil, err
 	}
@@ -107,7 +126,7 @@ func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectS
 		return nil, err
 	}
 
-	var ret ObjectStatus
+	var ret RolloutStatus
 
 	if d.Metadata.Generation > d.Status.ObservedGeneration {
 		return ret.withDesc(fmt.Sprintf("waiting for spec update to be observed")), nil
@@ -131,7 +150,7 @@ func deploymentStatus(base *unstructured.Unstructured, revision int64) (*ObjectS
 	return ret.withDone(true).withDesc("successfully rolled out"), nil
 }
 
-func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
+func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*RolloutStatus, error) {
 	var d struct {
 		Metadata struct {
 			Generation      int64
@@ -153,7 +172,7 @@ func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, e
 		return nil, err
 	}
 
-	var ret ObjectStatus
+	var ret RolloutStatus
 	if d.Spec.UpdateStrategy.Type != "RollingUpdate" {
 		return ret.withDone(true).withDesc(fmt.Sprintf("skip rollout check for daemonset (strategy=%s)", d.Spec.UpdateStrategy.Type)), nil
 	}
@@ -171,7 +190,7 @@ func daemonsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, e
 	return ret.withDone(true).withDesc("successfully rolled out"), nil
 }
 
-func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
+func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*RolloutStatus, error) {
 	var d struct {
 		Metadata struct {
 			Generation      int64
@@ -198,7 +217,7 @@ func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*ObjectStatus,
 		return nil, err
 	}
 
-	var ret ObjectStatus
+	var ret RolloutStatus
 
 	if d.Spec.UpdateStrategy.Type != "RollingUpdate" {
 		return ret.withDone(true).withDesc(fmt.Sprintf("skip rollout check for stateful set (strategy=%s)", d.Spec.UpdateStrategy.Type)), nil

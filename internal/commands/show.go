@@ -26,6 +26,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/types"
 )
 
 type metaOnly struct {
@@ -119,7 +120,7 @@ func doShow(args []string, config showCommandConfig) error {
 
 	if !config.showSecrets {
 		for i, o := range objects {
-			objects[i], _ = model.HideSensitiveLocalInfo(o)
+			objects[i], _ = types.HideSensitiveLocalInfo(o)
 		}
 	}
 

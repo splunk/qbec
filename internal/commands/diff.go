@@ -29,6 +29,7 @@ import (
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -235,7 +236,7 @@ func (d *differ) diff(ob model.K8sMeta) error {
 			return u
 		}
 		if !d.showSecrets {
-			u, _ = model.HideSensitiveInfo(u)
+			u, _ = types.HideSensitiveInfo(u)
 		}
 		d.ignores.preprocess(u)
 		return u

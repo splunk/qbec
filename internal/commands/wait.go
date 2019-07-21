@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/rollout"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
@@ -58,7 +58,7 @@ func (w *waitListener) OnInit(objects []model.K8sMeta) {
 
 // OnStatusChange prints the updated status of the object and removes it from the internal list of remaining items
 // if the status is marked done.
-func (w *waitListener) OnStatusChange(object model.K8sMeta, rs rollout.ObjectStatus) {
+func (w *waitListener) OnStatusChange(object model.K8sMeta, rs types.RolloutStatus) {
 	w.l.Lock()
 	defer w.l.Unlock()
 	if rs.Done {

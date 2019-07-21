@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,13 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 )
-
-func TestObjectStatus(t *testing.T) {
-	os := ObjectStatus{}
-	os.withDesc("foo").withDone(true)
-	assert.Equal(t, "foo", os.Description)
-	assert.True(t, os.Done)
-}
 
 type testEvent struct {
 	wait  time.Duration
@@ -116,7 +110,7 @@ func (l *testListener) OnInit(objects []model.K8sMeta) {
 	l.t.Log("init", len(objects), "objects")
 }
 
-func (l *testListener) OnStatusChange(object model.K8sMeta, rs ObjectStatus) {
+func (l *testListener) OnStatusChange(object model.K8sMeta, rs types.RolloutStatus) {
 	l.l.Lock()
 	defer l.l.Unlock()
 	k := testKey(object)
@@ -142,7 +136,7 @@ func (l *testListener) OnEnd(err error) {
 	l.t.Log("end", "err=", err, "remaining=", l.remainingObjects)
 }
 
-func newObject(kind string, name string, status *ObjectStatus, err error) map[string]interface{} {
+func newObject(kind string, name string, status *types.RolloutStatus, err error) map[string]interface{} {
 	anns := map[string]interface{}{}
 	ret := map[string]interface{}{
 		"apiVersion": "apps/v1",
@@ -163,17 +157,17 @@ func newObject(kind string, name string, status *ObjectStatus, err error) map[st
 	return ret
 }
 
-func extractStatus(obj *unstructured.Unstructured, _ int64) (*ObjectStatus, error) {
+func extractStatus(obj *unstructured.Unstructured, _ int64) (*types.RolloutStatus, error) {
 	desc := obj.GetAnnotations()["status/desc"]
 	errmsg := obj.GetAnnotations()["status/error"]
 	done := obj.GetAnnotations()["status/done"]
 	if errmsg != "" {
 		return nil, fmt.Errorf(errmsg)
 	}
-	return &ObjectStatus{Description: desc, Done: done == "true"}, nil
+	return &types.RolloutStatus{Description: desc, Done: done == "true"}, nil
 }
 
-func testStatusMapper(obj model.K8sMeta) statusFunc {
+func testStatusMapper(obj model.K8sMeta) types.RolloutStatusFunc {
 	switch obj.GetKind() {
 	case "Foo", "Bar":
 		return extractStatus
@@ -186,14 +180,14 @@ func newTestMeta(kind string, name string) model.K8sMeta {
 	return model.NewK8sObject(newObject(kind, name, nil, nil))
 }
 
-func newUnstructured(kind string, name string, status *ObjectStatus, err error) *unstructured.Unstructured {
+func newUnstructured(kind string, name string, status *types.RolloutStatus, err error) *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: newObject(kind, name, status, err)}
 }
 
 func TestWaitUntilComplete(t *testing.T) {
 	statusMapper = testStatusMapper
 	defer func() {
-		statusMapper = statusFuncFor
+		statusMapper = types.StatusFuncFor
 	}()
 
 	foo1, foo2 := newTestMeta("Foo", "foo1"), newTestMeta("Foo", "foo2")
@@ -207,21 +201,21 @@ func TestWaitUntilComplete(t *testing.T) {
 					wait: 0,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &ObjectStatus{Description: "start"}, nil),
+						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &types.RolloutStatus{Description: "start"}, nil),
 					},
 				},
 				{
 					wait: 10 * time.Millisecond,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &ObjectStatus{Description: "mid"}, nil),
+						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &types.RolloutStatus{Description: "mid"}, nil),
 					},
 				},
 				{
 					wait: 20 * time.Millisecond,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &ObjectStatus{Description: "end", Done: true}, nil),
+						Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &types.RolloutStatus{Description: "end", Done: true}, nil),
 					},
 				},
 			},
@@ -230,7 +224,7 @@ func TestWaitUntilComplete(t *testing.T) {
 					wait: 5 * time.Millisecond,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(foo2.GetKind(), foo2.GetName(), &ObjectStatus{Description: "done", Done: true}, nil),
+						Object: newUnstructured(foo2.GetKind(), foo2.GetName(), &types.RolloutStatus{Description: "done", Done: true}, nil),
 					},
 				},
 			},
@@ -239,7 +233,7 @@ func TestWaitUntilComplete(t *testing.T) {
 					wait: 30 * time.Millisecond,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &ObjectStatus{Description: "done", Done: true}, nil),
+						Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &types.RolloutStatus{Description: "done", Done: true}, nil),
 					},
 				},
 			},
@@ -263,7 +257,7 @@ func TestWaitUntilComplete(t *testing.T) {
 func TestWaitUntilCompleteDefaultOpts(t *testing.T) {
 	statusMapper = testStatusMapper
 	defer func() {
-		statusMapper = statusFuncFor
+		statusMapper = types.StatusFuncFor
 	}()
 
 	bar1 := newTestMeta("Bar", "bar1")
@@ -275,7 +269,7 @@ func TestWaitUntilCompleteDefaultOpts(t *testing.T) {
 					wait: 30 * time.Millisecond,
 					event: watch.Event{
 						Type:   watch.Modified,
-						Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &ObjectStatus{Description: "done", Done: true}, nil),
+						Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &types.RolloutStatus{Description: "done", Done: true}, nil),
 					},
 				},
 			},
@@ -303,7 +297,7 @@ func (r runtimeFoo) DeepCopyObject() runtime.Object {
 func TestWaitNegative(t *testing.T) {
 	statusMapper = testStatusMapper
 	defer func() {
-		statusMapper = statusFuncFor
+		statusMapper = types.StatusFuncFor
 	}()
 	foo1, foo2 := newTestMeta("Foo", "foo1"), newTestMeta("Foo", "foo2")
 	bar1 := newTestMeta("Bar", "bar1")
@@ -326,14 +320,14 @@ func TestWaitNegative(t *testing.T) {
 								wait: 0,
 								event: watch.Event{
 									Type:   watch.Modified,
-									Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &ObjectStatus{Description: "start"}, nil),
+									Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &types.RolloutStatus{Description: "start"}, nil),
 								},
 							},
 							{
 								wait: 10 * time.Millisecond,
 								event: watch.Event{
 									Type:   watch.Modified,
-									Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &ObjectStatus{Description: "mid"}, nil),
+									Object: newUnstructured(foo1.GetKind(), foo1.GetName(), &types.RolloutStatus{Description: "mid"}, nil),
 								},
 							},
 						},
@@ -342,7 +336,7 @@ func TestWaitNegative(t *testing.T) {
 								wait: 30 * time.Millisecond,
 								event: watch.Event{
 									Type:   watch.Modified,
-									Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &ObjectStatus{Description: "done", Done: true}, nil),
+									Object: newUnstructured(bar1.GetKind(), bar1.GetName(), &types.RolloutStatus{Description: "done", Done: true}, nil),
 								},
 							},
 						},

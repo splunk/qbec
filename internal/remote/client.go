@@ -28,11 +28,12 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/types"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	apiTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 )
@@ -284,12 +285,12 @@ func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 }
 
 type updateResult struct {
-	SkipReason    string          `json:"skip,omitempty"`
-	Operation     string          `json:"operation,omitempty"`
-	Source        string          `json:"source,omitempty"`
-	Kind          types.PatchType `json:"kind,omitempty"`
-	DisplayPatch  string          `json:"patch,omitempty"`
-	GeneratedName string          `json:"generatedName,omitempty"`
+	SkipReason    string             `json:"skip,omitempty"`
+	Operation     string             `json:"operation,omitempty"`
+	Source        string             `json:"source,omitempty"`
+	Kind          apiTypes.PatchType `json:"kind,omitempty"`
+	DisplayPatch  string             `json:"patch,omitempty"`
+	GeneratedName string             `json:"generatedName,omitempty"`
 	patch         []byte
 }
 
@@ -376,7 +377,7 @@ func extractCustomTypes(obj model.K8sObject) (schema.GroupVersionKind, error) {
 func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
 	// set up the pristine strategy.
 	var prw pristineReadWriter = qbecPristine{}
-	sensitive := model.HasSensitiveInfo(original.ToUnstructured())
+	sensitive := types.HasSensitiveInfo(original.ToUnstructured())
 
 	internal := internalSyncOptions{
 		secretDryRun:       false,
@@ -450,7 +451,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 	var obj model.K8sLocalObject
 	if internal.secretDryRun {
 		opts.DryRun = true // won't affect caller since passed by value
-		obj, _ = model.HideSensitiveLocalInfo(original)
+		obj, _ = types.HideSensitiveLocalInfo(original)
 	} else {
 		o, err := internal.pristiner.createFromPristine(original)
 		if err != nil {
@@ -472,7 +473,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 			}
 			delete(ann, internal.pristineAnnotation)
 			remObj.SetAnnotations(ann)
-			c, _ := model.HideSensitiveInfo(remObj)
+			c, _ := types.HideSensitiveInfo(remObj)
 			remObj = c
 		}
 		result, err = c.maybeUpdate(obj, remObj, opts)
