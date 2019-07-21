@@ -48,6 +48,8 @@ metadata:
   labels:
     name: foo-system
     system: "true"
+  annotations:
+    name: foo-system
   name: foo-system
 
 ---

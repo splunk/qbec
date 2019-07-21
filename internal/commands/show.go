@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -27,6 +28,7 @@ import (
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type metaOnly struct {
@@ -65,7 +67,11 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 	objects = out
 
 	switch format {
-	case "yaml":
+	case "json":
+		encoder := json.NewEncoder(w)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(objects)
+	default:
 		b, err := yaml.Marshal(objects)
 		if err != nil {
 			return err
@@ -73,12 +79,6 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 		fmt.Fprintln(w, "---")
 		fmt.Fprintf(w, "%s\n", b)
 		return nil
-	case "json":
-		encoder := json.NewEncoder(w)
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(objects)
-	default:
-		return fmt.Errorf("showNames: unsupport format %q", format)
 	}
 }
 
@@ -89,7 +89,41 @@ type showCommandConfig struct {
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
+	clean           bool
 	filterFunc      func() (filterParams, error)
+}
+
+func removeMetadataKey(un *unstructured.Unstructured, name string) {
+	meta := un.Object["metadata"]
+	if m, ok := meta.(map[string]interface{}); ok {
+		delete(m, name)
+	}
+}
+
+func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
+	un := obj.ToUnstructured()
+	annotations := un.GetAnnotations()
+	labels := un.GetLabels()
+	deleteQbecKeys := func(obj map[string]string) {
+		for k := range obj {
+			if strings.HasPrefix(k, model.QBECMetadataPrefix) {
+				delete(obj, k)
+			}
+		}
+	}
+	deleteQbecKeys(labels)
+	deleteQbecKeys(annotations)
+	if len(labels) == 0 {
+		removeMetadataKey(un, "labels")
+	} else {
+		un.SetLabels(labels)
+	}
+	if len(annotations) == 0 {
+		removeMetadataKey(un, "annotations")
+	} else {
+		un.SetAnnotations(annotations)
+	}
+	return un
 }
 
 func doShow(args []string, config showCommandConfig) error {
@@ -140,9 +174,24 @@ func doShow(args []string, config showCommandConfig) error {
 		return showNames(objects, config.formatSpecified, format, config.Stdout())
 	}
 
+	var displayObjects []*unstructured.Unstructured
+	mapper := func(o model.K8sLocalObject) *unstructured.Unstructured { return o.ToUnstructured() }
+
+	if config.clean {
+		mapper = cleanMeta
+	}
+
+	for _, o := range objects {
+		displayObjects = append(displayObjects, mapper(o))
+	}
+
 	switch format {
-	case "yaml":
-		for _, o := range objects {
+	case "json":
+		encoder := json.NewEncoder(config.Stdout())
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(displayObjects)
+	default:
+		for _, o := range displayObjects {
 			b, err := yaml.Marshal(o)
 			if err != nil {
 				return err
@@ -151,12 +200,6 @@ func doShow(args []string, config showCommandConfig) error {
 			fmt.Fprintf(config.Stdout(), "%s\n", b)
 		}
 		return nil
-	case "json":
-		encoder := json.NewEncoder(config.Stdout())
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(objects)
-	default:
-		return fmt.Errorf("show: unsupported format %q", format)
 	}
 }
 
@@ -174,6 +217,7 @@ func newShowCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
 	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
 	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
+	cmd.Flags().BoolVar(&config.clean, "clean", false, "do not display qbec-generated labels and annotations")
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
