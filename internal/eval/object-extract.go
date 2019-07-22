@@ -20,17 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 
-	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func tolerantJSON(data interface{}) string {
-	b, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return "<unable to serialize object to JSON>"
-	}
+	b, _ := json.MarshalIndent(data, "", "  ")
 	return string(b)
 }
 
@@ -42,85 +37,80 @@ func str(data map[string]interface{}, attr string) string {
 	return ""
 }
 
-type walker struct {
-	app  string
-	tag  string
-	env  string
-	data interface{}
+type rawObjectType = int
+
+const (
+	unknownType rawObjectType = iota
+	leafType
+	arrayType
+)
+
+func getRawObjectType(data map[string]interface{}) rawObjectType {
+	kind := str(data, "kind")
+	apiVersion := str(data, "apiVersion")
+	if kind == "" || apiVersion == "" {
+		return unknownType
+	}
+	_, isArray := data["items"].([]interface{})
+	if isArray { // kubernetes list, not primitive
+		return arrayType
+	}
+	return leafType
 }
 
-func (w *walker) walk() ([]model.K8sLocalObject, error) {
-	return w.walkObjects("$", "", w.data)
+func walk(data interface{}) ([]map[string]interface{}, error) {
+	return walkObjects("$", data, data)
 }
 
-func (w *walker) walkObjects(path string, component string, data interface{}) ([]model.K8sLocalObject, error) {
-	var ret []model.K8sLocalObject
+func walkObjects(path string, data interface{}, ctx interface{}) ([]map[string]interface{}, error) {
+	var ret []map[string]interface{}
+	if data == nil {
+		return ret, nil
+	}
 	switch t := data.(type) {
 	case []interface{}:
 		for i, o := range t {
-			objects, err := w.walkObjects(fmt.Sprintf("%s[%d]", path, i), component, o)
+			objects, err := walkObjects(fmt.Sprintf("%s[%d]", path, i), o, data)
 			if err != nil {
 				return nil, err
 			}
 			ret = append(ret, objects...)
 		}
 	case map[string]interface{}:
-		kind := str(t, "kind")
-		apiVersion := str(t, "apiVersion")
-		if kind != "" && apiVersion != "" {
-			array, isArray := t["items"].([]interface{})
-			if isArray { // kubernetes list, extract items
-				objects, err := w.walkObjects(fmt.Sprintf("%s.items", path), component, array)
-				if err != nil {
-					return nil, err
-				}
-				ret = append(ret, objects...)
-			} else {
-				u := unstructured.Unstructured{Object: t}
-				name := u.GetName()
-				genName := u.GetGenerateName()
-				if name == "" && genName == "" {
-					return nil, fmt.Errorf("object (%v) did not have a name at path %q, (json=\n%s)",
-						reflect.TypeOf(data),
-						path,
-						tolerantJSON(data))
-				}
-				ret = append(ret, model.NewK8sLocalObject(t, w.app, w.tag, component, w.env))
-			}
-			return ret, nil
-		}
-		for k, v := range t {
-			comp := component
-			if component == "" {
-				comp = k
-			}
-			objects, err := w.walkObjects(fmt.Sprintf("%s.%s", path, k), comp, v)
+		rt := getRawObjectType(t)
+		switch rt {
+		case arrayType:
+			array := t["items"].([]interface{})
+			objects, err := walkObjects(fmt.Sprintf("%s.items", path), array, data)
 			if err != nil {
 				return nil, err
 			}
 			ret = append(ret, objects...)
+		case leafType:
+			u := unstructured.Unstructured{Object: t}
+			name := u.GetName()
+			genName := u.GetGenerateName()
+			if name == "" && genName == "" {
+				return nil, fmt.Errorf("object (%v) did not have a name at path %q, (json=\n%s)",
+					reflect.TypeOf(data),
+					path,
+					tolerantJSON(data))
+			}
+			ret = append(ret, t)
+		default:
+			for k, v := range t {
+				objects, err := walkObjects(fmt.Sprintf("%s.%s", path, k), v, data)
+				if err != nil {
+					return nil, err
+				}
+				ret = append(ret, objects...)
+			}
 		}
 	default:
 		return nil, fmt.Errorf("unexpected type for object (%v) at path %q, (json=\n%s)",
 			reflect.TypeOf(data),
 			path,
-			tolerantJSON(data))
+			tolerantJSON(ctx))
 	}
-	return ret, nil
-}
-
-func k8sObjectsFromJSON(data map[string]interface{}, app, tag, env string) ([]model.K8sLocalObject, error) {
-	w := walker{app: app, tag: tag, env: env, data: data}
-	ret, err := w.walk()
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		left := ret[i]
-		right := ret[j]
-		leftKey := fmt.Sprintf("%s:%s:%s:%s", left.Component(), left.GetNamespace(), left.GroupVersionKind().Kind, left.GetName())
-		rightKey := fmt.Sprintf("%s:%s:%s:%s", right.Component(), right.GetNamespace(), right.GroupVersionKind().Kind, right.GetName())
-		return leftKey < rightKey
-	})
 	return ret, nil
 }

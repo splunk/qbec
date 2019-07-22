@@ -21,8 +21,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
@@ -33,24 +35,64 @@ import (
 const (
 	defaultConcurrency = 5
 	maxDisplayErrors   = 3
+	postprocessTLAVAr  = "object"
 )
 
 // VMConfigFunc is a function that returns a VM configuration containing only the
 // specified top-level variables of interest.
 type VMConfigFunc func(tlaVars []string) vm.Config
 
-// Context is the evaluation context
-type Context struct {
-	App         string       // the application for which the evaluation is done
-	Tag         string       // the gc tag if present
-	Env         string       // the environment for which the evaluation is done
-	DefaultNs   string       // the default namespace to expose as an external variable
-	VMConfig    VMConfigFunc // the base VM config to use for eval
-	Verbose     bool         // show generated code
-	Concurrency int          // concurrent components to evaluate, default 5
+type postProc struct {
+	ctx  Context
+	code string
+	file string
 }
 
-func (c Context) vm(tlas []string) *vm.VM {
+func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error) {
+	if p.code == "" {
+		return obj, nil
+	}
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "json marshal")
+	}
+	cfg := p.ctx.baseVMConfig(nil).WithTopLevelCodeVars(map[string]string{
+		postprocessTLAVAr: string(b),
+	})
+
+	jvm := vm.New(cfg)
+	evalCode, err := jvm.EvaluateSnippet(p.file, p.code)
+	if err != nil {
+		return nil, errors.Wrap(err, "post-eval object")
+	}
+
+	var data interface{}
+	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", p.file))
+	}
+	t, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("post-eval did not return an object, %s", evalCode)
+	}
+	if getRawObjectType(t) != leafType {
+		return nil, fmt.Errorf("post-eval did not return a K8s object, %s", evalCode)
+	}
+	return t, nil
+}
+
+// Context is the evaluation context
+type Context struct {
+	App             string       // the application for which the evaluation is done
+	Tag             string       // the gc tag if present
+	Env             string       // the environment for which the evaluation is done
+	DefaultNs       string       // the default namespace to expose as an external variable
+	VMConfig        VMConfigFunc // the base VM config to use for eval
+	Verbose         bool         // show generated code
+	Concurrency     int          // concurrent components to evaluate, default 5
+	PostProcessFile string       // the file that contains post-processing code for all objects
+}
+
+func (c Context) baseVMConfig(tlas []string) vm.Config {
 	fn := c.VMConfig
 	if fn == nil {
 		fn = defaultFunc
@@ -60,23 +102,56 @@ func (c Context) vm(tlas []string) *vm.VM {
 		model.QbecNames.TagVarName:       c.Tag,
 		model.QbecNames.DefaultNsVarName: c.DefaultNs,
 	})
-	return vm.New(cfg)
+	return cfg
+}
+
+func (c Context) vm(tlas []string) *vm.VM {
+	return vm.New(c.baseVMConfig(tlas))
+}
+
+func (c Context) postProcessor() (postProc, error) {
+	if c.PostProcessFile == "" {
+		return postProc{}, nil
+	}
+	b, err := ioutil.ReadFile(c.PostProcessFile)
+	if err != nil {
+		return postProc{}, errors.Wrap(err, "read post-eval file")
+	}
+	return postProc{
+		ctx:  c,
+		code: string(b),
+		file: c.PostProcessFile,
+	}, nil
 }
 
 var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
 
 // Components evaluates the specified components using the specific runtime
 // parameters file and returns the result.
-func Components(components []model.Component, ctx Context) ([]model.K8sLocalObject, error) {
-	componentMap, err := evalComponents(components, ctx)
+func Components(components []model.Component, ctx Context) (_ []model.K8sLocalObject, finalErr error) {
+	start := time.Now()
+	defer func() {
+		if finalErr == nil {
+			sio.Debugf("%d components evaluated in %v\n", len(components), time.Since(start).Round(time.Millisecond))
+		}
+	}()
+	pe, err := ctx.postProcessor()
 	if err != nil {
 		return nil, err
 	}
-	objs, err := k8sObjectsFromJSON(componentMap, ctx.App, ctx.Tag, ctx.Env)
+	ret, err := evalComponents(components, ctx, pe)
 	if err != nil {
-		return nil, errors.Wrap(err, "extract objects")
+		return nil, err
 	}
-	return objs, nil
+
+	sort.Slice(ret, func(i, j int) bool {
+		left := ret[i]
+		right := ret[j]
+		leftKey := fmt.Sprintf("%s:%s:%s:%s", left.Component(), left.GetNamespace(), left.GroupVersionKind().Kind, left.GetName())
+		rightKey := fmt.Sprintf("%s:%s:%s:%s", right.Component(), right.GetNamespace(), right.GroupVersionKind().Kind, right.GetName())
+		return leftKey < rightKey
+	})
+	return ret, nil
 }
 
 // Params evaluates the supplied parameters file in the supplied VM and
@@ -101,7 +176,7 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 	return ret, nil
 }
 
-func evalComponent(ctx Context, c model.Component) (interface{}, error) {
+func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLocalObject, error) {
 	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
 	contextFile := c.File
@@ -127,11 +202,25 @@ func evalComponent(ctx Context, c model.Component) (interface{}, error) {
 	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", c.File))
 	}
-	return data, nil
+
+	objs, err := walk(data)
+	if err != nil {
+		return nil, errors.Wrap(err, "extract objects")
+	}
+
+	var processed []model.K8sLocalObject
+	for _, o := range objs {
+		proc, err := pe.run(o)
+		if err != nil {
+			return nil, err
+		}
+		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env))
+	}
+	return processed, nil
 }
 
-func evalComponents(list []model.Component, ctx Context) (map[string]interface{}, error) {
-	ret := map[string]interface{}{}
+func evalComponents(list []model.Component, ctx Context, pe postProc) ([]model.K8sLocalObject, error) {
+	var ret []model.K8sLocalObject
 	if len(list) == 0 {
 		return ret, nil
 	}
@@ -159,12 +248,12 @@ func evalComponents(list []model.Component, ctx Context) (map[string]interface{}
 		go func() {
 			defer wg.Done()
 			for c := range ch {
-				obj, err := evalComponent(ctx, c)
+				objs, err := evalComponent(ctx, c, pe)
 				l.Lock()
 				if err != nil {
 					errs = append(errs, err)
 				} else {
-					ret[c.Name] = obj
+					ret = append(ret, objs...)
 				}
 				l.Unlock()
 			}

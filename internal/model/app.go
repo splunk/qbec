@@ -153,6 +153,11 @@ func (a *App) ParamsFile() string {
 	return a.inner.Spec.ParamsFile
 }
 
+// PostProcessor returns the post processor file for the app or the empty string if not defined.
+func (a *App) PostProcessor() string {
+	return a.inner.Spec.PostProcessor
+}
+
 // LibPaths returns the library paths set up for the app.
 func (a *App) LibPaths() []string {
 	return a.inner.Spec.LibPaths

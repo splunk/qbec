@@ -64,6 +64,9 @@ type AppSpec struct {
 	// standard file containing parameters for all environments returning correct values based on qbec.io/env external
 	// variable, defaults to params.libsonnet
 	ParamsFile string `json:"paramsFile,omitempty"`
+	// file containing jsonnet code that can be used to post-process all objects, typically adding metadata like
+	// annotations.
+	PostProcessor string `json:"postProcessor,omitempty"`
 	// the interface for jsonnet variables.
 	Vars Variables `json:"vars,omitempty"`
 	// set of environments for the app
