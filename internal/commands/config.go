@@ -236,13 +236,14 @@ func (c Config) App() *model.App { return c.app }
 // EvalContext returns the evaluation context for the supplied environment.
 func (c Config) EvalContext(env string) eval.Context {
 	return eval.Context{
-		App:         c.App().Name(),
-		Tag:         c.App().Tag(),
-		Env:         env,
-		DefaultNs:   c.app.DefaultNamespace(env),
-		VMConfig:    c.vmConfig,
-		Verbose:     c.Verbosity() > 1,
-		Concurrency: c.EvalConcurrency(),
+		App:             c.App().Name(),
+		Tag:             c.App().Tag(),
+		Env:             env,
+		DefaultNs:       c.app.DefaultNamespace(env),
+		VMConfig:        c.vmConfig,
+		Verbose:         c.Verbosity() > 1,
+		Concurrency:     c.EvalConcurrency(),
+		PostProcessFile: c.App().PostProcessor(),
 	}
 }
 

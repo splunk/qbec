@@ -66,7 +66,7 @@ func TestEvalComponents(t *testing.T) {
 			Name: "a",
 			File: "testdata/components/a.json",
 		},
-	}, Context{Env: "dev", Verbose: true})
+	}, Context{Env: "dev", Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
 	require.Nil(t, err)
 	require.Equal(t, 3, len(objs))
 	a := assert.New(t)
@@ -79,16 +79,22 @@ func TestEvalComponents(t *testing.T) {
 	a.Equal("ConfigMap", obj.GroupVersionKind().Kind)
 	a.Equal("", obj.GetNamespace())
 	a.Equal("json-config-map", obj.GetName())
+	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
+	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 
 	obj = objs[1]
 	a.Equal("b", obj.Component())
 	a.Equal("dev", obj.Environment())
 	a.Equal("yaml-config-map", obj.GetName())
+	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
+	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 
 	obj = objs[2]
 	a.Equal("c", obj.Component())
 	a.Equal("dev", obj.Environment())
 	a.Equal("jsonnet-config-map", obj.GetName())
+	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
+	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 }
 
 func TestEvalComponentsEdges(t *testing.T) {
@@ -99,18 +105,18 @@ func TestEvalComponentsEdges(t *testing.T) {
 		{Name: "g4", File: "testdata/good-components/g4.jsonnet"},
 		{Name: "g5", File: "testdata/good-components/g5.jsonnet"},
 	}
-	goodAssert := func(t *testing.T, ret map[string]interface{}, err error) {
+	goodAssert := func(t *testing.T, ret []model.K8sLocalObject, err error) {
 		require.NotNil(t, err)
 	}
 	tests := []struct {
 		name        string
 		components  []model.Component
-		asserter    func(*testing.T, map[string]interface{}, error)
+		asserter    func(*testing.T, []model.K8sLocalObject, error)
 		concurrency int
 	}{
 		{
 			name: "no components",
-			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.Nil(t, err)
 				assert.Equal(t, 0, len(ret))
 			},
@@ -118,7 +124,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 		{
 			name:       "single bad",
 			components: []model.Component{{Name: "e1", File: "testdata/bad-components/e1.jsonnet"}},
-			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), "evaluate 'e1'")
 			},
@@ -129,7 +135,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 				{Name: "e1", File: "testdata/bad-components/e1.jsonnet"},
 				{Name: "e2", File: "testdata/bad-components/e2.jsonnet"},
 			},
-			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), "evaluate 'e1'")
 				assert.Contains(t, err.Error(), "evaluate 'e2'")
@@ -144,7 +150,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 				{Name: "e4", File: "testdata/bad-components/e4.jsonnet"},
 				{Name: "e5", File: "testdata/bad-components/e5.jsonnet"},
 			},
-			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), "... and 2 more errors")
 			},
@@ -154,7 +160,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 			components: []model.Component{
 				{Name: "e1", File: "testdata/bad-components/XXX.jsonnet"},
 			},
-			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), "no such file")
 			},
@@ -195,7 +201,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 			ret, err := evalComponents(test.components, Context{
 				Env:         "dev",
 				Concurrency: test.concurrency,
-			})
+			}, postProc{})
 			test.asserter(t, ret, err)
 		})
 	}
@@ -210,6 +216,17 @@ func TestEvalComponentsBadJson(t *testing.T) {
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "invalid character")
+}
+
+func TestEvalComponentsBadPosProcessor(t *testing.T) {
+	_, err := Components([]model.Component{
+		{
+			Name: "bad",
+			File: "testdata/components/good.json",
+		},
+	}, Context{Env: "dev", PostProcessFile: "foo/bar.jsonnet"})
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "read post-eval file:")
 }
 
 func TestEvalComponentsBadYaml(t *testing.T) {
@@ -231,5 +248,82 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 		},
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), `unexpected type for object (string) at path "$.bad[0].foo"`)
+	require.Contains(t, err.Error(), `unexpected type for object (string) at path "$[0].foo"`)
+}
+
+func TestEvalPostProcessor(t *testing.T) {
+	obj := map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]interface{}{
+			"name": "cm",
+		},
+		"data": map[string]interface{}{
+			"foo": "bar",
+		},
+	}
+	tests := []struct {
+		name     string
+		code     string
+		asserter func(t *testing.T, ret map[string]interface{}, err error)
+	}{
+		{
+			name: "add annotation",
+			code: `function (object) object + { metadata +: { annotations +:{ slack: '#crash' }}}`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.Nil(t, err)
+				ann := ret["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["slack"]
+				assert.Equal(t, "#crash", ann)
+			},
+		},
+		{
+			name: "return scalar",
+			code: `function (object) "boo"`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Equal(t, `post-eval did not return an object, "boo"`+"\n", err.Error())
+			},
+		},
+		{
+			name: "return array",
+			code: `function (object) [ object ]`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), `post-eval did not return an object, [`)
+			},
+		},
+		{
+			name: "return k8s list",
+			code: `function (object) { apiVersion: "v1", kind: "List", items: [ object ] }`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), `post-eval did not return a K8s object,`)
+			},
+		},
+		{
+			name: "bad code",
+			code: `function (object) object2`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), `post-eval object: pp.jsonnet:1`)
+			},
+		},
+		{
+			name: "bad tla",
+			code: `function (o) o`,
+			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), `post-eval object: RUNTIME ERROR: function has no parameter object`)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := Context{Env: "dev"}
+			pp := postProc{ctx: ctx, code: test.code, file: "pp.jsonnet"}
+			ret, err := pp.run(obj)
+			test.asserter(t, ret, err)
+		})
+	}
 }

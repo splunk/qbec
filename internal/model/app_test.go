@@ -111,6 +111,7 @@ func TestAppSimple(t *testing.T) {
 	a.Equal(`invalid environment "devx"`, err.Error())
 
 	a.Equal("params.libsonnet", app.ParamsFile())
+	a.Equal("pp.jsonnet", app.PostProcessor())
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 }
 

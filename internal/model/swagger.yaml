@@ -66,6 +66,11 @@ definitions:
           standard file containing parameters for all environments returning correct values based on qbec.io/env external
           variable, defaults to params.libsonnet
         type: string
+      postProcessor:
+        description: |-
+          file containing jsonnet code that can be used to post-process all objects, typically adding metadata like
+          annotations
+        type: string
       vars:
         $ref: "#/definitions/qbec.io.v1alpha1.Variables"
       namespaceTagSuffix:

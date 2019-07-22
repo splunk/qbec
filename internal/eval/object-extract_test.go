@@ -32,15 +32,28 @@ func TestSimpleObject(t *testing.T) {
 		"apiVersion": "v1",
 		"data":       map[string]string{"foo": "bar"},
 	}
-	w := walker{env: "dev", data: map[string]interface{}{"comp1": obj}}
-	ret, err := w.walk()
+	ret, err := walk(obj)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(ret))
-	o := ret[0]
-	a := assert.New(t)
-	a.Equal("comp1", o.Component())
-	a.Equal("dev", o.Environment())
-	a.Equal("ConfigMap", o.GroupVersionKind().Kind)
+}
+
+func TestSimpleObjectNoName(t *testing.T) {
+	obj := map[string]interface{}{
+		"kind":       "ConfigMap",
+		"metadata":   map[string]interface{}{},
+		"apiVersion": "v1",
+		"data":       map[string]string{"foo": "bar"},
+	}
+	nested := map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "List",
+		"items":      []interface{}{obj},
+	}
+	_, err := walk(nested)
+	require.NotNil(t, err)
+	assert.Contains(t, err.Error(), "did not have a name")
+	assert.Contains(t, err.Error(), `"$.items[0]"`)
+	assert.Contains(t, err.Error(), `"foo": "bar"`)
 }
 
 func TestDeepObjectNesting(t *testing.T) {
@@ -66,14 +79,10 @@ func TestDeepObjectNesting(t *testing.T) {
 				},
 			},
 		},
+		"comp2": nil,
 	}
-	w := walker{env: "dev", data: nested}
-	ret, err := w.walk()
+	ret, err := walk(nested)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(ret))
-	o := ret[0]
-	a := assert.New(t)
-	a.Equal("comp1", o.Component())
-	a.Equal("dev", o.Environment())
-	a.Equal("ConfigMap", o.GroupVersionKind().Kind)
+	assert.Equal(t, obj, ret[0])
 }
