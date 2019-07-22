@@ -149,6 +149,7 @@ type Config struct {
 	stdin           io.Reader         // standard input
 	stdout          io.Writer         // standard output
 	stderr          io.Writer         // standard error
+	cleanEvalMode   bool              // clean mode for eval
 }
 
 // init checks variables and sets up defaults. In strict mode, it requires all variables
@@ -244,6 +245,7 @@ func (c Config) EvalContext(env string) eval.Context {
 		Verbose:         c.Verbosity() > 1,
 		Concurrency:     c.EvalConcurrency(),
 		PostProcessFile: c.App().PostProcessor(),
+		CleanMode:       c.cleanEvalMode,
 	}
 }
 

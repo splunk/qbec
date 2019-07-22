@@ -90,6 +90,7 @@ type Context struct {
 	Verbose         bool         // show generated code
 	Concurrency     int          // concurrent components to evaluate, default 5
 	PostProcessFile string       // the file that contains post-processing code for all objects
+	CleanMode       bool         // whether clean mode is enabled
 }
 
 func (c Context) baseVMConfig(tlas []string) vm.Config {
@@ -97,10 +98,15 @@ func (c Context) baseVMConfig(tlas []string) vm.Config {
 	if fn == nil {
 		fn = defaultFunc
 	}
+	cm := "off"
+	if c.CleanMode {
+		cm = "on"
+	}
 	cfg := fn(tlas).WithVars(map[string]string{
 		model.QbecNames.EnvVarName:       c.Env,
 		model.QbecNames.TagVarName:       c.Tag,
 		model.QbecNames.DefaultNsVarName: c.DefaultNs,
+		model.QbecNames.CleanModeVarName: cm,
 	})
 	return cfg
 }

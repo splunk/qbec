@@ -97,6 +97,29 @@ func TestEvalComponents(t *testing.T) {
 	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 }
 
+func TestEvalComponentsClean(t *testing.T) {
+	objs, err := Components([]model.Component{
+		{
+			Name: "a",
+			File: "testdata/components/a.json",
+		},
+	}, Context{Env: "dev", CleanMode: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
+	require.Nil(t, err)
+	require.Equal(t, 1, len(objs))
+	a := assert.New(t)
+
+	obj := objs[0]
+	a.Equal("a", obj.Component())
+	a.Equal("dev", obj.Environment())
+	a.Equal("", obj.GroupVersionKind().Group)
+	a.Equal("v1", obj.GroupVersionKind().Version)
+	a.Equal("ConfigMap", obj.GroupVersionKind().Kind)
+	a.Equal("", obj.GetNamespace())
+	a.Equal("json-config-map", obj.GetName())
+	a.Equal("", obj.ToUnstructured().GetAnnotations()["team"])
+	a.Equal("", obj.ToUnstructured().GetAnnotations()["slack"])
+}
+
 func TestEvalComponentsEdges(t *testing.T) {
 	goodComponents := []model.Component{
 		{Name: "g1", File: "testdata/good-components/g1.jsonnet"},
