@@ -89,7 +89,6 @@ type showCommandConfig struct {
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
-	clean           bool
 	filterFunc      func() (filterParams, error)
 }
 
@@ -177,7 +176,7 @@ func doShow(args []string, config showCommandConfig) error {
 	var displayObjects []*unstructured.Unstructured
 	mapper := func(o model.K8sLocalObject) *unstructured.Unstructured { return o.ToUnstructured() }
 
-	if config.clean {
+	if config.cleanEvalMode {
 		mapper = cleanMeta
 	}
 
@@ -214,15 +213,17 @@ func newShowCommand(cp ConfigProvider) *cobra.Command {
 		filterFunc: addFilterParams(cmd, true),
 	}
 
+	var clean bool
 	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
 	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
 	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
-	cmd.Flags().BoolVar(&config.clean, "clean", false, "do not display qbec-generated labels and annotations")
+	cmd.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.Config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
+		config.Config.cleanEvalMode = clean
 		return wrapError(doShow(args, config))
 	}
 	return cmd
