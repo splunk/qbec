@@ -1,6 +1,17 @@
 Changelog
 ---
 
+## v0.7.3 (Jul 22, 2019)
+
+* allow user to define a jsonnet post-processor in `qbec.yaml` that is provided with every object returned
+  from evaliating jsonnet components and has the ability to decorate it, typically with additional annotations
+  and labels. This allows common metadata to be set in one place.
+* add a `--clean` option to the `show` command that strips qbec metadata from the output. This reduces the noise
+  when inspecting objects for debugging. Introduce a standard external variable called `qbec.io/cleanMode` that is 
+  `off` by default for all commands and only turned `on` for the `show --clean` command.
+* the above means that the post processor can use the value of the external variable to add annotations or not.
+  This provides for a "real clean" experience.
+
 ## v0.7.2 (Jul 19, 2019)
 
 * add a `--wait` option to the `apply` command to automatically wait for deployments, daemonsets and 
