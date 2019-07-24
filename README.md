@@ -17,18 +17,8 @@ For more info, [read the docs](https://qbec.io/)
 ### Building from source
 
 ```shell
-mkdir -p ${GOPATH}/src/github.com/splunk
-cd ${GOPATH}/src/github.com/splunk && git clone git@github.com:splunk/qbec
+git clone git@github.com:splunk/qbec
 cd qbec
-make install  # installs dep, golint etc.
+make install  # installs lint tools etc.
 make
 ```
-
-
-
-
-
-
-
-    
-
