@@ -10,15 +10,16 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 
-DEP_FLAGS ?=
 LINT_FLAGS ?=
+
+export GO111MODULE=on
 
 .PHONY: all
 all: get build lint test
 
 .PHONY: get
 get:
-	dep ensure $(DEP_FLAGS)
+	go get ./...
 
 .PHONY: build
 build:
@@ -30,8 +31,8 @@ test:
 
 .PHONY: lint
 lint:
-	go list ./... | grep -v vendor | xargs go vet
-	go list ./... | grep -v vendor | xargs golint
+	go vet ./...
+	golint ./...
 	golangci-lint run $(LINT_FLAGS) .
 
 .PHONY: install-ci
@@ -43,7 +44,6 @@ install-ci:
 
 .PHONY: install
 install:
-	go get github.com/golang/dep/cmd/dep
 	go get golang.org/x/lint/golint
 	@echo for building docs, manually install hugo for your OS from: https://github.com/gohugoio/hugo/releases
 

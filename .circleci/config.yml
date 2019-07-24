@@ -9,19 +9,28 @@ jobs:
       - GOCACHE: /tmp/go/cache
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - go12-pkg-cache
       - run:
-          name: Install dependencies
+          name: Install command dependencies
           command: make install-ci install
       - run:
+          name: Install package dependencies
+          command: make get
+      - run:
           name: Build
-          command: DEP_FLAGS="-v -vendor-only" make get build
+          command: make build
       - run:
           name: Test
           command: make test
       - run:
           name: Lint
-          command: LINT_FLAGS="-v" make lint
-
+          command: make lint
+      - save_cache:
+          key: go12-pkg-cache
+          paths:
+          - "/go/pkg"
 workflows:
   version: 2
   workflow:
