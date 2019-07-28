@@ -118,6 +118,31 @@ func (k qbecPristine) createFromPristine(pristine model.K8sLocalObject) (model.K
 	return model.NewK8sLocalObject(annotated.Object, pristine.Application(), pristine.Tag(), pristine.Component(), pristine.Environment()), nil
 }
 
+const kubectlLastConfig = "kubectl.kubernetes.io/last-applied-configuration"
+
+type kubectlPristine struct{}
+
+func (k kubectlPristine) getPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+	serialized := annotations[kubectlLastConfig]
+	if serialized == "" {
+		return nil, ""
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(serialized), &data); err != nil {
+		sio.Warnln("unable to unmarshal pristine kubectl annotation", err)
+		return nil, ""
+	}
+	// now set the annotation back into the pristine object so it is deleted when qbec tries to apply it
+	ret := &unstructured.Unstructured{Object: data}
+	anns := ret.GetAnnotations()
+	if anns == nil {
+		anns = map[string]string{}
+	}
+	anns[kubectlLastConfig] = serialized
+	ret.SetAnnotations(anns)
+	return ret, "kubectl annotation"
+}
+
 type fallbackPristine struct{}
 
 func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstructured.Unstructured) (*unstructured.Unstructured, string) {
@@ -134,9 +159,9 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 }
 
 func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
-	pristineReaders := []pristineReader{qbecPristine{}, fallbackPristine{}}
+	pristineReaders := []pristineReader{qbecPristine{}, kubectlPristine{}}
 	if includeFallback {
-		pristineReaders = append(pristineReaders)
+		pristineReaders = append(pristineReaders, fallbackPristine{})
 	}
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
@@ -155,9 +180,5 @@ func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*
 // live object. If no annotations are found, it halfheartedly deletes known runtime information that is
 // set on the server and returns the supplied object with those attributes removed.
 func GetPristineVersionForDiff(obj *unstructured.Unstructured) (*unstructured.Unstructured, string) {
-	ret, src := getPristineVersion(obj, true)
-	if ret == nil {
-		return obj, "unmodified live"
-	}
-	return ret, src
+	return getPristineVersion(obj, true)
 }
