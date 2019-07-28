@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.7.4 (Jul 28, 2019)
+
+* Fix a bug (#33) where the original object for patches was using the live server object when it was not supposed to
+* Add kubectl's last applied annotation as a source for the original object when qbec annotation not found
+
 ## v0.7.3 (Jul 22, 2019)
 
 * allow user to define a jsonnet post-processor in `qbec.yaml` that is provided with every object returned
