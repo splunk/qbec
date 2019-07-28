@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.7.5 (Jul 28, 2019)
+
+* Fixes #51 by aligning the patch logic between qbec and kubectl more closely.
+
 ## v0.7.4 (Jul 28, 2019)
 
 * Fix a bug (#33) where the original object for patches was using the live server object when it was not supposed to
