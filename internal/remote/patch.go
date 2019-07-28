@@ -159,8 +159,16 @@ func (p *patcher) getPatchContents(serverObj *unstructured.Unstructured, desired
 	patchContext := fmt.Sprintf("creating patch with:\npristine:\n%s\ndesired:\n%s\nserver:\n%s\nfor:", ser.pristine, ser.desired, ser.server)
 	gvk := serverObj.GroupVersionKind()
 
-	// prefer open API if available to create a strategic merge patch
-	if p.openAPILookup != nil {
+	// see if a versioned struct is available in scheme
+	versionedObject, err := scheme.Scheme.New(gvk)
+	if err != nil && !runtime.IsNotRegisteredError(err) {
+		return nil, errors.Wrap(err, fmt.Sprintf("getting instance of versioned object for %v:", gvk))
+	}
+
+	registered := err == nil
+
+	// prefer open API if available to create a strategic merge patch; but only if the object was registered
+	if registered && p.openAPILookup != nil {
 		if sch = p.openAPILookup(gvk); sch != nil {
 			lookupPatchMeta = strategicpatch.PatchMetaFromOpenAPI{Schema: sch}
 			if openapiPatch, err := strategicpatch.CreateThreeWayMergePatch(ser.pristine, ser.desired, ser.server, lookupPatchMeta, p.overwrite); err == nil {
@@ -170,13 +178,7 @@ func (p *patcher) getPatchContents(serverObj *unstructured.Unstructured, desired
 		}
 	}
 
-	// next try a versioned struct if available in scheme
-	versionedObject, err := scheme.Scheme.New(gvk)
-	if err != nil && !runtime.IsNotRegisteredError(err) {
-		return nil, errors.Wrap(err, fmt.Sprintf("getting instance of versioned object for %v:", gvk))
-	}
-
-	if runtime.IsNotRegisteredError(err) { // fallback to generic JSON merge patch
+	if !registered { // fallback to generic JSON merge patch
 		preconditions := []mergepatch.PreconditionFunc{
 			mergepatch.RequireKeyUnchanged("apiVersion"),
 			mergepatch.RequireKeyUnchanged("kind"),
