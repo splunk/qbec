@@ -165,7 +165,7 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 	fileOpts.LeftName = left.name
 	fileOpts.RightName = right.name
 	switch {
-	case left.obj == nil && &right.obj == nil:
+	case left.obj == nil && right.obj == nil:
 		return fmt.Errorf("internal error: both left and right objects were nil for diff")
 	case left.obj != nil && right.obj != nil:
 		b, err := diff.Objects(left.obj, right.obj, fileOpts)
