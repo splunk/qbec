@@ -3,8 +3,8 @@ title: Home
 chapter: true
 ---
 
-# &#9884; qbec
-
+# ![qbec](/images/qbec-logo-black.svg)
+ 
 _a tool to configure and create Kubernetes objects on multiple environments_
 
 qbec (pronounced like the [Canadian province](https://en.wikipedia.org/wiki/Quebec)) is a command line tool that 
