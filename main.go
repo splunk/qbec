@@ -95,9 +95,10 @@ func main() {
 
 `, exe), "\n")
 	root := &cobra.Command{
-		Use:   exe + " <sub-command>",
-		Short: "Kubernetes cluster config tool",
-		Long:  longdesc,
+		Use:                    exe,
+		Short:                  "Kubernetes cluster config tool",
+		Long:                   longdesc,
+		BashCompletionFunction: commands.BashCompletionFunc,
 	}
 	root.SilenceUsage = true
 	root.SilenceErrors = true

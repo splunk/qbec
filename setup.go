@@ -142,7 +142,7 @@ func setup(root *cobra.Command) {
 
 	var cmdCfg *commands.Config
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() == "version" || cmd.Name() == "init" { // don't make these commands dependent on work dir
+		if cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion" { // don't make these commands dependent on work dir
 			return nil
 		}
 		if !cmd.Flags().Changed("colors") {
