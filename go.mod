@@ -30,7 +30,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/google/go-jsonnet v0.13.0
+	github.com/google/go-jsonnet v0.14.0
 	github.com/google/pprof v0.0.0-20190723021845-34ac40c74b70 // indirect
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gophercloud/gophercloud v0.0.0-20190419190354-e53f839b56ea // indirect
