@@ -154,4 +154,20 @@ func TestConfigConfirm(t *testing.T) {
 	err = cfg.Confirm("we will destroy you")
 	require.NotNil(t, err)
 	a.Equal("canceled", err.Error())
+
+	t.Run("skipPrompts", func(t *testing.T) {
+		cfg, err := f.Config(app, vmc, rc, true)
+		require.Nil(t, err)
+		cfg.stdin = stdin
+		err = cfg.Confirm("we will destroy you")
+		require.Nil(t, err)
+
+		cfg.stdin = bytes.NewReader([]byte(""))
+		err = cfg.Confirm("we will destroy you")
+		require.Nil(t, err)
+		cfg.stdin = bytes.NewReader([]byte("n\n"))
+		err = cfg.Confirm("we will destroy you")
+		require.Nil(t, err)
+	})
+
 }
