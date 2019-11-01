@@ -104,7 +104,9 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 	if cp.Stderr != nil {
 		stderr = cp.Stderr
 	}
-
+	if os.Getenv("QBEC_DISABLE_PROMPTS") == "true" {
+		cp.SkipConfirm = true
+	}
 	cfg := &Config{
 		app:             app,
 		vmc:             vmConfig,
