@@ -1,6 +1,17 @@
 Changelog
 ---
 
+## v0.8.0 (Oct 31, 2019)
+
+* update jsonnet version to v0.14.0
+* add initial version of bash completion command (thanks @e-zhang)
+* add qbec logo (thanks @kvaps)
+* minor bug fixes
+
+There are no backwards-incompatible changes in this release. The minor version upgrade
+is to account for any unintentional backward incompatibilities caused by the jsonnet
+library upgrade.
+
 ## v0.7.5 (Jul 28, 2019)
 
 * Fixes #51 by aligning the patch logic between qbec and kubectl more closely.
