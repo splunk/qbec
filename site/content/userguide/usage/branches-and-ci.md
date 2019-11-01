@@ -36,8 +36,8 @@ To be able to use this feature:
 * The tag passed to qbec cannot have special characters like `/`. It must conform to what can be used as a label
   value in Kubernetes. qbec will validate this and will not let you proceed otherwise.
 
-* `qbec` is built with safety in mind. All command with side-effects require user-confirmation. This behaviour can be overridden by using
-the `--yes` flag on all commands or by setting the environment variable `QBEC_DISABLE_PROMPTS=true`.
+* `qbec` is built with safety in mind. All command with side-effects require user confirmation. This behaviour can be overridden by using
+the `--yes` flag on commands or by setting the environment variable `QBEC_DISABLE_PROMPTS=true`.
 
 ## Usage pattern 1: create a test namespace for every branch
 
