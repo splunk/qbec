@@ -104,7 +104,6 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 	if cp.Stderr != nil {
 		stderr = cp.Stderr
 	}
-
 	cfg := &Config{
 		app:             app,
 		vmc:             vmConfig,
@@ -318,10 +317,11 @@ func (c Config) Confirm(context string) error {
 		return nil
 	}
 	inst, err := readline.NewEx(&readline.Config{
-		Prompt: "Do you want to continue [y/n]: ",
-		Stdin:  c.stdin,
-		Stdout: c.stdout,
-		Stderr: c.stderr,
+		Prompt:              "Do you want to continue [y/n]: ",
+		Stdin:               c.stdin,
+		Stdout:              c.stdout,
+		Stderr:              c.stderr,
+		ForceUseInteractive: true,
 	})
 	if err != nil {
 		return err
@@ -329,6 +329,9 @@ func (c Config) Confirm(context string) error {
 	for {
 		s, err := inst.Readline()
 		if err != nil {
+			if err == io.EOF {
+				return errors.New("failed to get user confirmation")
+			}
 			return err
 		}
 		if s == "y" {
