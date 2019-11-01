@@ -148,7 +148,7 @@ func TestConfigConfirm(t *testing.T) {
 	cfg.stdin = bytes.NewReader([]byte(""))
 	err = cfg.Confirm("we will destroy you")
 	require.NotNil(t, err)
-	a.Equal("EOF", err.Error())
+	a.Equal("failed to get user confirmation", err.Error())
 
 	cfg.stdin = bytes.NewReader([]byte("n\n"))
 	err = cfg.Confirm("we will destroy you")
