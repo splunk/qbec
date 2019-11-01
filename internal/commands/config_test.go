@@ -50,7 +50,7 @@ func TestConfigCreate(t *testing.T) {
 		Stderr:          bytes.NewBufferString(""),
 	}
 
-	cfg, err := f.Config(app, vmc, rc, false)
+	cfg, err := f.Config(app, vmc, rc)
 	require.Nil(t, err)
 	a.Equal(4, cfg.Verbosity())
 	a.Equal(7, cfg.EvalConcurrency())
@@ -89,7 +89,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 		StrictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc, false)
+	_, err = f.Config(app, vmc, rc)
 	require.Nil(t, err)
 }
 
@@ -111,7 +111,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 		StrictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc, false)
+	_, err = f.Config(app, vmc, rc)
 	require.NotNil(t, err)
 	msg := err.Error()
 	a.Contains(msg, "specified external variable 'extSomething' not declared for app")
@@ -139,7 +139,7 @@ func TestConfigConfirm(t *testing.T) {
 		Stdout:      &stdout,
 		Stderr:      &stderr,
 	}
-	cfg, err := f.Config(app, vmc, rc, false)
+	cfg, err := f.Config(app, vmc, rc)
 	require.Nil(t, err)
 	cfg.stdin = stdin
 	err = cfg.Confirm("we will destroy you")
@@ -154,20 +154,4 @@ func TestConfigConfirm(t *testing.T) {
 	err = cfg.Confirm("we will destroy you")
 	require.NotNil(t, err)
 	a.Equal("canceled", err.Error())
-
-	t.Run("skipPrompts", func(t *testing.T) {
-		cfg, err := f.Config(app, vmc, rc, true)
-		require.Nil(t, err)
-		cfg.stdin = stdin
-		err = cfg.Confirm("we will destroy you")
-		require.Nil(t, err)
-
-		cfg.stdin = bytes.NewReader([]byte(""))
-		err = cfg.Confirm("we will destroy you")
-		require.Nil(t, err)
-		cfg.stdin = bytes.NewReader([]byte("n\n"))
-		err = cfg.Confirm("we will destroy you")
-		require.Nil(t, err)
-	})
-
 }

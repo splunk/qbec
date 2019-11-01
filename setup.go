@@ -140,7 +140,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
 	root.PersistentFlags().IntVarP(&cp.Verbosity, "verbose", "v", 0, "verbosity level")
 	root.PersistentFlags().BoolVar(&cp.Colors, "colors", false, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", false, "do not prompt for confirmation")
+	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_DISABLE_PROMPTS=true/false")
 	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
 	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
@@ -167,7 +167,7 @@ func setup(root *cobra.Command) {
 		if err != nil {
 			return commands.NewRuntimeError(err)
 		}
-		cmdCfg, err = cp.Config(app, conf, cfg, skipPrompts())
+		cmdCfg, err = cp.Config(app, conf, cfg)
 		return err
 	}
 	commands.Setup(root, func() *commands.Config {

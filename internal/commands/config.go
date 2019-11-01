@@ -94,7 +94,7 @@ type ConfigFactory struct {
 	StrictVars      bool      // strict mode for variable evaluation
 }
 
-func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider, skipPrompts bool) (*Config, error) {
+func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*Config, error) {
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
@@ -103,9 +103,6 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 	}
 	if cp.Stderr != nil {
 		stderr = cp.Stderr
-	}
-	if skipPrompts {
-		cp.SkipConfirm = true
 	}
 	cfg := &Config{
 		app:             app,
@@ -127,13 +124,13 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 }
 
 // Config returns the command configuration.
-func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, skipPrompts bool) (*Config, error) {
+func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config) (*Config, error) {
 	scp := &stdClientProvider{
 		app:       app,
 		config:    remoteConfig,
 		verbosity: cp.Verbosity,
 	}
-	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs, skipPrompts)
+	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }
 
 // Config is the command configuration.

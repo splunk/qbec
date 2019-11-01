@@ -7,6 +7,9 @@ You have created jsonnet components, a `qbec.yaml` file and declared a dev envir
 good enough for local development and/ or commits to a master branch. Now you are looking for a
 way to create objects with slightly different names as part of functional tests of your pull request builds.
 
+`qbec` is built with safety in mind. All command with side-effects require user confirmation. This behaviour can be overridden by using
+the `--yes` flag on commands or by setting the environment variable `QBEC_DISABLE_PROMPTS=true`.
+
 You want to ensure that each branch build runs in its own "scope" and does not interfere with your master builds.
 Specifically, you don't want GC to run amok and delete objects that it was never meant to delete.
 
@@ -35,9 +38,6 @@ To be able to use this feature:
 
 * The tag passed to qbec cannot have special characters like `/`. It must conform to what can be used as a label
   value in Kubernetes. qbec will validate this and will not let you proceed otherwise.
-
-* `qbec` is built with safety in mind. All command with side-effects require user confirmation. This behaviour can be overridden by using
-the `--yes` flag on commands or by setting the environment variable `QBEC_DISABLE_PROMPTS=true`.
 
 ## Usage pattern 1: create a test namespace for every branch
 
