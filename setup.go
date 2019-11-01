@@ -44,10 +44,7 @@ func defaultRoot() string {
 }
 
 func skipPrompts() bool {
-	if os.Getenv("QBEC_DISABLE_PROMPTS") == "true" {
-		return true
-	}
-	return false
+	return os.Getenv("QBEC_DISABLE_PROMPTS") == "true"
 }
 
 func usageTemplate(rootCmd string) string {
