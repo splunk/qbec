@@ -308,7 +308,7 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		SkipConfirm: true,
 		Colors:      false,
 	}
-	config, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider)
+	config, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider, false)
 	require.Nil(t, err)
 
 	cmd := &cobra.Command{

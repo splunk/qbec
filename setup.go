@@ -43,6 +43,13 @@ func defaultRoot() string {
 	return envOrDefault("QBEC_ROOT", "")
 }
 
+func skipPrompts() bool {
+	if os.Getenv("QBEC_DISABLE_PROMPTS") == "true" {
+		return true
+	}
+	return false
+}
+
 func usageTemplate(rootCmd string) string {
 	return fmt.Sprintf(`Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
@@ -160,7 +167,7 @@ func setup(root *cobra.Command) {
 		if err != nil {
 			return commands.NewRuntimeError(err)
 		}
-		cmdCfg, err = cp.Config(app, conf, cfg)
+		cmdCfg, err = cp.Config(app, conf, cfg, skipPrompts())
 		return err
 	}
 	commands.Setup(root, func() *commands.Config {
