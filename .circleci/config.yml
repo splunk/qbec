@@ -2,7 +2,7 @@ version: 2
 
 jobs:
   build:
-    working_directory: /splunk/qbec
+    working_directory: /go/src/github.com/splunk/qbec
     docker:
       - image: circleci/golang:1.13
     environment:
