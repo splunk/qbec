@@ -1,0 +1,33 @@
+name: Continous Integration
+on: 
+  pull_request:
+  push: 
+    branches: master
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Install command dependencies
+      #uses: docker://golang:1.13
+      run: make install-ci install 
+
+    - name: Install package dependencies
+      run: go get
+    - name: Build
+      run: make build
+    - name: Test
+      run: make test
+    - name: Lint
+      run: make lint
