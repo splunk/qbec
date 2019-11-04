@@ -6,3 +6,4 @@ cover.out
 dist/
 helm.tar.gz
 linux-amd64/
+bin/

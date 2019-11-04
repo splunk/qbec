@@ -1,0 +1,36 @@
+before:
+#  hooks:
+#    # you may remove this if you don't use vgo
+#    - go mod download
+builds:
+- main: ./
+  ldflags:
+  -  -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GOVERSION}}
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - amd64
+archives:
+  - name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}"
+    format: tar.gz
+    format_overrides:
+    - goos: windows
+      format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{.Version}}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - 'README.md'
+    - '.gitignore'
+    - '^site:'
+    - '^examples:'
+    - Merge pull request
+    - Merge branch
