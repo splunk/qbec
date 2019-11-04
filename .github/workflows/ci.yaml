@@ -1,7 +1,7 @@
 name: Continous Integration
-on: 
+on:
   pull_request:
-  push: 
+  push:
     branches: master
 jobs:
 
@@ -21,7 +21,10 @@ jobs:
 
     - name: Install command dependencies
       #uses: docker://golang:1.13
-      run: make install-ci install 
+      run: |
+      env
+      go env
+      make install-ci install
 
     - name: Install package dependencies
       run: go get
