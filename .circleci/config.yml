@@ -2,16 +2,16 @@ version: 2
 
 jobs:
   build:
-    working_directory: /go/src/github.com/splunk/qbec
+    working_directory: /splunk/qbec
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
     environment:
       - GOCACHE: /tmp/go/cache
     steps:
       - checkout
       - restore_cache:
           keys:
-            - go12-pkg-cache
+            - go13-pkg-cache
       - run:
           name: Install command dependencies
           command: make install-ci install
@@ -28,7 +28,7 @@ jobs:
           name: Lint
           command: make lint
       - save_cache:
-          key: go12-pkg-cache
+          key: go13-pkg-cache
           paths:
           - "/go/pkg"
 workflows:
@@ -36,4 +36,3 @@ workflows:
   workflow:
     jobs:
       - build: {}
-
