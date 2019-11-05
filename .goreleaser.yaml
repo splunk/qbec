@@ -2,6 +2,7 @@ before:
 #  hooks:
 builds:
 - id: qbec
+  binary: qbec
   main: ./
   ldflags:
   - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
@@ -14,6 +15,7 @@ builds:
   goarch:
   - amd64
 - id: jsonnet-qbec
+  binary: jsonnet-qbec
   main: cmd/jsonnet-qbec/main.go
   ldflags:
   - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
