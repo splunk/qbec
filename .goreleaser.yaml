@@ -1,11 +1,9 @@
 before:
 #  hooks:
-#    # you may remove this if you don't use vgo
-#    - go mod download
 builds:
 - main: ./
   ldflags:
-  -  -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GOVERSION}}
+  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
   env:
   - CGO_ENABLED=0
   goos:
