@@ -44,7 +44,7 @@ func defaultRoot() string {
 }
 
 func skipPrompts() bool {
-	return os.Getenv("QBEC_DISABLE_PROMPTS") == "true"
+	return os.Getenv("QBEC_YES") == "true"
 }
 
 func usageTemplate(rootCmd string) string {
@@ -137,7 +137,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
 	root.PersistentFlags().IntVarP(&cp.Verbosity, "verbose", "v", 0, "verbosity level")
 	root.PersistentFlags().BoolVar(&cp.Colors, "colors", false, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_DISABLE_PROMPTS=true/false")
+	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true/false")
 	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
 	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
