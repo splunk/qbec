@@ -1,7 +1,20 @@
 before:
 #  hooks:
 builds:
-- main: ./
+- id: qbec
+  main: ./
+  ldflags:
+  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - amd64
+- id: jsonnet-qbec
+  main: cmd/jsonnet-qbec/main.go
   ldflags:
   - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
   env:
