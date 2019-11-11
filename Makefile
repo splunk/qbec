@@ -65,6 +65,7 @@ clean:
 os_archive:
 	rm -rf dist/tmp
 	mkdir -p dist/tmp
+	mkdir -p dist/assets
 ifeq ($(GOOS), windows)
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/qbec.exe .
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/jsonnet-qbec.exe ./cmd/jsonnet-qbec
