@@ -130,9 +130,11 @@ func setup(root *cobra.Command) {
 	var cp commands.ConfigFactory
 	var rootDir string
 	var appTag string
+	var forceContext string
 
 	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
 	cfg := remote.NewConfig(root, "k8s:")
+	root.PersistentFlags().StringVar(&forceContext, "force:k8s-context", "", "Force K8s context")
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
 	root.PersistentFlags().IntVarP(&cp.Verbosity, "verbose", "v", 0, "verbosity level")
@@ -164,7 +166,8 @@ func setup(root *cobra.Command) {
 		if err != nil {
 			return commands.NewRuntimeError(err)
 		}
-		cmdCfg, err = cp.Config(app, conf, cfg)
+		forceContext := cmd.Flag("force:k8s-context").Value.String()
+		cmdCfg, err = cp.Config(app, conf, cfg, forceContext)
 		return err
 	}
 	commands.Setup(root, func() *commands.Config {
