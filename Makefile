@@ -13,6 +13,8 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 LINT_FLAGS ?=
 
 export GO111MODULE=on
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 
 .PHONY: all
 all: get build lint test
@@ -63,16 +65,17 @@ clean:
 
 .PHONY: os_archive
 os_archive:
+	@echo build O/S archive for: $(GOOS)-$(GOARCH)
 	rm -rf dist/tmp
 	mkdir -p dist/tmp
 	mkdir -p dist/assets
 ifeq ($(GOOS), windows)
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/qbec.exe .
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/jsonnet-qbec.exe ./cmd/jsonnet-qbec
-	(cd dist/tmp && zip ../assets/qbec-${GOOS}-${GOARCH}.zip *)
+	(cd dist/tmp && zip ../assets/qbec-$(GOOS)-$(GOARCH).zip *)
 else
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/qbec .
 	go build -ldflags '$(LD_FLAGS)' -o dist/tmp/jsonnet-qbec ./cmd/jsonnet-qbec
-	(cd dist/tmp && tar -czf ../assets/qbec-${GOOS}-${GOARCH}.tar.gz *)
+	(cd dist/tmp && tar -czf ../assets/qbec-$(GOOS)-$(GOARCH).tar.gz *)
 endif
 	rm -rf dist/tmp
