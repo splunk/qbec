@@ -315,6 +315,13 @@ func (a *App) loadComponents() (map[string]Component, error) {
 			hasIndexJsonnet := false
 			hasIndexYAML := false
 			for _, f := range files {
+				stat, err := os.Stat(f)
+				if err != nil {
+					return err
+				}
+				if stat.IsDir() {
+					continue
+				}
 				switch filepath.Base(f) {
 				case "index.jsonnet":
 					hasIndexJsonnet = true
