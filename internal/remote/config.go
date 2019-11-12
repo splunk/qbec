@@ -32,14 +32,20 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// Constants for special context values.
+const (
+	ForceInClusterContext = "__incluster__"
+	ForceCurrentContext   = "__current__"
+)
+
 // inspired by the config code in ksonnet but implemented differently.
 
 // ConnectOpts are the connection options required for the config.
 type ConnectOpts struct {
-	EnvName   string // environment name, display purposes only
-	ServerURL string // the server URL to connect to, must be configured in the kubeconfig
-	Namespace string // the default namespace to set for the context
-	Verbosity int    // verbosity of client interactions
+	EnvName      string // environment name, display purposes only
+	ServerURL    string // the server URL to connect to, must be configured in the kubeconfig
+	Namespace    string // the default namespace to set for the context
+	Verbosity    int    // verbosity of client interactions
 	ForceContext string // __incluster__ or __current or named context
 }
 
@@ -70,16 +76,72 @@ func NewConfig(cmd *cobra.Command, prefix string) *Config {
 	}
 }
 
-func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
+func (c *Config) setupOverrides(opts ConnectOpts) error {
 	if c.kubeconfig == nil {
 		c.kubeconfig = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(c.loadingRules, c.overrides)
 	}
+	rc, err := c.kubeconfig.RawConfig()
+	if err != nil {
+		return errors.Wrap(err, "raw Config from kubeconfig")
+	}
+	c.overrides.Context.Namespace = opts.Namespace
 
-	if opts.ForceContext == "__incluster__" {
-		return rest.InClusterConfig()
+	overrideClusterForEnv := func() error {
+		for name, cluster := range rc.Clusters {
+			if cluster.Server == opts.ServerURL {
+				sio.Noticeln("setting cluster to", name)
+				c.overrides.Context.Cluster = name
+				for contextName, ctx := range rc.Contexts {
+					if ctx.Cluster == name {
+						sio.Noticeln("setting context to", contextName)
+						c.overrides.CurrentContext = contextName
+					}
+				}
+				return nil
+			}
+		}
+		return fmt.Errorf("unable to find any cluster with URL %q  (for env %s) in the kube config", opts.ServerURL, opts.EnvName)
 	}
 
-	if err := c.overrideCluster(c.kubeconfig, opts); err != nil {
+	overrideCtx := func(wantCtx string) {
+		c.overrides.CurrentContext = wantCtx
+		c.overrides.Context.Cluster = rc.Contexts[wantCtx].Cluster
+	}
+
+	switch opts.ForceContext {
+	case ForceInClusterContext:
+		return fmt.Errorf("cannot set up overrides for in-cluster context")
+	case ForceCurrentContext:
+		if rc.CurrentContext == "" {
+			return fmt.Errorf("attempt to use current context but no current context was set")
+		}
+		wantCtx := rc.CurrentContext
+		if _, ok := rc.Contexts[wantCtx]; !ok {
+			return fmt.Errorf("attempt to use current context %s, but no such context was found", wantCtx)
+		}
+		sio.Warnf("force current context %s\n", rc.CurrentContext)
+		overrideCtx(wantCtx)
+	case "":
+		if err := overrideClusterForEnv(); err != nil {
+			return err
+		}
+	default: // assume named context
+		wantCtx := opts.ForceContext
+		if _, ok := rc.Contexts[wantCtx]; !ok {
+			return fmt.Errorf("attempt to use context %s, but no such context was found", wantCtx)
+		}
+		sio.Warnf("force context %s\n", wantCtx)
+		overrideCtx(wantCtx)
+	}
+	return nil
+}
+
+func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
+	if opts.ForceContext == ForceInClusterContext {
+		sio.Warnln("force in-cluster config")
+		return rest.InClusterConfig()
+	}
+	if err := c.setupOverrides(opts); err != nil {
 		return nil, err
 	}
 	restConfig, err := c.kubeconfig.ClientConfig()
@@ -87,28 +149,6 @@ func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
 		return nil, err
 	}
 	return restConfig, nil
-}
-
-func (c *Config) overrideCluster(kc clientcmd.ClientConfig, opts ConnectOpts) error {
-	rc, err := kc.RawConfig()
-	if err != nil {
-		return errors.Wrap(err, "raw Config from kubeconfig")
-	}
-	for name, cluster := range rc.Clusters {
-		if cluster.Server == opts.ServerURL {
-			sio.Noticeln("setting cluster to", name)
-			c.overrides.Context.Cluster = name
-			c.overrides.Context.Namespace = opts.Namespace
-			for contextName, ctx := range rc.Contexts {
-				if ctx.Cluster == name {
-					sio.Noticeln("setting context to", contextName)
-					c.overrides.CurrentContext = contextName
-				}
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("unable to find any cluster with URL %q  (for env %s) in the kube config", opts.ServerURL, opts.EnvName)
 }
 
 // KubeAttributes is a collection k8s attributes pertaining to an connection.
@@ -121,10 +161,7 @@ type KubeAttributes struct {
 
 // KubeAttributes returns client attributes for the supplied connection options.
 func (c *Config) KubeAttributes(opts ConnectOpts) (*KubeAttributes, error) {
-	if c.kubeconfig == nil {
-		c.kubeconfig = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(c.loadingRules, c.overrides)
-	}
-	if err := c.overrideCluster(c.kubeconfig, opts); err != nil {
+	if err := c.setupOverrides(opts); err != nil {
 		return nil, err
 	}
 	return &KubeAttributes{

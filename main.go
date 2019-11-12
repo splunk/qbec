@@ -78,10 +78,12 @@ func newVersionCommand() *cobra.Command {
 }
 
 func newOptionsCommand(root *cobra.Command) *cobra.Command {
+	leader := fmt.Sprintf("All %s commands accept the following options (some may not use them unless relevant):\n", root.CommandPath())
+	trailer := "Note: using options that begin with 'force:' will cause qbec to drop its safety checks. Use with care."
 	cmd := &cobra.Command{
 		Use:   "options",
 		Short: "print global options for program",
-		Long:  fmt.Sprintf("\nAll %s commands accept the following options (some may not use them unless relevant):\n", root.CommandPath()) + root.LocalFlags().FlagUsages(),
+		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
 	}
 	return cmd
 }

@@ -25,6 +25,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
@@ -39,8 +40,22 @@ type clientProvider func(env string) (Client, error)
 
 type kubeAttrsProvider func(env string) (*remote.KubeAttributes, error)
 
-type forceOptions struct {
-	context string
+// ForceOptions are options that override qbec safety features and disregard
+// configuration in qbec.yaml.
+type ForceOptions struct {
+	K8sContext   string // override kubernetes context
+	K8sNamespace string // override kubernetes default namespace
+}
+
+// ForceOptionsConfig adds flags to the supplied root command and returns forced options.
+func ForceOptionsConfig(cmd *cobra.Command, prefix string) func() ForceOptions {
+	var f ForceOptions
+	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively",
+		remote.ForceInClusterContext, remote.ForceCurrentContext)
+	pf := cmd.PersistentFlags()
+	pf.StringVar(&f.K8sContext, prefix+"k8s-context", "", ctxUsage)
+	pf.StringVar(&f.K8sNamespace, prefix+"k8s-namespace", "", "override default namespace for environment with supplied value")
+	return func() ForceOptions { return f }
 }
 
 // stdClientProvider provides clients based on the supplied Kubernetes config
@@ -48,7 +63,17 @@ type stdClientProvider struct {
 	app       *model.App
 	config    *remote.Config
 	verbosity int
-	forced forceOptions
+	force     ForceOptions
+}
+
+func (s stdClientProvider) wrapOpts(opts remote.ConnectOpts) remote.ConnectOpts {
+	opts.ForceContext = s.force.K8sContext
+	if s.force.K8sNamespace != "" {
+		sio.Warnln("force default namespace to", s.force.K8sNamespace)
+		opts.Namespace = s.force.K8sNamespace
+	}
+	opts.Verbosity = s.verbosity
+	return opts
 }
 
 // Client returns a client for the supplied environment.
@@ -58,13 +83,11 @@ func (s stdClientProvider) Client(env string) (Client, error) {
 		return nil, errors.Wrap(err, "get client")
 	}
 	ns := s.app.DefaultNamespace(env)
-	rem, err := s.config.Client(remote.ConnectOpts{
+	rem, err := s.config.Client(s.wrapOpts(remote.ConnectOpts{
 		EnvName:   env,
 		ServerURL: server,
 		Namespace: ns,
-		Verbosity: s.verbosity,
-		ForceContext: s.forced.context,
-	})
+	}))
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +100,11 @@ func (s stdClientProvider) Attrs(env string) (*remote.KubeAttributes, error) {
 		return nil, errors.Wrap(err, "get kubernetes attrs")
 	}
 	ns := s.app.DefaultNamespace(env)
-	rem, err := s.config.KubeAttributes(remote.ConnectOpts{
+	rem, err := s.config.KubeAttributes(s.wrapOpts(remote.ConnectOpts{
 		EnvName:   env,
 		ServerURL: server,
 		Namespace: ns,
-		Verbosity: s.verbosity,
-	})
+	}))
 	if err != nil {
 		return nil, err
 	}
@@ -130,14 +152,12 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 }
 
 // Config returns the command configuration.
-func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceContext string) (*Config, error) {
+func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts ForceOptions) (*Config, error) {
 	scp := &stdClientProvider{
 		app:       app,
 		config:    remoteConfig,
 		verbosity: cp.Verbosity,
-		forced: forceOptions{
-			context:forceContext,
-		},
+		force:     forceOpts,
 	}
 	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }
