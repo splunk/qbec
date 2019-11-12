@@ -50,7 +50,7 @@ func TestConfigCreate(t *testing.T) {
 		Stderr:          bytes.NewBufferString(""),
 	}
 
-	cfg, err := f.Config(app, vmc, rc)
+	cfg, err := f.Config(app, vmc, rc, "foo")
 	require.Nil(t, err)
 	a.Equal(4, cfg.Verbosity())
 	a.Equal(7, cfg.EvalConcurrency())
@@ -89,7 +89,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 		StrictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc)
+	_, err = f.Config(app, vmc, rc, "foo")
 	require.Nil(t, err)
 }
 
@@ -111,7 +111,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 		StrictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc)
+	_, err = f.Config(app, vmc, rc, "foo")
 	require.NotNil(t, err)
 	msg := err.Error()
 	a.Contains(msg, "specified external variable 'extSomething' not declared for app")
@@ -139,7 +139,7 @@ func TestConfigConfirm(t *testing.T) {
 		Stdout:      &stdout,
 		Stderr:      &stderr,
 	}
-	cfg, err := f.Config(app, vmc, rc)
+	cfg, err := f.Config(app, vmc, rc, "foo")
 	require.Nil(t, err)
 	cfg.stdin = stdin
 	err = cfg.Confirm("we will destroy you")

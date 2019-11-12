@@ -39,11 +39,16 @@ type clientProvider func(env string) (Client, error)
 
 type kubeAttrsProvider func(env string) (*remote.KubeAttributes, error)
 
+type forceOptions struct {
+	context string
+}
+
 // stdClientProvider provides clients based on the supplied Kubernetes config
 type stdClientProvider struct {
 	app       *model.App
 	config    *remote.Config
 	verbosity int
+	forced forceOptions
 }
 
 // Client returns a client for the supplied environment.
@@ -58,6 +63,7 @@ func (s stdClientProvider) Client(env string) (Client, error) {
 		ServerURL: server,
 		Namespace: ns,
 		Verbosity: s.verbosity,
+		ForceContext: s.forced.context,
 	})
 	if err != nil {
 		return nil, err
@@ -124,11 +130,14 @@ func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 }
 
 // Config returns the command configuration.
-func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config) (*Config, error) {
+func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceContext string) (*Config, error) {
 	scp := &stdClientProvider{
 		app:       app,
 		config:    remoteConfig,
 		verbosity: cp.Verbosity,
+		forced: forceOptions{
+			context:forceContext,
+		},
 	}
 	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }

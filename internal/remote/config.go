@@ -40,6 +40,7 @@ type ConnectOpts struct {
 	ServerURL string // the server URL to connect to, must be configured in the kubeconfig
 	Namespace string // the default namespace to set for the context
 	Verbosity int    // verbosity of client interactions
+	ForceContext string // __incluster__ or __current or named context
 }
 
 // Config provides clients for specific contexts out of a kubeconfig file, with overrides for auth.
@@ -73,6 +74,11 @@ func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
 	if c.kubeconfig == nil {
 		c.kubeconfig = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(c.loadingRules, c.overrides)
 	}
+
+	if opts.ForceContext == "__incluster__" {
+		return rest.InClusterConfig()
+	}
+
 	if err := c.overrideCluster(c.kubeconfig, opts); err != nil {
 		return nil, err
 	}
