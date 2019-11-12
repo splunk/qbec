@@ -182,23 +182,48 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 	return ret, nil
 }
 
+func evaluationCode(file string) (string, string, error) {
+	var inputCode string
+	contextFile := file
+	switch {
+	case strings.HasSuffix(file, ".yaml"):
+		inputCode = fmt.Sprintf("std.native('parseYaml')(importstr '%s')", file)
+		contextFile = "yaml-loader.jsonnet"
+	case strings.HasSuffix(file, ".json"):
+		inputCode = fmt.Sprintf("std.native('parseJson')(importstr '%s')", file)
+		contextFile = "json-loader.jsonnet"
+	default:
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			return "", "", errors.Wrap(err, "read inputCode for "+file)
+		}
+		inputCode = string(b)
+	}
+	return inputCode, contextFile, nil
+}
+
 func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLocalObject, error) {
 	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
-	contextFile := c.File
+	var contextFile string
 	switch {
-	case strings.HasSuffix(c.File, ".yaml"):
-		inputCode = fmt.Sprintf("std.native('parseYaml')(importstr '%s')", c.File)
-		contextFile = "yaml-loader.jsonnet"
-	case strings.HasSuffix(c.File, ".json"):
-		inputCode = fmt.Sprintf("std.native('parseJson')(importstr '%s')", c.File)
-		contextFile = "json-loader.jsonnet"
-	default:
-		b, err := ioutil.ReadFile(c.File)
-		if err != nil {
-			return nil, errors.Wrap(err, "read inputCode for "+c.File)
+	case len(c.Files) > 1:
+		var lines []string
+		for _, file := range c.Files {
+			code, _, err := evaluationCode(file)
+			if err != nil {
+				return nil, errors.Wrap(err, "eval code for "+file)
+			}
+			lines = append(lines, "["+code+"]")
 		}
-		inputCode = string(b)
+		inputCode = strings.Join(lines, "+\n")
+		contextFile = "multi-file-loader.jsonnet"
+	default:
+		var err error
+		inputCode, contextFile, err = evaluationCode(c.Files[0])
+		if err != nil {
+			return nil, errors.Wrap(err, "eval code for "+c.Files[0])
+		}
 	}
 	evalCode, err := jvm.EvaluateSnippet(contextFile, inputCode)
 	if err != nil {
@@ -206,7 +231,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 	}
 	var data interface{}
 	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", c.File))
+		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", c.Files[0]))
 	}
 
 	objs, err := walk(data)

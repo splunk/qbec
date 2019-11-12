@@ -46,10 +46,10 @@ var supportedExtensions = map[string]bool{
 	".json":    true,
 }
 
-// Component is a file that contains objects to be applied to a cluster.
+// Component is one or more logically related files that contains objects to be applied to a cluster.
 type Component struct {
 	Name         string   // component name
-	File         string   // path to component file
+	Files        []string // path to main component file and possibly additional files
 	TopLevelVars []string // the top-level variables used by the component
 }
 
@@ -307,13 +307,43 @@ func (a *App) loadComponents() (map[string]Component, error) {
 			return nil
 		}
 		if info.IsDir() {
+			files, err := filepath.Glob(filepath.Join(path, "*"))
+			if err != nil {
+				return err
+			}
+			var staticFiles []string
+			hasIndexJsonnet := false
+			hasIndexYAML := false
+			for _, f := range files {
+				switch filepath.Base(f) {
+				case "index.jsonnet":
+					hasIndexJsonnet = true
+				case "index.yaml":
+					hasIndexYAML = true
+				}
+				if strings.HasSuffix(f, ".json") || strings.HasSuffix(f, ".yaml") {
+					staticFiles = append(staticFiles, f)
+				}
+			}
+			switch {
+			case hasIndexJsonnet:
+				list = append(list, Component{
+					Name:  filepath.Base(path),
+					Files: []string{filepath.Join(path, "index.jsonnet")},
+				})
+			case hasIndexYAML:
+				list = append(list, Component{
+					Name:  filepath.Base(path),
+					Files: staticFiles,
+				})
+			}
 			return filepath.SkipDir
 		}
 		extension := filepath.Ext(path)
 		if supportedExtensions[extension] {
 			list = append(list, Component{
-				Name: strings.TrimSuffix(filepath.Base(path), extension),
-				File: path,
+				Name:  strings.TrimSuffix(filepath.Base(path), extension),
+				Files: []string{path},
 			})
 		}
 		return nil
@@ -324,7 +354,7 @@ func (a *App) loadComponents() (map[string]Component, error) {
 	m := make(map[string]Component, len(list))
 	for _, c := range list {
 		if old, ok := m[c.Name]; ok {
-			return nil, fmt.Errorf("duplicate component %s, found %s and %s", c.Name, old.File, c.File)
+			return nil, fmt.Errorf("duplicate component %s, found %s and %s", c.Name, old.Files[0], c.Files[0])
 		}
 		m[c.Name] = c
 	}

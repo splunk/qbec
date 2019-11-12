@@ -55,53 +55,66 @@ func TestEvalParamsNegative(t *testing.T) {
 func TestEvalComponents(t *testing.T) {
 	objs, err := Components([]model.Component{
 		{
-			Name: "b",
-			File: "testdata/components/b.yaml",
+			Name:  "b",
+			Files: []string{"testdata/components/b.yaml"},
 		},
 		{
-			Name: "c",
-			File: "testdata/components/c.jsonnet",
+			Name:  "c",
+			Files: []string{"testdata/components/c.jsonnet"},
 		},
 		{
-			Name: "a",
-			File: "testdata/components/a.json",
+			Name:  "a",
+			Files: []string{"testdata/components/a.json"},
+		},
+		{
+			Name: "d",
+			Files: []string{
+				"testdata/components/d/index.yaml",
+				"testdata/components/d/subdir-cm.yaml",
+				"testdata/components/d/subdir-cm2.json",
+			},
 		},
 	}, Context{Env: "dev", Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
 	require.Nil(t, err)
-	require.Equal(t, 3, len(objs))
+	require.Equal(t, 5, len(objs))
 	a := assert.New(t)
 
+	// ensure postprocessor is called everywhere
+	for _, obj := range objs {
+		a.Equal("dev", obj.Environment())
+		a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
+		a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
+	}
 	obj := objs[0]
 	a.Equal("a", obj.Component())
-	a.Equal("dev", obj.Environment())
 	a.Equal("", obj.GroupVersionKind().Group)
 	a.Equal("v1", obj.GroupVersionKind().Version)
 	a.Equal("ConfigMap", obj.GroupVersionKind().Kind)
 	a.Equal("", obj.GetNamespace())
 	a.Equal("json-config-map", obj.GetName())
-	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
-	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 
 	obj = objs[1]
 	a.Equal("b", obj.Component())
-	a.Equal("dev", obj.Environment())
 	a.Equal("yaml-config-map", obj.GetName())
-	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
-	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
 
 	obj = objs[2]
 	a.Equal("c", obj.Component())
-	a.Equal("dev", obj.Environment())
 	a.Equal("jsonnet-config-map", obj.GetName())
-	a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
-	a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
+
+	obj = objs[3]
+	a.Equal("d", obj.Component())
+	a.Equal("subdir-config-map1", obj.GetName())
+
+	obj = objs[4]
+	a.Equal("d", obj.Component())
+	a.Equal("subdir-config-map2", obj.GetName())
 }
 
 func TestEvalComponentsClean(t *testing.T) {
 	objs, err := Components([]model.Component{
 		{
-			Name: "a",
-			File: "testdata/components/a.json",
+			Name:  "a",
+			Files: []string{"testdata/components/a.json"},
 		},
 	}, Context{Env: "dev", CleanMode: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
 	require.Nil(t, err)
@@ -122,11 +135,11 @@ func TestEvalComponentsClean(t *testing.T) {
 
 func TestEvalComponentsEdges(t *testing.T) {
 	goodComponents := []model.Component{
-		{Name: "g1", File: "testdata/good-components/g1.jsonnet"},
-		{Name: "g2", File: "testdata/good-components/g2.jsonnet"},
-		{Name: "g3", File: "testdata/good-components/g3.jsonnet"},
-		{Name: "g4", File: "testdata/good-components/g4.jsonnet"},
-		{Name: "g5", File: "testdata/good-components/g5.jsonnet"},
+		{Name: "g1", Files: []string{"testdata/good-components/g1.jsonnet"}},
+		{Name: "g2", Files: []string{"testdata/good-components/g2.jsonnet"}},
+		{Name: "g3", Files: []string{"testdata/good-components/g3.jsonnet"}},
+		{Name: "g4", Files: []string{"testdata/good-components/g4.jsonnet"}},
+		{Name: "g5", Files: []string{"testdata/good-components/g5.jsonnet"}},
 	}
 	goodAssert := func(t *testing.T, ret []model.K8sLocalObject, err error) {
 		require.NotNil(t, err)
@@ -146,7 +159,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 		},
 		{
 			name:       "single bad",
-			components: []model.Component{{Name: "e1", File: "testdata/bad-components/e1.jsonnet"}},
+			components: []model.Component{{Name: "e1", Files: []string{"testdata/bad-components/e1.jsonnet"}}},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
 				assert.Contains(t, err.Error(), "evaluate 'e1'")
@@ -155,8 +168,8 @@ func TestEvalComponentsEdges(t *testing.T) {
 		{
 			name: "two bad",
 			components: []model.Component{
-				{Name: "e1", File: "testdata/bad-components/e1.jsonnet"},
-				{Name: "e2", File: "testdata/bad-components/e2.jsonnet"},
+				{Name: "e1", Files: []string{"testdata/bad-components/e1.jsonnet"}},
+				{Name: "e2", Files: []string{"testdata/bad-components/e2.jsonnet"}},
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
@@ -167,11 +180,11 @@ func TestEvalComponentsEdges(t *testing.T) {
 		{
 			name: "many bad",
 			components: []model.Component{
-				{Name: "e1", File: "testdata/bad-components/e1.jsonnet"},
-				{Name: "e2", File: "testdata/bad-components/e2.jsonnet"},
-				{Name: "e3", File: "testdata/bad-components/e3.jsonnet"},
-				{Name: "e4", File: "testdata/bad-components/e4.jsonnet"},
-				{Name: "e5", File: "testdata/bad-components/e5.jsonnet"},
+				{Name: "e1", Files: []string{"testdata/bad-components/e1.jsonnet"}},
+				{Name: "e2", Files: []string{"testdata/bad-components/e2.jsonnet"}},
+				{Name: "e3", Files: []string{"testdata/bad-components/e3.jsonnet"}},
+				{Name: "e4", Files: []string{"testdata/bad-components/e4.jsonnet"}},
+				{Name: "e5", Files: []string{"testdata/bad-components/e5.jsonnet"}},
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
@@ -181,7 +194,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 		{
 			name: "bad file",
 			components: []model.Component{
-				{Name: "e1", File: "testdata/bad-components/XXX.jsonnet"},
+				{Name: "e1", Files: []string{"testdata/bad-components/XXX.jsonnet"}},
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
@@ -233,8 +246,8 @@ func TestEvalComponentsEdges(t *testing.T) {
 func TestEvalComponentsBadJson(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
-			Name: "bad",
-			File: "testdata/components/bad.json",
+			Name:  "bad",
+			Files: []string{"testdata/components/bad.json"},
 		},
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)
@@ -244,8 +257,8 @@ func TestEvalComponentsBadJson(t *testing.T) {
 func TestEvalComponentsBadPosProcessor(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
-			Name: "bad",
-			File: "testdata/components/good.json",
+			Name:  "bad",
+			Files: []string{"testdata/components/good.json"},
 		},
 	}, Context{Env: "dev", PostProcessFile: "foo/bar.jsonnet"})
 	require.NotNil(t, err)
@@ -255,8 +268,8 @@ func TestEvalComponentsBadPosProcessor(t *testing.T) {
 func TestEvalComponentsBadYaml(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
-			Name: "bad",
-			File: "testdata/components/bad.yaml",
+			Name:  "bad",
+			Files: []string{"testdata/components/bad.yaml"},
 		},
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)
@@ -266,8 +279,8 @@ func TestEvalComponentsBadYaml(t *testing.T) {
 func TestEvalComponentsBadObjects(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
-			Name: "bad",
-			File: "testdata/components/bad-objects.yaml",
+			Name:  "bad",
+			Files: []string{"testdata/components/bad-objects.yaml"},
 		},
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)

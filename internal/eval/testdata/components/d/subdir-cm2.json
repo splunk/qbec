@@ -1,0 +1,10 @@
+{
+  "apiVersion": "v1",
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "subdir-config-map2"
+  },
+  "data": {
+    "foo": "bar"
+  }
+}
