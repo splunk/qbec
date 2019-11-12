@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
@@ -39,9 +40,9 @@ func newComponentCommand(cp ConfigProvider) *cobra.Command {
 
 func listComponents(components []model.Component, formatSpecified bool, format string, w io.Writer) error {
 	if !formatSpecified {
-		fmt.Fprintf(w, "%-30s %s\n", "COMPONENT", "FILE")
+		fmt.Fprintf(w, "%-30s %s\n", "COMPONENT", "FILES")
 		for _, c := range components {
-			fmt.Fprintf(w, "%-30s %s\n", c.Name, c.File)
+			fmt.Fprintf(w, "%-30s %s\n", c.Name, strings.Join(c.Files, ", "))
 		}
 		return nil
 	}

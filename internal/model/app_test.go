@@ -113,6 +113,9 @@ func TestAppSimple(t *testing.T) {
 	a.Equal("params.libsonnet", app.ParamsFile())
 	a.Equal("pp.jsonnet", app.PostProcessor())
 	a.EqualValues([]string{"lib"}, app.LibPaths())
+
+	envs := app.Environments()
+	a.Equal(2, len(envs))
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -143,6 +146,28 @@ func TestAppWarnings(t *testing.T) {
 
 	a.Equal("foobar", app.Tag())
 	a.Equal("default-foobar", app.DefaultNamespace("dev"))
+}
+
+func TestAppComponentLoadSubdirs(t *testing.T) {
+	reset := setPwd(t, "testdata/subdir-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", "")
+	require.Nil(t, err)
+	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.Equal(2, len(comps))
+	comp := comps[0]
+	a.Equal("comp1", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "comp1", "index.jsonnet"))
+
+	comp = comps[1]
+	a.Equal("comp2", comp.Name)
+	a.Equal(3, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm1.yaml"))
+	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm2.json"))
+	a.Contains(comp.Files, filepath.Join("components", "comp2", "index.yaml"))
 }
 
 func TestAppComponentLoadNegative(t *testing.T) {

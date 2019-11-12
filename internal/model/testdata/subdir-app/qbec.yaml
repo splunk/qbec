@@ -1,0 +1,9 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: subdir-app
+spec:
+  environments:
+    dev:
+      server: https://dev-server
