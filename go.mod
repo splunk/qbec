@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.44.3 // indirect
-	github.com/Azure/go-autorest v9.9.0+incompatible // indirect
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/readline v0.0.0-20160726135117-62c6fe619375
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
@@ -34,8 +33,6 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
 	github.com/mattn/go-isatty v0.0.7
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/pkg/errors v0.8.1
@@ -47,9 +44,8 @@ require (
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.0.0-20190116205037-c89978d5f86d // indirect
-	k8s.io/apimachinery v0.0.0-20180601181227-17529ec7eadb
-	k8s.io/client-go v7.0.0+incompatible
-	k8s.io/kube-openapi v0.0.0-20181114233023-0317810137be
+	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762
+	k8s.io/client-go v0.0.0-20191016110837-54936ba21026
+	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 	k8s.io/kubernetes v1.14.1
 )

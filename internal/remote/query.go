@@ -64,8 +64,7 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 		ls = fmt.Sprintf("%s,%s=%s", ls, model.QbecNames.TagLabel, o.scope.Tag)
 	}
 	list, err := xface.List(metav1.ListOptions{
-		LabelSelector:        ls,
-		IncludeUninitialized: true,
+		LabelSelector: ls,
 	})
 	if err != nil {
 		if apiErrors.IsForbidden(err) {
