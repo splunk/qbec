@@ -32,11 +32,20 @@ test:
 	go test -race ./...
 
 .PHONY: lint
-lint:
+lint: check-format
 	go vet ./...
 	golint ./...
 	golangci-lint run $(LINT_FLAGS) .
 
+.PHONY: check-format
+check-format:
+	@echo "Running gofmt..."
+	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -l))
+	$(if $(strip $(unformatted)),\
+		$(error $(\n) Some files are ill formatted! Run: \
+			$(foreach file,$(unformatted),$(\n)    gofmt -w $(file))$(\n)),\
+		@echo All files are well formatted.\
+	)
 .PHONY: install-ci
 install-ci:
 	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
