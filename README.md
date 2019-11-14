@@ -1,5 +1,6 @@
 ![qbec](site/static/images/qbec-logo-black.svg)
 
+[![Github build status](https://github.com/splunk/qbec/workflows/build/badge.svg)](https://github.com/splunk/qbec/actions)
 [![Build Status](https://circleci.com/gh/splunk/qbec.svg?style=svg)](https://circleci.com/gh/splunk/qbec)
 [![Go Report Card](https://goreportcard.com/badge/github.com/splunk/qbec)](https://goreportcard.com/report/github.com/splunk/qbec)
 
