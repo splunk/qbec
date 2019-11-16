@@ -1,6 +1,29 @@
 Changelog
 ---
 
+## v0.9.0 (Nov 16, 2019)
+
+* allow for component subdirectories at one level of nesting. A subdirectory directly under the components directory
+  is treated as a multi-file component if it has an `index.jsonnet` file (which is the file loaded for the component),
+  or an `index.yaml` file (in which case all JSON and YAML files in the directory are loaded).
+* add `--force:*` options to be able to override K8s context and namespace from command line (thanks @abhide).
+  This allows for new use-cases like in-cluster applies. `qbec options` shows the available options and special values.
+  Note that using these options suppresses qbec safety checks. Use with care.
+* add `QBEC_YES` environment variable as default for the `--yes` option. 
+  Provide better messages when a non-interactive build needs confirmation (thanks @harsimranmaan)
+* update `client-go` version to `kubernetes-1.15.5`. Add client-go version to the list of versions displayed by the
+  `qbec version` command.
+* various internal CI improvements (thanks @harsimranmaan)
+  * github actions workflow for builds
+  * release workflow for tags
+  * break build on `gofmt` failures
+
+Backward incompatibilities:
+
+* If you previously had a component subdirectory that has an `index.jsonnet` or `index.yaml` file, qbec will now treat
+  it as a component. Rename these files to restore previous behavior.
+* client-go upgrade has the potential to be backwards-incompatible for edge cases.
+
 ## v0.8.0 (Oct 31, 2019)
 
 * update jsonnet version to v0.14.0
