@@ -48,7 +48,7 @@ func (s *statusTracker) wait() (finalErr error) {
 		return errors.Wrap(err, "get watch interface")
 	}
 	var prevStatus types.RolloutStatus
-	_, err = watch.Until(0, watcher, func(e watch.Event) (bool, error) {
+	_, err = until(0, watcher, func(e watch.Event) (bool, error) {
 		switch e.Type {
 		case watch.Deleted:
 			return false, fmt.Errorf("object was deleted")

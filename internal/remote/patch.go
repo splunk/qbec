@@ -219,7 +219,7 @@ func (p *patcher) patchSimple(serverObj *unstructured.Unstructured, desired mode
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error getting update interface for %v", gvk))
 	}
-	_, err = ri.Patch(serverObj.GetName(), result.Kind, result.patch)
+	_, err = ri.Patch(serverObj.GetName(), result.Kind, result.patch, metav1.PatchOptions{})
 	return result, err
 }
 

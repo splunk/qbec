@@ -66,19 +66,23 @@ type internalSyncOptions struct {
 	pristineAnnotation string             // pristine annotation to manipulate for secrets dry-run
 }
 
+type resourceClient interface {
+	clientForGroupVersionKind(kind schema.GroupVersionKind) (dynamic.Interface, error)
+}
+
 // Client is a thick remote client that provides high-level operations for commands as opposed to
 // granular ones.
 type Client struct {
 	resources    *k8smeta.Resources               // the server metadata loaded once and never updated
 	schema       *k8smeta.ServerSchema            // the server schema
-	pool         dynamic.ClientPool               // the client pool for resource interfaces
+	pool         resourceClient                   // the client pool for resource interfaces
 	disco        k8smeta.ResourceDiscovery        // the discovery interface
 	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
 	verbosity    int                              // log verbosity
 	dynamicTypes map[schema.GroupVersionKind]bool // crds seen by this client
 }
 
-func newClient(pool dynamic.ClientPool, disco discovery.DiscoveryInterface, ns string, verbosity int) (*Client, error) {
+func newClient(pool resourceClient, disco discovery.DiscoveryInterface, ns string, verbosity int) (*Client, error) {
 	start := time.Now()
 	resources, err := k8smeta.NewResources(disco, k8smeta.ResourceOpts{WarnFn: sio.Warnln})
 	if err != nil {
@@ -551,7 +555,7 @@ func (c *Client) jitResource(gvk schema.GroupVersionKind) (*metav1.APIResource, 
 
 // ResourceInterface returns a dynamic resource interface for the supplied group version kind and namespace.
 func (c *Client) ResourceInterface(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
-	client, err := c.pool.ClientForGroupVersionKind(gvk)
+	client, err := c.pool.clientForGroupVersionKind(gvk)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +566,18 @@ func (c *Client) ResourceInterface(gvk schema.GroupVersionKind, namespace string
 			return nil, errMetadataNotFound
 		}
 	}
-	return client.Resource(res, namespace), nil
+	base := client.Resource(schema.GroupVersionResource{
+		Group:    res.Group,
+		Version:  res.Version,
+		Resource: res.Name,
+	})
+	var ret dynamic.ResourceInterface
+	if res.Namespaced {
+		ret = base.Namespace(namespace)
+	} else {
+		ret = base
+	}
+	return ret, nil
 }
 
 func (c *Client) resourceInterfaceWithDefaultNs(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
@@ -594,7 +609,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource interface")
 	}
-	out, err := ri.Create(obj.ToUnstructured())
+	out, err := ri.Create(obj.ToUnstructured(), metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

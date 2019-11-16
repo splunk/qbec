@@ -27,7 +27,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/sio"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -187,12 +186,7 @@ func (c *Config) Client(opts ConnectOpts) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	discoCache := newCachedDiscoveryClient(disco)
-	mapper := discovery.NewDeferredDiscoveryRESTMapper(discoCache, dynamic.VersionInterfaces)
-	pathResolver := dynamic.LegacyAPIPathResolverFunc
-	pool := dynamic.NewClientPool(conf, mapper, pathResolver)
-	return newClient(pool, disco, opts.Namespace, opts.Verbosity)
+	return newClient(newResourceClient(conf), disco, opts.Namespace, opts.Verbosity)
 }
 
 // ContextInfo has information we care about a K8s context
