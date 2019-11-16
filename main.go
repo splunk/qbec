@@ -30,10 +30,11 @@ import (
 )
 
 var (
-	version        = "dev"
-	commit         = "dev"
-	goVersion      = "unknown"
-	jsonnetVersion = "v0.14.0" // update this when library dependency is upgraded
+	version         = "dev"
+	commit          = "dev"
+	goVersion       = "unknown"
+	jsonnetVersion  = "v0.14.0"           // update this when library dependency is upgraded
+	clientGoVersion = "kubernetes-1.15.5" // ditto when client go dep is upgraded
 )
 
 var exe = "qbec"
@@ -47,15 +48,17 @@ func newVersionCommand() *cobra.Command {
 		Run: func(c *cobra.Command, args []string) {
 			if jsonOutput {
 				out := struct {
-					Qbec    string `json:"qbec"`
-					Jsonnet string `json:"jsonnet"`
-					Go      string `json:"go"`
-					Commit  string `json:"commit"`
+					Qbec     string `json:"qbec"`
+					Jsonnet  string `json:"jsonnet"`
+					ClientGo string `json:"client-go"`
+					Go       string `json:"go"`
+					Commit   string `json:"commit"`
 				}{
-					version,
-					jsonnetVersion,
-					goVersion,
-					commit,
+					Qbec:     version,
+					Jsonnet:  jsonnetVersion,
+					ClientGo: clientGoVersion,
+					Go:       goVersion,
+					Commit:   commit,
 				}
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
@@ -64,10 +67,11 @@ func newVersionCommand() *cobra.Command {
 				}
 				return
 			}
-			fmt.Printf("%s version: %s\njsonnet version: %s\ngo version: %s\ncommit: %s\n",
+			fmt.Printf("%s version: %s\njsonnet version: %s\nclient-go version: %s\ngo version: %s\ncommit: %s\n",
 				exe,
 				version,
 				jsonnetVersion,
+				clientGoVersion,
 				goVersion,
 				commit,
 			)
