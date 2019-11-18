@@ -26,9 +26,19 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://qbec.io/userguide/usage/authoring/</guid>
-      <description>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static and unable to support parameterization per environment. These formats are good enough for Kubernetes objects like roles, role bindings, service accounts etc. where the content doesn&amp;rsquo;t usually vary per environment.
-In order to create components that need to be different per environment, you are pretty much required to use jsonnet.
-k8s-yaml-patch, for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and return them for qbec use.</description>
+      <description>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static and unable to support parameterization per environment. These formats are good enough for Kubernetes objects like roles, role bindings, service accounts etc. where the content doesn&amp;rsquo;t usually vary per environment. In order to create components that need to be different per environment, you are pretty much required to use jsonnet.
+Component structure Components are loaded from the components directory defined for your app.</description>
+    </item>
+    
+    <item>
+      <title>Common object metadata</title>
+      <link>http://qbec.io/userguide/usage/common-metadata/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/common-metadata/</guid>
+      <description>qbec provides an easy mechanism to set up common metadata like annotations for all objects produced. For example, you may want to set up a team annotation for all objects.
+You do this by defining a post-processor. A post-processor is a jsonnet file that contains a single function like so:
+// the post processor jsonnet must return a function taking exactly one parameter // called &amp;quot;object&amp;quot; and returning its decorated version.</description>
     </item>
     
     <item>
@@ -59,7 +69,7 @@ You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;r
       
       <guid>http://qbec.io/userguide/usage/commands/</guid>
       <description>The qbec CLI provides usage help for all commands. The commands that qbec supports are:
-$ qbec --help qbec provides a set of commands to manage addons. Usage: qbec [command] Available Commands: apply apply one or more components to a Kubernetes cluster component component lists and diffs delete delete one or more components from a Kubernetes cluster diff diff one or more components against objects in a Kubernetes cluster help Help about any command init initialize a qbec app param parameter lists and diffs show show output in YAML or JSON format for one or more components validate validate one or more components against the spec of a kubernetes cluster version print program version .</description>
+$ qbec --help qbec provides a set of commands to manage kubernetes objects on multiple clusters. Usage: qbec [command] Available Commands: apply apply one or more components to a Kubernetes cluster completion Output shell completion for bash component component lists and diffs delete delete one or more components from a Kubernetes cluster diff diff one or more components against objects in a Kubernetes cluster env environment lists and details help Help about any command init initialize a qbec app param parameter lists and diffs show show output in YAML or JSON format for one or more components validate validate one or more components against the spec of a kubernetes cluster version print program version .</description>
     </item>
     
     <item>

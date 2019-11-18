@@ -231,6 +231,25 @@
  
   
     
+      <li data-nav-id="/userguide/usage/common-metadata/" title="Common object metadata" class="dd-item ">
+        <a href="/userguide/usage/common-metadata/">
+        Common object metadata
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
@@ -351,6 +370,25 @@
       <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
         <a href="/reference/qbec-yaml/">
         Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+        <a href="/reference/jsonnet-vars/">
+        Standard jsonnet variables
         
         </a>
     </li>
@@ -607,11 +645,15 @@
 <h2 id="components">Components</h2>
 
 <p>Components are the source code that you write that represent Kubernetes objects.
-A component is single source file that produces a collection of logically related Kubernetes objects.
-You implement components by writing jsonnet, YAML or JSON files.</p>
+You will typically organize related Kubernetes objects as a single component
+(e.g. a microservice that needs a service account, deployment, service, and config map
+kubernetes objects).</p>
 
-<p>It is also valid for a component to return an empty set of objects if runtime parameters determine that
-nothing should be installed for a specific target environment.</p>
+<p>Components are loaded from jsonnet, json, or yaml files. Only jsonnet files provide the ability
+to customize object definitions for different environments. In addition, qbec support loading
+objects from helm charts, and using jsonnet libraries to produce them.</p>
+
+<p>More details can be found in the <a href="userguide/authoring/">authoring components</a> page.</p>
 
 <h2 id="environments">Environments</h2>
 
@@ -920,6 +962,22 @@ the <a href="../usage/branches-and-ci">branch builds and CI</a> section of the u
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -938,6 +996,22 @@ the <a href="../usage/branches-and-ci">branch builds and CI</a> section of the u
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

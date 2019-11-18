@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Jsonnet native functions :: Qbec</title>
+    <title>Standard jsonnet variables :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/reference/jsonnet-native-funcs/">
+  <body class="" data-url="/reference/jsonnet-vars/">
     <nav id="sidebar" class="">
 
 
@@ -386,7 +386,7 @@
  
   
     
-      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item active">
         <a href="/reference/jsonnet-vars/">
         Standard jsonnet variables
         
@@ -424,7 +424,7 @@
  
   
     
-      <li data-nav-id="/reference/jsonnet-native-funcs/" title="Jsonnet native functions" class="dd-item active">
+      <li data-nav-id="/reference/jsonnet-native-funcs/" title="Jsonnet native functions" class="dd-item ">
         <a href="/reference/jsonnet-native-funcs/">
         Jsonnet native functions
         
@@ -562,7 +562,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-native-funcs.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-vars.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -593,7 +593,7 @@
             
           
           
-            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Jsonnet native functions
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Standard jsonnet variables
           
          
           
@@ -606,26 +606,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-<nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#expandhelmtemplate">expandHelmTemplate</a>
-<ul>
-<li><a href="#usage">Usage</a></li>
-<li><a href="#the-options-object">The options object</a></li>
-</ul></li>
-<li><a href="#parsejson">parseJson</a>
-<ul>
-<li><a href="#usage-1">Usage</a></li>
-</ul></li>
-<li><a href="#parseyaml">parseYaml</a>
-<ul>
-<li><a href="#usage-2">Usage</a></li>
-</ul></li>
-</ul></li>
-</ul>
-</nav>
+
     </div>
 </div>
 
@@ -637,83 +618,26 @@
         
         <div id="body-inner">
           
-            <h1>Jsonnet native functions</h1>
+            <h1>Standard jsonnet variables</h1>
           
 
         
 
 
-
-
-<p>A list of all native functions that qbec natively supports.</p>
-
-<h2 id="expandhelmtemplate">expandHelmTemplate</h2>
-
-<p>The <code>expandHelmTemplate</code> function expands a helm chart and returns the resulting objects.
-This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release.
-It runs the <code>helm template</code> command, assuming that the <code>helm</code> binary is already installed and
-available in the PATH.</p>
-
-<h3 id="usage">Usage</h3>
-
-<pre><code>    expandHelmTemplate(&quot;path/to/chart&quot;, 
-        { 
-            chartProperty: 'chart-value'
-        },
-        {
-            namespace: 'my-ns',
-            name: 'my-name',
-            thisFile: std.thisFile, // important
-        },
-    )
-</code></pre>
+<p>qbec exposes the following standard jsonnet variables whenever it evaluates components.</p>
 
 <ul>
-<li>The first argument is a path to a helm chart (which is usually a folder or a <code>.tar.gz</code> file).</li>
-<li>The second argument is an object containing the values for the chart. This is turned into a <code>--values</code> argument to the template command.</li>
-<li>The last argument is an object representing a set of options, including options to the helm command.</li>
+<li><code>qbec.io/env</code> - the name of the environment for which processing occurs.</li>
+<li><code>qbec.io/tag</code> - the tag specified for the command using the <code>--app-tag</code> option.</li>
+<li><code>qbec.io/defaultNs</code> - the default namespace in use. This is typically picked from the environment definition,
+possibly changed for app tags, or the value forced from the command line using the <code>--force:k8s-namespace</code> option.</li>
+<li><code>qbec.io/cleanMode</code> - has the <code>off</code> or <code>on</code>. The <code>on</code> value is only set for the <code>show --clean</code> command.</li>
 </ul>
 
-<h3 id="the-options-object">The options object</h3>
+<p>In addition to the above, qbec will also set the default values for declared external variables and
+override them from command line arguments.</p>
 
-<p>This object supports the following keys:</p>
-
-<ul>
-<li><code>thisFile</code> (string) - the current file from which the function is called. Should be set to <a href="https://jsonnet.org/ref/stdlib.html#thisFile">std.thisFile</a>. Relative references
-are resolved with respect to the supplied file path.</li>
-<li><code>namespace</code> (string) - the <code>--namespace</code> argument to the template command</li>
-<li><code>name</code> (string) - the <code>--name</code> argument to the template command</li>
-<li><code>nameTemplate</code> (string) - the <code>--name-template</code> argument to the template command</li>
-<li><code>generateName</code> (string) - the <code>--generate-name</code> argument to the template command</li>
-<li><code>execute</code> (array of strings) - the <code>--execute</code> argument to the template command</li>
-<li><code>kubeVersion</code> (string) - the <code>--kube-version</code> argument to the template command</li>
-<li><code>verbose</code> (bool) - print <code>helm template</code> command invocation to standard error before executing it</li>
-</ul>
-
-<h2 id="parsejson">parseJson</h2>
-
-<p>The <code>parseJson</code> function parses a JSON-encoded string and returns the corresponding object.</p>
-
-<h3 id="usage-1">Usage</h3>
-
-<pre><code>    local parseJson = std.native('parseJson');
-    local jsonString = '{ &quot;hello&quot; : &quot;world&quot; }';
-    
-    parseJson(jsonString) // returns the _object_ { hello: 'world' }
-</code></pre>
-
-<h2 id="parseyaml">parseYaml</h2>
-
-<p>The <code>parseYaml</code> function parses an input string into an array of YAML documents. It <em>always</em> returns an array
-even if there is only one YAML document in the string.</p>
-
-<h3 id="usage-2">Usage</h3>
-
-<pre><code>    local parseYaml = std.native('parseYaml');
-    local yamlString = importstr './path/to/yaml/file';
-    
-    parseYaml(yamlString) // returns all YAML docs as an array
-</code></pre>
+<p>See the <a href="../component-evaluation">component evaluation page</a> for the gory details.</p>
 
 
 <footer class=" footline" >
@@ -982,6 +906,26 @@ even if there is only one YAML document in the string.</p>
             
                 
                     
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
                 
                 
 
@@ -1013,26 +957,6 @@ even if there is only one YAML document in the string.</p>
             
             
                 
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
                     
                 
                 
@@ -1105,10 +1029,10 @@ even if there is only one YAML document in the string.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/reference/gen-metadata/" title="Metadata for K8s objects"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/reference/qbec-yaml/" title="Application YAML"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/reference/component-evaluation/" title="Component evaluation" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/reference/gen-metadata/" title="Metadata for K8s objects" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

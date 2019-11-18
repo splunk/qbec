@@ -231,6 +231,25 @@
  
   
     
+      <li data-nav-id="/userguide/usage/common-metadata/" title="Common object metadata" class="dd-item ">
+        <a href="/userguide/usage/common-metadata/">
+        Common object metadata
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
@@ -351,6 +370,25 @@
       <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item active">
         <a href="/reference/qbec-yaml/">
         Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+        <a href="/reference/jsonnet-vars/">
+        Standard jsonnet variables
         
         </a>
     </li>
@@ -607,6 +645,7 @@ metadata:
 spec:
   componentsDir: components    # directory where component files can be found. Not recursive. default: components
   paramsFile: params.libsonnet # file to load for `param list` and `param diff` commands. Not otherwise used.
+  postProcessor: pp.jsonnet    # post processor file for injecting common metadata
 
   # additional library paths when executing jsonnet, no support currently for `http` URLs.
   libPaths: 
@@ -874,6 +913,22 @@ same name and different extensions.</li>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -918,6 +973,22 @@ same name and different extensions.</li>
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -1025,7 +1096,7 @@ same name and different extensions.</li>
 			<a class="nav nav-prev" href="/reference/" title="Reference"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/reference/gen-metadata/" title="Metadata for K8s objects" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/reference/jsonnet-vars/" title="Standard jsonnet variables" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

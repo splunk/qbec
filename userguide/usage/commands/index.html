@@ -231,6 +231,25 @@
  
   
     
+      <li data-nav-id="/userguide/usage/common-metadata/" title="Common object metadata" class="dd-item ">
+        <a href="/userguide/usage/common-metadata/">
+        Common object metadata
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
@@ -351,6 +370,25 @@
       <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
         <a href="/reference/qbec-yaml/">
         Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+        <a href="/reference/jsonnet-vars/">
+        Standard jsonnet variables
         
         </a>
     </li>
@@ -585,6 +623,7 @@
 <li><a href="#kind-filters">Kind filters</a></li>
 </ul></li>
 <li><a href="#command-help">Command help</a></li>
+<li><a href="#running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -611,23 +650,25 @@
 
 <pre><code class="language-shell">$ qbec --help
 
-qbec provides a set of commands to manage addons.
+qbec provides a set of commands to manage kubernetes objects on multiple clusters.
 
 Usage:
   qbec [command]
 
 Available Commands:
   apply       apply one or more components to a Kubernetes cluster
+  completion  Output shell completion for bash
   component   component lists and diffs
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
+  env         environment lists and details
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs
   show        show output in YAML or JSON format for one or more components
   validate    validate one or more components against the spec of a kubernetes cluster
   version     print program version
-  
+
 ...
 </code></pre>
 
@@ -740,6 +781,44 @@ Flags:
       --sort-apply                      sort output in apply order (requires cluster access)
 
 Use &quot;qbec options&quot; for a list of global options available to all commands.
+</code></pre>
+
+<h2 id="running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</h2>
+
+<p>Sometimes you need to run other commands and scripts in addition to <code>qbec apply</code> that operate on
+the same cluster/ namespace as a qbec environment. qbec provides the <code>env list</code> and <code>env vars</code>
+command to enumerate its environments and set <code>kubectl</code> args to point to the same context
+as qbec would use for an environment.</p>
+
+<p>The output of the <code>env vars</code> command can be <code>eval</code>-ed in the shell and used to run other commands.</p>
+
+<p>Example:</p>
+
+<pre><code>$ qbec env vars dev
+KUBECONFIG='/path/to/kube/config';
+KUBE_CLUSTER='dev-cluster-name';
+KUBE_CONTEXT='dev';
+KUBE_NAMESPACE='dev-ns';
+KUBECTL_ARGS='--context=dev1 --cluster=dev1.dev.us-west-2.splunk8s.io --namespace=default';
+export KUBECONFIG KUBE_CLUSTER KUBE_CONTEXT KUBE_NAMESPACE KUBECTL_ARGS
+</code></pre>
+
+<p>The basic output can be eval-ed like so and used in <code>kubectl</code> or other commands:</p>
+
+<pre><code>$ eval $(qbec env vars dev) # this sets the environment variables printed above
+$ kubectl ${KUBECTL_ARGS} apply -f somefile.yaml
+</code></pre>
+
+<p>If you want the cluster, context, namespace etc. as structured output you can use the <code>-o json</code>
+option.</p>
+
+<pre><code>$ qbec env vars dev -o json
+{
+  &quot;configFile&quot;: &quot;/path/to/kube/config&quot;,
+  &quot;context&quot;: &quot;dev&quot;,
+  &quot;cluster&quot;: &quot;dev1-cluster-name&quot;,
+  &quot;namespace&quot;: &quot;dev-ns&quot;
+}
 </code></pre>
 
 
@@ -930,6 +1009,22 @@ Use &quot;qbec options&quot; for a list of global options available to all comma
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -979,6 +1074,22 @@ Use &quot;qbec options&quot; for a list of global options available to all comma
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

@@ -231,6 +231,25 @@
  
   
     
+      <li data-nav-id="/userguide/usage/common-metadata/" title="Common object metadata" class="dd-item ">
+        <a href="/userguide/usage/common-metadata/">
+        Common object metadata
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item ">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
@@ -351,6 +370,25 @@
       <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
         <a href="/reference/qbec-yaml/">
         Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+        <a href="/reference/jsonnet-vars/">
+        Standard jsonnet variables
         
         </a>
     </li>
@@ -574,7 +612,17 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#component-structure">Component structure</a></li>
+<li><a href="#using-helm-charts">Using helm charts</a></li>
+<li><a href="#using-other-jsonnet-libraries">Using other jsonnet libraries</a></li>
+<li><a href="#creating-transient-objects">Creating transient objects</a></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -592,13 +640,40 @@
         
 
 
+
+
 <p>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static
 and unable to support parameterization per environment. These formats are good enough for Kubernetes
 objects like roles, role bindings, service accounts etc. where the content doesn&rsquo;t usually vary
-per environment.</p>
+per environment. In order to create components that need to be different per environment, you are
+pretty much required to use jsonnet.</p>
 
-<p>In order to create components that need to be different per environment, you are pretty much required
-to use jsonnet.</p>
+<h2 id="component-structure">Component structure</h2>
+
+<p>Components are loaded from the components directory defined for your app.
+This defaults to <code>components/</code> under the source tree but you can change this path in <code>qbec.yaml</code>.</p>
+
+<p>A component is:</p>
+
+<ul>
+<li>a single jsonnet, json or yaml source file directly under the components directory. In this case the component name
+is the name of the file without the extension and qbec will process this file.</li>
+<li>a subdirectory directly under the components directory that has an <code>index.jsonnet</code> file. In this case the component
+name is the subdirectory name and the <code>index.jsonnet</code> is processed by qbec.</li>
+<li>a sudirectory containing an <code>index.yaml</code> file. In this case the component name is the subdirectory name and all
+json and yaml files under the directory are loaded by qbec.</li>
+</ul>
+
+<p>It is valid for a component to return an empty set of objects if runtime parameters determine that
+nothing should be installed for a specific target environment.</p>
+
+<h2 id="using-helm-charts">Using helm charts</h2>
+
+<p>You can use existing helm charts as a basis for loading a component. In this case, you would create a jsonnet file
+that uses the <a href="../../../reference/jsonnet-native-funcs/#expandhelmtemplate">expandHelmTemplate</a> native function that qbec exposes. This function loads the objects returned by the
+helm chart and allows you to patch them with jsonnet before returning them for qbec processing.</p>
+
+<h2 id="using-other-jsonnet-libraries">Using other jsonnet libraries</h2>
 
 <p><a href="https://github.com/splunk/k8s-yaml-patch">k8s-yaml-patch</a>,
 for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and
@@ -608,6 +683,20 @@ return them for qbec use.</p>
 the <a href="https://github.com/jsonnet-bundler/jsonnet-bundler">jsonnet bundler</a>. download the dependencies
 locally to a <code>vendor</code> directory, and add this directory to the <code>libPaths</code> array in <code>qbec.yaml</code>.
 You will then be able to use these dependencies in your jsonnet code.</p>
+
+<h2 id="creating-transient-objects">Creating transient objects</h2>
+
+<p>Most objects that you create using qbec are objects with fixed names (e.g. deployments, services etc.). Occasionally
+you may need to create transient objects like jobs and one-off pods.</p>
+
+<p>qbec, like kubectl, allows you to set the <code>generateName</code> instead of the <code>name</code> metadata attribute for an object.
+When the <code>generateName</code> attribute is set, qbec will change its behavior such that:</p>
+
+<ul>
+<li>two objects with the same <code>generateName</code> attribute are not considered duplicates.</li>
+<li>qbec tracks the actual name with which the object was created</li>
+<li>it garbage collects previously created transient objects that were not created in the current run of <code>qbec apply</code></li>
+</ul>
 
 
 <footer class=" footline" >
@@ -828,6 +917,22 @@ You will then be able to use these dependencies in your jsonnet code.</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -846,6 +951,22 @@ You will then be able to use these dependencies in your jsonnet code.</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -974,7 +1095,7 @@ You will then be able to use these dependencies in your jsonnet code.</p>
 			<a class="nav nav-prev" href="/userguide/usage/basic/" title="Folders, files, parameters"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/userguide/usage/runtime-params/" title="Runtime parameters" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/userguide/usage/common-metadata/" title="Common object metadata" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

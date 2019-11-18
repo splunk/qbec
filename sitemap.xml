@@ -27,11 +27,19 @@
   </url>
   
   <url>
+    <loc>http://qbec.io/reference/jsonnet-vars/</loc>
+  </url>
+  
+  <url>
     <loc>http://qbec.io/reference/gen-metadata/</loc>
   </url>
   
   <url>
     <loc>http://qbec.io/reference/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/userguide/usage/common-metadata/</loc>
   </url>
   
   <url>

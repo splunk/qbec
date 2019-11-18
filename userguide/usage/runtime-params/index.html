@@ -231,6 +231,25 @@
  
   
     
+      <li data-nav-id="/userguide/usage/common-metadata/" title="Common object metadata" class="dd-item ">
+        <a href="/userguide/usage/common-metadata/">
+        Common object metadata
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/userguide/usage/runtime-params/" title="Runtime parameters" class="dd-item active">
         <a href="/userguide/usage/runtime-params/">
         Runtime parameters
@@ -351,6 +370,25 @@
       <li data-nav-id="/reference/qbec-yaml/" title="Application YAML" class="dd-item ">
         <a href="/reference/qbec-yaml/">
         Application YAML
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
+        <a href="/reference/jsonnet-vars/">
+        Standard jsonnet variables
         
         </a>
     </li>
@@ -583,6 +621,7 @@
 <li><a href="#using-top-level-jsonnet-variables">Using top-level jsonnet variables</a>
 <ul>
 <li><a href="#notes-on-usage">Notes on usage</a></li>
+<li><a href="#setting-variables-in-bulk">Setting variables in bulk</a></li>
 </ul></li>
 <li><a href="#strict-mode">Strict mode</a></li>
 </ul></li>
@@ -771,6 +810,40 @@ you cannot have a top-level argument called <code>imageTag</code> for 2 differen
 default that was not specified versus one that was explicitly set to <code>null</code>.</li>
 </ul>
 
+<h3 id="setting-variables-in-bulk">Setting variables in bulk</h3>
+
+<p>qbec provides a <code>--vm:ext-str-list</code> (and <code>--vm:tla-str-list</code>) option that allows you to set a bunch of variables using a
+single file. For example, if you have to set 3 variables, say, <code>commit</code>, <code>ci_job</code>, <code>image_tag</code> for
+every apply command, you can just set these environment variables and create a file like so:</p>
+
+<pre><code>commit
+ci_job=1234
+image_tag
+</code></pre>
+
+<p>You can set the values for each line if you so prefer. In the above example, the <code>ci_job</code>
+variable is given an explicit value while the others are loaded from the environment.</p>
+
+<p>Then <code>--vm:ex-str-list=list-file</code> would automatically pull in the remaining values from the environment.
+This file can be checked into source control and the variables can be provided with default values in
+<code>qbec.yaml</code> as usual.</p>
+
+<p>To reduce duplication, you can even have your params generation code read this file and set
+parameters from external variables. For example:</p>
+
+<pre><code>local varList = std.split(importstr './list-vars.txt', '\n');
+// remove blank lines
+local lines = std.filter(function(x) x != '', varList);
+// extract names
+local names = std.map(function (x) std.split(x,'=')[0], lines);
+
+local foldFunc = function(obj, key) obj { [key]: std.extVar(key) };
+local externals = std.foldl(foldFunc, names, {});
+
+// now externals is an object that can be used by the rest of the code
+// it looks like: { commit: 'commit-id', ci_job: '1234', image_tag: '1.4-abc' }
+</code></pre>
+
 <h2 id="strict-mode">Strict mode</h2>
 
 <p>The <code>--strict-vars</code> flag for qbec commands can help you ensure correctness of your qbec command line invocation.
@@ -940,6 +1013,22 @@ but fails to set a value for it for the <code>apply</code> command, or if the va
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -1021,6 +1110,22 @@ but fails to set a value for it for the <code>apply</code> command, or if the va
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -1146,7 +1251,7 @@ but fails to set a value for it for the <code>apply</code> command, or if the va
 	 
 	 
 		
-			<a class="nav nav-prev" href="/userguide/usage/authoring/" title="Create components"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/userguide/usage/common-metadata/" title="Common object metadata"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="/userguide/usage/branches-and-ci/" title="Branch builds and CI" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
