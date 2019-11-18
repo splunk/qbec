@@ -8,26 +8,27 @@ The qbec CLI provides usage help for all commands. The commands that qbec suppor
 ```shell
 $ qbec --help
 
-qbec provides a set of commands to manage addons.
+qbec provides a set of commands to manage kubernetes objects on multiple clusters.
 
 Usage:
   qbec [command]
 
 Available Commands:
   apply       apply one or more components to a Kubernetes cluster
+  completion  Output shell completion for bash
   component   component lists and diffs
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
+  env         environment lists and details
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs
   show        show output in YAML or JSON format for one or more components
   validate    validate one or more components against the spec of a kubernetes cluster
   version     print program version
-  
+
 ...
 ```
-
 
 ## Command lifecycle
 
@@ -135,3 +136,44 @@ Flags:
 
 Use "qbec options" for a list of global options available to all commands.
 ```
+
+## Running other scripts for qbec environments
+
+Sometimes you need to run other commands and scripts in addition to `qbec apply` that operate on
+the same cluster/ namespace as a qbec environment. qbec provides the `env list` and `env vars`
+command to enumerate its environments and set `kubectl` args to point to the same context
+as qbec would use for an environment.
+
+The output of the `env vars` command can be `eval`-ed in the shell and used to run other commands.
+
+Example:
+```
+$ qbec env vars dev
+KUBECONFIG='/path/to/kube/config';
+KUBE_CLUSTER='dev-cluster-name';
+KUBE_CONTEXT='dev';
+KUBE_NAMESPACE='dev-ns';
+KUBECTL_ARGS='--context=dev1 --cluster=dev1.dev.us-west-2.splunk8s.io --namespace=default';
+export KUBECONFIG KUBE_CLUSTER KUBE_CONTEXT KUBE_NAMESPACE KUBECTL_ARGS
+```
+
+The basic output can be eval-ed like so and used in `kubectl` or other commands:
+
+```
+$ eval $(qbec env vars dev) # this sets the environment variables printed above
+$ kubectl ${KUBECTL_ARGS} apply -f somefile.yaml
+```
+
+If you want the cluster, context, namespace etc. as structured output you can use the `-o json` 
+option.
+
+```
+$ qbec env vars dev -o json
+{
+  "configFile": "/path/to/kube/config",
+  "context": "dev",
+  "cluster": "dev1-cluster-name",
+  "namespace": "dev-ns"
+}
+```
+

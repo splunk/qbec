@@ -29,4 +29,17 @@ weight: 40
   installs). Configure the `qbec.io/env` extension variable to a valid environment. With this in place,
   the IDE will be able to show you errors early during development, without even having to run any
   of the qbec commands. 
+
+* Use the `--clean` option of the `show` command so you can see object contents without the additional qbec metadata.
+
+* Declare a post-processor to add common metadata to all objects.
+ 
+## Continuous Integration
+ 
+ * Set the `QBEC_YES` environment variable to `true` so that all qbec prompts are disabled.
+ 
+ * Use the `--wait` option of the `apply` command so that qbec waits for deployments to fully roll out. Your subsequent
+   functional tests can then rely on the rollout to be complete before they start executing. This ensures that your
+   pods under test are ready and are of the desired version.
+   
  

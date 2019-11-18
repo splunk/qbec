@@ -7,12 +7,16 @@ qbec uses the following concepts.
 
 ## Components
 
-Components are the source code that you write that represent Kubernetes objects.
-A component is single source file that produces a collection of logically related Kubernetes objects. 
-You implement components by writing jsonnet, YAML or JSON files.
+Components are the source code that you write that represent Kubernetes objects. 
+You will typically organize related Kubernetes objects as a single component 
+(e.g. a microservice that needs a service account, deployment, service, and config map
+kubernetes objects).
 
-It is also valid for a component to return an empty set of objects if runtime parameters determine that
-nothing should be installed for a specific target environment.
+Components are loaded from jsonnet, json, or yaml files. Only jsonnet files provide the ability
+to customize object definitions for different environments. In addition, qbec support loading
+objects from helm charts, and using jsonnet libraries to produce them.
+
+More details can be found in the [authoring components](userguide/authoring/) page.
 
 ## Environments
 

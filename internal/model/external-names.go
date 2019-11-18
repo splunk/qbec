@@ -26,7 +26,6 @@ var QbecNames = struct {
 	ComponentAnnotation string // the label to use for tagging an object with a component
 	EnvironmentLabel    string // the label to use for tagging an object with an annotation
 	PristineAnnotation  string // the annotation to use for storing the pristine object
-	ParamsCodeVarName   string // the name of the code variable that stores env params
 	EnvVarName          string // the name of the external variable that has the environment name
 	TagVarName          string // the name of the external variable that has the tag name
 	DefaultNsVarName    string // the name of the external variable that has the default namespace
@@ -37,7 +36,6 @@ var QbecNames = struct {
 	ComponentAnnotation: QBECMetadataPrefix + "component",
 	EnvironmentLabel:    QBECMetadataPrefix + "environment",
 	PristineAnnotation:  QBECMetadataPrefix + "last-applied",
-	ParamsCodeVarName:   QBECMetadataPrefix + "params",
 	EnvVarName:          QBECMetadataPrefix + "env",
 	TagVarName:          QBECMetadataPrefix + "tag",
 	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
