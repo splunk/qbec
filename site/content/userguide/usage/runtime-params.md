@@ -171,6 +171,42 @@ qbec apply dev --vm:tla-str service1Tag=1.0.3 --vm:tla-str service1Secret
 * Defaults for external variables cannot be `null`. This is because qbec cannot tell the difference between a 
   default that was not specified versus one that was explicitly set to `null`.
 
+### Setting variables in bulk
+
+qbec provides a `--vm:ext-str-list` (and `--vm:tla-str-list`) option that allows you to set a bunch of variables using a 
+single file. For example, if you have to set 3 variables, say, `commit`, `ci_job`, `image_tag` for
+every apply command, you can just set these environment variables and create a file like so:
+
+```
+commit
+ci_job=1234
+image_tag
+``` 
+
+You can set the values for each line if you so prefer. In the above example, the `ci_job` 
+variable is given an explicit value while the others are loaded from the environment. 
+
+Then `--vm:ex-str-list=list-file` would automatically pull in the remaining values from the environment.
+This file can be checked into source control and the variables can be provided with default values in
+`qbec.yaml` as usual.
+
+To reduce duplication, you can even have your params generation code read this file and set 
+parameters from external variables. For example:
+
+```
+local varList = std.split(importstr './list-vars.txt', '\n');
+// remove blank lines
+local lines = std.filter(function(x) x != '', varList);
+// extract names
+local names = std.map(function (x) std.split(x,'=')[0], lines);
+
+local foldFunc = function(obj, key) obj { [key]: std.extVar(key) };
+local externals = std.foldl(foldFunc, names, {});
+
+// now externals is an object that can be used by the rest of the code
+// it looks like: { commit: 'commit-id', ci_job: '1234', image_tag: '1.4-abc' }
+```
+
 ## Strict mode
 
 The `--strict-vars` flag for qbec commands can help you ensure correctness of your qbec command line invocation.

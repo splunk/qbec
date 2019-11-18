@@ -13,6 +13,7 @@ metadata:
 spec:
   componentsDir: components    # directory where component files can be found. Not recursive. default: components
   paramsFile: params.libsonnet # file to load for `param list` and `param diff` commands. Not otherwise used.
+  postProcessor: pp.jsonnet    # post processor file for injecting common metadata
 
   # additional library paths when executing jsonnet, no support currently for `http` URLs.
   libPaths: 

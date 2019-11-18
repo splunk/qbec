@@ -18,8 +18,10 @@ how qbec is different from them. Otherwise read the [user guide](userguide/).
 
 ## Features
 
-* Deploy across multiple clusters and/ or namespaces
+* Deploy Kubernetes objects across multiple clusters and/ or namespaces.
+* Create transient objects like one-off `jobs` and `pods` with generated names.
 * Deploy cluster-scoped objects (useful for cluster admins)
+* Specify common metadata (e.g. annotations) for all objects in one place.
 * Track configurations with version control
 * Specify environment-specific component lists
 * Apply component and kind filters to commands
@@ -27,8 +29,11 @@ how qbec is different from them. Otherwise read the [user guide](userguide/).
 * Integrate with jsonnet external and top-level variables for late-bound configuration
 * Create differently named objects for branch builds and garbage collect in that limited scope.
 * Usable, safe and secure by default.
+  * Duplicate objects having the same kind, namespace, and name are detected and disallowed.
   * Remote commands that change cluster state require confirmation.
   * Secrets are automatically hidden and never appear in any output.
   * Performant (limited by the speed of the jsonnet libraries you use)
+* Ability to use qbec environment definitions in other unrelated commands and scripts so that the
+  safety properties of qbec are carried over to those commands.
 
 [Get started](getting-started/).
