@@ -1,0 +1,20 @@
+This
+is
+a
+file
+contaning
+the
+changelog
+seperated by ## vX.X.X
+at
+the
+beginning
+of
+line
+## v0.0.1
+This goes in the published release notes
+this too
+## v0.0.1-older
+This does not
+## v0.0.1-oldest
+Neither does this
