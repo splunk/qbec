@@ -33,11 +33,12 @@ jobs:
     - name: Build
       run: make build
 
+    - name: Lint
+      run: make lint
+
     - name: Test
       run: make test
 
-    - name: Lint
-      run: make lint
     - name: goreleaser
       uses: goreleaser/goreleaser-action@master
       with:
