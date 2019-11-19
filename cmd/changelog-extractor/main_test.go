@@ -13,8 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
 package main
 
+// Example shows usage of printReleaseNotes function
 func Example() {
 	printReleaseNotes("testdata/abc.txt")
 	// Output: This goes in the published release notes
