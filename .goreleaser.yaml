@@ -28,13 +28,13 @@ builds:
   goarch:
   - amd64
 archives:
-  - name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}"
+  - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
     format: tar.gz
     format_overrides:
     - goos: windows
       format: zip
 checksum:
-  name_template: 'checksums.txt'
+  name_template: 'sha256-checksums.txt'
 snapshot:
   name_template: "{{.Version}}-next"
 changelog:
