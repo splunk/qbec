@@ -5,7 +5,7 @@ file
 contaning
 the
 changelog
-seperated by ## vX.X.X
+separated by ## vX.X.X
 at
 the
 beginning
