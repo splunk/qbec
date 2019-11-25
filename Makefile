@@ -88,3 +88,8 @@ else
 	(cd dist/tmp && tar -czf ../assets/qbec-$(GOOS)-$(GOARCH).tar.gz *)
 endif
 	rm -rf dist/tmp
+
+.PHONY: release-notes
+release-notes:
+	go test cmd/changelog-extractor/*.go
+	go run cmd/changelog-extractor/main.go CHANGELOG.md > .release-notes.md

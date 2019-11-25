@@ -42,6 +42,6 @@ jobs:
     - name: goreleaser
       uses: goreleaser/goreleaser-action@master
       with:
-        args: release --snapshot --skip-publish --rm-dist
+        args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
