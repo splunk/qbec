@@ -287,6 +287,28 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 	require.Contains(t, err.Error(), `unexpected type for object (string) at path "$[0].foo"`)
 }
 
+func TestEvalComponentsBadMetadata(t *testing.T) {
+	_, err := Components([]model.Component{
+		{
+			Name:  "bad-metadata",
+			Files: []string{"testdata/components/bad-metadata.yaml"},
+		},
+	}, Context{Env: "dev"})
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), `/v1, Kind=ConfigMap, Name=subdir-config-map1: .metadata.annotations accessor error`)
+}
+
+func TestEvalComponentsBadPostProc(t *testing.T) {
+	_, err := Components([]model.Component{
+		{
+			Name:  "bad-postproc",
+			Files: []string{"testdata/components/b.yaml"},
+		},
+	}, Context{Env: "dev", PostProcessFile: "testdata/components/bad-pp.libsonnet"})
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), `post-eval did not return an object`)
+}
+
 func TestEvalPostProcessor(t *testing.T) {
 	obj := map[string]interface{}{
 		"apiVersion": "v1",

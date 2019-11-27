@@ -245,6 +245,9 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		if err != nil {
 			return nil, err
 		}
+		if err := model.AssertMetadataValid(proc); err != nil {
+			return nil, err
+		}
 		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env))
 	}
 	return processed, nil

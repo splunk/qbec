@@ -61,13 +61,15 @@ type basicObject struct {
 	tag       string
 	component string
 	env       string
+	anns      map[string]string
 }
 
-func (b *basicObject) Application() string     { return b.app }
-func (b *basicObject) Tag() string             { return b.tag }
-func (b *basicObject) Component() string       { return b.component }
-func (b *basicObject) Environment() string     { return b.env }
-func (b *basicObject) GetGenerateName() string { return "" }
+func (b *basicObject) Application() string               { return b.app }
+func (b *basicObject) Tag() string                       { return b.tag }
+func (b *basicObject) Component() string                 { return b.component }
+func (b *basicObject) Environment() string               { return b.env }
+func (b *basicObject) GetGenerateName() string           { return "" }
+func (b *basicObject) GetAnnotations() map[string]string { return b.anns }
 
 type coll struct {
 	data map[objectKey]model.K8sQbecMeta
@@ -111,7 +113,7 @@ type client struct {
 	syncFunc      func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
 	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	listFunc      func(scope remote.ListQueryConfig) (remote.Collection, error)
-	deleteFunc    func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
+	deleteFunc    func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error)
 	objectKeyFunc func(obj model.K8sMeta) string
 }
 
@@ -157,9 +159,9 @@ func (c *client) ListObjects(scope remote.ListQueryConfig) (remote.Collection, e
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error) {
+func (c *client) Delete(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 	if c.deleteFunc != nil {
-		return c.deleteFunc(obj, dryRun)
+		return c.deleteFunc(obj, opts)
 	}
 	return nil, errors.New("not implemented")
 }

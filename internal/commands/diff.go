@@ -224,7 +224,7 @@ func (d *differ) diff(ob model.K8sMeta) error {
 
 	if ob.GetName() != "" {
 		remoteObject, err = d.client.Get(ob)
-		if err != nil && err != remote.ErrNotFound {
+		if err != nil && err != remote.ErrNotFound && err.Error() != "server type not found" { // *sigh*
 			d.stats.errors(name)
 			sio.Errorf("error fetching %s, %v\n", name, err)
 			return err

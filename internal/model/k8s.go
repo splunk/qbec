@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -32,6 +33,7 @@ type K8sMeta interface {
 	GetNamespace() string
 	GetName() string
 	GetGenerateName() string
+	GetAnnotations() map[string]string
 }
 
 // NameForDisplay returns the local name of the metadata object, taking
@@ -93,6 +95,25 @@ func toUnstructured(data map[string]interface{}) *unstructured.Unstructured {
 		base.SetGenerateName("")
 	}
 	return base
+}
+
+// AssertMetadataValid asserts that the object metadata for the supplied unstructured object is valid.
+func AssertMetadataValid(data map[string]interface{}) error {
+	decorate := func(err error) error {
+		if err == nil {
+			return nil
+		}
+		obj := NewK8sObject(data)
+		name := fmt.Sprintf("%s, Name=%s", obj.GroupVersionKind(), NameForDisplay(obj))
+		return errors.Wrap(err, name)
+	}
+	if _, _, err := unstructured.NestedStringMap(data, "metadata", "labels"); err != nil {
+		return decorate(err)
+	}
+	if _, _, err := unstructured.NestedStringMap(data, "metadata", "annotations"); err != nil {
+		return decorate(err)
+	}
+	return nil
 }
 
 // NewK8sObject wraps a K8sObject implementation around the unstructured object data specified as a bag

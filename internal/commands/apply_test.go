@@ -79,14 +79,16 @@ func TestApplyBasic(t *testing.T) {
 		}
 	}
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("apply", "dev", "--wait")
 	require.Nil(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
-	a.EqualValues(remote.SyncOptions{}, captured)
+	a.False(captured.DryRun)
+	a.False(captured.DisableCreate)
+	a.False(captured.ShowSecrets)
 	a.True(stats["same"].(float64) > 0)
 	a.EqualValues(8, stats["same"])
 	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret", "Job::tj-1234"}, stats["created"])
@@ -118,7 +120,9 @@ func TestApplyFlags(t *testing.T) {
 	require.Nil(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
-	a.EqualValues(remote.SyncOptions{DryRun: true, ShowSecrets: true, DisableCreate: true}, captured)
+	a.True(captured.ShowSecrets)
+	a.True(captured.DryRun)
+	a.True(captured.DisableCreate)
 	a.EqualValues(nil, stats["created"])
 	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret"}, stats["skipped"])
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm"}, stats["updated"])

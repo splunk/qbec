@@ -100,10 +100,15 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	}
 
 	var stats applyStats
+	dp := newDeletePolicy(client.IsNamespaced, config.App().DefaultNamespace(env))
+	delOpts := remote.DeleteOptions{
+		DryRun:          config.dryRun,
+		DisableDeleteFn: dp.disableDelete,
+	}
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
-		res, err := client.Delete(ob, config.dryRun)
+		res, err := client.Delete(ob, delOpts)
 		if err != nil {
 			return err
 		}

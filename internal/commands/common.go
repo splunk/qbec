@@ -90,7 +90,7 @@ type Client interface {
 	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
 	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
 	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
-	Delete(obj model.K8sMeta, dryRun bool) (*remote.SyncResult, error)
+	Delete(model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
 	ObjectKey(obj model.K8sMeta) string
 	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 }
