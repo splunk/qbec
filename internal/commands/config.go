@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -372,7 +373,24 @@ func (c Config) Confirm(context string) error {
 	}
 }
 
-// SortConfig returns the sort configuration.
+func ordering(item model.K8sQbecMeta) int {
+	a := item.GetAnnotations()
+	if a == nil {
+		return 0
+	}
+	v := a[model.QbecNames.Directives.ApplyOrder]
+	if v == "" {
+		return 0
+	}
+	val, err := strconv.Atoi(v)
+	if err != nil {
+		sio.Warnf("invalid apply order directive '%s' for %s, ignored\n", v, model.NameForDisplay(item))
+		return 0
+	}
+	return val
+}
+
+// sortConfig returns the sort configuration.
 func sortConfig(provider objsort.Namespaced) objsort.Config {
 	return objsort.Config{
 		NamespacedIndicator: func(gvk schema.GroupVersionKind) (bool, error) {
@@ -382,5 +400,6 @@ func sortConfig(provider objsort.Namespaced) objsort.Config {
 			}
 			return ret, nil
 		},
+		OrderingProvider: ordering,
 	}
 }

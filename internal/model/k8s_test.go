@@ -103,3 +103,77 @@ func TestK8sLocalObjectWithTag(t *testing.T) {
 	a.Equal("e1", labels[QbecNames.EnvironmentLabel])
 	a.Equal("t1", labels[QbecNames.TagLabel])
 }
+
+func TestAssertMetadata(t *testing.T) {
+	good := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  labels:
+    foo: bar
+data:
+  foo: bar
+`
+	badLabels := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  labels:
+    foo: 10
+  annotations:
+    x: "foo"
+data:
+  foo: bar
+`
+	badAnnotations := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  labels:
+    x: "foo"
+  annotations:
+    foo: true
+data:
+  foo: bar
+`
+
+	tests := []struct {
+		name     string
+		data     map[string]interface{}
+		assertFn func(t *testing.T, err error)
+	}{
+		{
+			"good",
+			toData(good),
+			func(t *testing.T, err error) {
+				assert.Nil(t, err)
+			},
+		},
+		{
+			"bad-labels",
+			toData(badLabels),
+			func(t *testing.T, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "/v1, Kind=ConfigMap, Name=foo: .metadata.labels accessor error")
+			},
+		},
+		{
+			"bad-annotations",
+			toData(badAnnotations),
+			func(t *testing.T, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "/v1, Kind=ConfigMap, Name=foo: .metadata.annotations accessor error")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := AssertMetadataValid(test.data)
+			test.assertFn(t, err)
+		})
+	}
+}

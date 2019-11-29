@@ -19,6 +19,17 @@ package model
 // QBECMetadataPrefix is the leading path for all metadata set by qbec.
 const QBECMetadataPrefix = "qbec.io/"
 
+// QBECDirectivesNamespace is the leading path for all directives set by the user for qbec use.
+const QBECDirectivesNamespace = "directives.qbec.io/"
+
+// Directives is the list of directive names we support.
+type Directives struct {
+	ApplyOrder   string // numeric apply order for object
+	DeletePolicy string // delete policy "default" | "never"
+	UpdatePolicy string // update policy "default" | "never"
+	LazyType     string // wait for (CRD) type to appear before applying object "false" (default) | "true". Will also process diffs and apply dry-run without errors
+}
+
 // QbecNames is the set of names used by Qbec.
 var QbecNames = struct {
 	ApplicationLabel    string // the label to use for tagging an object with an application name
@@ -30,6 +41,7 @@ var QbecNames = struct {
 	TagVarName          string // the name of the external variable that has the tag name
 	DefaultNsVarName    string // the name of the external variable that has the default namespace
 	CleanModeVarName    string // name of external variable that has the indicator for clean mode
+	Directives          Directives
 }{
 	ApplicationLabel:    QBECMetadataPrefix + "application",
 	TagLabel:            QBECMetadataPrefix + "tag",
@@ -40,4 +52,10 @@ var QbecNames = struct {
 	TagVarName:          QBECMetadataPrefix + "tag",
 	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
 	CleanModeVarName:    QBECMetadataPrefix + "cleanMode",
+	Directives: Directives{
+		ApplyOrder:   QBECDirectivesNamespace + "apply-order",
+		DeletePolicy: QBECDirectivesNamespace + "delete-policy",
+		UpdatePolicy: QBECDirectivesNamespace + "update-policy",
+		LazyType:     QBECDirectivesNamespace + "lazy-type",
+	},
 }

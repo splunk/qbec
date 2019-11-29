@@ -40,13 +40,15 @@ type basicObject struct {
 	tag       string
 	component string
 	env       string
+	anns      map[string]string
 }
 
-func (b *basicObject) Application() string     { return b.app }
-func (b *basicObject) Tag() string             { return b.tag }
-func (b *basicObject) Component() string       { return b.component }
-func (b *basicObject) Environment() string     { return b.env }
-func (b *basicObject) GetGenerateName() string { return "" }
+func (b *basicObject) Application() string               { return b.app }
+func (b *basicObject) Tag() string                       { return b.tag }
+func (b *basicObject) Component() string                 { return b.component }
+func (b *basicObject) Environment() string               { return b.env }
+func (b *basicObject) GetGenerateName() string           { return "" }
+func (b *basicObject) GetAnnotations() map[string]string { return b.anns }
 
 type collectMetadata interface {
 	objectNamespace(obj model.K8sMeta) string
@@ -92,6 +94,7 @@ func (c *collection) add(object model.K8sQbecMeta) error {
 		tag:       object.Tag(),
 		component: object.Component(),
 		env:       object.Environment(),
+		anns:      object.GetAnnotations(),
 	}
 	c.objects[key] = resultObject
 	return nil

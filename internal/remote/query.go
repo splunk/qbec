@@ -114,6 +114,7 @@ outer:
 			app:       labels[model.QbecNames.ApplicationLabel],
 			component: anns[model.QbecNames.ComponentAnnotation],
 			env:       labels[model.QbecNames.EnvironmentLabel],
+			anns:      un.GetAnnotations(),
 		}
 		ret = append(ret, mm)
 	}

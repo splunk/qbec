@@ -111,6 +111,9 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	opts := config.syncOptions
+	opts.DisableUpdateFn = newUpdatePolicy().disableUpdate
+	opts.WaitForTypeFn = newWaitForTypePolicy().shouldWaitForType
+
 	if !opts.DryRun && len(objects) > 0 {
 		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))
 		if err := config.Confirm(msg); err != nil {
@@ -191,11 +194,14 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 	}
 
+	dp := newDeletePolicy(client.IsNamespaced, config.App().DefaultNamespace(env))
+	deleteOpts := remote.DeleteOptions{DryRun: opts.DryRun, DisableDeleteFn: dp.disableDelete}
+
 	deletions = objsort.SortMeta(deletions, sortConfig(client.IsNamespaced))
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
-		res, err := client.Delete(ob, opts.DryRun)
+		res, err := client.Delete(ob, deleteOpts)
 		if err != nil {
 			return err
 		}

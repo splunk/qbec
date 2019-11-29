@@ -53,11 +53,29 @@ var (
 
 // this file contains the client definition and supported CRUD operations.
 
+// TypeWaitOptions are options for waiting on a custom type.
+type TypeWaitOptions struct {
+	Timeout time.Duration // the total time to wait
+	Poll    time.Duration // poll interval
+}
+
+// ConditionFunc returns if a specific condition tests as true for the supplied object.
+type ConditionFunc func(obj model.K8sMeta) bool
+
 // SyncOptions provides the caller with options for the sync operation.
 type SyncOptions struct {
-	DryRun        bool // do not actually create or update objects, return what would happen
-	DisableCreate bool // only update objects if they exist, do not create new ones
-	ShowSecrets   bool // show secrets in patches and creations
+	DryRun          bool            // do not actually create or update objects, return what would happen
+	DisableCreate   bool            // only update objects if they exist, do not create new ones
+	DisableUpdateFn ConditionFunc   // do not update an existing object
+	WaitForTypeFn   ConditionFunc   // wait for the type of a custom resource to appear in discovery
+	WaitOptions     TypeWaitOptions // opts for waiting
+	ShowSecrets     bool            // show secrets in patches and creations
+}
+
+// DeleteOptions provides the caller with options for the delete operation.
+type DeleteOptions struct {
+	DryRun          bool          // do not actually delete, return what would happen
+	DisableDeleteFn ConditionFunc // test to see if deletion should be disabled.
 }
 
 type internalSyncOptions struct {
@@ -376,6 +394,34 @@ func extractCustomTypes(obj model.K8sObject) (schema.GroupVersionKind, error) {
 	return schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Spec.Names.Kind}, nil
 }
 
+func (c *Client) ensureType(gvk schema.GroupVersionKind, opts SyncOptions) error {
+	waitTime := opts.WaitOptions.Timeout
+	if waitTime == 0 {
+		waitTime = 2 * time.Minute
+	}
+	end := time.Now().Add(waitTime)
+
+	waitPoll := opts.WaitOptions.Poll
+	if waitPoll == 0 {
+		waitPoll = 2 * time.Second
+	}
+	first := true
+	for {
+		_, err := c.jitResource(gvk)
+		if err == nil {
+			return nil
+		}
+		if first {
+			first = false
+			sio.Noticef("waiting for type %s to be available for up to %s\n", gvk, waitTime.Round(time.Second))
+		}
+		if time.Now().After(end) {
+			return err
+		}
+		time.Sleep(waitPoll)
+	}
+}
+
 // Sync syncs the local object by either creating a new one or patching an existing one.
 // It does not do anything in dry-run mode. It also does not create new objects if the caller has disabled the feature.
 func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
@@ -399,13 +445,31 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 		}
 	}()
 
+	isCustomType := func(gvk schema.GroupVersionKind) bool {
+		return gvk.Kind == "CustomResourceDefinition" && gvk.Group == "apiextensions.k8s.io"
+	}
+
 	gvk := original.GroupVersionKind()
-	if gvk.Kind == "CustomResourceDefinition" && gvk.Group == "apiextensions.k8s.io" {
+	var innerType *schema.GroupVersionKind
+	defer func() {
+		if finalError == nil && innerType != nil {
+			_ = c.ensureType(*innerType, opts)
+		}
+	}()
+
+	if isCustomType(gvk) {
 		t, err := extractCustomTypes(original)
 		if err != nil {
 			sio.Warnf("error extracting types for custom resource %s, %v\n", original.GetName(), err)
 		} else {
+			innerType = &t
 			c.dynamicTypes[t] = true
+		}
+	}
+
+	if !opts.DryRun && opts.WaitForTypeFn(original) {
+		if err := c.ensureType(original.GroupVersionKind(), opts); err != nil {
+			return nil, err
 		}
 	}
 
@@ -413,6 +477,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 	if err != nil {
 		return nil, err
 	}
+
 	// exit if we are done
 	if !internal.secretDryRun || opts.DryRun {
 		return result.toSyncResult(), nil
@@ -422,6 +487,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 	if err != nil {
 		return nil, err
 	}
+
 	return result.toSyncResult(), err
 }
 
@@ -441,15 +507,15 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 		break
 	// treat metadata errors (server type not found) as a "not found" error under the following conditions:
 	// - dry-run mode is active
-	// - a prior custom resource with that GVK has been applied
-	case objErr == errMetadataNotFound && opts.DryRun && c.dynamicTypes[gvk]:
+	// - a prior custom resource with that GVK has been applied or the resource has a lazy type
+	case objErr == errMetadataNotFound && opts.DryRun && (c.dynamicTypes[gvk] || opts.WaitForTypeFn(original)):
 		break
 	// error but with better message
 	case objErr == errMetadataNotFound && opts.DryRun:
 		return nil, fmt.Errorf("server type %v not found and no prior CRD installs it", gvk)
 	// report all other errors
 	case objErr != nil:
-		return nil, objErr
+		return nil, errors.Wrap(objErr, "get object")
 	}
 
 	var obj model.K8sLocalObject
@@ -501,11 +567,17 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 }
 
 // Delete delete the supplied object if it exists. It does not do anything in dry-run mode.
-func (c *Client) Delete(obj model.K8sMeta, dryRun bool) (_ *SyncResult, finalError error) {
+func (c *Client) Delete(obj model.K8sMeta, opts DeleteOptions) (_ *SyncResult, finalError error) {
+	if opts.DisableDeleteFn(obj) {
+		upr := &updateResult{
+			SkipReason: "deletion disabled due to user request",
+		}
+		return upr.toSyncResult(), nil
+	}
 	ret := &SyncResult{
 		Type: SyncDeleted,
 	}
-	if dryRun {
+	if opts.DryRun {
 		return ret, nil
 	}
 	defer func() {
@@ -547,7 +619,10 @@ func (c *Client) jitResource(gvk schema.GroupVersionKind) (*metav1.APIResource, 
 			continue
 		}
 		if r.Kind == gvk.Kind {
-			return &r, nil
+			clone := r
+			clone.Group = gvk.Group
+			clone.Version = gvk.Version
+			return &clone, nil
 		}
 	}
 	return nil, fmt.Errorf("server does not recognize gvk %s", gvk)
@@ -611,7 +686,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	}
 	out, err := ri.Create(obj.ToUnstructured(), metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "create object")
 	}
 	if obj.GetName() == "" {
 		result.GeneratedName = out.GetName()
@@ -620,6 +695,11 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 }
 
 func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
+	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
+		return &updateResult{
+			SkipReason: "update disabled due to user request",
+		}, nil
+	}
 	res, err := c.schema.OpenAPIResources()
 	if err != nil {
 		sio.Warnln("get open API resources", err)

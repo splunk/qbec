@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: subdir-config-map1
+  annotations:
+    do-it: true
+data:
+  foo: bar
