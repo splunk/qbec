@@ -17,21 +17,42 @@
 package commands
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/sio"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
-	policyNever = "never"
+	policyNever   = "never"
+	policyDefault = "default"
 )
 
 // isSet return true if the annotation name specified as directive is equal to the supplied value.
-func isSet(ob model.K8sMeta, directive, value string) bool {
+// The allowedValues parameter specifies what other values are allowed and causes a warning if
+// the annotation exists but doesn't have one of the allowed values.
+func isSet(ob model.K8sMeta, directive, value string, otherAllowedValues []string) bool {
 	anns := ob.GetAnnotations()
 	if anns != nil {
 		v := anns[directive]
 		if v == value {
 			return true
+		}
+		if v != "" {
+			found := false
+			for _, allowed := range otherAllowedValues {
+				if v == allowed {
+					found = true
+					break
+				}
+			}
+			if !found {
+				allVals := append([]string{value}, otherAllowedValues...)
+				sort.Strings(allVals)
+				sio.Warnf("ignored annotation %s=%s does not have one of the allowed values: %s\n", directive, v, strings.Join(allVals, ", "))
+			}
 		}
 	}
 	return false
@@ -40,7 +61,7 @@ func isSet(ob model.K8sMeta, directive, value string) bool {
 type updatePolicy struct{}
 
 func (u *updatePolicy) disableUpdate(ob model.K8sMeta) bool {
-	return isSet(ob, model.QbecNames.Directives.UpdatePolicy, policyNever)
+	return isSet(ob, model.QbecNames.Directives.UpdatePolicy, policyNever, []string{policyDefault})
 }
 
 func newUpdatePolicy() *updatePolicy {
@@ -54,14 +75,17 @@ type deletePolicy struct {
 }
 
 func newDeletePolicy(nsFunc func(kind schema.GroupVersionKind) (bool, error), defaultNS string) *deletePolicy {
-	return &deletePolicy{nsFunc: nsFunc, keepNamespaces: map[string]bool{
-		"default":     true, // never try to delete the default namespace
-		"kube-system": true, // ditto for system namespace
-	}}
+	return &deletePolicy{
+		nsFunc:    nsFunc,
+		defaultNS: defaultNS,
+		keepNamespaces: map[string]bool{
+			"default":     true, // never try to delete the default namespace
+			"kube-system": true, // ditto for system namespace
+		}}
 }
 
 func (d *deletePolicy) disableDelete(ob model.K8sMeta) bool {
-	ret := isSet(ob, model.QbecNames.Directives.DeletePolicy, policyNever)
+	ret := isSet(ob, model.QbecNames.Directives.DeletePolicy, policyNever, []string{policyDefault})
 	if ret {
 		isNamespaced, _ := d.nsFunc(ob.GroupVersionKind())
 		if isNamespaced {
@@ -82,7 +106,7 @@ func (d *deletePolicy) disableDelete(ob model.K8sMeta) bool {
 type waitForTypePolicy struct{}
 
 func (w *waitForTypePolicy) shouldWaitForType(ob model.K8sMeta) bool {
-	return isSet(ob, model.QbecNames.Directives.LazyType, "true")
+	return isSet(ob, model.QbecNames.Directives.LazyType, "true", []string{"false"})
 }
 
 func newWaitForTypePolicy() *waitForTypePolicy {
