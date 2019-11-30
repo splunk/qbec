@@ -28,6 +28,7 @@ how qbec is different from them. Otherwise read the [user guide](userguide/).
 * Automatic garbage collection for deleted and renamed objects.
 * Integrate with jsonnet external and top-level variables for late-bound configuration
 * Create differently named objects for branch builds and garbage collect in that limited scope.
+* Customize update and delete behavior using directives.
 * Usable, safe and secure by default.
   * Duplicate objects having the same kind, namespace, and name are detected and disallowed.
   * Remote commands that change cluster state require confirmation.

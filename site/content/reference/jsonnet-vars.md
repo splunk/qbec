@@ -1,6 +1,6 @@
 ---
 title: Standard jsonnet variables
-weight: 11
+weight: 110
 ---
 
 qbec exposes the following standard jsonnet variables whenever it evaluates components.

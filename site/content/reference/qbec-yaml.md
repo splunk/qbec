@@ -1,6 +1,6 @@
 ---
 title: Application YAML
-weight: 10
+weight: 100
 ---
 
 The app configuration is a file called `qbec.yaml` and needs to be at the root of the directory tree.

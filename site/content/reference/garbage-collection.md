@@ -1,6 +1,6 @@
 ---
 title: Garbage collection
-weight: 50
+weight: 500
 ---
 
 While garbage collection is supported as a first-class operation qbec and enabled by default, it is a
