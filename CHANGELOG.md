@@ -1,6 +1,20 @@
 Changelog
 ---
 
+## v0.10.0 (Nov 30, 2019)
+
+* better support for custom types that are created lazily, for example, by an operator.
+  * qbec now waits for custom types to be available in discovery for up to 2 minutes before applying their instances.
+* [support for annotations](https://qbec.io/userguide/usage/directives/) to control qbec processing. This includes the 
+  ability to lock objects for updates and deletes, and to specify a custom apply order for objects. This includes 
+  standard rules to ensure that the default and system namespaces are never deleted.
+* various internal CI and release process fixes (thanks @harsimranmaan)
+
+Backward incompatibilities:
+
+qbec now checks every object to ensure that their labels and annotations have values that are strictly strings.
+Previously metadata having non-string values were dropped in their entirety.
+
 ## v0.9.0 (Nov 16, 2019)
 
 * allow for component subdirectories at one level of nesting. A subdirectory directly under the components directory
