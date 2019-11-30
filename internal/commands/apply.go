@@ -112,7 +112,6 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	opts := config.syncOptions
 	opts.DisableUpdateFn = newUpdatePolicy().disableUpdate
-	opts.WaitForTypeFn = newWaitForTypePolicy().shouldWaitForType
 
 	if !opts.DryRun && len(objects) > 0 {
 		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))

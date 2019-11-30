@@ -102,13 +102,3 @@ func (d *deletePolicy) disableDelete(ob model.K8sMeta) bool {
 	}
 	return false
 }
-
-type waitForTypePolicy struct{}
-
-func (w *waitForTypePolicy) shouldWaitForType(ob model.K8sMeta) bool {
-	return isSet(ob, model.QbecNames.Directives.LazyType, "true", []string{"false"})
-}
-
-func newWaitForTypePolicy() *waitForTypePolicy {
-	return &waitForTypePolicy{}
-}
