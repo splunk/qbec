@@ -42,36 +42,6 @@ Component structure Components are loaded from the components directory defined 
     </item>
     
     <item>
-      <title>Application YAML</title>
-      <link>http://qbec.io/reference/qbec-yaml/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/reference/qbec-yaml/</guid>
-      <description>The app configuration is a file called qbec.yaml and needs to be at the root of the directory tree.
-apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;quot;App&amp;quot; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
-    </item>
-    
-    <item>
-      <title>Standard jsonnet variables</title>
-      <link>http://qbec.io/reference/jsonnet-vars/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/reference/jsonnet-vars/</guid>
-      <description>qbec exposes the following standard jsonnet variables whenever it evaluates components.
- qbec.io/env - the name of the environment for which processing occurs. qbec.io/tag - the tag specified for the command using the --app-tag option. qbec.io/defaultNs - the default namespace in use. This is typically picked from the environment definition, possibly changed for app tags, or the value forced from the command line using the --force:k8s-namespace option. qbec.io/cleanMode - has the off or on.</description>
-    </item>
-    
-    <item>
-      <title>Metadata for K8s objects</title>
-      <link>http://qbec.io/reference/gen-metadata/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/reference/gen-metadata/</guid>
-      <description>Labels All Kubernetes objects produced by qbec have the following labels associated with them:
- qbec.io/application - the app name from qbec.yaml. qbec.io/environment - the environment name in qbec.yaml for which the object was created. qbec.io/tag - the --app-tag parameter passed in on the command line. This label is only set when non-blank.  The labels are used to efficiently find all cluster objects for a specific app and environment (and tag, if specified) for garbage collection.</description>
-    </item>
-    
-    <item>
       <title>Common object metadata</title>
       <link>http://qbec.io/userguide/usage/common-metadata/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -80,28 +50,6 @@ apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must
       <description>qbec provides an easy mechanism to set up common metadata like annotations for all objects produced. For example, you may want to set up a team annotation for all objects.
 You do this by defining a post-processor. A post-processor is a jsonnet file that contains a single function like so:
 // the post processor jsonnet must return a function taking exactly one parameter // called &amp;quot;object&amp;quot; and returning its decorated version.</description>
-    </item>
-    
-    <item>
-      <title>Jsonnet native functions</title>
-      <link>http://qbec.io/reference/jsonnet-native-funcs/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/reference/jsonnet-native-funcs/</guid>
-      <description>A list of all native functions that qbec natively supports.
-expandHelmTemplate The expandHelmTemplate function expands a helm chart and returns the resulting objects. This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release. It runs the helm template command, assuming that the helm binary is already installed and available in the PATH.
-Usage  expandHelmTemplate(&amp;quot;path/to/chart&amp;quot;, { chartProperty: &#39;chart-value&#39; }, { namespace: &#39;my-ns&#39;, name: &#39;my-name&#39;, thisFile: std.</description>
-    </item>
-    
-    <item>
-      <title>Component evaluation</title>
-      <link>http://qbec.io/reference/component-evaluation/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/reference/component-evaluation/</guid>
-      <description>How qbec evaluates component code using jsonnet and what it expects the output to look like.
-Jsonnet evaluation This works as follows:
- Collect the list of files to be evaluated for the environment. This takes into account all components in the directory, inclusion and exclusion lists for the current environment and component filters specified on the command line. Assuming this leads to 3 files, say, c1.jsonnet, c2.json, and c3.</description>
     </item>
     
     <item>
@@ -137,6 +85,17 @@ You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;r
     </item>
     
     <item>
+      <title>Controlling qbec behavior</title>
+      <link>http://qbec.io/userguide/usage/directives/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/directives/</guid>
+      <description>qbec usually does the right thing when applying objects. Sometimes this behavior needs tweaking. Qbec allows you to annotate objects with specific directives to control its behavior. All annotations are in the directives.qbec.io/ namespace.
+Updating and deleting objects Usually qbec will update and delete objects as required. You can &amp;ldquo;lock&amp;rdquo; objects from being updated or deleted using the following annotations:
+ directives.qbec.io/update-policy: never directives.qbec.io/delete-policy: never  The first is useful when dealing with jobs that typically should not be updated.</description>
+    </item>
+    
+    <item>
       <title>Running qbec commands</title>
       <link>http://qbec.io/userguide/usage/commands/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -147,6 +106,77 @@ $ qbec --help qbec provides a set of commands to manage kubernetes objects on mu
     </item>
     
     <item>
+      <title>Tips and tricks</title>
+      <link>http://qbec.io/userguide/usage/tips-and-tricks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/userguide/usage/tips-and-tricks/</guid>
+      <description>Runtime  qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
+    </item>
+    
+    <item>
+      <title>Application YAML</title>
+      <link>http://qbec.io/reference/qbec-yaml/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/qbec-yaml/</guid>
+      <description>The app configuration is a file called qbec.yaml and needs to be at the root of the directory tree.
+apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;quot;App&amp;quot; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
+    </item>
+    
+    <item>
+      <title>Qbec directives</title>
+      <link>http://qbec.io/reference/directives/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/directives/</guid>
+      <description>Annotations that you can use for your objects to control qbec behavior.
+directives.qbec.io/apply-order  Annotation source: local object Allowed values: Any positive integer as a string (i.e. ensure that the value is quoted in YAML) Default value: &amp;quot;0&amp;quot; (use qbec defaults)  controls the order in which objects are applied. This allows you, for example, to move updates of a custom resource to after all other objects have been processed.</description>
+    </item>
+    
+    <item>
+      <title>Standard jsonnet variables</title>
+      <link>http://qbec.io/reference/jsonnet-vars/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/jsonnet-vars/</guid>
+      <description>qbec exposes the following standard jsonnet variables whenever it evaluates components.
+ qbec.io/env - the name of the environment for which processing occurs. qbec.io/tag - the tag specified for the command using the --app-tag option. qbec.io/defaultNs - the default namespace in use. This is typically picked from the environment definition, possibly changed for app tags, or the value forced from the command line using the --force:k8s-namespace option. qbec.io/cleanMode - has the off or on.</description>
+    </item>
+    
+    <item>
+      <title>Metadata for K8s objects</title>
+      <link>http://qbec.io/reference/gen-metadata/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/gen-metadata/</guid>
+      <description>Labels All Kubernetes objects produced by qbec have the following labels associated with them:
+ qbec.io/application - the app name from qbec.yaml. qbec.io/environment - the environment name in qbec.yaml for which the object was created. qbec.io/tag - the --app-tag parameter passed in on the command line. This label is only set when non-blank.  The labels are used to efficiently find all cluster objects for a specific app and environment (and tag, if specified) for garbage collection.</description>
+    </item>
+    
+    <item>
+      <title>Jsonnet native functions</title>
+      <link>http://qbec.io/reference/jsonnet-native-funcs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/jsonnet-native-funcs/</guid>
+      <description>A list of all native functions that qbec natively supports.
+expandHelmTemplate The expandHelmTemplate function expands a helm chart and returns the resulting objects. This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release. It runs the helm template command, assuming that the helm binary is already installed and available in the PATH.
+Usage  local expandHelmTemplate = std.native(&#39;expandHelmTemplate&#39;); expandHelmTemplate(&amp;quot;path/to/chart&amp;quot;, { chartProperty: &#39;chart-value&#39; }, { namespace: &#39;my-ns&#39;, name: &#39;my-name&#39;, thisFile: std.</description>
+    </item>
+    
+    <item>
+      <title>Component evaluation</title>
+      <link>http://qbec.io/reference/component-evaluation/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/component-evaluation/</guid>
+      <description>How qbec evaluates component code using jsonnet and what it expects the output to look like.
+Jsonnet evaluation This works as follows:
+ Collect the list of files to be evaluated for the environment. This takes into account all components in the directory, inclusion and exclusion lists for the current environment and component filters specified on the command line. Assuming this leads to 3 files, say, c1.jsonnet, c2.json, and c3.</description>
+    </item>
+    
+    <item>
       <title>Diffs and patches</title>
       <link>http://qbec.io/reference/diffs-and-patches/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -154,15 +184,6 @@ $ qbec --help qbec provides a set of commands to manage kubernetes objects on mu
       <guid>http://qbec.io/reference/diffs-and-patches/</guid>
       <description>qbec uses a 3-way merge patch similar to kubectl/ksonnet apply. The Kubernetes documentation describes how this works.
 For existing objects, the qbec diff command produces a diff between the last applied configuration stored on the server and the current configuration of the object loaded from source. This diff is &amp;ldquo;clean&amp;rdquo; in the sense of the remote object not having additional fields, default values and so on. It faithfully represents the change between the previous and current version of the object produced from source code.</description>
-    </item>
-    
-    <item>
-      <title>Tips and tricks</title>
-      <link>http://qbec.io/userguide/usage/tips-and-tricks/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://qbec.io/userguide/usage/tips-and-tricks/</guid>
-      <description>Runtime  qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
     </item>
     
     <item>

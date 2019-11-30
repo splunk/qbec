@@ -21,6 +21,16 @@ apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must
     </item>
     
     <item>
+      <title>Qbec directives</title>
+      <link>http://qbec.io/reference/directives/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/directives/</guid>
+      <description>Annotations that you can use for your objects to control qbec behavior.
+directives.qbec.io/apply-order  Annotation source: local object Allowed values: Any positive integer as a string (i.e. ensure that the value is quoted in YAML) Default value: &amp;quot;0&amp;quot; (use qbec defaults)  controls the order in which objects are applied. This allows you, for example, to move updates of a custom resource to after all other objects have been processed.</description>
+    </item>
+    
+    <item>
       <title>Standard jsonnet variables</title>
       <link>http://qbec.io/reference/jsonnet-vars/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -48,7 +58,7 @@ apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must
       <guid>http://qbec.io/reference/jsonnet-native-funcs/</guid>
       <description>A list of all native functions that qbec natively supports.
 expandHelmTemplate The expandHelmTemplate function expands a helm chart and returns the resulting objects. This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release. It runs the helm template command, assuming that the helm binary is already installed and available in the PATH.
-Usage  expandHelmTemplate(&amp;quot;path/to/chart&amp;quot;, { chartProperty: &#39;chart-value&#39; }, { namespace: &#39;my-ns&#39;, name: &#39;my-name&#39;, thisFile: std.</description>
+Usage  local expandHelmTemplate = std.native(&#39;expandHelmTemplate&#39;); expandHelmTemplate(&amp;quot;path/to/chart&amp;quot;, { chartProperty: &#39;chart-value&#39; }, { namespace: &#39;my-ns&#39;, name: &#39;my-name&#39;, thisFile: std.</description>
     </item>
     
     <item>

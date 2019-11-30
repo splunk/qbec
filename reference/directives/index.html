@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Tags :: Qbec</title>
+    <title>Qbec directives :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/tags/">
+  <body class="" data-url="/reference/directives/">
     <nav id="sidebar" class="">
 
 
@@ -362,7 +362,7 @@
   
     
     <li data-nav-id="/reference/" title="Reference" class="dd-item 
-        
+        parent
         
         
         ">
@@ -405,7 +405,7 @@
  
   
     
-      <li data-nav-id="/reference/directives/" title="Qbec directives" class="dd-item ">
+      <li data-nav-id="/reference/directives/" title="Qbec directives" class="dd-item active">
         <a href="/reference/directives/">
         Qbec directives
         
@@ -596,6 +596,17 @@
               <div>
                 <div id="top-bar">
                 
+                  
+                  
+                  
+                  <div id="top-github-link">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/directives.md" target="blank">
+                      <i class="fas fa-code-branch"></i>
+                      <span id="top-github-link-text">Edit this page</span>
+                    </a>
+                  </div>
+                  
+                
                 
                 <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
                     <span id="sidebar-toggle-span">
@@ -612,7 +623,19 @@
                     
           
           
-            Tags
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Qbec directives
+          
+         
+          
+         
           
         
                  
@@ -621,7 +644,22 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#directives-qbec-io-apply-order"><code>directives.qbec.io/apply-order</code></a></li>
+<li><a href="#directives-qbec-io-delete-policy"><code>directives.qbec.io/delete-policy</code></a></li>
+<li><a href="#directives-qbec-io-update-policy"><code>directives.qbec.io/update-policy</code></a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -633,7 +671,7 @@
         
         <div id="body-inner">
           
-            <h1>Tags</h1>
+            <h1>Qbec directives</h1>
           
 
         
@@ -641,9 +679,48 @@
 
 
 
+<p>Annotations that you can use for your objects to control qbec behavior.</p>
+
+<h4 id="directives-qbec-io-apply-order"><code>directives.qbec.io/apply-order</code></h4>
+
+<ul>
+<li>Annotation source: local object</li>
+<li>Allowed values: Any positive integer as a string (i.e. ensure that the value is quoted in YAML)</li>
+<li>Default value: <code>&quot;0&quot;</code> (use qbec defaults)</li>
+</ul>
+
+<p>controls the order in which objects are applied. This allows you, for example, to move updates of a custom
+resource to after all other objects have been processed.</p>
+
+<h4 id="directives-qbec-io-delete-policy"><code>directives.qbec.io/delete-policy</code></h4>
+
+<ul>
+<li>Annotation source: in-cluster object</li>
+<li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
+<li>Default value: <code>&quot;default&quot;</code></li>
+</ul>
+
+<p>when set to <code>&quot;never&quot;</code>, indicates that the specific object should never be deleted. This applies to both explicit deletes as well as garbage collection.
+If you want qbec to delete this object, you need to remove the annotation from the in-cluster object. Changing the source
+object to remove this annotation will not work.</p>
+
+<h4 id="directives-qbec-io-update-policy"><code>directives.qbec.io/update-policy</code></h4>
+
+<ul>
+<li>Annotation source: in-cluster object.</li>
+<li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
+<li>Default value: <code>&quot;default&quot;</code></li>
+</ul>
+
+<p>when set to <code>&quot;never&quot;</code>, indicates that the specific object should never be updated.
+If you want qbec to update this object, you need to remove the annotation from the in-cluster object. Changing the source
+object to remove this annotation will not work.</p>
+
+
 <footer class=" footline" >
 	
 </footer>
+
 
         
         </div> 
@@ -889,6 +966,7 @@
             
                 
                     
+                    
                 
                 
 
@@ -901,6 +979,9 @@
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -918,6 +999,7 @@
             
                 
                     
+                    
                 
                 
 
@@ -933,6 +1015,9 @@
             
             
                 
+                    
+                        
+                        
                     
                 
                 
@@ -1053,8 +1138,10 @@
 	 
 	 
 		
+			<a class="nav nav-prev" href="/reference/qbec-yaml/" title="Application YAML"> <i class="fa fa-chevron-left"></i></a>
 		
-			<a class="nav nav-next" href="/getting-started/" title="Getting started" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+			<a class="nav nav-next" href="/reference/jsonnet-vars/" title="Standard jsonnet variables" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -1085,3 +1172,4 @@
 
   </body>
 </html>
+

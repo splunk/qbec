@@ -19,19 +19,7 @@
   </url>
   
   <url>
-    <loc>http://qbec.io/reference/qbec-yaml/</loc>
-  </url>
-  
-  <url>
     <loc>http://qbec.io/userguide/</loc>
-  </url>
-  
-  <url>
-    <loc>http://qbec.io/reference/jsonnet-vars/</loc>
-  </url>
-  
-  <url>
-    <loc>http://qbec.io/reference/gen-metadata/</loc>
   </url>
   
   <url>
@@ -43,15 +31,7 @@
   </url>
   
   <url>
-    <loc>http://qbec.io/reference/jsonnet-native-funcs/</loc>
-  </url>
-  
-  <url>
     <loc>http://qbec.io/comparison-with-other-tools/</loc>
-  </url>
-  
-  <url>
-    <loc>http://qbec.io/reference/component-evaluation/</loc>
   </url>
   
   <url>
@@ -67,15 +47,43 @@
   </url>
   
   <url>
+    <loc>http://qbec.io/userguide/usage/directives/</loc>
+  </url>
+  
+  <url>
     <loc>http://qbec.io/userguide/usage/commands/</loc>
   </url>
   
   <url>
-    <loc>http://qbec.io/reference/diffs-and-patches/</loc>
+    <loc>http://qbec.io/userguide/usage/tips-and-tricks/</loc>
   </url>
   
   <url>
-    <loc>http://qbec.io/userguide/usage/tips-and-tricks/</loc>
+    <loc>http://qbec.io/reference/qbec-yaml/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/directives/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/jsonnet-vars/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/gen-metadata/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/jsonnet-native-funcs/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/component-evaluation/</loc>
+  </url>
+  
+  <url>
+    <loc>http://qbec.io/reference/diffs-and-patches/</loc>
   </url>
   
   <url>
