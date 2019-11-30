@@ -67,7 +67,6 @@ type SyncOptions struct {
 	DryRun          bool            // do not actually create or update objects, return what would happen
 	DisableCreate   bool            // only update objects if they exist, do not create new ones
 	DisableUpdateFn ConditionFunc   // do not update an existing object
-	WaitForTypeFn   ConditionFunc   // wait for the type of a custom resource to appear in discovery
 	WaitOptions     TypeWaitOptions // opts for waiting
 	ShowSecrets     bool            // show secrets in patches and creations
 }
@@ -114,13 +113,12 @@ func newClient(pool resourceClient, disco discovery.DiscoveryInterface, ns strin
 
 	ss := k8smeta.NewServerSchema(disco)
 	c := &Client{
-		resources:    resources,
-		schema:       ss,
-		pool:         pool,
-		disco:        disco,
-		defaultNs:    ns,
-		verbosity:    verbosity,
-		dynamicTypes: map[schema.GroupVersionKind]bool{},
+		resources: resources,
+		schema:    ss,
+		pool:      pool,
+		disco:     disco,
+		defaultNs: ns,
+		verbosity: verbosity,
 	}
 	return c, nil
 }
@@ -373,28 +371,10 @@ type SyncResult struct {
 	Details       string         // additional details that are safe to print to console (e.g. no secrets)
 }
 
-func extractCustomTypes(obj model.K8sObject) (schema.GroupVersionKind, error) {
-	var ret schema.GroupVersionKind
-	var crd struct {
-		Spec struct {
-			Group   string `json:"group"`
-			Version string `json:"version"`
-			Names   struct {
-				Kind string `json:"kind"`
-			} `json:"names"`
-		} `json:"spec"`
-	}
-	b, err := obj.ToUnstructured().MarshalJSON()
-	if err != nil {
-		return ret, err
-	}
-	if err := json.Unmarshal(b, &crd); err != nil {
-		return ret, err
-	}
-	return schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Spec.Names.Kind}, nil
-}
-
 func (c *Client) ensureType(gvk schema.GroupVersionKind, opts SyncOptions) error {
+	if _, err := c.apiResourceFor(gvk); err == nil {
+		return nil
+	}
 	waitTime := opts.WaitOptions.Timeout
 	if waitTime == 0 {
 		waitTime = 2 * time.Minute
@@ -445,29 +425,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 		}
 	}()
 
-	isCustomType := func(gvk schema.GroupVersionKind) bool {
-		return gvk.Kind == "CustomResourceDefinition" && gvk.Group == "apiextensions.k8s.io"
-	}
-
-	gvk := original.GroupVersionKind()
-	var innerType *schema.GroupVersionKind
-	defer func() {
-		if finalError == nil && innerType != nil {
-			_ = c.ensureType(*innerType, opts)
-		}
-	}()
-
-	if isCustomType(gvk) {
-		t, err := extractCustomTypes(original)
-		if err != nil {
-			sio.Warnf("error extracting types for custom resource %s, %v\n", original.GetName(), err)
-		} else {
-			innerType = &t
-			c.dynamicTypes[t] = true
-		}
-	}
-
-	if !opts.DryRun && opts.WaitForTypeFn(original) {
+	if !opts.DryRun {
 		if err := c.ensureType(original.GroupVersionKind(), opts); err != nil {
 			return nil, err
 		}
@@ -492,7 +450,6 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 }
 
 func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
-	gvk := original.GroupVersionKind()
 	var remObj *unstructured.Unstructured
 	var objErr error
 	if original.GetName() != "" {
@@ -505,14 +462,9 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 	// ignore object not found errors
 	case objErr == ErrNotFound:
 		break
-	// treat metadata errors (server type not found) as a "not found" error under the following conditions:
-	// - dry-run mode is active
-	// - a prior custom resource with that GVK has been applied or the resource has a lazy type
-	case objErr == errMetadataNotFound && opts.DryRun && (c.dynamicTypes[gvk] || opts.WaitForTypeFn(original)):
-		break
-	// error but with better message
+	// treat metadata errors (server type not found) as a "not found" error if dry-run mode is active
 	case objErr == errMetadataNotFound && opts.DryRun:
-		return nil, fmt.Errorf("server type %v not found and no prior CRD installs it", gvk)
+		break
 	// report all other errors
 	case objErr != nil:
 		return nil, errors.Wrap(objErr, "get object")

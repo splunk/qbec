@@ -92,17 +92,6 @@ func TestDirectivesUpdatePolicy(t *testing.T) {
 	a.True(ret)
 }
 
-func TestDirectivesWaitForTypePolicy(t *testing.T) {
-	wp := newWaitForTypePolicy()
-	a := assert.New(t)
-	ret := wp.shouldWaitForType(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", nil))
-	a.False(ret)
-	ret = wp.shouldWaitForType(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", map[string]interface{}{
-		"directives.qbec.io/lazy-type": "true",
-	}))
-	a.True(ret)
-}
-
 func TestDirectivesDeletePolicy(t *testing.T) {
 	dp := newDeletePolicy(func(gvk schema.GroupVersionKind) (bool, error) {
 		return gvk.Kind == "ConfigMap", nil
