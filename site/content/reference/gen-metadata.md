@@ -1,6 +1,6 @@
 ---
 title: Metadata for K8s objects
-weight: 12
+weight: 120
 ---
 
 ## Labels

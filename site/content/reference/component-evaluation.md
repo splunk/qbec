@@ -1,6 +1,6 @@
 ---
 title: Component evaluation
-weight: 20
+weight: 200
 ---
 
 How qbec evaluates component code using jsonnet and what it expects the output to look like.

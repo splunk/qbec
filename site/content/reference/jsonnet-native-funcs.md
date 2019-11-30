@@ -1,6 +1,6 @@
 ---
 title: Jsonnet native functions
-weight: 18
+weight: 180
 ---
 
 A list of all native functions that qbec natively supports.
@@ -14,6 +14,7 @@ available in the PATH.
 
 ### Usage
 ```
+    local expandHelmTemplate = std.native('expandHelmTemplate');
     expandHelmTemplate("path/to/chart", 
         { 
             chartProperty: 'chart-value'

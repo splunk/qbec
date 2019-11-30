@@ -1,6 +1,6 @@
 ---
 title: Diffs and patches
-weight: 40
+weight: 400
 ---
 
 qbec uses a 3-way merge patch similar to `kubectl/ksonnet apply`. The [Kubernetes documentation](https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/#how-apply-calculates-differences-and-merges-changes)
