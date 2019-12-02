@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.10.1 (Dec 1, 2019)
+
+Fix a regression in the metadata check introduced in v0.10.0. Nil maps for annotations
+and labels were being reported as an error, when they shouldn't have.
+
 ## v0.10.0 (Nov 30, 2019)
 
 * better support for custom types that are created lazily, for example, by an operator.
