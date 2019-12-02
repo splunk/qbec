@@ -19,6 +19,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -99,6 +100,16 @@ func toUnstructured(data map[string]interface{}) *unstructured.Unstructured {
 
 // AssertMetadataValid asserts that the object metadata for the supplied unstructured object is valid.
 func AssertMetadataValid(data map[string]interface{}) error {
+	fixup := func(err error) error {
+		if err == nil {
+			return err
+		}
+		// allow nil values which leads to an error in NestedStringMap
+		if strings.Contains(err.Error(), "<nil> is of the type <nil>") {
+			return nil
+		}
+		return err
+	}
 	decorate := func(err error) error {
 		if err == nil {
 			return nil
@@ -107,10 +118,10 @@ func AssertMetadataValid(data map[string]interface{}) error {
 		name := fmt.Sprintf("%s, Name=%s", obj.GroupVersionKind(), NameForDisplay(obj))
 		return errors.Wrap(err, name)
 	}
-	if _, _, err := unstructured.NestedStringMap(data, "metadata", "labels"); err != nil {
+	if _, _, err := unstructured.NestedStringMap(data, "metadata", "labels"); fixup(err) != nil {
 		return decorate(err)
 	}
-	if _, _, err := unstructured.NestedStringMap(data, "metadata", "annotations"); err != nil {
+	if _, _, err := unstructured.NestedStringMap(data, "metadata", "annotations"); fixup(err) != nil {
 		return decorate(err)
 	}
 	return nil
