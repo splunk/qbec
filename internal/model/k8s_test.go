@@ -115,6 +115,15 @@ metadata:
 data:
   foo: bar
 `
+	nilAnnotations := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  annotations:
+data:
+  foo: bar
+`
 	badLabels := `
 apiVersion: v1
 kind: ConfigMap
@@ -148,6 +157,13 @@ data:
 		{
 			"good",
 			toData(good),
+			func(t *testing.T, err error) {
+				assert.Nil(t, err)
+			},
+		},
+		{
+			"nil-annotations",
+			toData(nilAnnotations),
 			func(t *testing.T, err error) {
 				assert.Nil(t, err)
 			},
