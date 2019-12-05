@@ -81,15 +81,15 @@ type AppSpec struct {
 	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
 }
 
-// QbecEnvironmentsSpec is the spec for a QbecEnvironments object.
-type QbecEnvironmentsSpec struct {
+// QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.
+type QbecEnvironmentMapSpec struct {
 	// set of declared environments, keyed by name
 	// required: true
 	Environments map[string]Environment `json:"environments"`
 }
 
-// QbecEnvironments is a standalone object that contains a map of environments keyed by name.
-type QbecEnvironments struct {
+// QbecEnvironmentMap is a standalone object that contains a map of environments keyed by name.
+type QbecEnvironmentMap struct {
 	// object kind
 	// required: true
 	// pattern: ^Environments$
@@ -99,7 +99,7 @@ type QbecEnvironments struct {
 	APIVersion string `json:"apiVersion"`
 	// environments spec
 	// require: true
-	Spec QbecEnvironmentsSpec `json:"spec"`
+	Spec QbecEnvironmentMapSpec `json:"spec"`
 }
 
 // QbecApp is a set of components that can be applied to multiple environments with tweaked runtime configurations.

@@ -5,7 +5,7 @@
 paths: {}
 swagger: "2.0"
 definitions:
-  qbec.io.v1alpha1.Environments:
+  qbec.io.v1alpha1.EnvironmentMap:
     additionalProperties: false
     properties:
       apiVersion:
@@ -13,7 +13,7 @@ definitions:
         type: string
       kind:
         description: object kind
-        pattern: ^Environments$
+        pattern: ^EnvironmentMap$
         type: string
       spec:
         $ref: '#/definitions/qbec.io.v1alpha1.EnvironmentsSpec'
