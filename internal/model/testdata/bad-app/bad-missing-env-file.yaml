@@ -1,0 +1,9 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: test-app
+spec:
+  envFiles:
+    - missing-env.yaml
+
+

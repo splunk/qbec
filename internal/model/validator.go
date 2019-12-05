@@ -76,3 +76,33 @@ func (v *validator) validateYAML(content []byte) []error {
 	res := ov.Validate(data)
 	return res.Errors
 }
+
+func (v *validator) validateEnvYAML(content []byte) []error {
+	wrap := func(err error) []error {
+		return []error{err}
+	}
+	var data map[string]interface{}
+	if err := yaml.Unmarshal(content, &data); err != nil {
+		return wrap(errors.Wrap(err, "YAML unmarshal"))
+	}
+	apiVersion, ok := data["apiVersion"].(string)
+	if !ok {
+		return wrap(fmt.Errorf("missing or invalid apiVersion property"))
+	}
+	kind, ok := data["kind"].(string)
+	if !ok {
+		return wrap(fmt.Errorf("missing or invalid kind property"))
+	}
+	if kind != "Environments" {
+		return wrap(fmt.Errorf("bad kind property, expected Environments"))
+	}
+
+	dataType := strings.Replace(apiVersion, "/", ".", -1) + "." + kind
+	schema, ok := v.swagger.Definitions[dataType]
+	if !ok {
+		return wrap(fmt.Errorf("no schema found for %s (check for valid apiVersion and kind properties)", dataType))
+	}
+	ov := validate.NewSchemaValidator(&schema, v.swagger, "", strfmt.Default)
+	res := ov.Validate(data)
+	return res.Errors
+}

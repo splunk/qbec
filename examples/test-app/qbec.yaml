@@ -25,7 +25,5 @@ spec:
       - service2
       excludes:
       - service1
-    prod:
-      server: https://prod-server
-      includes:
-      - service2
+  envFiles: 
+  - prod-env.yaml

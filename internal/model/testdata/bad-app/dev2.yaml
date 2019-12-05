@@ -1,0 +1,8 @@
+apiVersion: qbec.io/v1alpha1
+kind: Environments
+spec:
+  environments:
+    dev:
+      server: https://dev-server2
+      includes:
+        - b

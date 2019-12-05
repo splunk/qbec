@@ -127,11 +127,15 @@ func TestAppWarnings(t *testing.T) {
 	sio.EnableColors = false
 	reset := setPwd(t, "./testdata/bad-app")
 	defer reset()
+	a := assert.New(t)
+
+	buf := bytes.NewBuffer(nil)
+	sio.Output = buf
 	app, err := NewApp("app-warn.yaml", "foobar")
 	require.Nil(t, err)
+	a.Contains(buf.String(), "[warn] override env definition 'dev' from file dev2.yaml (previous: inline)")
 
-	a := assert.New(t)
-	buf := bytes.NewBuffer(nil)
+	buf = bytes.NewBuffer(nil)
 	sio.Output = buf
 	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
 	require.Nil(t, err)
@@ -280,6 +284,30 @@ func TestAppNegative(t *testing.T) {
 			tag:  "-foobar",
 			asserter: func(t *testing.T, err error) {
 				assert.Contains(t, err.Error(), "invalid tag name '-foobar', must match")
+			},
+		},
+		{
+			file: "bad-no-envs.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "no environments defined for app")
+			},
+		},
+		{
+			file: "bad-missing-env-file.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "missing-env.yaml: no such file or directory")
+			},
+		},
+		{
+			file: "bad-malformed-env-file.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "malformed-env.yaml: unmarshal YAML")
+			},
+		},
+		{
+			file: "bad-invalid-env-file.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid-env.yaml, 1 schema validation error(s): spec.foo in body is a forbidden property")
 			},
 		},
 	}

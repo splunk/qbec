@@ -15,4 +15,7 @@ spec:
       server: https://dev-server
       includes:
       - b
+  envFiles:
+    - dev2.yaml
+
 

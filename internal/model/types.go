@@ -70,14 +70,36 @@ type AppSpec struct {
 	// the interface for jsonnet variables.
 	Vars Variables `json:"vars,omitempty"`
 	// set of environments for the app
-	// required: true
 	Environments map[string]Environment `json:"environments"`
+	// additional environments pulled in from external files
+	EnvFiles []string `json:"envFiles,omitempty"`
 	// list of components to exclude by default for every environment
 	Excludes []string `json:"excludes,omitempty"`
 	// list of library paths to add to the jsonnet VM at evaluation
 	LibPaths []string `json:"libPaths,omitempty"`
 	// automatically suffix default namespace defined for environment when app-tag provided.
 	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
+}
+
+// QbecEnvironmentsSpec is the spec for a QbecEnvironments object.
+type QbecEnvironmentsSpec struct {
+	// set of declared environments, keyed by name
+	// required: true
+	Environments map[string]Environment `json:"environments"`
+}
+
+// QbecEnvironments is a standalone object that contains a map of environments keyed by name.
+type QbecEnvironments struct {
+	// object kind
+	// required: true
+	// pattern: ^Environments$
+	Kind string `json:"kind"`
+	// requested API version
+	// required: true
+	APIVersion string `json:"apiVersion"`
+	// environments spec
+	// require: true
+	Spec QbecEnvironmentsSpec `json:"spec"`
 }
 
 // QbecApp is a set of components that can be applied to multiple environments with tweaked runtime configurations.
