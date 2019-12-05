@@ -1,0 +1,9 @@
+apiVersion: qbec.io/v1alpha1
+kind: Environments
+spec:
+  environments:
+    prod:
+      server: https://prod-server
+      includes:
+      - service2
+

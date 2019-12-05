@@ -62,6 +62,49 @@ type App struct {
 	defaultComponents map[string]Component // all components enabled by default
 }
 
+func makeValError(file string, errs []error) error {
+	var msgs []string
+	for _, err := range errs {
+		msgs = append(msgs, err.Error())
+	}
+	return fmt.Errorf("file: %s, %d schema validation error(s): %s", file, len(errs), strings.Join(msgs, "\n"))
+
+}
+
+func loadEnvFiles(app *QbecApp, v *validator) error {
+	if app.Spec.Environments == nil {
+		app.Spec.Environments = map[string]Environment{}
+	}
+	sources := map[string]string{}
+	for k := range app.Spec.Environments {
+		sources[k] = "inline"
+	}
+
+	for _, file := range app.Spec.EnvFiles {
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		var qEnvs QbecEnvironments
+		if err := yaml.Unmarshal(b, &qEnvs); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%s: unmarshal YAML", file))
+		}
+		errs := v.validateEnvYAML(b)
+		if len(errs) > 0 {
+			return makeValError(file, errs)
+		}
+		for k, v := range qEnvs.Spec.Environments {
+			old, ok := sources[k]
+			if ok {
+				sio.Warnf("override env definition '%s' from file %s (previous: %s)\n", k, file, old)
+			}
+			sources[k] = file
+			app.Spec.Environments[k] = v
+		}
+	}
+	return nil
+}
+
 // NewApp returns an app loading its details from the supplied file.
 func NewApp(file string, tag string) (*App, error) {
 	b, err := ioutil.ReadFile(file)
@@ -80,11 +123,15 @@ func NewApp(file string, tag string) (*App, error) {
 	}
 	errs := v.validateYAML(b)
 	if len(errs) > 0 {
-		var msgs []string
-		for _, err := range errs {
-			msgs = append(msgs, err.Error())
-		}
-		return nil, fmt.Errorf("%d schema validation error(s): %s", len(errs), strings.Join(msgs, "\n"))
+		return nil, makeValError(file, errs)
+	}
+
+	if err := loadEnvFiles(&qApp, v); err != nil {
+		return nil, err
+	}
+
+	if len(qApp.Spec.Environments) == 0 {
+		return nil, fmt.Errorf("%s: no environments defined for app", file)
 	}
 
 	app := App{inner: qApp}
