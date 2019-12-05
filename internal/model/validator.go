@@ -93,8 +93,8 @@ func (v *validator) validateEnvYAML(content []byte) []error {
 	if !ok {
 		return wrap(fmt.Errorf("missing or invalid kind property"))
 	}
-	if kind != "Environments" {
-		return wrap(fmt.Errorf("bad kind property, expected Environments"))
+	if kind != "EnvironmentMap" {
+		return wrap(fmt.Errorf("bad kind property, expected EnvironmentMap"))
 	}
 
 	dataType := strings.Replace(apiVersion, "/", ".", -1) + "." + kind

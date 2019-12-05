@@ -65,7 +65,7 @@ spec:
 func TestValidatorEnvironmentsBasic(t *testing.T) {
 	doc := `---
 apiVersion: qbec.io/v1alpha1
-kind: Environments
+kind: EnvironmentMap
 spec:
   environments:
     dev:
@@ -236,23 +236,23 @@ func TestValidatorEnvNegative(t *testing.T) {
 		},
 		{
 			name: "bad kind",
-			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "environments", spec: { environments: { dev: { server: "https://dev" } } } }`,
+			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "environmentMap", spec: { environments: { dev: { server: "https://dev" } } } }`,
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
-				assert.Equal(t, "bad kind property, expected Environments", errs[0].Error())
+				assert.Equal(t, "bad kind property, expected EnvironmentMap", errs[0].Error())
 			},
 		},
 		{
 			name: "bad api version",
-			yaml: `{ apiVersion: "qbec.io/v1alpha2", kind: "Environments", spec: { environments: { dev: { server: "https://dev" } } } }`,
+			yaml: `{ apiVersion: "qbec.io/v1alpha2", kind: "EnvironmentMap", spec: { environments: { dev: { server: "https://dev" } } } }`,
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
-				assert.Equal(t, "no schema found for qbec.io.v1alpha2.Environments (check for valid apiVersion and kind properties)", errs[0].Error())
+				assert.Equal(t, "no schema found for qbec.io.v1alpha2.EnvironmentMap (check for valid apiVersion and kind properties)", errs[0].Error())
 			},
 		},
 		{
 			name: "no apiVersion",
-			yaml: `{ kind: "Environments", spec: { environments: { dev: { server: "https://dev" } } } }`,
+			yaml: `{ kind: "EnvironmentMap", spec: { environments: { dev: { server: "https://dev" } } } }`,
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
 				assert.Equal(t, "missing or invalid apiVersion property", errs[0].Error())
@@ -260,7 +260,7 @@ func TestValidatorEnvNegative(t *testing.T) {
 		},
 		{
 			name: "no environments",
-			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "Environments", spec: { environments: {} } }`,
+			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "EnvironmentMap", spec: { environments: {} } }`,
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
 				assert.Equal(t, "spec.environments in body should have at least 1 properties", errs[0].Error())
@@ -268,7 +268,7 @@ func TestValidatorEnvNegative(t *testing.T) {
 		},
 		{
 			name: "extra props",
-			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "Environments", spec: { environments: { dev: { server: "https://dev" } } }, excludes: ["bar"] }`,
+			yaml: `{ apiVersion: "qbec.io/v1alpha1", kind: "EnvironmentMap", spec: { environments: { dev: { server: "https://dev" } } }, excludes: ["bar"] }`,
 			asserter: func(t *testing.T, errs []error) {
 				require.Equal(t, 1, len(errs))
 				assert.Equal(t, ".excludes in body is a forbidden property", errs[0].Error())

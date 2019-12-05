@@ -1,5 +1,5 @@
 apiVersion: qbec.io/v1alpha1
-kind: Environments
+kind: EnvironmentMap
 spec:
   environments:
     prod:

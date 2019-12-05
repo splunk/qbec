@@ -85,7 +85,7 @@ func loadEnvFiles(app *QbecApp, v *validator) error {
 		if err != nil {
 			return err
 		}
-		var qEnvs QbecEnvironments
+		var qEnvs QbecEnvironmentMap
 		if err := yaml.Unmarshal(b, &qEnvs); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("%s: unmarshal YAML", file))
 		}
