@@ -25,5 +25,7 @@ spec:
       - service2
       excludes:
       - service1
+      properties:
+        envType: development
   envFiles: 
   - prod-env.yaml

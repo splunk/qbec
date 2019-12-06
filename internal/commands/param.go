@@ -138,7 +138,7 @@ func doParamList(args []string, config paramListCommandConfig) error {
 		}
 	}
 	paramsFile := config.App().ParamsFile()
-	paramsObject, err := eval.Params(paramsFile, config.EvalContext(env))
+	paramsObject, err := eval.Params(paramsFile, config.EvalContext(env, config.App().Properties(env)))
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 			}
 		}
 		paramsFile := config.App().ParamsFile()
-		paramsObject, err := eval.Params(paramsFile, config.EvalContext(env))
+		paramsObject, err := eval.Params(paramsFile, config.EvalContext(env, config.App().Properties(env)))
 		if err != nil {
 			return "", "", err
 		}

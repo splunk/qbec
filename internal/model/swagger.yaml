@@ -129,6 +129,8 @@ definitions:
         type: array
       server:
         type: string
+      properties:
+        type: object
     title: Environment points to a specific destination and has its own set of runtime
       parameters.
     type: object

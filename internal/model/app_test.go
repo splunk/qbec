@@ -110,6 +110,19 @@ func TestAppSimple(t *testing.T) {
 	require.NotNil(t, err)
 	a.Equal(`invalid environment "devx"`, err.Error())
 
+	props := app.Properties("dev")
+	require.NotNil(t, props)
+	a.Equal(1, len(props))
+	a.Equal("development", props["envType"])
+
+	props = app.Properties("prod")
+	require.NotNil(t, props)
+	a.Equal(0, len(props))
+
+	props = app.Properties("_")
+	require.NotNil(t, props)
+	a.Equal(0, len(props))
+
 	a.Equal("params.libsonnet", app.ParamsFile())
 	a.Equal("pp.jsonnet", app.PostProcessor())
 	a.EqualValues([]string{"lib"}, app.LibPaths())

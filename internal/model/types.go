@@ -20,10 +20,11 @@ package model
 
 // Environment points to a specific destination and has its own set of runtime parameters.
 type Environment struct {
-	DefaultNamespace string   `json:"defaultNamespace"`   // default namespace to set for k8s context
-	Server           string   `json:"server"`             // server URL of server
-	Includes         []string `json:"includes,omitempty"` // components to be included in this env even if excluded at the app level
-	Excludes         []string `json:"excludes,omitempty"` // additional components to exclude for this env
+	DefaultNamespace string                 `json:"defaultNamespace"`     // default namespace to set for k8s context
+	Server           string                 `json:"server"`               // server URL of server
+	Includes         []string               `json:"includes,omitempty"`   // components to be included in this env even if excluded at the app level
+	Excludes         []string               `json:"excludes,omitempty"`   // additional components to exclude for this env
+	Properties       map[string]interface{} `json:"properties,omitempty"` // properties attached to the environment, exposed via an extvar
 }
 
 // Var is a base variable.
