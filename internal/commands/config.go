@@ -264,11 +264,16 @@ func (c *Config) init(strict bool) error {
 func (c Config) App() *model.App { return c.app }
 
 // EvalContext returns the evaluation context for the supplied environment.
-func (c Config) EvalContext(env string) eval.Context {
+func (c Config) EvalContext(env string, props map[string]interface{}) eval.Context {
+	p, err := json.Marshal(props)
+	if err != nil {
+		sio.Warnln("unable to serialize env properties to JSON:", err)
+	}
 	return eval.Context{
 		App:             c.App().Name(),
 		Tag:             c.App().Tag(),
 		Env:             env,
+		EnvPropsJSON:    string(p),
 		DefaultNs:       c.app.DefaultNamespace(env),
 		VMConfig:        c.vmConfig,
 		Verbose:         c.Verbosity() > 1,

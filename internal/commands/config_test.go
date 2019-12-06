@@ -61,7 +61,7 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal("default-t1", cfg.app.DefaultNamespace("prod"))
 	a.Nil(cfg.Confirm("we will destroy you"))
 
-	ctx := cfg.EvalContext("dev")
+	ctx := cfg.EvalContext("dev", map[string]interface{}{"foo": "bar"})
 	a.Equal("app1", ctx.App)
 	a.Equal("dev", ctx.Env)
 	a.Equal("t1", ctx.Tag)

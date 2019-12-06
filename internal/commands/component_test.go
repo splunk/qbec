@@ -103,7 +103,7 @@ func TestComponentDiffObjects(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("component", "diff", "dev", "-O")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`--- baseline`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+\+\+ environment: dev`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+service2\s+ConfigMap\s+svc2-cm\s+bar-system`))

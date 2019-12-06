@@ -227,6 +227,18 @@ func (a *App) ServerURL(env string) (string, error) {
 	return e.Server, nil
 }
 
+// Properties returns the configured properties for the supplied environment.
+func (a *App) Properties(env string) map[string]interface{} {
+	e, err := a.envObject(env)
+	if err != nil {
+		return map[string]interface{}{}
+	}
+	if e.Properties == nil {
+		return map[string]interface{}{}
+	}
+	return e.Properties
+}
+
 // DefaultNamespace returns the default namespace for the environment, potentially
 // suffixing it with any app-tag, if configured.
 func (a *App) DefaultNamespace(env string) string {

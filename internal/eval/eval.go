@@ -85,6 +85,7 @@ type Context struct {
 	App             string       // the application for which the evaluation is done
 	Tag             string       // the gc tag if present
 	Env             string       // the environment for which the evaluation is done
+	EnvPropsJSON    string       // the environment properties to expose as an external variable
 	DefaultNs       string       // the default namespace to expose as an external variable
 	VMConfig        VMConfigFunc // the base VM config to use for eval
 	Verbose         bool         // show generated code
@@ -107,6 +108,8 @@ func (c Context) baseVMConfig(tlas []string) vm.Config {
 		model.QbecNames.TagVarName:       c.Tag,
 		model.QbecNames.DefaultNsVarName: c.DefaultNs,
 		model.QbecNames.CleanModeVarName: cm,
+	}).WithCodeVars(map[string]string{
+		model.QbecNames.EnvPropsVarName: c.EnvPropsJSON,
 	})
 	return cfg
 }

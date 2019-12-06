@@ -38,6 +38,7 @@ var QbecNames = struct {
 	EnvironmentLabel    string // the label to use for tagging an object with an annotation
 	PristineAnnotation  string // the annotation to use for storing the pristine object
 	EnvVarName          string // the name of the external variable that has the environment name
+	EnvPropsVarName     string // the name of the external variable that has the environment properties object
 	TagVarName          string // the name of the external variable that has the tag name
 	DefaultNsVarName    string // the name of the external variable that has the default namespace
 	CleanModeVarName    string // name of external variable that has the indicator for clean mode
@@ -49,6 +50,7 @@ var QbecNames = struct {
 	EnvironmentLabel:    QBECMetadataPrefix + "environment",
 	PristineAnnotation:  QBECMetadataPrefix + "last-applied",
 	EnvVarName:          QBECMetadataPrefix + "env",
+	EnvPropsVarName:     QBECMetadataPrefix + "envProperties",
 	TagVarName:          QBECMetadataPrefix + "tag",
 	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
 	CleanModeVarName:    QBECMetadataPrefix + "cleanMode",
