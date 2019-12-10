@@ -30,6 +30,7 @@ build:
 .PHONY: test
 test:
 	go test -coverprofile=coverage.txt -covermode=atomic -race ./...
+	bash <(curl -s https://codecov.io/bash)
 
 .PHONY: lint
 lint: check-format
