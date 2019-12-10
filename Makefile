@@ -29,7 +29,7 @@ build:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test -coverprofile=coverage.txt -covermode=atomic -race ./...
 
 .PHONY: lint
 lint: check-format
