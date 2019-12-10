@@ -3,6 +3,7 @@
 tmp/
 vendor/
 cover.out
+coverage.txt
 dist/
 helm.tar.gz
 linux-amd64/
