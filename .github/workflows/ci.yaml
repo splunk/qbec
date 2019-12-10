@@ -47,3 +47,4 @@ jobs:
           args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
