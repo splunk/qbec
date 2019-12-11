@@ -107,6 +107,9 @@ definitions:
           file containing jsonnet code that can be used to post-process all objects, typically adding metadata like
           annotations
         type: string
+      baseProperties:
+        description: properties for the baseline environment
+        type: object
       vars:
         $ref: "#/definitions/qbec.io.v1alpha1.Variables"
       namespaceTagSuffix:
@@ -130,6 +133,7 @@ definitions:
       server:
         type: string
       properties:
+        description: open-ended object containing additional environment properties.
         type: object
     title: Environment points to a specific destination and has its own set of runtime
       parameters.

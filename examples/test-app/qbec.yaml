@@ -11,6 +11,8 @@ spec:
   - lib
   excludes:
   - service2
+  baseProperties:
+    envType: unknown
   vars:
     topLevel:
       - name: tlaFoo

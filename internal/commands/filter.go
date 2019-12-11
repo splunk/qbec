@@ -111,7 +111,11 @@ func filteredObjects(cfg *Config, env string, kf keyFunc, fp filterParams) ([]mo
 	if err != nil {
 		return nil, err
 	}
-	output, err := eval.Components(components, cfg.EvalContext(env, cfg.App().Properties(env)))
+	props, err := cfg.App().Properties(env)
+	if err != nil {
+		return nil, err
+	}
+	output, err := eval.Components(components, cfg.EvalContext(env, props))
 	if err != nil {
 		return nil, err
 	}
