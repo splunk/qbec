@@ -6,6 +6,8 @@ weight: 110
 qbec exposes the following standard jsonnet variables whenever it evaluates components.
 
 * `qbec.io/env` - the name of the environment for which processing occurs.
+* `qbec.io/envProperties` - the properties associated with the environment if present or an empty object. For the
+   baseline environment (`_`), this is set to the `baseProperties` object define in `qbec.yaml`.
 * `qbec.io/tag` - the tag specified for the command using the `--app-tag` option.
 * `qbec.io/defaultNs` - the default namespace in use. This is typically picked from the environment definition,
    possibly changed for app tags, or the value forced from the command line using the `--force:k8s-namespace` option.

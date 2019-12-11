@@ -1,6 +1,14 @@
 Changelog
 ---
 
+## v0.10.2 (Dec 11, 2019)
+
+* Provide the ability to load environment definitions from external files in addition to defining them inline.
+* Add the ability to associate a properties object with every environment and also define baseline properties.
+  These are exposed as the `qbec.io/envProperties` external variable. 
+
+The test app under `examples` demonstrates both of these features.
+
 ## v0.10.1 (Dec 1, 2019)
 
 Fix a regression in the metadata check introduced in v0.10.0. Nil maps for annotations

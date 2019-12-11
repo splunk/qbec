@@ -47,8 +47,11 @@ spec:
   # change the default namespace for the environment in question by suffixing it with <hyphen><tag-value> (e.g. 'myns-tag')
   namespaceTagSuffix: true
 
-  environments: # map of environment names to environment objects
+  # an arbitrary object to define baseline properties
+  baseProperties:
+    foo: base
 
+  environments: # map of environment names to environment objects
     minikube:
       server: https://minikube:8443 # server end point
       defaultNamespace: my-ns # the namespace to use when namespaced object does not define it.
@@ -62,12 +65,37 @@ spec:
 
     dev:
       server: https://dev-server
+      properties: # arbitrary properties can be attached to environments
+        foo: bar
+
+    # additional environments can be loaded from files. Files are loaded in the order specified.
+    # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
+    # The file path is relative to the directory where qbec.yaml resides.
+    envFiles:
+    - more-envs.yaml
 ```
+
+### Environment files
+
+Environments can be defined in external files that are then loaded and merged into the main environments object.
+
+```yaml
+apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  # the environments key is exactly the same as the environments key in qbec.yaml
+  environments:
+    prod:
+      server: https://prod-server
+      includes:
+      - service2
+      properties:
+        foo: bar
+```
+
 
 ### Notes
 
-* The list of components is loaded from the `componentsDir` directory. Components may be `.jsonnet`, `.json` or `.yaml`
-  files. The name of the component is the name of the file without the extension. You may not create two files with the
-  same name and different extensions.
+* The list of components is loaded from the `componentsDir` directory.
 * Once the list is loaded, all exclusion and inclusion lists are checked to ensure that they refer to valid components.
 * The global exclusion list allows you to introduce a new component gradually by only including it in a dev environment.

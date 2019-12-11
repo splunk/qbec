@@ -15,7 +15,11 @@ should be subsequently used in the same build for a deployment, environment-spec
 qbec provides the following facilities for runtime parameters.
 
 * it exposes the external variable `qbec.io/env` that contains the name of the environment used for the command.
-  This mechanism allows you to parameterize values that are known in advance for an environment.
+  This allows you to parameterize values based on the name of the environment. For instance, you could use the name
+  as a key in a map of variables keyed by environment name.
+* it exposes the external variable `qbec.io/envProperties` set to the properties defined in `qbec.yaml` for the
+  environment. This is a good place to store static environment properties like cluster name, external endpoints
+  related to the cluster etc.
 * it allows you to declare jsonnet _external variables_ in `qbec.yaml` with default values. Values for external
   variables can be supplied on the command line. Default values are used when declared variables have not be set.
   This mechanism allows you to develop components locally without having to specify variables on the command line

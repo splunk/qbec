@@ -5,12 +5,20 @@ weight: 200
 
 How qbec evaluates component code using jsonnet and what it expects the output to look like.
 
+## Component loading
+
+* Consider every `.jsonnet`, `.json`, and `.yaml` file directly under the component directory as a component to be loaded.
+  In this case, the component name is the file name without the extension.
+* Check immediate subdirectories of the component directory to see if they contain an `index.jsonnet` or `index.yaml` file.
+  If so, create a component with the sub-directory name.
+    * If an `index.jsonnet` file exists load it for component processing
+    * If an `index.yaml` file exists load all `.json` and `.yaml` files in the subdirectory.
+
 ## Jsonnet evaluation
 
 This works as follows:
 
-* Collect the list of files to be evaluated for the environment. This takes into account all components in the directory,
-  inclusion and exclusion lists for the current environment and component filters specified on the command line.
+* Collect the list of files to be loaded as described in the previous section.
 * Assuming this leads to 3 files, say, `c1.jsonnet`, `c2.json`, and `c3.yaml` evaluate each file in its own VM in parallel
   upto a specific concurrency.
 
@@ -21,6 +29,7 @@ The JSON file is parsed as: `std.native('parseJson')(importstr '<file>')`
 The JSONNET is evaluated in a VM instance as-is. In this case:
  
 * the `qbec.io/env` extension variable is set to the environment name in question.
+* the `qbec.io/envProperties` extension variable is set to the properties defined for the environment.
 * the `qbec.io/tag` extension variable is set to the `--app-tag` argument passed to the command line (or the empty
   string, if it wasn't)
 * the `qbec.io/defaultNs` variable is set to the default namespace for the environment. This is typically the namespace
