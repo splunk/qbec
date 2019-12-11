@@ -648,6 +648,7 @@
 <ul>
 <li>
 <ul>
+<li><a href="#component-loading">Component loading</a></li>
 <li><a href="#jsonnet-evaluation">Jsonnet evaluation</a></li>
 <li><a href="#converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</a></li>
 </ul></li>
@@ -674,13 +675,26 @@
 
 <p>How qbec evaluates component code using jsonnet and what it expects the output to look like.</p>
 
+<h2 id="component-loading">Component loading</h2>
+
+<ul>
+<li>Consider every <code>.jsonnet</code>, <code>.json</code>, and <code>.yaml</code> file directly under the component directory as a component to be loaded.
+In this case, the component name is the file name without the extension.</li>
+<li>Check immediate subdirectories of the component directory to see if they contain an <code>index.jsonnet</code> or <code>index.yaml</code> file.
+If so, create a component with the sub-directory name.
+
+<ul>
+<li>If an <code>index.jsonnet</code> file exists load it for component processing</li>
+<li>If an <code>index.yaml</code> file exists load all <code>.json</code> and <code>.yaml</code> files in the subdirectory.</li>
+</ul></li>
+</ul>
+
 <h2 id="jsonnet-evaluation">Jsonnet evaluation</h2>
 
 <p>This works as follows:</p>
 
 <ul>
-<li>Collect the list of files to be evaluated for the environment. This takes into account all components in the directory,
-inclusion and exclusion lists for the current environment and component filters specified on the command line.</li>
+<li>Collect the list of files to be loaded as described in the previous section.</li>
 <li>Assuming this leads to 3 files, say, <code>c1.jsonnet</code>, <code>c2.json</code>, and <code>c3.yaml</code> evaluate each file in its own VM in parallel
 upto a specific concurrency.</li>
 </ul>
@@ -693,6 +707,7 @@ upto a specific concurrency.</li>
 
 <ul>
 <li>the <code>qbec.io/env</code> extension variable is set to the environment name in question.</li>
+<li>the <code>qbec.io/envProperties</code> extension variable is set to the properties defined for the environment.</li>
 <li>the <code>qbec.io/tag</code> extension variable is set to the <code>--app-tag</code> argument passed to the command line (or the empty
 string, if it wasn&rsquo;t)</li>
 <li>the <code>qbec.io/defaultNs</code> variable is set to the default namespace for the environment. This is typically the namespace

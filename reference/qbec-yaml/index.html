@@ -650,6 +650,7 @@
 <ul>
 <li>
 <ul>
+<li><a href="#environment-files">Environment files</a></li>
 <li><a href="#notes">Notes</a></li>
 </ul></li>
 </ul></li>
@@ -717,8 +718,11 @@ spec:
   # change the default namespace for the environment in question by suffixing it with &lt;hyphen&gt;&lt;tag-value&gt; (e.g. 'myns-tag')
   namespaceTagSuffix: true
 
-  environments: # map of environment names to environment objects
+  # an arbitrary object to define baseline properties
+  baseProperties:
+    foo: base
 
+  environments: # map of environment names to environment objects
     minikube:
       server: https://minikube:8443 # server end point
       defaultNamespace: my-ns # the namespace to use when namespaced object does not define it.
@@ -732,14 +736,37 @@ spec:
 
     dev:
       server: https://dev-server
+      properties: # arbitrary properties can be attached to environments
+        foo: bar
+
+    # additional environments can be loaded from files. Files are loaded in the order specified.
+    # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
+    # The file path is relative to the directory where qbec.yaml resides.
+    envFiles:
+    - more-envs.yaml
+</code></pre>
+
+<h3 id="environment-files">Environment files</h3>
+
+<p>Environments can be defined in external files that are then loaded and merged into the main environments object.</p>
+
+<pre><code class="language-yaml">apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  # the environments key is exactly the same as the environments key in qbec.yaml
+  environments:
+    prod:
+      server: https://prod-server
+      includes:
+      - service2
+      properties:
+        foo: bar
 </code></pre>
 
 <h3 id="notes">Notes</h3>
 
 <ul>
-<li>The list of components is loaded from the <code>componentsDir</code> directory. Components may be <code>.jsonnet</code>, <code>.json</code> or <code>.yaml</code>
-files. The name of the component is the name of the file without the extension. You may not create two files with the
-same name and different extensions.</li>
+<li>The list of components is loaded from the <code>componentsDir</code> directory.</li>
 <li>Once the list is loaded, all exclusion and inclusion lists are checked to ensure that they refer to valid components.</li>
 <li>The global exclusion list allows you to introduce a new component gradually by only including it in a dev environment.</li>
 </ul>

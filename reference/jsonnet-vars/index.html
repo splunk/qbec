@@ -666,6 +666,8 @@
 
 <ul>
 <li><code>qbec.io/env</code> - the name of the environment for which processing occurs.</li>
+<li><code>qbec.io/envProperties</code> - the properties associated with the environment if present or an empty object. For the
+baseline environment (<code>_</code>), this is set to the <code>baseProperties</code> object define in <code>qbec.yaml</code>.</li>
 <li><code>qbec.io/tag</code> - the tag specified for the command using the <code>--app-tag</code> option.</li>
 <li><code>qbec.io/defaultNs</code> - the default namespace in use. This is typically picked from the environment definition,
 possibly changed for app tags, or the value forced from the command line using the <code>--force:k8s-namespace</code> option.</li>
