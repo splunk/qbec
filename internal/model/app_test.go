@@ -110,18 +110,30 @@ func TestAppSimple(t *testing.T) {
 	require.NotNil(t, err)
 	a.Equal(`invalid environment "devx"`, err.Error())
 
-	props := app.Properties("dev")
+	props := app.BaseProperties()
+	require.NotNil(t, props)
+	a.Equal(1, len(props))
+	a.Equal("unknown", props["envType"])
+
+	props, err = app.Properties("dev")
+	require.NoError(t, err)
 	require.NotNil(t, props)
 	a.Equal(1, len(props))
 	a.Equal("development", props["envType"])
 
-	props = app.Properties("prod")
+	props, err = app.Properties("prod")
+	require.NoError(t, err)
 	require.NotNil(t, props)
 	a.Equal(0, len(props))
 
-	props = app.Properties("_")
+	props, err = app.Properties("_")
+	require.NoError(t, err)
 	require.NotNil(t, props)
-	a.Equal(0, len(props))
+	a.Equal(1, len(props))
+	a.Equal("unknown", props["envType"])
+
+	props, err = app.Properties("foo")
+	require.Error(t, err)
 
 	a.Equal("params.libsonnet", app.ParamsFile())
 	a.Equal("pp.jsonnet", app.PostProcessor())
@@ -163,6 +175,8 @@ func TestAppWarnings(t *testing.T) {
 
 	a.Equal("foobar", app.Tag())
 	a.Equal("default-foobar", app.DefaultNamespace("dev"))
+
+	a.EqualValues(map[string]interface{}{}, app.BaseProperties())
 }
 
 func TestAppComponentLoadSubdirs(t *testing.T) {

@@ -80,6 +80,8 @@ type AppSpec struct {
 	LibPaths []string `json:"libPaths,omitempty"`
 	// automatically suffix default namespace defined for environment when app-tag provided.
 	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
+	// properties for the baseline environment, can be used to define what env properties should look like
+	BaseProperties map[string]interface{} `json:"baseProperties,omitempty"`
 }
 
 // QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.

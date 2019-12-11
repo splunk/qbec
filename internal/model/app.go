@@ -227,16 +227,28 @@ func (a *App) ServerURL(env string) (string, error) {
 	return e.Server, nil
 }
 
+// BaseProperties returns the baseline properties defined for the app.
+func (a *App) BaseProperties() map[string]interface{} {
+	p := a.inner.Spec.BaseProperties
+	if p == nil {
+		return map[string]interface{}{}
+	}
+	return p
+}
+
 // Properties returns the configured properties for the supplied environment.
-func (a *App) Properties(env string) map[string]interface{} {
+func (a *App) Properties(env string) (map[string]interface{}, error) {
+	if env == Baseline {
+		return a.BaseProperties(), nil
+	}
 	e, err := a.envObject(env)
 	if err != nil {
-		return map[string]interface{}{}
+		return nil, err
 	}
 	if e.Properties == nil {
-		return map[string]interface{}{}
+		return map[string]interface{}{}, nil
 	}
-	return e.Properties
+	return e.Properties, nil
 }
 
 // DefaultNamespace returns the default namespace for the environment, potentially
