@@ -27,7 +27,6 @@ type Directives struct {
 	ApplyOrder   string // numeric apply order for object
 	DeletePolicy string // delete policy "default" | "never"
 	UpdatePolicy string // update policy "default" | "never"
-	LazyType     string // wait for (CRD) type to appear before applying object "false" (default) | "true". Will also process diffs and apply dry-run without errors
 }
 
 // QbecNames is the set of names used by Qbec.
@@ -58,6 +57,5 @@ var QbecNames = struct {
 		ApplyOrder:   QBECDirectivesNamespace + "apply-order",
 		DeletePolicy: QBECDirectivesNamespace + "delete-policy",
 		UpdatePolicy: QBECDirectivesNamespace + "update-policy",
-		LazyType:     QBECDirectivesNamespace + "lazy-type",
 	},
 }
