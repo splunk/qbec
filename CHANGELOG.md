@@ -9,6 +9,8 @@ Changelog
 
 The test app under `examples` demonstrates both of these features.
 
+* Internal build improvements: add code coverage (thanks @harsimranmaan)
+
 ## v0.10.1 (Dec 1, 2019)
 
 Fix a regression in the metadata check introduced in v0.10.0. Nil maps for annotations
