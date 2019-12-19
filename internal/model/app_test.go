@@ -149,7 +149,7 @@ func TestAppSimple(t *testing.T) {
 	a.Equal("bar", extra["foo"])
 	a.Equal("baz", extra["bar"])
 
-	props, err = app.Properties("foo")
+	_, err = app.Properties("foo")
 	require.Error(t, err)
 
 	a.Equal("params.libsonnet", app.ParamsFile())
