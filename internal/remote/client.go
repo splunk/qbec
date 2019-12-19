@@ -90,13 +90,12 @@ type resourceClient interface {
 // Client is a thick remote client that provides high-level operations for commands as opposed to
 // granular ones.
 type Client struct {
-	resources    *k8smeta.Resources               // the server metadata loaded once and never updated
-	schema       *k8smeta.ServerSchema            // the server schema
-	pool         resourceClient                   // the client pool for resource interfaces
-	disco        k8smeta.ResourceDiscovery        // the discovery interface
-	defaultNs    string                           // the default namespace to set for namespaced objects that do not define one
-	verbosity    int                              // log verbosity
-	dynamicTypes map[schema.GroupVersionKind]bool // crds seen by this client
+	resources *k8smeta.Resources        // the server metadata loaded once and never updated
+	schema    *k8smeta.ServerSchema     // the server schema
+	pool      resourceClient            // the client pool for resource interfaces
+	disco     k8smeta.ResourceDiscovery // the discovery interface
+	defaultNs string                    // the default namespace to set for namespaced objects that do not define one
+	verbosity int                       // log verbosity
 }
 
 func newClient(pool resourceClient, disco discovery.DiscoveryInterface, ns string, verbosity int) (*Client, error) {

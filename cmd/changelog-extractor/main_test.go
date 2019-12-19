@@ -18,7 +18,10 @@ package main
 
 // Example shows usage of printReleaseNotes function
 func Example() {
-	printReleaseNotes("testdata/abc.txt")
+	err := printReleaseNotes("testdata/abc.txt")
+	if err != nil {
+		panic(err)
+	}
 	// Output: This goes in the published release notes
 	// this too
 }

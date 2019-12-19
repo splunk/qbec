@@ -17,7 +17,6 @@
 package model
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -37,19 +36,6 @@ metadata:
 data:
   foo: bar
 `
-
-var b64 = base64.StdEncoding.EncodeToString([]byte("changeme"))
-
-var secret = fmt.Sprintf(`
----
-apiVersion:  v1
-kind: Secret
-metadata:
-  namespace: ns1
-  name: s
-data:
-  foo: %s
-`, b64)
 
 func toData(s string) map[string]interface{} {
 	var data map[string]interface{}
