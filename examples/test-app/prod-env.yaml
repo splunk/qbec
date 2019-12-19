@@ -6,4 +6,5 @@ spec:
       server: https://prod-server
       includes:
       - service2
-
+      properties:
+        envType: prod

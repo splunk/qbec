@@ -18,6 +18,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,6 +27,7 @@ import (
 	"sort"
 	"strings"
 
+	patchLib "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/sio"
@@ -236,7 +238,28 @@ func (a *App) BaseProperties() map[string]interface{} {
 	return p
 }
 
-// Properties returns the configured properties for the supplied environment.
+func mergePatch(base, overrides map[string]interface{}) (map[string]interface{}, error) {
+	baseBytes, err := json.Marshal(base)
+	if err != nil {
+		return nil, errors.Wrap(err, "serialize base")
+	}
+	overrideBytes, err := json.Marshal(overrides)
+	if err != nil {
+		return nil, errors.Wrap(err, "serialize overrides")
+	}
+	patchedBytes, err := patchLib.MergePatch(baseBytes, overrideBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "merge patch")
+	}
+	var ret map[string]interface{}
+	if err := json.Unmarshal(patchedBytes, &ret); err != nil {
+		return nil, errors.Wrap(err, "deserialize patched object")
+	}
+	return ret, nil
+}
+
+// Properties returns the configured properties for the supplied environment, merge patched into
+// the base properties object.
 func (a *App) Properties(env string) (map[string]interface{}, error) {
 	if env == Baseline {
 		return a.BaseProperties(), nil
@@ -248,7 +271,7 @@ func (a *App) Properties(env string) (map[string]interface{}, error) {
 	if e.Properties == nil {
 		return map[string]interface{}{}, nil
 	}
-	return e.Properties, nil
+	return mergePatch(a.BaseProperties(), e.Properties)
 }
 
 // DefaultNamespace returns the default namespace for the environment, potentially
