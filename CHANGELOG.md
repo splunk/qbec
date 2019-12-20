@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.10.3 (Dec 19, 2019)
+
+* when returning environment properties introduced in the previous release, first
+  apply a JSON merge-patch on to base properties before returning it. 
+
 ## v0.10.2 (Dec 11, 2019)
 
 * Provide the ability to load environment definitions from external files in addition to defining them inline.
