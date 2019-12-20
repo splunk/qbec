@@ -47,9 +47,10 @@ func TestAppSimple(t *testing.T) {
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.Equal("example1", app.Name())
-	a.Equal(2, len(app.inner.Spec.Environments))
+	a.Equal(3, len(app.inner.Spec.Environments))
 	a.Contains(app.inner.Spec.Environments, "dev")
 	a.Contains(app.inner.Spec.Environments, "prod")
+	a.Contains(app.inner.Spec.Environments, "stage")
 	a.Equal(4, len(app.allComponents))
 	a.Equal(3, len(app.defaultComponents))
 	a.Contains(app.allComponents, "service2")
@@ -110,21 +111,25 @@ func TestAppSimple(t *testing.T) {
 	require.NotNil(t, err)
 	a.Equal(`invalid environment "devx"`, err.Error())
 
+	checkBase := func(props map[string]interface{}) {
+		require.NotNil(t, props)
+		a.Equal(2, len(props))
+		a.Equal("unknown", props["envType"])
+		extra := props["extra"].(map[string]interface{})
+		a.Equal(2, len(extra))
+		a.Equal("bar", extra["foo"])
+		a.Equal("baz", extra["bar"])
+	}
+
 	props := app.BaseProperties()
-	require.NotNil(t, props)
-	a.Equal(2, len(props))
-	a.Equal("unknown", props["envType"])
-	extra := props["extra"].(map[string]interface{})
-	a.Equal(2, len(extra))
-	a.Equal("bar", extra["foo"])
-	a.Equal("baz", extra["bar"])
+	checkBase(props)
 
 	props, err = app.Properties("dev")
 	require.NoError(t, err)
 	require.NotNil(t, props)
 	a.Equal(2, len(props))
 	a.Equal("development", props["envType"])
-	extra = props["extra"].(map[string]interface{})
+	extra := props["extra"].(map[string]interface{})
 	a.Equal(1, len(extra))
 	a.Equal("baz", extra["foo"])
 
@@ -141,13 +146,11 @@ func TestAppSimple(t *testing.T) {
 
 	props, err = app.Properties("_")
 	require.NoError(t, err)
-	require.NotNil(t, props)
-	a.Equal(2, len(props))
-	a.Equal("unknown", props["envType"])
-	extra = props["extra"].(map[string]interface{})
-	a.Equal(2, len(extra))
-	a.Equal("bar", extra["foo"])
-	a.Equal("baz", extra["bar"])
+	checkBase(props)
+
+	props, err = app.Properties("stage")
+	require.NoError(t, err)
+	checkBase(props)
 
 	_, err = app.Properties("foo")
 	require.Error(t, err)
@@ -157,7 +160,7 @@ func TestAppSimple(t *testing.T) {
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 
 	envs := app.Environments()
-	a.Equal(2, len(envs))
+	a.Equal(3, len(envs))
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -225,9 +228,9 @@ func TestAppComponentLoadNegative(t *testing.T) {
 	require.Nil(t, err)
 	a := assert.New(t)
 
-	_, err = app.ComponentsForEnvironment("stage", nil, nil)
+	_, err = app.ComponentsForEnvironment("boo", nil, nil)
 	require.NotNil(t, err)
-	a.Equal(`invalid environment "stage"`, err.Error())
+	a.Equal(`invalid environment "boo"`, err.Error())
 
 	_, err = app.ComponentsForEnvironment("dev", []string{"d"}, nil)
 	require.NotNil(t, err)

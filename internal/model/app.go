@@ -268,10 +268,11 @@ func (a *App) Properties(env string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	eProps := e.Properties
 	if e.Properties == nil {
-		return map[string]interface{}{}, nil
+		eProps = map[string]interface{}{}
 	}
-	return mergePatch(a.BaseProperties(), e.Properties)
+	return mergePatch(a.BaseProperties(), eProps)
 }
 
 // DefaultNamespace returns the default namespace for the environment, potentially

@@ -37,3 +37,5 @@ spec:
           bar: null
   envFiles: 
   - prod-env.yaml
+  - stage-env.yaml
+
