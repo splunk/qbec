@@ -2,49 +2,92 @@ before:
   hooks:
     - make release-notes
 builds:
-- id: qbec
-  binary: qbec
-  main: ./
-  ldflags:
-  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
-  env:
-  - CGO_ENABLED=0
-  goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
-- id: jsonnet-qbec
-  binary: jsonnet-qbec
-  main: cmd/jsonnet-qbec/main.go
-  ldflags:
-  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
-  env:
-  - CGO_ENABLED=0
-  goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
+  - id: qbec
+    binary: qbec
+    main: ./
+    ldflags:
+      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+  - id: jsonnet-qbec
+    binary: jsonnet-qbec
+    main: cmd/jsonnet-qbec/main.go
+    ldflags:
+      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
 archives:
   - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
     format: tar.gz
     format_overrides:
-    - goos: windows
-      format: zip
+      - goos: windows
+        format: zip
+brews:
+  - name: qbec
+
+    # IDs of the archives to use.
+    # Defaults to all.
+    ids:
+      - qbec
+      #- jsonnet-qbec
+
+    # Github repository to push the tap to.
+    github:
+      owner: harsimranmaan
+      name: qbec
+    url_template: "https://github.com/splunk/qbec/releases/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Allows you to set a custom download strategy. Note that you'll need
+    # to implement the strategy and add it to your tap repository.
+    # Example: http://lessthanhero.io/post/homebrew-with-private-repo-releases/
+    # Default is empty.
+    #download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+
+    # Allows you to add a custom require_relative at the top of the formula template
+    # Default is empty
+    #custom_require: custom_download_strategy
+
+    commit_author:
+      name: Harsimran Singh Maan
+      email: maan.harry@gmail.com
+
+    # Your app's homepage.
+    # Default is empty.
+    homepage: "https://qbec.io/"
+
+    description: |
+      Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
+      It is based on jsonnet and is similar to other tools in the same space like kubecfg and ksonnet.
+
+    test: |
+      system "#{bin}/qbec --version"
+
+    install: |
+      bin.install "qbec"
+
 checksum:
-  name_template: 'sha256-checksums.txt'
+  name_template: "sha256-checksums.txt"
 snapshot:
   name_template: "{{.Version}}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-    - 'README.md'
-    - '.gitignore'
-    - '^site:'
-    - '^examples:'
-    - Merge pull request
-    - Merge branch
+      - "README.md"
+      - ".gitignore"
+      - "^site:"
+      - "^examples:"
+      - Merge pull request
+      - Merge branch
