@@ -38,7 +38,7 @@ archives:
 brews:
   - name: qbec
     github:
-      owner: harsimranmaan
+      owner: splunk
       name: homebrew-tap
     url_template: https://github.com/splunk/qbec/releases/download/{{.Tag}}/{{.ArtifactName}}
 
