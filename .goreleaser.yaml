@@ -49,7 +49,7 @@ brews:
     description: Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
 
     test: |
-      system "#{bin}/qbec --version"
+      system "#{bin}/qbec version"
 
     install: |
       bin.install "qbec"
