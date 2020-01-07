@@ -46,9 +46,7 @@ brews:
       name: Harsimran Singh Maan
       email: maan.harry@gmail.com
     homepage: "https://qbec.io/"
-    description: |
-      Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
-      It is based on jsonnet and is similar to other tools in the same space like kubecfg and ksonnet.
+    description: Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
 
     test: |
       system "#{bin}/qbec --version"
