@@ -26,4 +26,4 @@ jobs:
         with:
           args: release --rm-dist --release-notes .release-notes.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_PERSONAL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
