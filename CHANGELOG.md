@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.10.4 (Jan 21, 2020)
+
+* no code changes in this release. This version will be the first to be published as a brew tap thanks to 
+  @harsimranmaan and @aaqel-s
+
 ## v0.10.3 (Dec 19, 2019)
 
 * when returning environment properties introduced in the previous release, first
