@@ -2,49 +2,65 @@ before:
   hooks:
     - make release-notes
 builds:
-- id: qbec
-  binary: qbec
-  main: ./
-  ldflags:
-  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
-  env:
-  - CGO_ENABLED=0
-  goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
-- id: jsonnet-qbec
-  binary: jsonnet-qbec
-  main: cmd/jsonnet-qbec/main.go
-  ldflags:
-  - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
-  env:
-  - CGO_ENABLED=0
-  goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
+  - id: qbec
+    binary: qbec
+    main: ./
+    ldflags:
+      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+  - id: jsonnet-qbec
+    binary: jsonnet-qbec
+    main: cmd/jsonnet-qbec/main.go
+    ldflags:
+      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
 archives:
   - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
     format: tar.gz
     format_overrides:
-    - goos: windows
-      format: zip
+      - goos: windows
+        format: zip
+
+brews:
+  - name: qbec
+    github:
+      owner: splunk
+      name: homebrew-tap
+    url_template: https://github.com/splunk/qbec/releases/download/{{.Tag}}/{{.ArtifactName}}
+    homepage: "https://qbec.io/"
+    description: Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
+
+    test: |
+      system "#{bin}/qbec version"
+
+    install: |
+      bin.install "qbec"
+
 checksum:
-  name_template: 'sha256-checksums.txt'
+  name_template: "sha256-checksums.txt"
 snapshot:
   name_template: "{{.Version}}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-    - 'README.md'
-    - '.gitignore'
-    - '^site:'
-    - '^examples:'
-    - Merge pull request
-    - Merge branch
+      - "README.md"
+      - ".gitignore"
+      - "^site:"
+      - "^examples:"
+      - Merge pull request
+      - Merge branch
