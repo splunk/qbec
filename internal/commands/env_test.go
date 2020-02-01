@@ -90,6 +90,26 @@ func TestEnvVarsJSON(t *testing.T) {
 	require.Nil(t, err)
 }
 
+func TestEnvPropsYAML(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("env", "props", "dev")
+	require.Nil(t, err)
+	out, err := s.yamlOutput()
+	require.Nil(t, err)
+	assert.True(t, len(out) > 0)
+}
+
+func TestEnvPropsJSON(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("env", "props", "dev", "-o", "json")
+	require.Nil(t, err)
+	var data interface{}
+	err = s.jsonOutput(&data)
+	require.Nil(t, err)
+}
+
 func TestEnvNegative(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -144,6 +164,42 @@ func TestEnvNegative(t *testing.T) {
 		{
 			name: "vars bad format",
 			args: []string{"env", "vars", "-o", "table", "dev"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(isUsageError(err))
+				a.Equal(`environmentVars: unsupported format "table"`, err.Error())
+			},
+		},
+		{
+			name: "props no env",
+			args: []string{"env", "props"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(isUsageError(err))
+				a.Equal(`exactly one environment required`, err.Error())
+			},
+		},
+		{
+			name: "props two envs",
+			args: []string{"env", "props", "dev", "prod"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(isUsageError(err))
+				a.Equal(`exactly one environment required`, err.Error())
+			},
+		},
+		{
+			name: "props bad env",
+			args: []string{"env", "props", "foo"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(isUsageError(err))
+				a.Equal(`invalid environment: "foo"`, err.Error())
+			},
+		},
+		{
+			name: "props bad format",
+			args: []string{"env", "props", "-o", "table", "dev"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(isUsageError(err))

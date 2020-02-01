@@ -31,7 +31,7 @@ func newEnvCommand(cp ConfigProvider) *cobra.Command {
 		Use:   "env <subcommand>",
 		Short: "environment lists and details",
 	}
-	cmd.AddCommand(newEnvListCommand(cp), newEnvVarsCommand(cp))
+	cmd.AddCommand(newEnvListCommand(cp), newEnvVarsCommand(cp), newEnvPropsCommand(cp))
 	return cmd
 }
 
@@ -186,6 +186,57 @@ func environmentVars(name string, config envVarsCommandConfig) error {
 			fmt.Fprintf(w, "%s;\n", l)
 		}
 		fmt.Fprintf(w, "export %s\n", strings.Join(vars, " "))
+	default:
+		return newUsageError(fmt.Sprintf("environmentVars: unsupported format %q", config.format))
+	}
+	return nil
+}
+
+func newEnvPropsCommand(cp ConfigProvider) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "props [-o <format>] <env>",
+		Short: "print properties for an environment",
+	}
+
+	config := envPropsCommandConfig{}
+	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable output")
+
+	cmd.RunE = func(c *cobra.Command, args []string) error {
+		config.Config = cp()
+		return wrapError(doEnvProps(args, config))
+	}
+	return cmd
+}
+
+type envPropsCommandConfig struct {
+	*Config
+	format string
+}
+
+func doEnvProps(args []string, config envPropsCommandConfig) error {
+	if len(args) != 1 {
+		return newUsageError("exactly one environment required")
+	}
+	if _, ok := config.app.Environments()[args[0]]; !ok {
+		return fmt.Errorf("invalid environment: %q", args[0])
+	}
+	return environmentProps(args[0], config)
+}
+
+func environmentProps(name string, config envPropsCommandConfig) error {
+	props, err := config.App().Properties(name)
+	if err != nil {
+		return err
+	}
+	w := config.Stdout()
+	switch config.format {
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(props)
+	case "", "yaml":
+		b, _ := yaml.Marshal(props)
+		_, _ = w.Write(b)
 	default:
 		return newUsageError(fmt.Sprintf("environmentVars: unsupported format %q", config.format))
 	}

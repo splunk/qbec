@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,6 +40,47 @@ func setPwd(t *testing.T, dir string) func() {
 		err = os.Chdir(wd)
 		require.Nil(t, err)
 	}
+}
+
+func TestDeepMerge(t *testing.T) {
+	base := `
+foo1: bar
+foo2: [ 1, 2 ]
+foo3: extra
+inner:
+  foo4: bar3
+  foo5: 10
+`
+	override := `
+foo1: bar-prime
+foo2: [3,2,1]
+foo10: extra
+inner:
+  foo0: zero
+  foo4: bar4
+`
+	expected := `
+foo1: bar-prime
+foo2:
+- 3
+- 2
+- 1
+foo3: extra
+foo10: extra
+inner:
+  foo0: zero
+  foo4: bar4
+  foo5: 10
+`
+	var baseData, overrideData map[string]interface{}
+	err := yaml.Unmarshal([]byte(base), &baseData)
+	require.NoError(t, err)
+	err = yaml.Unmarshal([]byte(override), &overrideData)
+	require.NoError(t, err)
+	ret := deepMerge(baseData, overrideData)
+	b, err := yaml.Marshal(ret)
+	require.NoError(t, err)
+	assert.Equal(t, strings.Trim(expected, "\n"), strings.Trim(string(b), "\n"))
 }
 
 func TestAppSimple(t *testing.T) {
@@ -113,7 +156,8 @@ func TestAppSimple(t *testing.T) {
 
 	checkBase := func(props map[string]interface{}) {
 		require.NotNil(t, props)
-		a.Equal(2, len(props))
+		a.Equal(3, len(props))
+		a.Equal("no-override", props["core"])
 		a.Equal("unknown", props["envType"])
 		extra := props["extra"].(map[string]interface{})
 		a.Equal(2, len(extra))
@@ -127,17 +171,20 @@ func TestAppSimple(t *testing.T) {
 	props, err = app.Properties("dev")
 	require.NoError(t, err)
 	require.NotNil(t, props)
-	a.Equal(2, len(props))
+	a.Equal(3, len(props))
+	a.Equal("no-override", props["core"])
 	a.Equal("development", props["envType"])
 	extra := props["extra"].(map[string]interface{})
-	a.Equal(1, len(extra))
+	a.Equal(2, len(extra))
 	a.Equal("baz", extra["foo"])
+	a.Equal(nil, extra["bar"])
 
 	props, err = app.Properties("prod")
 	require.NoError(t, err)
 	require.NotNil(t, props)
 	t.Log(props)
-	a.Equal(2, len(props))
+	a.Equal(3, len(props))
+	a.Equal("no-override", props["core"])
 	a.Equal("prod", props["envType"])
 	extra = props["extra"].(map[string]interface{})
 	a.Equal(2, len(extra))
