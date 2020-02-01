@@ -18,7 +18,6 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,7 +26,6 @@ import (
 	"sort"
 	"strings"
 
-	patchLib "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/sio"
@@ -238,24 +236,27 @@ func (a *App) BaseProperties() map[string]interface{} {
 	return p
 }
 
-func mergePatch(base, overrides map[string]interface{}) (map[string]interface{}, error) {
-	baseBytes, err := json.Marshal(base)
-	if err != nil {
-		return nil, errors.Wrap(err, "serialize base")
+func deepMerge(base, overrides map[string]interface{}) map[string]interface{} {
+	ret := map[string]interface{}{}
+	for k, v := range base {
+		ret[k] = v
 	}
-	overrideBytes, err := json.Marshal(overrides)
-	if err != nil {
-		return nil, errors.Wrap(err, "serialize overrides")
+	for k := range overrides {
+		v1, present := base[k]
+		v2 := overrides[k]
+		if !present {
+			ret[k] = v2
+			continue
+		}
+		v1Map, ok1 := v1.(map[string]interface{})
+		v2Map, ok2 := v2.(map[string]interface{})
+		if ok1 && ok2 {
+			ret[k] = deepMerge(v1Map, v2Map)
+			continue
+		}
+		ret[k] = v2
 	}
-	patchedBytes, err := patchLib.MergePatch(baseBytes, overrideBytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "merge patch")
-	}
-	var ret map[string]interface{}
-	if err := json.Unmarshal(patchedBytes, &ret); err != nil {
-		return nil, errors.Wrap(err, "deserialize patched object")
-	}
-	return ret, nil
+	return ret
 }
 
 // Properties returns the configured properties for the supplied environment, merge patched into
@@ -272,7 +273,7 @@ func (a *App) Properties(env string) (map[string]interface{}, error) {
 	if e.Properties == nil {
 		eProps = map[string]interface{}{}
 	}
-	return mergePatch(a.BaseProperties(), eProps)
+	return deepMerge(a.BaseProperties(), eProps), nil
 }
 
 // DefaultNamespace returns the default namespace for the environment, potentially

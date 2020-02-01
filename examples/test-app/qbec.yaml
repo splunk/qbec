@@ -12,6 +12,7 @@ spec:
   excludes:
   - service2
   baseProperties:
+    core: no-override
     envType: unknown
     extra:
       foo: bar
