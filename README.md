@@ -15,6 +15,17 @@ It is based on [jsonnet](https://jsonnet.org) and is similar to other tools in t
 
 For more info, [read the docs](https://qbec.io/)
 
+### Installing
+
+Use a prebuilt binary [from the releases page](https://github.com/splunk/qbec/releases) for your operating system.
+
+On MacOS, you can install qbec using homebrew:
+
+```
+$ brew tap splunk/tap 
+$ brew install qbec
+```
+
 ### Building from source
 
 ```shell

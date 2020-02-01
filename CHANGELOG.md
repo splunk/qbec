@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.10.5 (Feb 1, 2020)
+
+* change alogirthm of merging environment properties with base properties to not use a merge patch. This means that
+  `null`s in property values will be retained. 
+
 ## v0.10.4 (Jan 21, 2020)
 
 * no code changes in this release. This version will be the first to be published as a brew tap thanks to 
