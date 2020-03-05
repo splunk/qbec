@@ -16,20 +16,20 @@ spec:
   postProcessor: pp.jsonnet    # post processor file for injecting common metadata
 
   # additional library paths when executing jsonnet, no support currently for `http` URLs.
-  libPaths: 
+  libPaths:
   - additional
   - local
   - library
   - paths
 
   # list of components to exclude by default
-  excludes: 
+  excludes:
   - default
   - excluded
   - components
 
   # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
-  vars: 
+  vars:
     # external variables are accessed as std.extVar('var-name')
     external:
       - name: imageTag # the name of the external variable passed in using --vm:ext-str and related options
@@ -68,11 +68,11 @@ spec:
       properties: # arbitrary properties can be attached to environments
         foo: bar
 
-    # additional environments can be loaded from files. Files are loaded in the order specified.
-    # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
-    # The file path is relative to the directory where qbec.yaml resides.
-    envFiles:
-    - more-envs.yaml
+  # additional environments can be loaded from files. Files are loaded in the order specified.
+  # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
+  # The file path is relative to the directory where qbec.yaml resides.
+  envFiles:
+  - more-envs.yaml
 ```
 
 ### Environment files
@@ -92,7 +92,6 @@ spec:
       properties:
         foo: bar
 ```
-
 
 ### Notes
 
