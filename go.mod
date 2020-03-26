@@ -1,6 +1,6 @@
 module github.com/splunk/qbec
 
-go 1.12
+go 1.14
 
 require (
 	cloud.google.com/go v0.44.3 // indirect
