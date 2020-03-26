@@ -150,6 +150,11 @@ func TestAppSimple(t *testing.T) {
 	a.Equal("default", app.DefaultNamespace("dev"))
 	a.Equal("", app.Tag())
 
+	app.SetOverrideNamespace("")
+	a.Equal("default", app.DefaultNamespace("dev"))
+	app.SetOverrideNamespace("foobar")
+	a.Equal("foobar", app.DefaultNamespace("dev"))
+
 	_, err = app.ServerURL("devx")
 	require.NotNil(t, err)
 	a.Equal(`invalid environment "devx"`, err.Error())
