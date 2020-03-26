@@ -69,10 +69,6 @@ type stdClientProvider struct {
 
 func (s stdClientProvider) wrapOpts(opts remote.ConnectOpts) remote.ConnectOpts {
 	opts.ForceContext = s.force.K8sContext
-	if s.force.K8sNamespace != "" {
-		sio.Warnln("force default namespace to", s.force.K8sNamespace)
-		opts.Namespace = s.force.K8sNamespace
-	}
 	opts.Verbosity = s.verbosity
 	return opts
 }
@@ -274,7 +270,7 @@ func (c Config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		Tag:             c.App().Tag(),
 		Env:             env,
 		EnvPropsJSON:    string(p),
-		DefaultNs:       c.app.DefaultNamespace(env),
+		DefaultNs:       c.App().DefaultNamespace(env),
 		VMConfig:        c.vmConfig,
 		Verbose:         c.Verbosity() > 1,
 		Concurrency:     c.EvalConcurrency(),

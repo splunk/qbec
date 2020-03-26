@@ -158,15 +158,17 @@ func setup(root *cobra.Command) {
 		if err := setWorkDir(rootDir); err != nil {
 			return err
 		}
+		forceOpts := forceOptsFn()
 		app, err := model.NewApp("qbec.yaml", appTag)
 		if err != nil {
 			return err
 		}
+		app.SetOverrideNamespace(forceOpts.K8sNamespace)
 		vmConfig, err := vmConfigFn()
 		if err != nil {
 			return commands.NewRuntimeError(err)
 		}
-		cmdCfg, err = cp.Config(app, vmConfig, remoteConfig, forceOptsFn())
+		cmdCfg, err = cp.Config(app, vmConfig, remoteConfig, forceOpts)
 		return err
 	}
 	commands.Setup(root, func() *commands.Config {

@@ -56,6 +56,7 @@ type Component struct {
 // App is a qbec application wrapped with some runtime attributes.
 type App struct {
 	inner             QbecApp              // the app object from serialization
+	overrideNs        string               // any override to the default namespace
 	tag               string               // the tag to be used for the current command invocation
 	root              string               // derived root directory of the app
 	allComponents     map[string]Component // all components whether or not included anywhere
@@ -176,6 +177,15 @@ func NewApp(file string, tag string) (*App, error) {
 	return &app, nil
 }
 
+// SetOverrideNamespace sets an override namespace that is returned in preference to the value
+// configured in qbec.yaml for any environment.
+func (a *App) SetOverrideNamespace(ns string) {
+	if ns != "" {
+		sio.Warnln("force default namespace to", ns)
+	}
+	a.overrideNs = ns
+}
+
 func (a *App) setupDefaults() {
 	if a.inner.Spec.ComponentsDir == "" {
 		a.inner.Spec.ComponentsDir = DefaultComponentsDir
@@ -279,13 +289,17 @@ func (a *App) Properties(env string) (map[string]interface{}, error) {
 // DefaultNamespace returns the default namespace for the environment, potentially
 // suffixing it with any app-tag, if configured.
 func (a *App) DefaultNamespace(env string) string {
-	envObj, ok := a.inner.Spec.Environments[env]
 	var ns string
-	if ok {
-		ns = envObj.DefaultNamespace
-	}
-	if ns == "" {
-		ns = "default"
+	if a.overrideNs != "" {
+		ns = a.overrideNs
+	} else {
+		envObj, ok := a.inner.Spec.Environments[env]
+		if ok {
+			ns = envObj.DefaultNamespace
+		}
+		if ns == "" {
+			ns = "default"
+		}
 	}
 	if a.tag != "" && a.inner.Spec.NamespaceTagSuffix {
 		ns += "-" + a.tag
