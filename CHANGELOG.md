@@ -1,6 +1,15 @@
 Changelog
 ---
 
+## v0.11.0 (Mar 26, 2020)
+
+There are no backwards-incompatible changes in this release. The minor version upgrade is to account for any
+inadvertent incompatibilities introduced by the jsonnet library upgrade.
+
+* Fix a bug with namespace forced on the command line not being used in every place that it should have, especially
+  when setting the `qbec.io/defaultNs` external variable.
+* Upgrade jsonnet to v0.15.0
+
 ## v0.10.5 (Feb 1, 2020)
 
 * change alogirthm of merging environment properties with base properties to not use a merge patch. This means that
