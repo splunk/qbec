@@ -32,7 +32,7 @@ func TestConfigCreate(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml", "t1")
+	app, err := model.NewApp("qbec.yaml", nil, "t1")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
@@ -78,7 +78,7 @@ func TestConfigCreate(t *testing.T) {
 func TestConfigStrictVarsPass(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml", "")
+	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
@@ -98,7 +98,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml", "")
+	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
@@ -128,7 +128,7 @@ func TestConfigConfirm(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
 	defer fn()
-	app, err := model.NewApp("qbec.yaml", "")
+	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}

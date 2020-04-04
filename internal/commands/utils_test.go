@@ -291,7 +291,7 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		dir = "../../examples/test-app"
 	}
 	reset := setPwd(t, dir)
-	app, err := model.NewApp("qbec.yaml", "")
+	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	out := bytes.NewBuffer(nil)
 

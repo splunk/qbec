@@ -43,6 +43,10 @@ func defaultRoot() string {
 	return envOrDefault("QBEC_ROOT", "")
 }
 
+func defaultEnvironmentFile() string {
+	return envOrDefault("QBEC_ENV_FILE", "")
+}
+
 func skipPrompts() bool {
 	return os.Getenv("QBEC_YES") == "true"
 }
@@ -130,6 +134,7 @@ func setup(root *cobra.Command) {
 	var cp commands.ConfigFactory
 	var rootDir string
 	var appTag string
+	var envFile string
 
 	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
@@ -143,6 +148,7 @@ func setup(root *cobra.Command) {
 	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
 	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
+	root.PersistentFlags().StringVarP(&envFile, "env-file", "E", defaultEnvironmentFile(), "use additional environment file not declared in qbec.yaml")
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
@@ -155,11 +161,22 @@ func setup(root *cobra.Command) {
 			cp.Colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
 		sio.EnableColors = cp.Colors
+
+		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
+		// directory before we change it
+		var envFiles []string
+		if envFile != "" {
+			abs, err := filepath.Abs(envFile)
+			if err != nil {
+				return err
+			}
+			envFiles = append(envFiles, abs)
+		}
 		if err := setWorkDir(rootDir); err != nil {
 			return err
 		}
 		forceOpts := forceOptsFn()
-		app, err := model.NewApp("qbec.yaml", appTag)
+		app, err := model.NewApp("qbec.yaml", envFiles, appTag)
 		if err != nil {
 			return err
 		}

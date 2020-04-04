@@ -86,7 +86,7 @@ inner:
 func TestAppSimple(t *testing.T) {
 	reset := setPwd(t, "../../examples/test-app")
 	defer reset()
-	app, err := NewApp("qbec.yaml", "")
+	app, err := NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.Equal("example1", app.Name())
@@ -228,9 +228,10 @@ func TestAppWarnings(t *testing.T) {
 
 	buf := bytes.NewBuffer(nil)
 	sio.Output = buf
-	app, err := NewApp("app-warn.yaml", "foobar")
+	app, err := NewApp("app-warn.yaml", []string{"envs/override-dev.yaml"}, "foobar")
 	require.Nil(t, err)
 	a.Contains(buf.String(), "[warn] override env definition 'dev' from file dev2.yaml (previous: inline)")
+	a.Contains(buf.String(), "[warn] override env definition 'dev' from file envs/override-dev.yaml (previous: dev2.yaml)")
 
 	buf = bytes.NewBuffer(nil)
 	sio.Output = buf
@@ -254,7 +255,7 @@ func TestAppWarnings(t *testing.T) {
 func TestAppComponentLoadSubdirs(t *testing.T) {
 	reset := setPwd(t, "testdata/subdir-app")
 	defer reset()
-	app, err := NewApp("qbec.yaml", "")
+	app, err := NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
 	require.Nil(t, err)
@@ -276,7 +277,7 @@ func TestAppComponentLoadSubdirs(t *testing.T) {
 func TestAppComponentLoadNegative(t *testing.T) {
 	reset := setPwd(t, "../../examples/test-app")
 	defer reset()
-	app, err := NewApp("qbec.yaml", "")
+	app, err := NewApp("qbec.yaml", nil, "")
 	require.Nil(t, err)
 	a := assert.New(t)
 
@@ -304,6 +305,7 @@ func TestAppNegative(t *testing.T) {
 	tests := []struct {
 		tag      string
 		file     string
+		envFiles []string
 		asserter func(t *testing.T, err error)
 	}{
 		{
@@ -409,11 +411,18 @@ func TestAppNegative(t *testing.T) {
 				assert.Contains(t, err.Error(), "invalid-env.yaml, 1 schema validation error(s): spec.foo in body is a forbidden property")
 			},
 		},
+		{
+			file:     "app-warn.yaml",
+			envFiles: []string{"foobar.yaml"},
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "open foobar.yaml")
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
-			_, err := NewApp(test.file, test.tag)
+			_, err := NewApp(test.file, test.envFiles, test.tag)
 			require.NotNil(t, err)
 			test.asserter(t, err)
 		})

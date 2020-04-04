@@ -72,7 +72,7 @@ func makeValError(file string, errs []error) error {
 
 }
 
-func loadEnvFiles(app *QbecApp, v *validator) error {
+func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	if app.Spec.Environments == nil {
 		app.Spec.Environments = map[string]Environment{}
 	}
@@ -81,7 +81,11 @@ func loadEnvFiles(app *QbecApp, v *validator) error {
 		sources[k] = "inline"
 	}
 
-	for _, file := range app.Spec.EnvFiles {
+	var allFiles []string
+	allFiles = append(allFiles, app.Spec.EnvFiles...)
+	allFiles = append(allFiles, additionalFiles...)
+
+	for _, file := range allFiles {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
 			return err
@@ -107,7 +111,7 @@ func loadEnvFiles(app *QbecApp, v *validator) error {
 }
 
 // NewApp returns an app loading its details from the supplied file.
-func NewApp(file string, tag string) (*App, error) {
+func NewApp(file string, envFiles []string, tag string) (*App, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -127,7 +131,7 @@ func NewApp(file string, tag string) (*App, error) {
 		return nil, makeValError(file, errs)
 	}
 
-	if err := loadEnvFiles(&qApp, v); err != nil {
+	if err := loadEnvFiles(&qApp, envFiles, v); err != nil {
 		return nil, err
 	}
 
