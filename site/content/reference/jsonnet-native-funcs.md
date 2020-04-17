@@ -15,8 +15,8 @@ available in the PATH.
 ### Usage
 ```
     local expandHelmTemplate = std.native('expandHelmTemplate');
-    expandHelmTemplate("path/to/chart", 
-        { 
+    expandHelmTemplate("path/to/chart",
+        {
             chartProperty: 'chart-value'
         },
         {
@@ -54,7 +54,7 @@ The `parseJson` function parses a JSON-encoded string and returns the correspond
 ```
     local parseJson = std.native('parseJson');
     local jsonString = '{ "hello" : "world" }';
-    
+
     parseJson(jsonString) // returns the _object_ { hello: 'world' }
 ```
 
@@ -63,12 +63,14 @@ The `parseJson` function parses a JSON-encoded string and returns the correspond
 The `parseYaml` function parses an input string into an array of YAML documents. It _always_ returns an array
 even if there is only one YAML document in the string.
 
+## uuid
+
+The `uuid` function returns a UUID string as specified in [RFC4122](https://tools.ietf.org/html/rfc4122).
+
 ### Usage
 ```
     local parseYaml = std.native('parseYaml');
     local yamlString = importstr './path/to/yaml/file';
-    
+
     parseYaml(yamlString) // returns all YAML docs as an array
 ```
-
-
