@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -103,6 +104,17 @@ func registerNativeFuncs(vm *jsonnet.VM) {
 				return nil, errors.Wrap(err, "unmarshal options from JSON")
 			}
 			return expandHelmTemplate(chart, values, h)
+		},
+	})
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "uuid",
+		Params: []ast.Identifier{},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			var u uuid.UUID
+			if u, err = uuid.NewRandom(); err != nil {
+				return "", err
+			}
+			return u.String(), nil
 		},
 	})
 

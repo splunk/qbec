@@ -16,9 +16,11 @@
 package vm
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/uuid"
 )
 
 // copied from original code at https://github.com/ksonnet/kubecfg/blob/master/utils/nativefuncs_test.go
@@ -111,4 +113,14 @@ func TestRegexQuoteMeta(t *testing.T) {
 	registerNativeFuncs(vm)
 	x, err := vm.EvaluateSnippet("test", `std.native("escapeStringRegex")("[f]")`)
 	check(t, err, x, `"\\[f\\]"`+"\n")
+}
+
+func TestUUID(t *testing.T) {
+	vm := jsonnet.MakeVM()
+	registerNativeFuncs(vm)
+	x, err := vm.EvaluateSnippet("test", `std.native("uuid")()`)
+	check(t, err, strconv.Itoa(len(x)), "39")
+	// Parse without quotes
+	u, err := uuid.Parse(x[1:37])
+	check(t, err, u.Variant().String(), uuid.RFC4122.String())
 }
