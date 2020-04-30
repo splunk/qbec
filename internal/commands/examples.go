@@ -67,6 +67,17 @@ func showExamples() string {
 	)
 }
 
+func fmtExamples() string {
+	return exampleHelp(
+		newExample("alpha fmt yaml", "format all yaml files to stdout"),
+		newExample("alpha fmt jsonnet", "format all jsonnet and libsonnet files to stdout"),
+		newExample("alpha fmt yaml -f somefolder -f file1.yaml -f file2.yml", "format all yaml files in the somefolder, file1.yaml and file2.yml files to stdout"),
+		newExample("alpha fmt jsonnet -f somefolder -f file1.jsonnet -f file2.libsonnet", "format all jsonnet and libsonnet files in the somefolder, file1.jsonnet and file2.libsonnet files to stdout"),
+		newExample("alpha fmt -w", "format all files in-place"),
+		newExample("alpha fmt -e", "check if all files are formatted well. Non zero exit code in case a unformatted file is found"),
+	)
+}
+
 func deleteExamples() string {
 	return exampleHelp(
 		newExample("delete dev", "delete all objects created for the dev environment"),

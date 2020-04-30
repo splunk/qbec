@@ -110,6 +110,9 @@ func setupCommands(root *cobra.Command, cp configProvider) {
 	root.AddCommand(newEnvCommand(cp))
 	root.AddCommand(newInitCommand())
 	root.AddCommand(newCompletionCommand(root))
+	alplhaCmd := newAlphaCommand()
+	alplhaCmd.AddCommand(newFmtCommand(cp))
+	root.AddCommand(alplhaCmd)
 }
 
 type worker func(object model.K8sLocalObject) error

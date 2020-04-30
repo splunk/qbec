@@ -1,6 +1,6 @@
 {
     apiVersion: 'v1',
-    kind: 'ConfigMap'
+    kind: 'ConfigMap',
     metadata: {
         name: 'cm2',
     },
@@ -8,4 +8,3 @@
         foo: std.extVar('extFoo'),
     },
 }
-
