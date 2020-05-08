@@ -638,7 +638,15 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#install-manually">Install manually</a></li>
+<li><a href="#install-using-brew">Install using brew</a></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -656,11 +664,23 @@
         
 
 
+
+
+<h2 id="install-manually">Install manually</h2>
+
 <ul>
 <li>Download a release binary for your operating system from the <a href="https://github.com/splunk/qbec/releases">github release page</a>.</li>
 <li>unzip the archive. This should have 2 executables <code>qbec</code> and <code>jsonnet-qbec</code></li>
 <li>install the <code>qbec</code> executable somewhere under your <code>PATH</code>.</li>
 </ul>
+
+<h2 id="install-using-brew">Install using brew</h2>
+
+<p>If you have homebrew installed, you can install <code>qbec</code> with the following commands:</p>
+
+<pre><code>$ brew tap splunk/tap
+$ brew install qbec
+</code></pre>
 
 <p>You are now ready to start <a href="../userguide/tour/">the tour</a>.</p>
 
