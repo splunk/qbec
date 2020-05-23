@@ -53,7 +53,7 @@ func (a *applyStats) update(name string, s *remote.SyncResult) {
 }
 
 type applyCommandConfig struct {
-	*Config
+	*config
 	syncOptions remote.SyncOptions
 	gc          bool
 	wait        bool
@@ -105,7 +105,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
+	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	var all []model.K8sLocalObject
 	var retainObjects []model.K8sLocalObject
 	if config.gc {
-		all, err = allObjects(config.Config, env)
+		all, err = allObjects(config.config, env)
 		if err != nil {
 			return err
 		}
@@ -234,7 +234,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	return nil
 }
 
-func newApplyCommand(cp ConfigProvider) *cobra.Command {
+func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "apply [-n] <environment>",
 		Short:   "apply one or more components to a Kubernetes cluster",
@@ -254,7 +254,7 @@ func newApplyCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		var err error
 		config.waitTimeout, err = time.ParseDuration(waitTime)
 		if err != nil {

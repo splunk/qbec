@@ -1,35 +1,85 @@
-/*
-   Copyright 2019 Splunk Inc.
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-package main
+package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/splunk/qbec/internal/commands"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 )
+
+var (
+	version         = "dev"
+	commit          = "dev"
+	goVersion       = "unknown"
+	jsonnetVersion  = "v0.15.0"           // update this when library dependency is upgraded
+	clientGoVersion = "kubernetes-1.15.5" // ditto when client go dep is upgraded
+)
+
+// Executable is the name of the qbec executable.
+var Executable = "qbec"
+
+func newVersionCommand() *cobra.Command {
+	var jsonOutput bool
+
+	c := &cobra.Command{
+		Use:   "version",
+		Short: "print program version",
+		Run: func(c *cobra.Command, args []string) {
+			if jsonOutput {
+				out := struct {
+					Qbec     string `json:"qbec"`
+					Jsonnet  string `json:"jsonnet"`
+					ClientGo string `json:"client-go"`
+					Go       string `json:"go"`
+					Commit   string `json:"commit"`
+				}{
+					Qbec:     version,
+					Jsonnet:  jsonnetVersion,
+					ClientGo: clientGoVersion,
+					Go:       goVersion,
+					Commit:   commit,
+				}
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				if err := enc.Encode(out); err != nil {
+					log.Fatalln(err)
+				}
+				return
+			}
+			fmt.Printf("%s version: %s\njsonnet version: %s\nclient-go version: %s\ngo version: %s\ncommit: %s\n",
+				Executable,
+				version,
+				jsonnetVersion,
+				clientGoVersion,
+				goVersion,
+				commit,
+			)
+		},
+	}
+	c.Flags().BoolVar(&jsonOutput, "json", false, "print versions in JSON format")
+	return c
+}
+
+func newOptionsCommand(root *cobra.Command) *cobra.Command {
+	leader := fmt.Sprintf("All %s commands accept the following options (some may not use them unless relevant):\n", root.CommandPath())
+	trailer := "Note: using options that begin with 'force:' will cause qbec to drop its safety checks. Use with care."
+	cmd := &cobra.Command{
+		Use:   "options",
+		Short: "print global options for program",
+		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
+	}
+	return cmd
+}
 
 func envOrDefault(name, def string) string {
 	v := os.Getenv(name)
@@ -128,39 +178,39 @@ func setWorkDir(specified string) error {
 	}
 }
 
-// setup sets up all sub-commands for the supplied root command and adds facilities for commands
+// Setup sets up all sub-commands for the supplied root command and adds facilities for commands
 // to access common options.
-func setup(root *cobra.Command) {
-	var cp commands.ConfigFactory
+func Setup(root *cobra.Command) {
+	var cp configFactory
 	var rootDir string
 	var appTag string
 	var envFile string
 
 	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
-	forceOptsFn := commands.ForceOptionsConfig(root, "force:")
+	forceOptsFn := addForceOptions(root, "force:")
 
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
-	root.PersistentFlags().IntVarP(&cp.Verbosity, "verbose", "v", 0, "verbosity level")
-	root.PersistentFlags().BoolVar(&cp.Colors, "colors", false, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&cp.SkipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true")
-	root.PersistentFlags().BoolVar(&cp.StrictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
-	root.PersistentFlags().IntVar(&cp.EvalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
+	root.PersistentFlags().IntVarP(&cp.verbosity, "verbose", "v", 0, "verbosity level")
+	root.PersistentFlags().BoolVar(&cp.colors, "colors", false, "colorize output (set automatically if not specified)")
+	root.PersistentFlags().BoolVar(&cp.skipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true")
+	root.PersistentFlags().BoolVar(&cp.strictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
+	root.PersistentFlags().IntVar(&cp.evalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
 	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
 	root.PersistentFlags().StringVarP(&envFile, "env-file", "E", defaultEnvironmentFile(), "use additional environment file not declared in qbec.yaml")
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
-	var cmdCfg *commands.Config
+	var cmdCfg *config
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion" { // don't make these commands dependent on work dir
 			return nil
 		}
 		if !cmd.Flags().Changed("colors") {
-			cp.Colors = isatty.IsTerminal(os.Stdout.Fd())
+			cp.colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
-		sio.EnableColors = cp.Colors
+		sio.EnableColors = cp.colors
 
 		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
 		// directory before we change it
@@ -180,25 +230,25 @@ func setup(root *cobra.Command) {
 			return err
 		}
 		forceOpts := forceOptsFn()
-		if forceOpts.K8sNamespace == remote.ForceCurrentNamespace {
-			if forceOpts.K8sContext != remote.ForceCurrentContext {
+		if forceOpts.k8sNamespace == remote.ForceCurrentNamespace {
+			if forceOpts.k8sContext != remote.ForceCurrentContext {
 				return fmt.Errorf("current namespace can only be forced when the context is also forced to current")
 			}
 			cc, err := remote.CurrentContextInfo()
 			if err != nil {
 				return err
 			}
-			forceOpts.K8sNamespace = cc.Namespace
+			forceOpts.k8sNamespace = cc.Namespace
 		}
-		app.SetOverrideNamespace(forceOpts.K8sNamespace)
+		app.SetOverrideNamespace(forceOpts.k8sNamespace)
 		vmConfig, err := vmConfigFn()
 		if err != nil {
-			return commands.NewRuntimeError(err)
+			return newRuntimeError(err)
 		}
-		cmdCfg, err = cp.Config(app, vmConfig, remoteConfig, forceOpts)
+		cmdCfg, err = cp.getConfig(app, vmConfig, remoteConfig, forceOpts)
 		return err
 	}
-	commands.Setup(root, func() *commands.Config {
+	setupCommands(root, func() *config {
 		return cmdCfg
 	})
 }

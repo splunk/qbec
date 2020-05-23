@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newEnvCommand(cp ConfigProvider) *cobra.Command {
+func newEnvCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "env <subcommand>",
 		Short: "environment lists and details",
@@ -36,11 +36,11 @@ func newEnvCommand(cp ConfigProvider) *cobra.Command {
 }
 
 type envListCommandConfig struct {
-	*Config
+	*config
 	format string
 }
 
-func newEnvListCommand(cp ConfigProvider) *cobra.Command {
+func newEnvListCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list [-o <format>]",
 		Short:   "list all environments in short, json or yaml format",
@@ -51,7 +51,7 @@ func newEnvListCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doEnvList(args, config))
 	}
 	return cmd
@@ -68,7 +68,7 @@ type displayEnvList struct {
 }
 
 func listEnvironments(config envListCommandConfig) error {
-	app := config.Config.App()
+	app := config.config.App()
 	var list []displayEnv
 	for name, obj := range app.Environments() {
 		defNs := obj.DefaultNamespace
@@ -113,7 +113,7 @@ func doEnvList(args []string, config envListCommandConfig) error {
 	return listEnvironments(config)
 }
 
-func newEnvVarsCommand(cp ConfigProvider) *cobra.Command {
+func newEnvVarsCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "vars [-o <format>] <env>",
 		Short:   "print variables for kubeconfig, context and cluster for an environment",
@@ -124,14 +124,14 @@ func newEnvVarsCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doEnvVars(args, config))
 	}
 	return cmd
 }
 
 type envVarsCommandConfig struct {
-	*Config
+	*config
 	format string
 }
 
@@ -192,7 +192,7 @@ func environmentVars(name string, config envVarsCommandConfig) error {
 	return nil
 }
 
-func newEnvPropsCommand(cp ConfigProvider) *cobra.Command {
+func newEnvPropsCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "props [-o <format>] <env>",
 		Short: "print properties for an environment",
@@ -202,14 +202,14 @@ func newEnvPropsCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doEnvProps(args, config))
 	}
 	return cmd
 }
 
 type envPropsCommandConfig struct {
-	*Config
+	*config
 	format string
 }
 

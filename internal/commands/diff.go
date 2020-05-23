@@ -118,7 +118,7 @@ func (d *diffStats) done() {
 
 type differ struct {
 	w           io.Writer
-	client      Client
+	client      kubeClient
 	opts        diff.Options
 	stats       diffStats
 	ignores     diffIgnores
@@ -262,7 +262,7 @@ func (d *differ) diffLocal(ob model.K8sLocalObject) error {
 }
 
 type diffCommandConfig struct {
-	*Config
+	*config
 	showDeletions bool
 	showSecrets   bool
 	parallel      int
@@ -290,7 +290,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
+	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -299,7 +299,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 	var all []model.K8sLocalObject
 	var retainObjects []model.K8sLocalObject
 	if config.showDeletions {
-		all, err = allObjects(config.Config, env)
+		all, err = allObjects(config.config, env)
 		if err != nil {
 			return err
 		}
@@ -372,7 +372,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 	}
 }
 
-func newDiffCommand(cp ConfigProvider) *cobra.Command {
+func newDiffCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diff <environment>",
 		Short:   "diff one or more components against objects in a Kubernetes cluster",
@@ -392,7 +392,7 @@ func newDiffCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doDiff(args, config))
 	}
 	return cmd

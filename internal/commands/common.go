@@ -58,8 +58,8 @@ type runtimeError struct {
 	error
 }
 
-// NewRuntimeError returns a runtime error
-func NewRuntimeError(err error) error {
+// newRuntimeError returns a runtime error
+func newRuntimeError(err error) error {
 	return &runtimeError{
 		error: err,
 	}
@@ -79,11 +79,11 @@ func wrapError(err error) error {
 	if isUsageError(err) {
 		return err
 	}
-	return NewRuntimeError(err)
+	return newRuntimeError(err)
 }
 
-// Client encapsulates all remote operations needed for the superset of all commands.
-type Client interface {
+// kubeClient encapsulates all remote operations needed for the superset of all commands.
+type kubeClient interface {
 	DisplayName(o model.K8sMeta) string
 	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
 	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
@@ -95,11 +95,11 @@ type Client interface {
 	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 }
 
-// ConfigProvider provides standard configuration available to all commands
-type ConfigProvider func() *Config
+// configProvider provides standard configuration available to all commands
+type configProvider func() *config
 
-// Setup sets up all subcommands for the supplied root command.
-func Setup(root *cobra.Command, cp ConfigProvider) {
+// setupCommands sets up all subcommands for the supplied root command.
+func setupCommands(root *cobra.Command, cp configProvider) {
 	root.AddCommand(newApplyCommand(cp))
 	root.AddCommand(newValidateCommand(cp))
 	root.AddCommand(newShowCommand(cp))

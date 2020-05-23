@@ -296,7 +296,7 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 	out := bytes.NewBuffer(nil)
 
 	c := &client{}
-	clientProvider := func(env string) (Client, error) { return c, nil }
+	clientProvider := func(env string) (kubeClient, error) { return c, nil }
 	attrsProvider := func(env string) (*remote.KubeAttributes, error) {
 		return &remote.KubeAttributes{
 			Context:    "foo",
@@ -305,18 +305,18 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 			Cluster:    "dev.server.com",
 		}, nil
 	}
-	cp := ConfigFactory{
-		Stdout:      out,
-		SkipConfirm: true,
-		Colors:      false,
+	cp := configFactory{
+		stdout:      out,
+		skipConfirm: true,
+		colors:      false,
 	}
-	config, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider)
+	cfg, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider)
 	require.Nil(t, err)
 
 	cmd := &cobra.Command{
 		Use: "qbec-test",
 	}
-	Setup(cmd, func() *Config { return config })
+	setupCommands(cmd, func() *config { return cfg })
 	cmd.SetOutput(out)
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = true
