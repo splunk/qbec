@@ -175,10 +175,20 @@ func setup(root *cobra.Command) {
 		if err := setWorkDir(rootDir); err != nil {
 			return err
 		}
-		forceOpts := forceOptsFn()
 		app, err := model.NewApp("qbec.yaml", envFiles, appTag)
 		if err != nil {
 			return err
+		}
+		forceOpts := forceOptsFn()
+		if forceOpts.K8sNamespace == remote.ForceCurrentNamespace {
+			if forceOpts.K8sContext != remote.ForceCurrentContext {
+				return fmt.Errorf("current namespace can only be forced when the context is also forced to current")
+			}
+			cc, err := remote.CurrentContextInfo()
+			if err != nil {
+				return err
+			}
+			forceOpts.K8sNamespace = cc.Namespace
 		}
 		app.SetOverrideNamespace(forceOpts.K8sNamespace)
 		vmConfig, err := vmConfigFn()

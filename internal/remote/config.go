@@ -35,6 +35,7 @@ import (
 const (
 	ForceInClusterContext = "__incluster__"
 	ForceCurrentContext   = "__current__"
+	ForceCurrentNamespace = "__current__"
 )
 
 // inspired by the config code in ksonnet but implemented differently.

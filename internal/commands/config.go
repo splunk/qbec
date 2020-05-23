@@ -55,7 +55,8 @@ func ForceOptionsConfig(cmd *cobra.Command, prefix string) func() ForceOptions {
 		remote.ForceInClusterContext, remote.ForceCurrentContext)
 	pf := cmd.PersistentFlags()
 	pf.StringVar(&f.K8sContext, prefix+"k8s-context", "", ctxUsage)
-	pf.StringVar(&f.K8sNamespace, prefix+"k8s-namespace", "", "override default namespace for environment with supplied value")
+	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", remote.ForceCurrentNamespace)
+	pf.StringVar(&f.K8sNamespace, prefix+"k8s-namespace", "", nsUsage)
 	return func() ForceOptions { return f }
 }
 
