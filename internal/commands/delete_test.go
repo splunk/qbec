@@ -35,7 +35,7 @@ func TestDeleteRemote(t *testing.T) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy", "Deployment:bar-system:svc2-deploy"}, stats["deleted"])
@@ -51,7 +51,7 @@ func TestDeleteRemoteComponentFilter(t *testing.T) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "-c", "service2")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deleted"])
@@ -66,7 +66,7 @@ func TestDeleteLocal(t *testing.T) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "--local", "-C", "cluster-objects")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-deploy", "Secret:bar-system:svc2-secret", "ConfigMap:bar-system:svc2-cm"}, stats["deleted"])

@@ -31,7 +31,7 @@ func TestParamListBasic(t *testing.T) {
 	defer func() { maxDisplayValueLength = orig }()
 	maxDisplayValueLength = 10
 	err := s.executeCommand("param", "list", "dev")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`COMPONENT\s+NAME\s+VALUE`))
 	s.assertOutputLineMatch(regexp.MustCompile(`service2\s+cpu\s+"50m"`))
 	s.assertOutputLineMatch(regexp.MustCompile(`service2\s+memory\s+"8Gi"`))
@@ -42,7 +42,7 @@ func TestParamListFilter(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("param", "list", "dev", "-C", "service2")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`COMPONENT\s+NAME\s+VALUE`))
 	s.assertOutputLineNoMatch(regexp.MustCompile(`service2`))
 }
@@ -51,9 +51,9 @@ func TestParamListYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("param", "list", "dev", "-o", "yaml")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	out, err := s.yamlOutput()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, len(out) > 0)
 }
 
@@ -61,17 +61,17 @@ func TestParamListJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("param", "list", "dev", "-o", "json")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestParamDiffBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("param", "diff", "dev")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`--- baseline`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+\+\+ environment: dev`))
 	s.assertOutputLineMatch(regexp.MustCompile(`-service2\s+cpu\s+"100m"`))
@@ -82,7 +82,7 @@ func TestParamDiff2Envs(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("params", "diff", "dev", "prod")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`--- environment: dev`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+\+\+ environment: prod`))
 	s.assertOutputLineMatch(regexp.MustCompile(`-service1\s+cpu\s+"10m"`))

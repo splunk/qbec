@@ -33,7 +33,7 @@ func TestConfigCreate(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "t1")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -52,7 +52,7 @@ func TestConfigCreate(t *testing.T) {
 	}
 
 	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	a.Equal(4, cfg.Verbosity())
 	a.Equal(7, cfg.EvalConcurrency())
 	a.Equal(app, cfg.App())
@@ -79,7 +79,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -91,7 +91,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	}
 
 	_, err = f.getConfig(app, vmc, rc, forceOptions{})
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestConfigStrictVarsFail(t *testing.T) {
@@ -99,7 +99,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -129,7 +129,7 @@ func TestConfigConfirm(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -141,10 +141,10 @@ func TestConfigConfirm(t *testing.T) {
 		stderr:      &stderr,
 	}
 	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	cfg.stdin = stdin
 	err = cfg.Confirm("we will destroy you")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	cfg.stdin = bytes.NewReader([]byte(""))
 	err = cfg.Confirm("we will destroy you")

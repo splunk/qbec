@@ -193,10 +193,7 @@ func setWorkDir(specified string) error {
 	}
 }
 
-// Setup sets up all sub-commands for the supplied root command and adds facilities for commands
-// to access common options.
-func Setup(root *cobra.Command) {
-	var cp configFactory
+func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, overrideAttrs func(env string) (*remote.KubeAttributes, error)) {
 	var rootDir string
 	var appTag string
 	var envFile string
@@ -207,11 +204,11 @@ func Setup(root *cobra.Command) {
 
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
-	root.PersistentFlags().IntVarP(&cp.verbosity, "verbose", "v", 0, "verbosity level")
-	root.PersistentFlags().BoolVar(&cp.colors, "colors", false, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&cp.skipConfirm, "yes", skipPrompts(), "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true")
-	root.PersistentFlags().BoolVar(&cp.strictVars, "strict-vars", false, "require declared variables to be specified, do not allow undeclared variables")
-	root.PersistentFlags().IntVar(&cp.evalConcurrency, "eval-concurrency", 5, "concurrency with which to evaluate components")
+	root.PersistentFlags().IntVarP(&cf.verbosity, "verbose", "v", cf.verbosity, "verbosity level")
+	root.PersistentFlags().BoolVar(&cf.colors, "colors", cf.colors, "colorize output (set automatically if not specified)")
+	root.PersistentFlags().BoolVar(&cf.skipConfirm, "yes", cf.skipConfirm, "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true")
+	root.PersistentFlags().BoolVar(&cf.strictVars, "strict-vars", cf.strictVars, "require declared variables to be specified, do not allow undeclared variables")
+	root.PersistentFlags().IntVar(&cf.evalConcurrency, "eval-concurrency", cf.evalConcurrency, "concurrency with which to evaluate components")
 	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
 	root.PersistentFlags().StringVarP(&envFile, "env-file", "E", defaultEnvironmentFile(), "use additional environment file not declared in qbec.yaml")
 	root.AddCommand(newOptionsCommand(root))
@@ -223,9 +220,9 @@ func Setup(root *cobra.Command) {
 			return nil
 		}
 		if !cmd.Flags().Changed("colors") {
-			cp.colors = isatty.IsTerminal(os.Stdout.Fd())
+			cf.colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
-		sio.EnableColors = cp.colors
+		sio.EnableColors = cf.colors
 
 		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
 		// directory before we change it
@@ -247,7 +244,7 @@ func Setup(root *cobra.Command) {
 		forceOpts := forceOptsFn()
 		if forceOpts.k8sNamespace == remote.ForceCurrentNamespace {
 			if forceOpts.k8sContext != remote.ForceCurrentContext {
-				return fmt.Errorf("current namespace can only be forced when the context is also forced to current")
+				return newUsageError(fmt.Sprintf("current namespace can only be forced when the context is also forced to current"))
 			}
 			cc, err := remote.CurrentContextInfo()
 			if err != nil {
@@ -260,10 +257,24 @@ func Setup(root *cobra.Command) {
 		if err != nil {
 			return newRuntimeError(err)
 		}
-		cmdCfg, err = cp.getConfig(app, vmConfig, remoteConfig, forceOpts)
+
+		if overrideCP == nil && overrideAttrs == nil {
+			cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts)
+		} else {
+			cmdCfg, err = cf.internalConfig(app, vmConfig, overrideCP, overrideAttrs)
+		}
 		return err
 	}
 	setupCommands(root, func() *config {
 		return cmdCfg
 	})
+}
+
+// Setup sets up all sub-commands for the supplied root command and adds facilities for commands
+// to access common options.
+func Setup(root *cobra.Command) {
+	doSetup(root, configFactory{
+		skipConfirm:     skipPrompts(),
+		evalConcurrency: 5,
+	}, nil, nil)
 }
