@@ -55,6 +55,7 @@ func (a *applyStats) update(name string, s *remote.SyncResult) {
 type applyCommandConfig struct {
 	*config
 	syncOptions remote.SyncOptions
+	showDetails bool
 	gc          bool
 	wait        bool
 	waitTimeout time.Duration
@@ -159,25 +160,51 @@ func doApply(args []string, config applyCommandConfig) error {
 	var stats applyStats
 	var changedObjects []model.K8sMeta
 
+	printSyncStatus := func(name string, res *remote.SyncResult, err error) {
+		if err != nil {
+			sio.Errorf("%ssync %s failed\n", dryRun, name)
+			return
+		}
+		if res.Type == remote.SyncObjectsIdentical {
+			if config.Verbosity() > 0 {
+				sio.Noticef("%sno changes to %s\n", dryRun, name)
+				if res.Details != "" {
+					sio.Println(res.Details)
+				}
+			}
+			return
+		}
+		verb := "create"
+		if res.Type == remote.SyncUpdated {
+			verb = "update"
+		}
+		if res.Type == remote.SyncSkip {
+			verb = "skip"
+		}
+		sio.Noticef("%s%s %s\n", dryRun, verb, name)
+		if config.showDetails || config.Verbosity() > 0 {
+			if res.Details != "" {
+				sio.Println(res.Details)
+			}
+		}
+	}
+
 	for _, ob := range objects {
+		name := client.DisplayName(ob)
 		res, err := client.Sync(ob, opts)
+		if res != nil && res.GeneratedName != "" {
+			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
+			name = client.DisplayName(ob)
+			retainObjects = append(retainObjects, ob)
+		}
+		printSyncStatus(name, res, err)
 		if err != nil {
 			return err
 		}
 		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
 			changedObjects = append(changedObjects, metaWrap{K8sMeta: ob})
 		}
-		if res.GeneratedName != "" {
-			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
-			retainObjects = append(retainObjects, ob)
-		}
-		name := client.DisplayName(ob)
 		stats.update(name, res)
-		show := res.Type != remote.SyncObjectsIdentical || config.Verbosity() > 0
-		if show {
-			sio.Noticeln(dryRun+"sync", name)
-			sio.Println(res.Details)
-		}
 	}
 
 	// process deletions
@@ -187,7 +214,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	if !opts.DryRun && len(deletions) > 0 {
-		msg := fmt.Sprintf("will delete %d object(s))", len(deletions))
+		msg := fmt.Sprintf("will delete %d object(s)", len(deletions))
 		if err := config.Confirm(msg); err != nil {
 			return err
 		}
@@ -197,16 +224,33 @@ func doApply(args []string, config applyCommandConfig) error {
 	deleteOpts := remote.DeleteOptions{DryRun: opts.DryRun, DisableDeleteFn: dp.disableDelete}
 
 	deletions = objsort.SortMeta(deletions, sortConfig(client.IsNamespaced))
+
+	printDelStatus := func(name string, res *remote.SyncResult, err error) {
+		if err != nil {
+			sio.Errorf("%sdelete %s failed\n", dryRun, name)
+			return
+		}
+		verb := "delete"
+		if res.Type == remote.SyncSkip {
+			verb = "skip delete"
+		}
+		sio.Noticef("%s%s %s\n", dryRun, verb, name)
+		if config.showDetails || config.Verbosity() > 0 {
+			if res.Details != "" {
+				sio.Println(res.Details)
+			}
+		}
+	}
+
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
 		res, err := client.Delete(ob, deleteOpts)
+		printDelStatus(name, res, err)
 		if err != nil {
 			return err
 		}
 		stats.update(name, res)
-		sio.Noticeln(dryRun+"delete", name)
-		sio.Println(res.Details)
 	}
 
 	printStats(config.Stdout(), &stats)
@@ -248,6 +292,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.syncOptions.DisableCreate, "skip-create", false, "set to true to only update existing resources but not create new ones")
 	cmd.Flags().BoolVarP(&config.syncOptions.DryRun, "dry-run", "n", false, "dry-run, do not create/ update resources but show what would happen")
 	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
+	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
 	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for objects to be ready")
 	var waitTime string
@@ -262,6 +307,9 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 		}
 		if config.syncOptions.DryRun {
 			config.wait = false
+		}
+		if !cmd.Flag("show-details").Changed {
+			config.showDetails = config.syncOptions.DryRun
 		}
 		return wrapError(doApply(args, config))
 	}
