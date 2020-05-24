@@ -147,6 +147,19 @@ func TestAppSimple(t *testing.T) {
 	u, err := app.ServerURL("dev")
 	require.Nil(t, err)
 	a.Equal("https://dev-server", u)
+
+	u, err = app.ServerURL("local")
+	require.Nil(t, err)
+	a.Equal("", u)
+
+	u, err = app.Context("dev")
+	require.Nil(t, err)
+	a.Equal("", u)
+
+	u, err = app.Context("local")
+	require.Nil(t, err)
+	a.Equal("minikube", u)
+
 	a.Equal("default", app.DefaultNamespace("dev"))
 	a.Equal("", app.Tag())
 
@@ -156,6 +169,10 @@ func TestAppSimple(t *testing.T) {
 	a.Equal("foobar", app.DefaultNamespace("dev"))
 
 	_, err = app.ServerURL("devx")
+	require.NotNil(t, err)
+	a.Equal(`invalid environment "devx"`, err.Error())
+
+	_, err = app.Context("devx")
 	require.NotNil(t, err)
 	a.Equal(`invalid environment "devx"`, err.Error())
 

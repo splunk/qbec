@@ -247,8 +247,8 @@ func (a *App) ServerURL(env string) (string, error) {
 	return e.Server, nil
 }
 
-// ForcedContext returns the forced context for the supplied environment, if set.
-func (a *App) ForcedContext(env string) (string, error) {
+// Context returns the context for the supplied environment, if set.
+func (a *App) Context(env string) (string, error) {
 	e, err := a.envObject(env)
 	if err != nil {
 		return "", err

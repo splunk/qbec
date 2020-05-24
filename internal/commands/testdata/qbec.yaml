@@ -18,6 +18,9 @@ spec:
         default: { bar: 'quux' }
       - name: noDefault
   environments:
+    minikube:
+      context: minikube
+      defaultNamespace: kube-public
     dev:
       server: https://dev-server
       defaultNamespace: kube-system

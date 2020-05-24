@@ -211,3 +211,68 @@ data:
 		})
 	}
 }
+
+func TestConfigConnectOpts(t *testing.T) {
+	reset := setPwd(t, "testdata")
+	defer reset()
+	app, err := model.NewApp("qbec.yaml", nil, "")
+	require.NoError(t, err)
+
+	scp := stdClientProvider{
+		app:       app,
+		verbosity: 1,
+	}
+	co, err := scp.connectOpts("dev")
+	require.NoError(t, err)
+	assert.EqualValues(t, remote.ConnectOpts{
+		EnvName:      "dev",
+		ServerURL:    "https://dev-server",
+		Namespace:    "kube-system",
+		Verbosity:    1,
+		ForceContext: "",
+	}, co)
+
+	scp = stdClientProvider{
+		app:       app,
+		verbosity: 1,
+	}
+	co, err = scp.connectOpts("minikube")
+	require.NoError(t, err)
+	assert.EqualValues(t, remote.ConnectOpts{
+		EnvName:      "minikube",
+		ServerURL:    "",
+		Namespace:    "kube-public",
+		Verbosity:    1,
+		ForceContext: "minikube",
+	}, co)
+
+	scp = stdClientProvider{
+		app:          app,
+		verbosity:    2,
+		forceContext: "kind",
+	}
+	co, err = scp.connectOpts("dev")
+	require.NoError(t, err)
+	assert.EqualValues(t, remote.ConnectOpts{
+		EnvName:      "dev",
+		ServerURL:    "https://dev-server",
+		Namespace:    "kube-system",
+		Verbosity:    2,
+		ForceContext: "kind",
+	}, co)
+
+	scp = stdClientProvider{
+		app:          app,
+		verbosity:    2,
+		forceContext: "kind",
+	}
+	co, err = scp.connectOpts("minikube")
+	require.NoError(t, err)
+	assert.EqualValues(t, remote.ConnectOpts{
+		EnvName:      "minikube",
+		ServerURL:    "",
+		Namespace:    "kube-public",
+		Verbosity:    2,
+		ForceContext: "kind",
+	}, co)
+}

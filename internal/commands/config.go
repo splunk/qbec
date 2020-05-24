@@ -62,10 +62,10 @@ func addForceOptions(cmd *cobra.Command, prefix string) func() forceOptions {
 
 // stdClientProvider provides clients based on the supplied Kubernetes config
 type stdClientProvider struct {
-	app       *model.App
-	config    *remote.Config
-	verbosity int
-	force     forceOptions
+	app          *model.App
+	config       *remote.Config
+	verbosity    int
+	forceContext string
 }
 
 func (s stdClientProvider) connectOpts(env string) (ret remote.ConnectOpts, _ error) {
@@ -73,13 +73,13 @@ func (s stdClientProvider) connectOpts(env string) (ret remote.ConnectOpts, _ er
 	if err != nil {
 		return ret, err
 	}
-	fc, err := s.app.ForcedContext(env)
+	fc, err := s.app.Context(env)
 	if err != nil {
 		return ret, err
 	}
 	// override with command-line forcing if supplied
-	if s.force.k8sContext != "" {
-		fc = s.force.k8sContext
+	if s.forceContext != "" {
+		fc = s.forceContext
 	}
 	ns := s.app.DefaultNamespace(env)
 	return remote.ConnectOpts{
@@ -159,10 +159,10 @@ func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 // getConfig returns the command configuration.
 func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts forceOptions) (*config, error) {
 	scp := &stdClientProvider{
-		app:       app,
-		config:    remoteConfig,
-		verbosity: cp.verbosity,
-		force:     forceOpts,
+		app:          app,
+		config:       remoteConfig,
+		verbosity:    cp.verbosity,
+		forceContext: forceOpts.k8sContext,
 	}
 	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }
