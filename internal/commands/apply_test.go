@@ -94,7 +94,7 @@ func TestApplyBasic(t *testing.T) {
 	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret", "Job::tj-1234"}, stats["created"])
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm"}, stats["updated"])
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deleted"])
-	s.assertErrorLineMatch(regexp.MustCompile(`sync ConfigMap:bar-system:svc2-cm`))
+	s.assertErrorLineMatch(regexp.MustCompile(`update ConfigMap:bar-system:svc2-cm`))
 }
 
 func TestApplyFlags(t *testing.T) {
@@ -126,7 +126,7 @@ func TestApplyFlags(t *testing.T) {
 	a.EqualValues(nil, stats["created"])
 	a.EqualValues([]interface{}{"Secret:bar-system:svc2-secret"}, stats["skipped"])
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm"}, stats["updated"])
-	s.assertErrorLineMatch(regexp.MustCompile(`\[dry-run\] sync ConfigMap:bar-system:svc2-cm`))
+	s.assertErrorLineMatch(regexp.MustCompile(`\[dry-run\] update ConfigMap:bar-system:svc2-cm`))
 	s.assertErrorLineMatch(regexp.MustCompile(`\*\* dry-run mode, nothing was actually changed \*\*`))
 }
 

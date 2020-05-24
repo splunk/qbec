@@ -99,6 +99,21 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		}
 	}
 
+	printDelStatus := func(name string, res *remote.SyncResult, err error) {
+		if err != nil {
+			sio.Errorf("%sdelete %s failed\n", dryRun, name)
+			return
+		}
+		verb := "delete"
+		if res.Type == remote.SyncSkip {
+			verb = "skip delete"
+		}
+		sio.Noticef("%s%s %s\n", dryRun, verb, name)
+		if res.Details != "" {
+			sio.Println(res.Details)
+		}
+	}
+
 	var stats applyStats
 	dp := newDeletePolicy(client.IsNamespaced, config.App().DefaultNamespace(env))
 	delOpts := remote.DeleteOptions{
@@ -109,12 +124,11 @@ func doDelete(args []string, config deleteCommandConfig) error {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
 		res, err := client.Delete(ob, delOpts)
+		printDelStatus(name, res, err)
 		if err != nil {
 			return err
 		}
 		stats.update(name, res)
-		sio.Noticeln(dryRun+"delete", name)
-		sio.Println(res.Details)
 	}
 
 	printStats(config.Stdout(), &stats)
