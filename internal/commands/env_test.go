@@ -42,7 +42,7 @@ func TestEnvListBasic(t *testing.T) {
 func TestEnvListYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("env", "list", "-o", "yaml")
+	err := s.executeCommand("env", "list", "-o", "yaml", "--k8s:kubeconfig=kubeconfig.yaml")
 	require.NoError(t, err)
 	out, err := s.yamlOutput()
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestEnvListYAML(t *testing.T) {
 func TestEnvListJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("env", "list", "-o", "json")
+	err := s.executeCommand("env", "list", "-o", "json", "--k8s:kubeconfig=kubeconfig.yaml")
 	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
@@ -62,19 +62,19 @@ func TestEnvListJSON(t *testing.T) {
 func TestEnvVarsBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("env", "vars", "dev")
+	err := s.executeCommand("env", "vars", "dev", "--k8s:kubeconfig=kubeconfig.yaml")
 	require.NoError(t, err)
-	s.assertOutputLineMatch(regexp.MustCompile(`KUBECONFIG='kube.config';`))
-	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CLUSTER='dev.server.com';`))
-	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CONTEXT='foo'`))
-	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_NAMESPACE='my-ns';`))
+	s.assertOutputLineMatch(regexp.MustCompile(`KUBECONFIG='kubeconfig.yaml';`))
+	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CLUSTER='dev';`))
+	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CONTEXT='dev'`))
+	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_NAMESPACE='default';`))
 	s.assertOutputLineMatch(regexp.MustCompile(`export KUBECONFIG KUBE_CLUSTER KUBE_CONTEXT KUBE_NAMESPACE KUBECTL_ARGS`))
 }
 
 func TestEnvVarsYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("env", "vars", "dev", "-o", "yaml")
+	err := s.executeCommand("env", "vars", "dev", "-o", "yaml", "--k8s:kubeconfig=kubeconfig.yaml")
 	require.NoError(t, err)
 	out, err := s.yamlOutput()
 	require.NoError(t, err)
@@ -84,7 +84,7 @@ func TestEnvVarsYAML(t *testing.T) {
 func TestEnvVarsJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("env", "vars", "dev", "-o", "json")
+	err := s.executeCommand("env", "vars", "dev", "-o", "json", "--k8s:kubeconfig=kubeconfig.yaml")
 	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
@@ -137,7 +137,7 @@ func TestEnvNegative(t *testing.T) {
 		},
 		{
 			name: "vars no env",
-			args: []string{"env", "vars"},
+			args: []string{"env", "vars", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(isUsageError(err))
@@ -146,7 +146,7 @@ func TestEnvNegative(t *testing.T) {
 		},
 		{
 			name: "vars two envs",
-			args: []string{"env", "vars", "dev", "prod"},
+			args: []string{"env", "vars", "dev", "prod", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(isUsageError(err))
@@ -155,7 +155,7 @@ func TestEnvNegative(t *testing.T) {
 		},
 		{
 			name: "vars bad env",
-			args: []string{"env", "vars", "foo"},
+			args: []string{"env", "vars", "foo", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.False(isUsageError(err))
@@ -164,7 +164,7 @@ func TestEnvNegative(t *testing.T) {
 		},
 		{
 			name: "vars bad format",
-			args: []string{"env", "vars", "-o", "table", "dev"},
+			args: []string{"env", "vars", "-o", "table", "dev", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(isUsageError(err))

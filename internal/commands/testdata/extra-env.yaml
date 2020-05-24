@@ -1,0 +1,7 @@
+apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  environments:
+    prod:
+      server: https://prod-server
+      defaultNamespace: prodfoo

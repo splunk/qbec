@@ -198,7 +198,7 @@ func setWorkDir(specified string) error {
 	}
 }
 
-func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, overrideAttrs func(env string) (*remote.KubeAttributes, error)) {
+func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 	var rootDir string
 	var appTag string
 	var envFile string
@@ -268,11 +268,7 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, o
 			return newRuntimeError(err)
 		}
 
-		if overrideCP == nil && overrideAttrs == nil {
-			cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts)
-		} else {
-			cmdCfg, err = cf.internalConfig(app, vmConfig, overrideCP, overrideAttrs)
-		}
+		cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts, overrideCP)
 		return err
 	}
 	setupCommands(root, func() *config {
@@ -286,5 +282,5 @@ func Setup(root *cobra.Command) {
 	doSetup(root, configFactory{
 		skipConfirm:     skipPrompts(),
 		evalConcurrency: 5,
-	}, nil, nil)
+	}, nil)
 }

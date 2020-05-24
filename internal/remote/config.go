@@ -152,8 +152,12 @@ func (c *Config) KubeAttributes(opts ConnectOpts) (*KubeAttributes, error) {
 	if err := c.setupOverrides(opts); err != nil {
 		return nil, err
 	}
+	configFile := strings.Join(c.loadingRules.Precedence, string(filepath.ListSeparator))
+	if c.loadingRules.ExplicitPath != "" {
+		configFile = c.loadingRules.ExplicitPath
+	}
 	return &KubeAttributes{
-		ConfigFile: strings.Join(c.loadingRules.Precedence, string(filepath.ListSeparator)),
+		ConfigFile: configFile,
 		Cluster:    c.overrides.Context.Cluster,
 		Context:    c.overrides.CurrentContext,
 		Namespace:  opts.Namespace,

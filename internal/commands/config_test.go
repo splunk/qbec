@@ -51,7 +51,7 @@ func TestConfigCreate(t *testing.T) {
 		stderr:          bytes.NewBufferString(""),
 	}
 
-	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
+	cfg, err := f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NoError(t, err)
 	a.Equal(4, cfg.Verbosity())
 	a.Equal(7, cfg.EvalConcurrency())
@@ -90,7 +90,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 		strictVars: true,
 	}
 
-	_, err = f.getConfig(app, vmc, rc, forceOptions{})
+	_, err = f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NoError(t, err)
 }
 
@@ -112,7 +112,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 		strictVars: true,
 	}
 
-	_, err = f.getConfig(app, vmc, rc, forceOptions{})
+	_, err = f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NotNil(t, err)
 	msg := err.Error()
 	a.Contains(msg, "specified external variable 'extSomething' not declared for app")
@@ -140,7 +140,7 @@ func TestConfigConfirm(t *testing.T) {
 		stdout:      &stdout,
 		stderr:      &stderr,
 	}
-	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
+	cfg, err := f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NoError(t, err)
 	cfg.stdin = stdin
 	err = cfg.Confirm("we will destroy you")
