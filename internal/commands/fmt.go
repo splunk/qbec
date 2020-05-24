@@ -17,25 +17,22 @@ import (
 )
 
 type fmtCommandConfig struct {
-	*Config
-	check  bool
-	write  bool
-	format string
-	files  []string
+	*config
+	check         bool
+	write         bool
+	formatJsonnet bool
+	formatYaml    bool
+	files         []string
 }
 
 func doFmt(args []string, config *fmtCommandConfig) error {
-	if len(args) > 1 {
-		return newUsageError(fmt.Sprintf("unexpected format arguments: %q", args))
-	}
 	if config.check && config.write {
 		return newUsageError(fmt.Sprintf("check and write are not supported together"))
 	}
-	if len(args) == 1 {
-		config.format = args[0]
-		if config.format != "jsonnet" && config.format != "yaml" {
-			return newUsageError(fmt.Sprintf("invalid format file format: %q", config.format))
-		}
+	if len(args) > 0 {
+		config.files = args
+	} else {
+		config.files = []string{"."}
 	}
 	for _, path := range config.files {
 		switch dir, err := os.Stat(path); {
@@ -44,7 +41,7 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		case dir.IsDir():
 			return walkDir(config, path)
 		default:
-			if shouldFormat(config.format, dir) {
+			if shouldFormat(config, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
 					return fmt.Errorf("error processing %q: %v", path, err)
 				}
@@ -54,9 +51,9 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 	return nil
 }
 
-func newFmtCommand(cp ConfigProvider) *cobra.Command {
+func newFmtCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "fmt <format>",
+		Use:     "fmt",
 		Short:   "format files",
 		Example: fmtExamples(),
 	}
@@ -65,9 +62,10 @@ func newFmtCommand(cp ConfigProvider) *cobra.Command {
 
 	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().StringArrayVarP(&config.files, "files", "f", []string{"."}, "format just this file")
+	cmd.Flags().BoolVarP(&config.formatJsonnet, "jsonnet", "j", true, "format jsonnet and libsonnet files")
+	cmd.Flags().BoolVar(&config.formatYaml, "yaml", false, "format yaml files")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doFmt(args, &config))
 	}
 	return cmd
@@ -82,15 +80,15 @@ func isJsonnetFile(f os.FileInfo) bool {
 	name := f.Name()
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "jsonnet"
 }
-func shouldFormat(allowedExtension string, f os.FileInfo) bool {
-	if allowedExtension == "" {
+func shouldFormat(config *fmtCommandConfig, f os.FileInfo) bool {
+	if config.formatJsonnet && config.formatYaml {
 		return isJsonnetFile(f) || isYamlFile(f)
 	}
-	if allowedExtension == "yaml" {
-		return isYamlFile(f)
-	}
-	if allowedExtension == "jsonnet" {
+	if config.formatJsonnet {
 		return isJsonnetFile(f)
+	}
+	if config.formatYaml {
+		return isYamlFile(f)
 	}
 	return false
 }
@@ -100,7 +98,7 @@ func walkDir(config *fmtCommandConfig, path string) error {
 
 func fileVisitor(config *fmtCommandConfig) filepath.WalkFunc {
 	return func(path string, f os.FileInfo, err error) error {
-		if err == nil && shouldFormat(config.format, f) {
+		if err == nil && shouldFormat(config, f) {
 			err = processFile(config, path, nil, config.Stdout())
 		}
 		// Don't complain if a file was deleted in the meantime (i.e.

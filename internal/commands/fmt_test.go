@@ -40,13 +40,13 @@ func TestIsYaml(t *testing.T) {
 func TestShouldFormat(t *testing.T) {
 	var tests = []struct {
 		fileName string
-		formats  []string
+		config   fmtCommandConfig
 		expected bool
 	}{
-		{"testdata/qbec.yaml", []string{"yaml"}, true},
-		{"testdata/test.yml", []string{"jsonnet"}, false},
-		{"testdata", []string{"jsonnet", "yaml"}, false},
-		{"testdata/components/c1.jsonnet", []string{"jsonnet"}, true},
+		{"testdata/qbec.yaml", fmtCommandConfig{formatYaml: true}, true},
+		{"testdata/test.yml", fmtCommandConfig{formatJsonnet: true}, false},
+		{"testdata", fmtCommandConfig{formatYaml: true, formatJsonnet: true}, false},
+		{"testdata/components/c1.jsonnet", fmtCommandConfig{formatJsonnet: true}, true},
 	}
 	for _, test := range tests {
 		t.Run(test.fileName, func(t *testing.T) {
@@ -54,11 +54,9 @@ func TestShouldFormat(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Unexpected error'%v'", err)
 			}
-			for _, format := range test.formats {
-				var actual = shouldFormat(format, f)
-				if test.expected != actual {
-					t.Errorf("Expected '%t', got '%t'", test.expected, actual)
-				}
+			var actual = shouldFormat(&test.config, f)
+			if test.expected != actual {
+				t.Errorf("Expected '%t', got '%t'", test.expected, actual)
 			}
 
 		})
@@ -96,12 +94,10 @@ func TestDoFmt(t *testing.T) {
 		config      fmtCommandConfig
 		expectedErr string
 	}{
-		{[]string{"a", "b"}, fmtCommandConfig{}, `unexpected format arguments: ["a" "b"]`},
-		{[]string{"a"}, fmtCommandConfig{}, `invalid format file format: "a"`},
 		{[]string{}, fmtCommandConfig{check: true, write: true}, `check and write are not supported together`},
-		{[]string{}, fmtCommandConfig{files: []string{"nonexistentfile"}}, `stat nonexistentfile: no such file or directory`},
-		{[]string{}, fmtCommandConfig{Config: &Config{stdout: &b}, files: []string{"testdata/qbec.yaml"}}, ""},
-		{[]string{}, fmtCommandConfig{Config: &Config{stdout: &b}, files: []string{"testdata/components"}}, ""},
+		{[]string{"nonexistentfile"}, fmtCommandConfig{}, `stat nonexistentfile: no such file or directory`},
+		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatYaml: true, config: &config{stdout: &b}}, ""},
+		{[]string{"testdata/components"}, fmtCommandConfig{formatJsonnet: true, config: &config{stdout: &b}}, ""},
 	}
 
 	for i, test := range tests {
@@ -168,7 +164,7 @@ func TestFormatJsonnet(t *testing.T) {
 func TestFmtCommand(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("alpha", "fmt", "-f", "prod-env.yaml")
+	err := s.executeCommand("alpha", "fmt", "--yaml", "prod-env.yaml")
 	require.Nil(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`      - service2`))
 }

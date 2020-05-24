@@ -191,7 +191,7 @@ qbec alpha --help
 For example, here's how you use the `fmt` command.
 
 ```shell
-qbec alpha fmt
+qbec alpha fmt -w
 ```
 
-The `fmt` command would format all jsonnet and yaml files.
+The `fmt` command would format all jsonnet and libsonnet files.
