@@ -16,15 +16,34 @@
 
 package model
 
+import (
+	"fmt"
+	"strings"
+)
+
 //go:generate gen-qbec-swagger swagger.yaml swagger-schema.go
 
 // Environment points to a specific destination and has its own set of runtime parameters.
 type Environment struct {
 	DefaultNamespace string                 `json:"defaultNamespace"`     // default namespace to set for k8s context
-	Server           string                 `json:"server"`               // server URL of server
+	Server           string                 `json:"server,omitempty"`     // server URL of server, must be present unless
+	Context          string                 `json:"context,omitempty"`    // named context to use instead of deriving from server URL
 	Includes         []string               `json:"includes,omitempty"`   // components to be included in this env even if excluded at the app level
 	Excludes         []string               `json:"excludes,omitempty"`   // additional components to exclude for this env
 	Properties       map[string]interface{} `json:"properties,omitempty"` // properties attached to the environment, exposed via an extvar
+}
+
+func (e Environment) assertValid() error {
+	if e.Server == "" && e.Context == "" {
+		return fmt.Errorf("neither server nor context was set")
+	}
+	if e.Server != "" && e.Context != "" {
+		return fmt.Errorf("only one of server or context may be set")
+	}
+	if strings.HasPrefix(e.Context, "__") { // do not allow context to be a keyword
+		return fmt.Errorf("context for environment ('%s') may not start with __", e.Context)
+	}
+	return nil
 }
 
 // Var is a base variable.

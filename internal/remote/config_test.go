@@ -53,21 +53,6 @@ func TestConfigResolution(t *testing.T) {
 			},
 		},
 		{
-			name:       "current context",
-			kubeconfig: mainKubeConfig,
-			opts: ConnectOpts{
-				EnvName:      "first",
-				ServerURL:    "https://dev1-server",
-				ForceContext: "__current__",
-			},
-			assertFn: func(c *Config, err error) {
-				require.Nil(t, err)
-				assert.Equal(t, "dev2", c.overrides.CurrentContext)
-				assert.Equal(t, "dev2", c.overrides.Context.Cluster)
-				assert.Equal(t, "", c.overrides.Context.Namespace)
-			},
-		},
-		{
 			name:       "in-cluster context",
 			kubeconfig: mainKubeConfig,
 			opts: ConnectOpts{

@@ -139,6 +139,12 @@ func NewApp(file string, envFiles []string, tag string) (*App, error) {
 		return nil, fmt.Errorf("%s: no environments defined for app", file)
 	}
 
+	for name, env := range qApp.Spec.Environments {
+		if err := env.assertValid(); err != nil {
+			return nil, errors.Wrapf(err, "verify environment %s", name)
+		}
+	}
+
 	app := App{inner: qApp}
 	dir := filepath.Dir(file)
 	if !filepath.IsAbs(dir) {
@@ -239,6 +245,15 @@ func (a *App) ServerURL(env string) (string, error) {
 		return "", err
 	}
 	return e.Server, nil
+}
+
+// Context returns the context for the supplied environment, if set.
+func (a *App) Context(env string) (string, error) {
+	e, err := a.envObject(env)
+	if err != nil {
+		return "", err
+	}
+	return e.Context, nil
 }
 
 // BaseProperties returns the baseline properties defined for the app.

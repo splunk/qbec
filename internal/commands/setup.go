@@ -13,6 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
 package commands
 
 import (
@@ -30,6 +31,10 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+)
+
+const (
+	currentMarker = "__current__"
 )
 
 var (
@@ -193,7 +198,7 @@ func setWorkDir(specified string) error {
 	}
 }
 
-func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, overrideAttrs func(env string) (*remote.KubeAttributes, error)) {
+func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 	var rootDir string
 	var appTag string
 	var envFile string
@@ -241,14 +246,19 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, o
 		if err != nil {
 			return err
 		}
+
+		var cc *remote.ContextInfo
 		forceOpts := forceOptsFn()
-		if forceOpts.k8sNamespace == remote.ForceCurrentNamespace {
-			if forceOpts.k8sContext != remote.ForceCurrentContext {
-				return newUsageError(fmt.Sprintf("current namespace can only be forced when the context is also forced to current"))
-			}
-			cc, err := remote.CurrentContextInfo()
+		if forceOpts.k8sContext == currentMarker {
+			cc, err = remote.CurrentContextInfo()
 			if err != nil {
 				return err
+			}
+			forceOpts.k8sContext = cc.ContextName
+		}
+		if forceOpts.k8sNamespace == currentMarker {
+			if cc == nil {
+				return newUsageError(fmt.Sprintf("current namespace can only be forced when the context is also forced to current"))
 			}
 			forceOpts.k8sNamespace = cc.Namespace
 		}
@@ -258,11 +268,7 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider, o
 			return newRuntimeError(err)
 		}
 
-		if overrideCP == nil && overrideAttrs == nil {
-			cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts)
-		} else {
-			cmdCfg, err = cf.internalConfig(app, vmConfig, overrideCP, overrideAttrs)
-		}
+		cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts, overrideCP)
 		return err
 	}
 	setupCommands(root, func() *config {
@@ -276,5 +282,5 @@ func Setup(root *cobra.Command) {
 	doSetup(root, configFactory{
 		skipConfirm:     skipPrompts(),
 		evalConcurrency: 5,
-	}, nil, nil)
+	}, nil)
 }
