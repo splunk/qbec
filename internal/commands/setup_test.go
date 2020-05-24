@@ -115,6 +115,18 @@ func TestSetupEnvironments(t *testing.T) {
 			},
 		},
 		{
+			name:   "env file from env var",
+			envMap: map[string]string{"QBEC_ROOT": "testdata", "QBEC_ENV_FILE": "testdata/extra-env.yaml"},
+			fn: func(t *testing.T, s *scaffold) {
+				err := s.executeCommand("env", "list")
+				require.NoError(t, err)
+				out := s.stdout()
+				assert.Contains(t, out, "dev")
+				assert.Contains(t, out, "minikube")
+				assert.Contains(t, out, "prod")
+			},
+		},
+		{
 			name:   "bad env file",
 			envMap: map[string]string{"QBEC_ROOT": "testdata"},
 			fn: func(t *testing.T, s *scaffold) {
