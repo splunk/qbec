@@ -64,14 +64,14 @@ func newVersionCommand() *cobra.Command {
 					Go:       goVersion,
 					Commit:   commit,
 				}
-				enc := json.NewEncoder(os.Stdout)
+				enc := json.NewEncoder(c.OutOrStdout())
 				enc.SetIndent("", "  ")
 				if err := enc.Encode(out); err != nil {
 					log.Fatalln(err)
 				}
 				return
 			}
-			fmt.Printf("%s version: %s\njsonnet version: %s\nclient-go version: %s\ngo version: %s\ncommit: %s\n",
+			fmt.Fprintf(c.OutOrStdout(), "%s version: %s\njsonnet version: %s\nclient-go version: %s\ngo version: %s\ncommit: %s\n",
 				Executable,
 				version,
 				jsonnetVersion,
