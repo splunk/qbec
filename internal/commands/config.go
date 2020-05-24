@@ -37,27 +37,27 @@ import (
 )
 
 // clientProvider returns a client for the supplied environment.
-type clientProvider func(env string) (Client, error)
+type clientProvider func(env string) (kubeClient, error)
 
 type kubeAttrsProvider func(env string) (*remote.KubeAttributes, error)
 
-// ForceOptions are options that override qbec safety features and disregard
+// forceOptions are options that override qbec safety features and disregard
 // configuration in qbec.yaml.
-type ForceOptions struct {
-	K8sContext   string // override kubernetes context
-	K8sNamespace string // override kubernetes default namespace
+type forceOptions struct {
+	k8sContext   string // override kubernetes context
+	k8sNamespace string // override kubernetes default namespace
 }
 
-// ForceOptionsConfig adds flags to the supplied root command and returns forced options.
-func ForceOptionsConfig(cmd *cobra.Command, prefix string) func() ForceOptions {
-	var f ForceOptions
+// addForceOptions adds flags to the supplied root command and returns forced options.
+func addForceOptions(cmd *cobra.Command, prefix string) func() forceOptions {
+	var f forceOptions
 	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively",
 		remote.ForceInClusterContext, remote.ForceCurrentContext)
 	pf := cmd.PersistentFlags()
-	pf.StringVar(&f.K8sContext, prefix+"k8s-context", "", ctxUsage)
+	pf.StringVar(&f.k8sContext, prefix+"k8s-context", "", ctxUsage)
 	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", remote.ForceCurrentNamespace)
-	pf.StringVar(&f.K8sNamespace, prefix+"k8s-namespace", "", nsUsage)
-	return func() ForceOptions { return f }
+	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", "", nsUsage)
+	return func() forceOptions { return f }
 }
 
 // stdClientProvider provides clients based on the supplied Kubernetes config
@@ -65,17 +65,17 @@ type stdClientProvider struct {
 	app       *model.App
 	config    *remote.Config
 	verbosity int
-	force     ForceOptions
+	force     forceOptions
 }
 
 func (s stdClientProvider) wrapOpts(opts remote.ConnectOpts) remote.ConnectOpts {
-	opts.ForceContext = s.force.K8sContext
+	opts.ForceContext = s.force.k8sContext
 	opts.Verbosity = s.verbosity
 	return opts
 }
 
 // Client returns a client for the supplied environment.
-func (s stdClientProvider) Client(env string) (Client, error) {
+func (s stdClientProvider) Client(env string) (kubeClient, error) {
 	server, err := s.app.ServerURL(env)
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
@@ -109,59 +109,59 @@ func (s stdClientProvider) Attrs(env string) (*remote.KubeAttributes, error) {
 	return rem, nil
 }
 
-// ConfigFactory provides a config.
-type ConfigFactory struct {
-	Stdout          io.Writer //standard output for command
-	Stderr          io.Writer // standard error for command
-	SkipConfirm     bool      // do not prompt for confirmation
-	Colors          bool      // show colorized output
-	EvalConcurrency int       // concurrency of eval operations
-	Verbosity       int       // verbosity level
-	StrictVars      bool      // strict mode for variable evaluation
+// configFactory provides a config.
+type configFactory struct {
+	stdout          io.Writer //standard output for command
+	stderr          io.Writer // standard error for command
+	skipConfirm     bool      // do not prompt for confirmation
+	colors          bool      // show colorized output
+	evalConcurrency int       // concurrency of eval operations
+	verbosity       int       // verbosity level
+	strictVars      bool      // strict mode for variable evaluation
 }
 
-func (cp ConfigFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*Config, error) {
+func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*config, error) {
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
-	if cp.Stdout != nil {
-		stdout = cp.Stdout
+	if cp.stdout != nil {
+		stdout = cp.stdout
 	}
-	if cp.Stderr != nil {
-		stderr = cp.Stderr
+	if cp.stderr != nil {
+		stderr = cp.stderr
 	}
-	cfg := &Config{
+	cfg := &config{
 		app:             app,
 		vmc:             vmConfig,
 		clp:             clp,
 		attrsp:          kp,
-		colors:          cp.Colors,
-		yes:             cp.SkipConfirm,
-		evalConcurrency: cp.EvalConcurrency,
-		verbose:         cp.Verbosity,
+		colors:          cp.colors,
+		yes:             cp.skipConfirm,
+		evalConcurrency: cp.evalConcurrency,
+		verbose:         cp.verbosity,
 		stdin:           os.Stdin,
 		stdout:          stdout,
 		stderr:          stderr,
 	}
-	if err := cfg.init(cp.StrictVars); err != nil {
+	if err := cfg.init(cp.strictVars); err != nil {
 		return nil, err
 	}
 	return cfg, nil
 }
 
-// Config returns the command configuration.
-func (cp ConfigFactory) Config(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts ForceOptions) (*Config, error) {
+// getConfig returns the command configuration.
+func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts forceOptions) (*config, error) {
 	scp := &stdClientProvider{
 		app:       app,
 		config:    remoteConfig,
-		verbosity: cp.Verbosity,
+		verbosity: cp.verbosity,
 		force:     forceOpts,
 	}
 	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
 }
 
-// Config is the command configuration.
-type Config struct {
+// config is the command configuration.
+type config struct {
 	app             *model.App        // app loaded from file
 	vmc             vm.Config         // jsonnet VM config
 	tlaVars         map[string]string // all top level string vars specified for the command
@@ -182,7 +182,7 @@ type Config struct {
 // to be specified and does not allow undeclared variables to be passed in.
 // It also sets the base VM config to include the library paths from the app definition
 // and exclude all TLA variables. Require TLA variables are set per component later.
-func (c *Config) init(strict bool) error {
+func (c *config) init(strict bool) error {
 	var msgs []string
 	c.tlaVars = c.vmc.TopLevelVars()
 	c.tlaCodeVars = c.vmc.TopLevelCodeVars()
@@ -258,10 +258,10 @@ func (c *Config) init(strict bool) error {
 }
 
 // App returns the application object loaded for this run.
-func (c Config) App() *model.App { return c.app }
+func (c config) App() *model.App { return c.app }
 
 // EvalContext returns the evaluation context for the supplied environment.
-func (c Config) EvalContext(env string, props map[string]interface{}) eval.Context {
+func (c config) EvalContext(env string, props map[string]interface{}) eval.Context {
 	p, err := json.Marshal(props)
 	if err != nil {
 		sio.Warnln("unable to serialize env properties to JSON:", err)
@@ -281,7 +281,7 @@ func (c Config) EvalContext(env string, props map[string]interface{}) eval.Conte
 }
 
 // vmConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c Config) vmConfig(tlaVars []string) vm.Config {
+func (c config) vmConfig(tlaVars []string) vm.Config {
 	cfg := c.vmc.WithoutTopLevel()
 
 	// common case to avoid useless object creation. If no required vars
@@ -312,36 +312,36 @@ func (c Config) vmConfig(tlaVars []string) vm.Config {
 }
 
 // Client returns a client for the supplied environment
-func (c Config) Client(env string) (Client, error) {
+func (c config) Client(env string) (kubeClient, error) {
 	return c.clp(env)
 }
 
 // KubeAttributes returns the kubernetes attributes for the supplied environment
-func (c Config) KubeAttributes(env string) (*remote.KubeAttributes, error) {
+func (c config) KubeAttributes(env string) (*remote.KubeAttributes, error) {
 	return c.attrsp(env)
 }
 
 // Colorize returns true if output needs to be colorized.
-func (c Config) Colorize() bool { return c.colors }
+func (c config) Colorize() bool { return c.colors }
 
 // Verbosity returns the log verbosity level
-func (c Config) Verbosity() int { return c.verbose }
+func (c config) Verbosity() int { return c.verbose }
 
 // EvalConcurrency returns the concurrency to be used for evaluating components.
-func (c Config) EvalConcurrency() int { return c.evalConcurrency }
+func (c config) EvalConcurrency() int { return c.evalConcurrency }
 
 // Stdout returns the standard output configured for the command.
-func (c Config) Stdout() io.Writer {
+func (c config) Stdout() io.Writer {
 	return c.stdout
 }
 
 // Stderr returns the standard error configured for the command.
-func (c Config) Stderr() io.Writer {
+func (c config) Stderr() io.Writer {
 	return c.stderr
 }
 
 // Confirm prompts for confirmation if needed.
-func (c Config) Confirm(context string) error {
+func (c config) Confirm(context string) error {
 	fmt.Fprintln(c.stderr)
 	fmt.Fprintln(c.stderr, context)
 	fmt.Fprintln(c.stderr)

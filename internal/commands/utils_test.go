@@ -36,7 +36,6 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -179,14 +178,14 @@ func (c *client) ResourceInterface(gvk schema.GroupVersionKind, namespace string
 
 func setPwd(t *testing.T, dir string) func() {
 	wd, err := os.Getwd()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	p, err := filepath.Abs(dir)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	err = os.Chdir(p)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	return func() {
 		err = os.Chdir(wd)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -291,12 +290,10 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		dir = "../../examples/test-app"
 	}
 	reset := setPwd(t, dir)
-	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
 	out := bytes.NewBuffer(nil)
 
 	c := &client{}
-	clientProvider := func(env string) (Client, error) { return c, nil }
+	clientProvider := func(env string) (kubeClient, error) { return c, nil }
 	attrsProvider := func(env string) (*remote.KubeAttributes, error) {
 		return &remote.KubeAttributes{
 			Context:    "foo",
@@ -305,19 +302,18 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 			Cluster:    "dev.server.com",
 		}, nil
 	}
-	cp := ConfigFactory{
-		Stdout:      out,
-		SkipConfirm: true,
-		Colors:      false,
+	cp := configFactory{
+		stdout:      out,
+		skipConfirm: true,
+		colors:      false,
 	}
-	config, err := cp.internalConfig(app, vm.Config{}, clientProvider, attrsProvider)
-	require.Nil(t, err)
 
 	cmd := &cobra.Command{
 		Use: "qbec-test",
 	}
-	Setup(cmd, func() *Config { return config })
-	cmd.SetOutput(out)
+	doSetup(cmd, cp, clientProvider, attrsProvider)
+	cmd.SetOut(out)
+	cmd.SetErr(out)
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = true
 	s := &scaffold{

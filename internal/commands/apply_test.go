@@ -83,7 +83,7 @@ func TestApplyBasic(t *testing.T) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("apply", "dev", "--wait")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.False(captured.DryRun)
@@ -117,7 +117,7 @@ func TestApplyFlags(t *testing.T) {
 		}
 	}
 	err := s.executeCommand("apply", "dev", "-S", "-n", "--skip-create", "--gc=false")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)
 	a.True(captured.ShowSecrets)

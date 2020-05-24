@@ -27,7 +27,7 @@ import (
 )
 
 type deleteCommandConfig struct {
-	*Config
+	*config
 	dryRun     bool
 	useLocal   bool
 	filterFunc func() (filterParams, error)
@@ -53,7 +53,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
+		objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			}
 		}
 	} else {
-		all, err := allObjects(config.Config, env)
+		all, err := allObjects(config.config, env)
 		if err != nil {
 			return err
 		}
@@ -124,7 +124,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	return nil
 }
 
-func newDeleteCommand(cp ConfigProvider) *cobra.Command {
+func newDeleteCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete [-n] <environment>",
 		Short:   "delete one or more components from a Kubernetes cluster",
@@ -139,7 +139,7 @@ func newDeleteCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.useLocal, "local", false, "use local object names to delete, do not derive list from server")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doDelete(args, config))
 	}
 	return cmd

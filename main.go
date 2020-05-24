@@ -17,9 +17,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -29,69 +27,6 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 )
 
-var (
-	version         = "dev"
-	commit          = "dev"
-	goVersion       = "unknown"
-	jsonnetVersion  = "v0.15.0"           // update this when library dependency is upgraded
-	clientGoVersion = "kubernetes-1.15.5" // ditto when client go dep is upgraded
-)
-
-var exe = "qbec"
-
-func newVersionCommand() *cobra.Command {
-	var jsonOutput bool
-
-	c := &cobra.Command{
-		Use:   "version",
-		Short: "print program version",
-		Run: func(c *cobra.Command, args []string) {
-			if jsonOutput {
-				out := struct {
-					Qbec     string `json:"qbec"`
-					Jsonnet  string `json:"jsonnet"`
-					ClientGo string `json:"client-go"`
-					Go       string `json:"go"`
-					Commit   string `json:"commit"`
-				}{
-					Qbec:     version,
-					Jsonnet:  jsonnetVersion,
-					ClientGo: clientGoVersion,
-					Go:       goVersion,
-					Commit:   commit,
-				}
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				if err := enc.Encode(out); err != nil {
-					log.Fatalln(err)
-				}
-				return
-			}
-			fmt.Printf("%s version: %s\njsonnet version: %s\nclient-go version: %s\ngo version: %s\ncommit: %s\n",
-				exe,
-				version,
-				jsonnetVersion,
-				clientGoVersion,
-				goVersion,
-				commit,
-			)
-		},
-	}
-	c.Flags().BoolVar(&jsonOutput, "json", false, "print versions in JSON format")
-	return c
-}
-
-func newOptionsCommand(root *cobra.Command) *cobra.Command {
-	leader := fmt.Sprintf("All %s commands accept the following options (some may not use them unless relevant):\n", root.CommandPath())
-	trailer := "Note: using options that begin with 'force:' will cause qbec to drop its safety checks. Use with care."
-	cmd := &cobra.Command{
-		Use:   "options",
-		Short: "print global options for program",
-		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
-	}
-	return cmd
-}
-
 var start = time.Now()
 
 func main() {
@@ -99,16 +34,16 @@ func main() {
 
 %s provides a set of commands to manage kubernetes objects on multiple clusters.
 
-`, exe), "\n")
+`, commands.Executable), "\n")
 	root := &cobra.Command{
-		Use:                    exe,
+		Use:                    commands.Executable,
 		Short:                  "Kubernetes cluster config tool",
 		Long:                   longdesc,
 		BashCompletionFunction: commands.BashCompletionFunc,
 	}
 	root.SilenceUsage = true
 	root.SilenceErrors = true
-	setup(root)
+	commands.Setup(root)
 	cmd, err := root.ExecuteC()
 
 	exit := func(code int) {

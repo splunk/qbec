@@ -72,7 +72,7 @@ func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filter
 // keyFunc is a function that provides a string key for an object
 type keyFunc func(object model.K8sMeta) string
 
-func allObjects(cfg *Config, env string) ([]model.K8sLocalObject, error) {
+func allObjects(cfg *config, env string) ([]model.K8sLocalObject, error) {
 	return filteredObjects(cfg, env, nil, filterParams{kindFilter: nil})
 }
 
@@ -106,7 +106,7 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 	return nil
 }
 
-func filteredObjects(cfg *Config, env string, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
+func filteredObjects(cfg *config, env string, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
 	components, err := cfg.App().ComponentsForEnvironment(env, fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err

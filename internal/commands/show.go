@@ -83,7 +83,7 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 }
 
 type showCommandConfig struct {
-	*Config
+	*config
 	showSecrets     bool
 	format          string
 	formatSpecified bool
@@ -146,7 +146,7 @@ func doShow(args []string, config showCommandConfig) error {
 		return fmt.Sprintf("%s:%s:%s:%s", gvk.Group, gvk.Kind, ns, obj.GetName())
 	}
 
-	objects, err := filteredObjects(config.Config, env, keyFunc, fp)
+	objects, err := filteredObjects(config.config, env, keyFunc, fp)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func doShow(args []string, config showCommandConfig) error {
 	}
 }
 
-func newShowCommand(cp ConfigProvider) *cobra.Command {
+func newShowCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <environment>",
 		Short:   "show output in YAML or JSON format for one or more components",
@@ -221,9 +221,9 @@ func newShowCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
-		config.Config.cleanEvalMode = clean
+		config.config.cleanEvalMode = clean
 		return wrapError(doShow(args, config))
 	}
 	return cmd

@@ -29,7 +29,7 @@ func TestEnvListBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "list")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	lines := strings.Split(strings.Trim(s.stdout(), "\n"), "\n")
 	a := assert.New(t)
 	require.Equal(t, 3, len(lines))
@@ -42,9 +42,9 @@ func TestEnvListYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "list", "-o", "yaml")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	out, err := s.yamlOutput()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, len(out) > 0)
 }
 
@@ -52,17 +52,17 @@ func TestEnvListJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "list", "-o", "json")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestEnvVarsBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "vars", "dev")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`KUBECONFIG='kube.config';`))
 	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CLUSTER='dev.server.com';`))
 	s.assertOutputLineMatch(regexp.MustCompile(`KUBE_CONTEXT='foo'`))
@@ -74,9 +74,9 @@ func TestEnvVarsYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "vars", "dev", "-o", "yaml")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	out, err := s.yamlOutput()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, len(out) > 0)
 }
 
@@ -84,19 +84,19 @@ func TestEnvVarsJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "vars", "dev", "-o", "json")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestEnvPropsYAML(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "props", "dev")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	out, err := s.yamlOutput()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, len(out) > 0)
 }
 
@@ -104,10 +104,10 @@ func TestEnvPropsJSON(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("env", "props", "dev", "-o", "json")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestEnvNegative(t *testing.T) {

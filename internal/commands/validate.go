@@ -72,7 +72,7 @@ func (v *validatorStats) errors(s string) {
 
 type validator struct {
 	w                      io.Writer
-	client                 Client
+	client                 kubeClient
 	stats                  validatorStats
 	red, green, dim, reset string
 	silent                 bool
@@ -110,7 +110,7 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	return nil
 }
 
-func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, colors bool, out io.Writer, silent bool) error {
+func validateObjects(objs []model.K8sLocalObject, client kubeClient, parallel int, colors bool, out io.Writer, silent bool) error {
 	v := &validator{
 		w:      &lockWriter{Writer: out},
 		client: client,
@@ -137,7 +137,7 @@ func validateObjects(objs []model.K8sLocalObject, client Client, parallel int, c
 }
 
 type validateCommandConfig struct {
-	*Config
+	*config
 	parallel   int
 	silent     bool
 	filterFunc func() (filterParams, error)
@@ -159,7 +159,7 @@ func doValidate(args []string, config validateCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.Config, env, client.ObjectKey, fp)
+	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func doValidate(args []string, config validateCommandConfig) error {
 
 }
 
-func newValidateCommand(cp ConfigProvider) *cobra.Command {
+func newValidateCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "validate <environment>",
 		Short:   "validate one or more components against the spec of a kubernetes cluster",
@@ -181,7 +181,7 @@ func newValidateCommand(cp ConfigProvider) *cobra.Command {
 	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
 	cmd.Flags().BoolVar(&config.silent, "silent", false, "do not print success messages for every object")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doValidate(args, config))
 	}
 	return cmd

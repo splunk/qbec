@@ -33,7 +33,7 @@ import (
 
 var maxDisplayValueLength = 1024
 
-func newParamCommand(cp ConfigProvider) *cobra.Command {
+func newParamCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "param <subcommand>",
 		Short:   "parameter lists and diffs",
@@ -121,7 +121,7 @@ func extractComponentParams(paramsObject map[string]interface{}, fp filterParams
 }
 
 type paramListCommandConfig struct {
-	*Config
+	*config
 	format     string
 	filterFunc func() (filterParams, error)
 }
@@ -157,7 +157,7 @@ func doParamList(args []string, config paramListCommandConfig) error {
 	return listParams(components, config.format != "", config.format, config.Stdout())
 }
 
-func newParamListCommand(cp ConfigProvider) *cobra.Command {
+func newParamListCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list [-c component]...  <environment>|_",
 		Short:   "list all parameters for an environment, optionally for a subset of components",
@@ -168,14 +168,14 @@ func newParamListCommand(cp ConfigProvider) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doParamList(args, config))
 	}
 	return cmd
 }
 
 type paramDiffCommandConfig struct {
-	*Config
+	*config
 	filterFunc func() (filterParams, error)
 }
 
@@ -248,7 +248,7 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 
 }
 
-func newParamDiffCommand(cp ConfigProvider) *cobra.Command {
+func newParamDiffCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diff [-c component]... <environment>|_ [<environment>|_]",
 		Short:   "diff parameter lists across two environments or between the baseline (use _ for baseline) and an environment",
@@ -260,7 +260,7 @@ func newParamDiffCommand(cp ConfigProvider) *cobra.Command {
 	}
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.Config = cp()
+		config.config = cp()
 		return wrapError(doParamDiff(args, config))
 	}
 	return cmd

@@ -30,7 +30,7 @@ import (
 
 func TestRunInParallelNoObjects(t *testing.T) {
 	err := runInParallel([]model.K8sLocalObject{}, func(o model.K8sLocalObject) error { return nil }, 5)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 type input struct {
@@ -90,7 +90,7 @@ func TestRunInParallel(t *testing.T) {
 	}
 
 	err := runInParallel(objs, worker, 5)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	a := assert.New(t)
 	for _, in := range inputs {
 		a.Contains(seen, in.String())
@@ -120,7 +120,7 @@ func TestUsageError(t *testing.T) {
 }
 
 func TestRuntimeError(t *testing.T) {
-	re := NewRuntimeError(errors.New("foobar"))
+	re := newRuntimeError(errors.New("foobar"))
 	a := assert.New(t)
 	a.True(IsRuntimeError(re))
 	a.False(isUsageError(re))

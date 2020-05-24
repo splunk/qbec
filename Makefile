@@ -4,7 +4,7 @@ GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
 
 LEARN_THEME_TAG := 2.2.0
 
-LD_FLAGS_PKG ?= main
+LD_FLAGS_PKG ?= github.com/splunk/qbec/internal/commands
 LD_FLAGS :=
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"

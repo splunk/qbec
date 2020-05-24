@@ -33,7 +33,7 @@ func TestConfigCreate(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "t1")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -41,18 +41,18 @@ func TestConfigCreate(t *testing.T) {
 	vmc = vmc.WithTopLevelCodeVars(map[string]string{"tlaBar": "true"})
 	vmc = vmc.WithVars(map[string]string{"extFoo": "xxx"})
 
-	f := ConfigFactory{
-		SkipConfirm:     true,
-		Colors:          true,
-		EvalConcurrency: 7,
-		Verbosity:       4,
-		StrictVars:      false,
-		Stdout:          bytes.NewBufferString(""),
-		Stderr:          bytes.NewBufferString(""),
+	f := configFactory{
+		skipConfirm:     true,
+		colors:          true,
+		evalConcurrency: 7,
+		verbosity:       4,
+		strictVars:      false,
+		stdout:          bytes.NewBufferString(""),
+		stderr:          bytes.NewBufferString(""),
 	}
 
-	cfg, err := f.Config(app, vmc, rc, ForceOptions{})
-	require.Nil(t, err)
+	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
+	require.NoError(t, err)
 	a.Equal(4, cfg.Verbosity())
 	a.Equal(7, cfg.EvalConcurrency())
 	a.Equal(app, cfg.App())
@@ -79,19 +79,19 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
 	vmc = vmc.WithTopLevelVars(map[string]string{"tlaFoo": "xxx"})
 	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
 
-	f := ConfigFactory{
-		StrictVars: true,
+	f := configFactory{
+		strictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc, ForceOptions{})
-	require.Nil(t, err)
+	_, err = f.getConfig(app, vmc, rc, forceOptions{})
+	require.NoError(t, err)
 }
 
 func TestConfigStrictVarsFail(t *testing.T) {
@@ -99,7 +99,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
@@ -108,11 +108,11 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	vmc = vmc.WithTopLevelCodeVars(map[string]string{"tlaBurble": "true"})
 	vmc = vmc.WithCodeVars(map[string]string{"extSomethingElse": "some-other-thing"})
 
-	f := ConfigFactory{
-		StrictVars: true,
+	f := configFactory{
+		strictVars: true,
 	}
 
-	_, err = f.Config(app, vmc, rc, ForceOptions{})
+	_, err = f.getConfig(app, vmc, rc, forceOptions{})
 	require.NotNil(t, err)
 	msg := err.Error()
 	a.Contains(msg, "specified external variable 'extSomething' not declared for app")
@@ -129,22 +129,22 @@ func TestConfigConfirm(t *testing.T) {
 	fn := setPwd(t, "testdata")
 	defer fn()
 	app, err := model.NewApp("qbec.yaml", nil, "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	rc := &remote.Config{}
 	vmc := vm.Config{}
 
 	var stdout, stderr bytes.Buffer
 	stdin := bytes.NewReader([]byte("abcd\ny\n"))
-	f := ConfigFactory{
-		SkipConfirm: false,
-		Stdout:      &stdout,
-		Stderr:      &stderr,
+	f := configFactory{
+		skipConfirm: false,
+		stdout:      &stdout,
+		stderr:      &stderr,
 	}
-	cfg, err := f.Config(app, vmc, rc, ForceOptions{})
-	require.Nil(t, err)
+	cfg, err := f.getConfig(app, vmc, rc, forceOptions{})
+	require.NoError(t, err)
 	cfg.stdin = stdin
 	err = cfg.Confirm("we will destroy you")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	cfg.stdin = bytes.NewReader([]byte(""))
 	err = cfg.Confirm("we will destroy you")

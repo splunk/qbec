@@ -31,7 +31,7 @@ func TestDiffBasicNoDiffs(t *testing.T) {
 	d := &dg{cmValue: "bar"}
 	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "-k", "configmaps", "--ignore-all-annotations", "--ignore-all-labels", "--show-deletes=false")
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestDiffBasic(t *testing.T) {
