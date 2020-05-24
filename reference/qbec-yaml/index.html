@@ -722,9 +722,12 @@ spec:
   baseProperties:
     foo: base
 
-  environments: # map of environment names to environment objects
+  # map of environment names to environment objects. An environment is the combination of a server URL and default
+  # namespace. The default namespace is used for objects that do not have an explicit namespace set.
+  environments:
+    # for enviromnents such as minikube that do not always have a stable server URL you can use a context name instead.
     minikube:
-      server: https://minikube:8443 # server end point
+      context: minikube # named context, prefer server URLs for non-local clusters.
       defaultNamespace: my-ns # the namespace to use when namespaced object does not define it.
       includes: # components to include, subset of global exclusion list
       - components
@@ -735,7 +738,7 @@ spec:
       - exclusions
 
     dev:
-      server: https://dev-server
+      server: https://dev-server # server URL
       properties: # arbitrary properties can be attached to environments
         foo: bar
 
