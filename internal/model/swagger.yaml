@@ -132,6 +132,8 @@ definitions:
         type: array
       server:
         type: string
+      context:
+        type: string
       properties:
         description: open-ended object containing additional environment properties.
         type: object

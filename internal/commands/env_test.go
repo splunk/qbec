@@ -32,10 +32,11 @@ func TestEnvListBasic(t *testing.T) {
 	require.NoError(t, err)
 	lines := strings.Split(strings.Trim(s.stdout(), "\n"), "\n")
 	a := assert.New(t)
-	require.Equal(t, 3, len(lines))
+	require.Equal(t, 4, len(lines))
 	a.Equal("dev", lines[0])
-	a.Equal("prod", lines[1])
-	a.Equal("stage", lines[2])
+	a.Equal("local", lines[1])
+	a.Equal("prod", lines[2])
+	a.Equal("stage", lines[3])
 }
 
 func TestEnvListYAML(t *testing.T) {

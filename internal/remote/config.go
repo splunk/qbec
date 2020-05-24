@@ -34,8 +34,6 @@ import (
 // Constants for special context values.
 const (
 	ForceInClusterContext = "__incluster__"
-	ForceCurrentContext   = "__current__"
-	ForceCurrentNamespace = "__current__"
 )
 
 // inspired by the config code in ksonnet but implemented differently.
@@ -111,16 +109,6 @@ func (c *Config) setupOverrides(opts ConnectOpts) error {
 	switch opts.ForceContext {
 	case ForceInClusterContext:
 		return fmt.Errorf("cannot set up overrides for in-cluster context")
-	case ForceCurrentContext:
-		if rc.CurrentContext == "" {
-			return fmt.Errorf("attempt to use current context but no current context was set")
-		}
-		wantCtx := rc.CurrentContext
-		if _, ok := rc.Contexts[wantCtx]; !ok {
-			return fmt.Errorf("attempt to use current context %s, but no such context was found", wantCtx)
-		}
-		sio.Warnf("force current context %s\n", rc.CurrentContext)
-		overrideCtx(wantCtx)
 	case "":
 		if err := overrideClusterForEnv(); err != nil {
 			return err
@@ -192,8 +180,9 @@ func (c *Config) Client(opts ConnectOpts) (*Client, error) {
 
 // ContextInfo has information we care about a K8s context
 type ContextInfo struct {
-	ServerURL string // the server URL defined for the cluster
-	Namespace string // the namespace if set for the context, else "default"
+	ContextName string // the name of the context
+	ServerURL   string // the server URL defined for the cluster
+	Namespace   string // the namespace if set for the context, else "default"
 }
 
 // CurrentContextInfo returns information for the current context found in kubeconfig.
@@ -231,7 +220,8 @@ func CurrentContextInfo() (*ContextInfo, error) {
 		return nil, fmt.Errorf("unable to find server URL for cluster %s", cluster)
 	}
 	return &ContextInfo{
-		ServerURL: serverURL,
-		Namespace: ns,
+		ContextName: kc.CurrentContext,
+		ServerURL:   serverURL,
+		Namespace:   ns,
 	}, nil
 }

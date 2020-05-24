@@ -25,6 +25,10 @@ spec:
       - name: externalFoo
         default: 'bar'
   environments:
+    local:
+      context: minikube
+      properties:
+        envType: local
     dev:
       server: https://dev-server
       includes:

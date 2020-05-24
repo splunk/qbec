@@ -52,10 +52,10 @@ type forceOptions struct {
 func addForceOptions(cmd *cobra.Command, prefix string) func() forceOptions {
 	var f forceOptions
 	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively",
-		remote.ForceInClusterContext, remote.ForceCurrentContext)
+		remote.ForceInClusterContext, currentMarker)
 	pf := cmd.PersistentFlags()
 	pf.StringVar(&f.k8sContext, prefix+"k8s-context", "", ctxUsage)
-	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", remote.ForceCurrentNamespace)
+	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", currentMarker)
 	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", "", nsUsage)
 	return func() forceOptions { return f }
 }
@@ -68,24 +68,36 @@ type stdClientProvider struct {
 	force     forceOptions
 }
 
-func (s stdClientProvider) wrapOpts(opts remote.ConnectOpts) remote.ConnectOpts {
-	opts.ForceContext = s.force.k8sContext
-	opts.Verbosity = s.verbosity
-	return opts
+func (s stdClientProvider) connectOpts(env string) (ret remote.ConnectOpts, _ error) {
+	server, err := s.app.ServerURL(env)
+	if err != nil {
+		return ret, err
+	}
+	fc, err := s.app.ForcedContext(env)
+	if err != nil {
+		return ret, err
+	}
+	// override with command-line forcing if supplied
+	if s.force.k8sContext != "" {
+		fc = s.force.k8sContext
+	}
+	ns := s.app.DefaultNamespace(env)
+	return remote.ConnectOpts{
+		EnvName:      env,
+		ServerURL:    server,
+		Namespace:    ns,
+		ForceContext: fc,
+		Verbosity:    s.verbosity,
+	}, nil
 }
 
 // Client returns a client for the supplied environment.
 func (s stdClientProvider) Client(env string) (kubeClient, error) {
-	server, err := s.app.ServerURL(env)
+	opts, err := s.connectOpts(env)
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-	ns := s.app.DefaultNamespace(env)
-	rem, err := s.config.Client(s.wrapOpts(remote.ConnectOpts{
-		EnvName:   env,
-		ServerURL: server,
-		Namespace: ns,
-	}))
+	rem, err := s.config.Client(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -93,16 +105,11 @@ func (s stdClientProvider) Client(env string) (kubeClient, error) {
 }
 
 func (s stdClientProvider) Attrs(env string) (*remote.KubeAttributes, error) {
-	server, err := s.app.ServerURL(env)
+	opts, err := s.connectOpts(env)
 	if err != nil {
 		return nil, errors.Wrap(err, "get kubernetes attrs")
 	}
-	ns := s.app.DefaultNamespace(env)
-	rem, err := s.config.KubeAttributes(s.wrapOpts(remote.ConnectOpts{
-		EnvName:   env,
-		ServerURL: server,
-		Namespace: ns,
-	}))
+	rem, err := s.config.KubeAttributes(opts)
 	if err != nil {
 		return nil, err
 	}

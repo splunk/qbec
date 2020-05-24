@@ -90,7 +90,7 @@ func TestAppSimple(t *testing.T) {
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.Equal("example1", app.Name())
-	a.Equal(3, len(app.inner.Spec.Environments))
+	a.Equal(4, len(app.inner.Spec.Environments))
 	a.Contains(app.inner.Spec.Environments, "dev")
 	a.Contains(app.inner.Spec.Environments, "prod")
 	a.Contains(app.inner.Spec.Environments, "stage")
@@ -212,7 +212,7 @@ func TestAppSimple(t *testing.T) {
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 
 	envs := app.Environments()
-	a.Equal(3, len(envs))
+	a.Equal(4, len(envs))
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -416,6 +416,24 @@ func TestAppNegative(t *testing.T) {
 			envFiles: []string{"foobar.yaml"},
 			asserter: func(t *testing.T, err error) {
 				assert.Contains(t, err.Error(), "open foobar.yaml")
+			},
+		},
+		{
+			file: "bad-env-config.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "verify environment foo: neither server nor context was set")
+			},
+		},
+		{
+			file: "bad-env-config2.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "verify environment foo: only one of server or context may be set")
+			},
+		},
+		{
+			file: "bad-env-config3.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "verify environment foo: context for environment ('__current__') may not start with __")
 			},
 		},
 	}
