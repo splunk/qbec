@@ -93,7 +93,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	deletions = objsort.SortMeta(deletions, sortConfig(client.IsNamespaced))
 
 	if !config.dryRun && len(deletions) > 0 {
-		msg := fmt.Sprintf("will delete %d objects", len(deletions))
+		msg := fmt.Sprintf("will delete %d object(s)", len(deletions))
 		if err := config.Confirm(msg); err != nil {
 			return err
 		}

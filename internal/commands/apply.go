@@ -214,7 +214,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	if !opts.DryRun && len(deletions) > 0 {
-		msg := fmt.Sprintf("will delete %d object(s))", len(deletions))
+		msg := fmt.Sprintf("will delete %d object(s)", len(deletions))
 		if err := config.Confirm(msg); err != nil {
 			return err
 		}

@@ -62,7 +62,7 @@ metadata:
   name: bar-system
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: 100-default
@@ -88,7 +88,7 @@ spec:
   - projected
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: 200-allow-root
