@@ -1,6 +1,20 @@
 Changelog
 ---
 
+## v0.11.1 (May 24, 2020)
+
+* Add ability to refer to an environment by context name rather than server URL. This is useful for environments
+  such as `minikube` and `kind` that do not have a stable URL. Since this requires a shared context name, it
+  should be used sparingly.
+* Add ability to introduce an environment file not declared in qbec.yaml. This is controlled by the `--env-file`
+  parameter to qbec commands. Environments in this additional file will override environments of the same name
+  if they already exist.
+* Add ability to force namespace to the current value in the kubeconfig using the keywork `__current__`. This can
+  only be done only if the context is also similarly forced.
+* Reduce verbosity of `apply` output. By default, dry-run works as before and actual apply only shows a single
+  line per object added/ updated/ deleted. This behavior can be explicitly controlled by the `--show-details` flag 
+  for the apply command.
+
 ## v0.11.0 (Mar 26, 2020)
 
 There are no backwards-incompatible changes in this release. The minor version upgrade is to account for any
