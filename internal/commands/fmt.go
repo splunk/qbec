@@ -43,7 +43,7 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		default:
 			if shouldFormat(config, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
-					return fmt.Errorf("error processing %q: %v", path, err)
+					return err
 				}
 			}
 		}
@@ -104,7 +104,7 @@ func fileVisitor(config *fmtCommandConfig) filepath.WalkFunc {
 		// Don't complain if a file was deleted in the meantime (i.e.
 		// the directory changed concurrently while running fmt).
 		if err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("error processing %q: %v", path, err)
+			return err
 		}
 		return nil
 	}
@@ -133,7 +133,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 
 	res, err := format(src, filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("error formatting file %q: %v", filename, err)
 	}
 
 	if !bytes.Equal(src, res) {
@@ -145,16 +145,17 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 			// make a temporary backup before overwriting original
 			bakname, err := backupFile(filename+".", src, perm)
 			if err != nil {
-				return err
+				return fmt.Errorf("error creating backup file %q: %v", filename+".", err)
 			}
 			err = ioutil.WriteFile(filename, res, perm)
 			if err != nil {
 				os.Rename(bakname, filename)
-				return err
+
+				return fmt.Errorf("error writing file %q: %v", filename, err)
 			}
 			err = os.Remove(bakname)
 			if err != nil {
-				return err
+				return fmt.Errorf("error removing backup file %q: %v", bakname, err)
 			}
 		}
 	}
