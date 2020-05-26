@@ -6,7 +6,7 @@ builds:
     binary: qbec
     main: ./
     ldflags:
-      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
+      - -X github.com/splunk/qbec/internal/commands.version={{.Version}} -X github.com/splunk/qbec/internal/commands.commit={{.Commit}} -X github.com/splunk/qbec/internal/commands.goVersion={{.Env.GO_VERSION}}
     env:
       - CGO_ENABLED=0
     goos:
@@ -18,8 +18,6 @@ builds:
   - id: jsonnet-qbec
     binary: jsonnet-qbec
     main: cmd/jsonnet-qbec/main.go
-    ldflags:
-      - -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.goVersion={{.Env.GO_VERSION}}
     env:
       - CGO_ENABLED=0
     goos:
