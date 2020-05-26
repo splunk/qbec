@@ -6,10 +6,9 @@ builds:
     binary: qbec
     main: ./
     ldflags:
-      - -X $LD_FLAGS_PKG.version={{.Version}} -X $LD_FLAGS_PKG.commit={{.Commit}} -X $LD_FLAGS_PKG.goVersion={{.Env.GO_VERSION}}
+      - -X github.com/splunk/qbec/internal/commands.version={{.Version}} -X github.com/splunk/qbec/internal/commands.commit={{.Commit}} -X github.com/splunk/qbec/internal/commands.goVersion={{.Env.GO_VERSION}}
     env:
       - CGO_ENABLED=0
-      - LD_FLAGS_PKG=github.com/splunk/qbec/internal/commands
     goos:
       - linux
       - darwin
