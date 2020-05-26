@@ -3,7 +3,7 @@ SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
 
 LEARN_THEME_TAG := 2.2.0
-# When modigying this, also modify the corresponding ldfag in .goreleaser.yml
+# When modigying this, also modify the corresponding ldfag in .goreleaser.yaml
 LD_FLAGS_PKG ?= github.com/splunk/qbec/internal/commands
 LD_FLAGS :=
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).version=$(VERSION)"
