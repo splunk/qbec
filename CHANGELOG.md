@@ -1,6 +1,12 @@
 Changelog
 ---
 
+## v0.11.2 (May 27, 2020)
+
+* Fix regression in previous release where `LD_FLAGS` were not set correctly causing qbec to report a wrong version.
+
+Please avoid using `v0.11.1` as a result.
+
 ## v0.11.1 (May 24, 2020)
 
 * Add ability to refer to an environment by context name rather than server URL. This is useful for environments
