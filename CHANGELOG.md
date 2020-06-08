@@ -1,6 +1,14 @@
 Changelog
 ---
 
+## v0.12.0 (Jun 8, 2020)
+
+There are no backwards-incompatible changes in this release. The minor version upgrade is to account for any
+inadvertent incompatibilities introduced by the jsonnet library upgrade.
+
+* Add `alpha fmt` command to format jsonnet/ libsonnet files and, optionally, yaml files (thanks to @harsimranmaan).
+  This also has facilities to only check if all files are well-formatted. Type `qbec alpha fmt --help` for details.
+  
 ## v0.11.2 (May 27, 2020)
 
 * Fix regression in previous release where `LD_FLAGS` were not set correctly causing qbec to report a wrong version.
