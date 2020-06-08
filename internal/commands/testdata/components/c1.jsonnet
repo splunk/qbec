@@ -1,7 +1,7 @@
 function (tlaFoo = 'bar') (
     {
         apiVersion: 'v1',
-        kind: 'ConfigMap'
+        kind: 'ConfigMap',
         metadata: {
             name: 'cm1',
         },
@@ -10,4 +10,3 @@ function (tlaFoo = 'bar') (
         },
     }
 )
-

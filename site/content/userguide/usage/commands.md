@@ -14,6 +14,7 @@ Usage:
   qbec [command]
 
 Available Commands:
+  alpha       experimental qbec commands
   apply       apply one or more components to a Kubernetes cluster
   completion  Output shell completion for bash
   component   component lists and diffs
@@ -93,7 +94,7 @@ to mean `deployment`.
 
 ## Command help
 
-Help and examples for every sub-command can be displayed with a `--help` flag. 
+Help and examples for every sub-command can be displayed with a `--help` flag.
 For example, here's help on the `show` sub-command.
 
 ```shell
@@ -164,7 +165,7 @@ $ eval $(qbec env vars dev) # this sets the environment variables printed above
 $ kubectl ${KUBECTL_ARGS} apply -f somefile.yaml
 ```
 
-If you want the cluster, context, namespace etc. as structured output you can use the `-o json` 
+If you want the cluster, context, namespace etc. as structured output you can use the `-o json`
 option.
 
 ```
@@ -177,3 +178,20 @@ $ qbec env vars dev -o json
 }
 ```
 
+## Experimental commands
+
+`qbec` includes some experimental commands that are not ready for primetime. These commands are not guaranteed to be backwards compatible between releases. They might also be removed in a future release. Use with caution.
+
+To see a list of experimental commands, run:
+
+```shell
+qbec alpha --help
+```
+
+For example, here's how you use the `fmt` command.
+
+```shell
+qbec alpha fmt -w
+```
+
+The `fmt` command would format all jsonnet and libsonnet files.
