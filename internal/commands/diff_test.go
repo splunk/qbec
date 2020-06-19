@@ -18,6 +18,7 @@ package commands
 
 import (
 	"encoding/base64"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -34,17 +35,23 @@ func TestDiffBasicNoDiffs(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestDiffBasic(t *testing.T) {
+func testDiffBasic(t *testing.T, errorExit bool) {
 	s := newScaffold(t)
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	s.client.listFunc = stdLister
-	err := s.executeCommand("diff", "dev")
-	require.NotNil(t, err)
-	stats := s.outputStats()
+	err := s.executeCommand("diff", "dev", fmt.Sprintf("--error-exit=%v", errorExit))
+
 	a := assert.New(t)
-	a.True(regexp.MustCompile(`\d+ object\(s\) different`).MatchString(err.Error()))
+	if errorExit {
+		require.Error(t, err)
+		a.True(regexp.MustCompile(`\d+ object\(s\) different`).MatchString(err.Error()))
+	} else {
+		require.NoError(t, err)
+	}
+
+	stats := s.outputStats()
 	a.EqualValues([]interface{}{"ConfigMap:bar-system:svc2-cm", "Secret:bar-system:svc2-secret"}, stats["changes"])
 	a.EqualValues([]interface{}{"Deployment:bar-system:svc2-previous-deploy"}, stats["deletions"])
 	adds, ok := stats["additions"].([]interface{})
@@ -55,6 +62,14 @@ func TestDiffBasic(t *testing.T) {
 	a.Contains(s.stdout(), redactedValue)
 	a.Contains(s.stdout(), "qbec.io/component: service2")
 	a.NotContains(s.stdout(), secretValue)
+}
+
+func TestDiffBasic(t *testing.T) {
+	testDiffBasic(t, true)
+}
+
+func TestDiffBasicNoErrorExit(t *testing.T) {
+	testDiffBasic(t, false)
 }
 
 func TestDiffGetFail(t *testing.T) {
