@@ -107,9 +107,9 @@ func walkObjects(path string, data interface{}, ctx interface{}) ([]map[string]i
 			}
 		}
 	default:
-		return nil, fmt.Errorf("unexpected type for object (%v) at path %q, (json=\n%s)",
-			reflect.TypeOf(data),
+		return nil, fmt.Errorf("non-kubernetes object found while evaluating path %q (found %q, json=\n%s)",
 			path,
+			reflect.TypeOf(data),
 			tolerantJSON(ctx))
 	}
 	return ret, nil

@@ -286,7 +286,7 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 		},
 	}, Context{Env: "dev"})
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), `unexpected type for object (string) at path "$[0].foo"`)
+	require.Contains(t, err.Error(), `non-kubernetes object found while evaluating path "$[0].foo" (found "string"`)
 }
 
 func TestEvalComponentsBadMetadata(t *testing.T) {
