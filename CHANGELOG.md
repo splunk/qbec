@@ -1,6 +1,13 @@
 Changelog
 ---
 
+## v0.12.1 (Jun 20, 2020)
+
+* Add an `error-exit` option to the `diff` command to be able to exit 0 even when diffs are present. This currently has a
+  `true` default for backwards compatibility. The next minor release of qbec will flip this default to `false`.
+* Improve error message when object processing fails due to bad json created by a component. Thanks to @wurbanski
+  for this contribution.
+
 ## v0.12.0 (Jun 8, 2020)
 
 There are no backwards-incompatible changes in this release. The minor version upgrade is to account for any
