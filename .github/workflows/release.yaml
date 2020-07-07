@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v2
         with:
-          go-version: 1.14
+          go-version: 1.15
         id: go
       - uses: actions/checkout@v2
       - name: Install package dependencies
@@ -20,7 +20,7 @@ jobs:
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           make get
       - name: Release via goreleaser
-        uses: goreleaser/goreleaser-action@master
+        uses: goreleaser/goreleaser-action@v2
         with:
           args: release --rm-dist --release-notes .release-notes.md
         env:

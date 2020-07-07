@@ -1,9 +1,12 @@
 a: 1
 # My super important comment
 b:
-- c:
-  e: 4
-  a: 4
+  - c:
+    e: 4
+    a: 4
+e:
+  - f: 2
+    g: 4
 ---
 b: c
 ---
