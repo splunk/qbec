@@ -44,10 +44,9 @@ func (s *stubLister) deletions(ignore []model.K8sLocalObject, filter func(obj mo
 }
 
 type remoteLister struct {
-	client       listClient
-	ch           chan listResult
-	unknownTypes map[schema.GroupVersionKind]bool
-	cfg          remote.ListQueryConfig
+	client listClient
+	ch     chan listResult
+	cfg    remote.ListQueryConfig
 }
 
 type listResult struct {
@@ -91,9 +90,8 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 	sort.Strings(nsList)
 
 	return &remoteLister{
-			client:       client,
-			ch:           make(chan listResult, 1),
-			unknownTypes: unknown,
+			client: client,
+			ch:     make(chan listResult, 1),
 		},
 		remote.ListQueryScope{
 			Namespaces:     nsList,
@@ -129,9 +127,6 @@ func (r *remoteLister) deletions(all []model.K8sLocalObject, filter func(obj mod
 
 	var removals []model.K8sQbecMeta
 	for _, c := range all {
-		if r.unknownTypes[c.GroupVersionKind()] {
-			continue
-		}
 		if !cfg.KindFilter.ShouldInclude(c.GetKind()) {
 			continue
 		}
