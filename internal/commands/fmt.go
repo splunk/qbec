@@ -70,7 +70,7 @@ func newFmtCommand(cp configProvider) *cobra.Command {
 	var specifiedTypes []string
 	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().StringSliceVar(&specifiedTypes, "types", supportedTypes, "file types that should be formatted. Supports yaml,json,jsonnet.")
+	cmd.Flags().StringSliceVar(&specifiedTypes, "types", supportedTypes, "file types that should be formatted")
 	cmd.Flags().BoolVar(&config.formatJsonnet, "jsonnet", true, "format jsonnet and libsonnet files")
 	cmd.Flags().BoolVar(&config.formatJson, "json", true, "format json files")
 	cmd.Flags().BoolVar(&config.formatYaml, "yaml", true, "format yaml files")
@@ -225,7 +225,7 @@ func format(in []byte, filename string) ([]byte, error) {
 		return formatJsonnet(in)
 	}
 	if getFileType(filename) == "json" {
-		return formatJson(in)
+		return formatJSON(in)
 	}
 	return nil, fmt.Errorf("unknown file type for file %q", filename)
 }
@@ -287,14 +287,14 @@ func formatJsonnet(in []byte) ([]byte, error) {
 	return []byte(ret), nil
 }
 
-func formatJson(in []byte) ([]byte, error) {
+func formatJSON(in []byte) ([]byte, error) {
 	var j interface{}
 	decoder := json.NewDecoder(bytes.NewReader(in))
 	decoder.UseNumber()
-	//Validate input json
 	defaultOptions := pretty.DefaultOptions
 	// Make array values to spread across lines
 	defaultOptions.Width = -1
+	//Validate input json
 	var err = decoder.Decode(&j)
 	return pretty.PrettyOptions(in, defaultOptions), err
 }

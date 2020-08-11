@@ -186,10 +186,10 @@ func TestFormatJsonnet(t *testing.T) {
 	}
 }
 
-func TestFormatJson(t *testing.T) {
+func TestFormatJSON(t *testing.T) {
 	var testfile, err = ioutil.ReadFile("testdata/test.json")
 	require.Nil(t, err)
-	o, err := formatJson(testfile)
+	o, err := formatJSON(testfile)
 	require.Nil(t, err)
 	e, err := ioutil.ReadFile("testdata/test.json.formatted")
 	require.Nil(t, err)
