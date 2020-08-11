@@ -36,12 +36,11 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762
 	k8s.io/client-go v0.0.0-20191016110837-54936ba21026
+	k8s.io/gengo v0.0.0-20200728071708-7794989d0000
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 	k8s.io/kubernetes v1.14.1
 )
