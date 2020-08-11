@@ -39,6 +39,31 @@ func TestIsYaml(t *testing.T) {
 	}
 }
 
+func TestIsJson(t *testing.T) {
+	var tests = []struct {
+		fileName string
+		expected bool
+	}{
+		{"testdata/qbec.yaml", false},
+		{"testdata/test.yml", false},
+		{"testdata", false},
+		{"testdata/test.json", true},
+		{"testdata/test.libsonnet", false},
+	}
+	for _, test := range tests {
+		t.Run(test.fileName, func(t *testing.T) {
+			f, err := os.Stat(test.fileName)
+			if err != nil {
+				t.Fatalf("Unexpected error'%v'", err)
+			}
+			var actual = isJsonFile(f)
+			if test.expected != actual {
+				t.Errorf("Expected '%t', got '%t'", test.expected, actual)
+			}
+		})
+	}
+}
+
 func TestShouldFormat(t *testing.T) {
 	var tests = []struct {
 		fileName string
@@ -155,6 +180,18 @@ func TestFormatJsonnet(t *testing.T) {
 	o, err := formatJsonnet(testfile)
 	require.Nil(t, err)
 	e, err := ioutil.ReadFile("testdata/test.libsonnet.formatted")
+	require.Nil(t, err)
+	if !bytes.Equal(o, e) {
+		t.Errorf("Expected %q, got %q", string(e), string(o))
+	}
+}
+
+func TestFormatJson(t *testing.T) {
+	var testfile, err = ioutil.ReadFile("testdata/test.json")
+	require.Nil(t, err)
+	o, err := formatJson(testfile)
+	require.Nil(t, err)
+	e, err := ioutil.ReadFile("testdata/test.json.formatted")
 	require.Nil(t, err)
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
