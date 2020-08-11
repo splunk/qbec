@@ -184,6 +184,8 @@ func TestFormatJsonnet(t *testing.T) {
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
 	}
+	_, err = formatJsonnet([]byte("---"))
+	require.NotNil(t, err)
 }
 
 func TestFormatJSON(t *testing.T) {
@@ -196,6 +198,8 @@ func TestFormatJSON(t *testing.T) {
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
 	}
+	_, err = formatJSON([]byte("---"))
+	require.NotNil(t, err)
 }
 
 func TestFmtCommand(t *testing.T) {
