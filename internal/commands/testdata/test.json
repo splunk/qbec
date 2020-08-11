@@ -1,20 +1,13 @@
-{
-  "groups": {
-    "kind": "APIGroupList",
+{"groups": {"kind": "APIGroupList",
     "apiVersion": "v1",
-    "num": 1,
-    "bool": true,
-    "float": 1.12,
-    "groups": [
-      {
+    "num": 1,"bool": true,"float": 1.12,
+"groups": [
+ {
         "name": "",
-        "versions": [
-          {
-            "groupVersion": "v1",
-            "version": "v1"
+        "versions": [{
+            "groupVersion": "v1",            "version": "v1"
           }
-        ],
-        "preferredVersion": {
+        ],"preferredVersion": {
           "groupVersion": "v1",
           "version": "v1"
         },
@@ -25,16 +18,13 @@
   "resourceLists": {
     ":v1": {
       "kind": "APIResourceList",
-      "groupVersion": "v1",
-      "resources": [
+      "groupVersion": "v1","resources": [
         {
           "name": "bindings",
           "singularName": "",
           "namespaced": true,
           "kind": "Binding",
-          "verbs": [
-            "create"
-          ]
+          "verbs": ["create"]
         },
         {
           "name": "resourcequotas/status",
@@ -42,12 +32,8 @@
           "namespaced": true,
           "kind": "ResourceQuota",
           "verbs": [
-            "get",
-            "patch",
+            "get", "patch",
             "update"
           ]
-        }
-      ]
-    }
-  }
-}
+        }]
+    }}}

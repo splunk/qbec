@@ -293,8 +293,8 @@ func formatJson(in []byte) ([]byte, error) {
 	decoder.UseNumber()
 	//Validate input json
 	defaultOptions := pretty.DefaultOptions
-	// For array values to spread across lines
-	defaultOptions.Width = 1
+	// Make array values to spread across lines
+	defaultOptions.Width = -1
 	var err = decoder.Decode(&j)
 	return pretty.PrettyOptions(in, defaultOptions), err
 }
