@@ -160,7 +160,7 @@ func (o *objectLister) serverObjects(coll *collection) error {
 	var workers []func()
 	addQueries := func(types []schema.GroupVersionKind, ns string) {
 		for _, gvk := range types {
-			if o.scope.KindFilter != nil && !o.scope.KindFilter.ShouldInclude(gvk.Kind) {
+			if o.scope.KindFilter != nil && !o.scope.KindFilter(gvk) {
 				continue
 			}
 			localType := gvk
