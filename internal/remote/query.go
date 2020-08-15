@@ -178,6 +178,7 @@ func (o *objectLister) serverObjects(coll *collection) error {
 				addQueries(o.namespacedTypes, ns)
 			}
 		default:
+			sio.Warnf("using cluster scoped queries since multiple namespaces present (%s)\n", strings.Join(o.scope.Namespaces, ", "))
 			addQueries(o.namespacedTypes, "")
 		}
 	}
