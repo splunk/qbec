@@ -19,6 +19,9 @@ package model
 import (
 	"fmt"
 	"strings"
+
+	"k8s.io/gengo/namer"
+	"k8s.io/gengo/types"
 )
 
 // Filter filters inputs.
@@ -85,13 +88,10 @@ func NewComponentFilter(includes, excludes []string) (Filter, error) {
 // NewKindFilter returns a filter for object kinds that ignores case and takes
 // pluralization into account.
 func NewKindFilter(includes, excludes []string) (Filter, error) {
-	// poor man's pluralizer
 	aliases := func(s string) []string {
+		n := namer.NewAllLowercasePluralNamer(nil)
 		kind := strings.ToLower(s)
-		plural := kind + "s"
-		if strings.HasSuffix(kind, "cy") {
-			plural = kind[:len(kind)-1] + "ies"
-		}
+		plural := n.Name(&types.Type{Name: types.Name{Name: kind}})
 		return []string{kind, plural}
 	}
 	mapLower := func(input []string) []string {

@@ -71,12 +71,13 @@ func TestKindFilterIncludes(t *testing.T) {
 }
 
 func TestKindFilterIncludesPlural(t *testing.T) {
-	filter, err := NewKindFilter([]string{"foos", "icies"}, []string{})
+	filter, err := NewKindFilter([]string{"foos", "icies", "classes"}, []string{})
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.True(filter.HasFilters())
 	a.True(filter.ShouldInclude("foo"))
 	a.True(filter.ShouldInclude("icy"))
+	a.True(filter.ShouldInclude("class"))
 	a.True(filter.ShouldInclude("ICIES"))
 	a.True(filter.ShouldInclude("ICY"))
 	a.False(filter.ShouldInclude("baz"))
