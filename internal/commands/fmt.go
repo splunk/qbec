@@ -20,13 +20,11 @@ import (
 
 type fmtCommandConfig struct {
 	*config
-	check         bool
-	write         bool
-	formatTypes   map[string]bool
-	formatJsonnet bool
-	formatYaml    bool
-	formatJson    bool
-	files         []string
+	check          bool
+	write          bool
+	formatTypes    map[string]bool
+	specifiedTypes []string
+	files          []string
 }
 
 func doFmt(args []string, config *fmtCommandConfig) error {
@@ -37,6 +35,21 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		config.files = args
 	} else {
 		config.files = []string{"."}
+	}
+	config.formatTypes = make(map[string]bool)
+	isSupported := func(s string) bool {
+		for _, t := range supportedTypes {
+			if s == t {
+				return true
+			}
+		}
+		return false
+	}
+	for _, s := range config.specifiedTypes {
+		if !isSupported(s) {
+			return newUsageError(fmt.Sprintf("%q is not a supported type", s))
+		}
+		config.formatTypes[s] = true
 	}
 	for _, path := range config.files {
 		switch dir, err := os.Stat(path); {
@@ -56,7 +69,7 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 }
 
 var (
-	supportedTypes = []string{"json,jsonnet,yaml"}
+	supportedTypes = []string{"json", "jsonnet", "yaml"}
 )
 
 func newFmtCommand(cp configProvider) *cobra.Command {
@@ -67,13 +80,9 @@ func newFmtCommand(cp configProvider) *cobra.Command {
 	}
 
 	config := fmtCommandConfig{}
-	var specifiedTypes []string
 	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().StringSliceVar(&specifiedTypes, "types", supportedTypes, "file types that should be formatted")
-	cmd.Flags().BoolVar(&config.formatJsonnet, "jsonnet", true, "format jsonnet and libsonnet files")
-	cmd.Flags().BoolVar(&config.formatJson, "json", true, "format json files")
-	cmd.Flags().BoolVar(&config.formatYaml, "yaml", true, "format yaml files")
+	cmd.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", supportedTypes, "file types that should be formatted")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		return wrapError(doFmt(args, &config))
@@ -91,23 +100,20 @@ func isJsonnetFile(f os.FileInfo) bool {
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "jsonnet"
 }
 
-func isJsonFile(f os.FileInfo) bool {
+func isJSONFile(f os.FileInfo) bool {
 	name := f.Name()
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "json"
 }
 
 func shouldFormat(config *fmtCommandConfig, f os.FileInfo) bool {
-	if config.formatJsonnet && config.formatYaml {
-		return isJsonnetFile(f) || isYamlFile(f)
-	}
-	if config.formatJsonnet {
+	if config.formatTypes["jsonnet"] {
 		return isJsonnetFile(f)
 	}
-	if config.formatYaml {
+	if config.formatTypes["yaml"] {
 		return isYamlFile(f)
 	}
-	if config.formatJson {
-		return isJsonFile(f)
+	if config.formatTypes["json"] {
+		return isJSONFile(f)
 	}
 	return false
 }
