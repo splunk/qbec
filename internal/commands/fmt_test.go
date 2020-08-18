@@ -209,6 +209,14 @@ func TestFmtCommand(t *testing.T) {
 	s.assertOutputLineMatch(regexp.MustCompile(`      - service2`))
 }
 
+func TestInvalidFormatType(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("alpha", "fmt", "-t=unknown", "prod-env.yaml")
+	require.NotNil(t, err)
+	require.Equal(t, `"unknown" is not a supported type`, err.Error())
+}
+
 func TestProcessFile(t *testing.T) {
 
 	var tests = []struct {
