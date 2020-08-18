@@ -73,6 +73,7 @@ func TestShouldFormat(t *testing.T) {
 		{"testdata/test.yml", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, false},
 		{"testdata", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true, "json": true, "yaml": true}}, false},
 		{"testdata/components/c1.jsonnet", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, true},
+		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
 	}
 	for _, test := range tests {
 		t.Run(test.fileName, func(t *testing.T) {
@@ -225,6 +226,7 @@ func TestProcessFile(t *testing.T) {
 	}{
 		{input: "testdata/test.libsonnet", output: "testdata/test.libsonnet.formatted"},
 		{input: "testdata/test.yml", output: "testdata/test.yml.formatted"},
+		{input: "testdata/test.json", output: "testdata/test.json.formatted"},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
