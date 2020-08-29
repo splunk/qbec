@@ -1,3 +1,5 @@
+include Makefile.tools
+
 VERSION         := 0.12.1
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
@@ -11,17 +13,16 @@ LD_FLAGS +=  -X "$(LD_FLAGS_PKG).commit=$(SHORT_COMMIT)"
 LD_FLAGS +=  -X "$(LD_FLAGS_PKG).goVersion=$(GO_VERSION)"
 
 LINT_FLAGS ?=
+TEST_FLAGS ?=
 
 export GO111MODULE=on
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
-.PHONY: all
-all: get build lint test
+.DEFAULT_GOAL := all
 
-.PHONY: get
-get:
-	go get ./...
+.PHONY: all
+all: build lint test
 
 .PHONY: build
 build:
@@ -29,7 +30,7 @@ build:
 
 .PHONY: test
 test:
-	go test -coverprofile=coverage.txt -covermode=atomic -race ./...
+	go test $(TEST_FLAGS) -coverprofile=coverage.txt -covermode=atomic -race ./...
 
 .PHONY: publish-coverage
 publish-coverage:
@@ -52,11 +53,12 @@ check-format:
 		@echo All files are well formatted.\
 	)
 .PHONY: install-ci
-install-ci:
+install-ci: .tools/kind
 	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
 	tar -xvzf helm.tar.gz
 	mv linux-amd64/helm $(GOPATH)/bin/
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
+	.tools/kind create cluster
 
 .PHONY: install
 install:

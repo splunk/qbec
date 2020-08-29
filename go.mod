@@ -38,6 +38,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	k8s.io/api v0.0.0-20191016110246-af539daaa43a
 	k8s.io/apimachinery v0.0.0-20191004115701-31ade1b30762
 	k8s.io/client-go v0.0.0-20191016110837-54936ba21026
 	k8s.io/gengo v0.0.0-20200728071708-7794989d0000

@@ -9,3 +9,4 @@ helm.tar.gz
 linux-amd64/
 bin/
 .release-notes.md
+.tools/

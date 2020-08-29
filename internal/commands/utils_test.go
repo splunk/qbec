@@ -189,24 +189,23 @@ func setPwd(t *testing.T, dir string) func() {
 	}
 }
 
-type scaffold struct {
+type baseScaffold struct {
 	t          *testing.T
-	client     *client
 	outCapture *bytes.Buffer
 	errCapture *bytes.Buffer
 	reset      func()
 	cmd        *cobra.Command
 }
 
-func (s *scaffold) stdout() string {
+func (s *baseScaffold) stdout() string {
 	return s.outCapture.String()
 }
 
-func (s *scaffold) stderr() string {
+func (s *baseScaffold) stderr() string {
 	return s.errCapture.String()
 }
 
-func (s *scaffold) yamlOutput() ([]interface{}, error) {
+func (s *baseScaffold) yamlOutput() ([]interface{}, error) {
 	var ret []interface{}
 	data := s.outCapture.Bytes()
 	d := yaml.NewYAMLToJSONDecoder(bytes.NewReader(data))
@@ -223,11 +222,11 @@ func (s *scaffold) yamlOutput() ([]interface{}, error) {
 	return ret, nil
 }
 
-func (s *scaffold) jsonOutput(data interface{}) error {
+func (s *baseScaffold) jsonOutput(data interface{}) error {
 	return json.Unmarshal(s.outCapture.Bytes(), &data)
 }
 
-func (s *scaffold) executeCommand(args ...string) (err error) {
+func (s *baseScaffold) executeCommand(args ...string) (err error) {
 	s.cmd.SetArgs(args)
 	defer func() {
 		if os.Getenv("QBEC_VERBOSE") != "" {
@@ -241,7 +240,7 @@ func (s *scaffold) executeCommand(args ...string) (err error) {
 	return s.cmd.Execute()
 }
 
-func (s *scaffold) testMatch(str string, r *regexp.Regexp) bool {
+func (s *baseScaffold) testMatch(str string, r *regexp.Regexp) bool {
 	lines := strings.Split(str, "\n")
 	for _, l := range lines {
 		if r.MatchString(l) {
@@ -251,28 +250,28 @@ func (s *scaffold) testMatch(str string, r *regexp.Regexp) bool {
 	return false
 }
 
-func (s *scaffold) assertOutputLineMatch(r *regexp.Regexp) {
+func (s *baseScaffold) assertOutputLineMatch(r *regexp.Regexp) {
 	b := s.testMatch(s.stdout(), r)
 	if !b {
 		s.t.Errorf("[unexpected] no output line matches: %v", r)
 	}
 }
 
-func (s *scaffold) assertOutputLineNoMatch(r *regexp.Regexp) {
+func (s *baseScaffold) assertOutputLineNoMatch(r *regexp.Regexp) {
 	b := s.testMatch(s.stdout(), r)
 	if b {
 		s.t.Errorf("[unexpected] output line matches: %v", r)
 	}
 }
 
-func (s *scaffold) assertErrorLineMatch(r *regexp.Regexp) {
+func (s *baseScaffold) assertErrorLineMatch(r *regexp.Regexp) {
 	b := s.testMatch(s.stderr(), r)
 	if !b {
 		s.t.Errorf("[unexpected] no error line matches: %v", r)
 	}
 }
 
-func (s *scaffold) outputStats() map[string]interface{} {
+func (s *baseScaffold) outputStats() map[string]interface{} {
 	out := s.stdout()
 	pos := strings.LastIndex(out, "---")
 	require.True(s.t, pos >= 0)
@@ -285,15 +284,10 @@ func (s *scaffold) outputStats() map[string]interface{} {
 	return data.Stats
 }
 
-func newCustomScaffold(t *testing.T, dir string) *scaffold {
-	if dir == "" {
-		dir = "../../examples/test-app"
-	}
+func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) baseScaffold {
 	reset := setPwd(t, dir)
 	out := bytes.NewBuffer(nil)
 
-	c := &client{}
-	clientProvider := func(env string) (kubeClient, error) { return c, nil }
 	cp := configFactory{
 		stdout:      out,
 		skipConfirm: true,
@@ -308,9 +302,8 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 	cmd.SetErr(out)
 	cmd.SilenceErrors = true
 	cmd.SilenceUsage = true
-	s := &scaffold{
+	s := baseScaffold{
 		t:          t,
-		client:     c,
 		outCapture: out,
 		errCapture: bytes.NewBuffer(nil),
 		cmd:        cmd,
@@ -325,7 +318,25 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		sio.EnableColors = oldColors
 	}
 	return s
+}
 
+type scaffold struct {
+	baseScaffold
+	client *client
+}
+
+func newCustomScaffold(t *testing.T, dir string) *scaffold {
+	if dir == "" {
+		dir = "../../examples/test-app"
+	}
+	c := &client{}
+	clientProvider := func(env string) (kubeClient, error) { return c, nil }
+	base := newBaseScaffold(t, dir, clientProvider)
+	s := &scaffold{
+		baseScaffold: base,
+		client:       c,
+	}
+	return s
 }
 
 func newScaffold(t *testing.T) *scaffold {
