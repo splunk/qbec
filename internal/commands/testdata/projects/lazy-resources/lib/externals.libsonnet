@@ -1,0 +1,3 @@
+{
+    suffix: std.extVar('suffix'),
+}

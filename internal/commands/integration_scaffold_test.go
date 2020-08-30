@@ -25,7 +25,7 @@ var (
 
 func initialize(t *testing.T) {
 	contextName = os.Getenv("QBEC_CONTEXT")
-	if contextName != "" {
+	if contextName == "" {
 		contextName = "kind-kind"
 	}
 	c, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
@@ -76,4 +76,11 @@ func (s *integrationScaffold) executeCommand(testArgs ...string) error {
 		"--force:k8s-namespace="+s.ns,
 	)
 	return s.baseScaffold.executeCommand(args...)
+}
+
+func (s *integrationScaffold) sub() *integrationScaffold {
+	return &integrationScaffold{
+		baseScaffold: s.baseScaffold.sub(),
+		ns:           s.ns,
+	}
 }
