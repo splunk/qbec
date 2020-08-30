@@ -24,6 +24,10 @@ GOARCH ?= $(shell go env GOARCH)
 .PHONY: all
 all: build lint test
 
+.PHONY: get
+get:
+	go get ./...
+
 .PHONY: build
 build:
 	go install -ldflags '$(LD_FLAGS)' ./...
