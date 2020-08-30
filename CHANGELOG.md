@@ -1,6 +1,15 @@
 Changelog
 ---
 
+## v0.12.2 (Aug 30, 2020)
+
+* Fix a bug where under certain circumstances of failed discovery, qbec would delete resources not meant to be deleted.
+  Thanks to @sj14 for the bug report and partial fix.
+* Add a warning when remote listing for GC switches to cluster scoped mode with a reason as to why this is happening.
+  These are typically setup errors by authors who want to deploy to a single namespace.
+* Fix pluralization for more kinds when using the kind filter
+* Create and run basic integration tests for qbec against a local kind cluster
+
 ## v0.12.1 (Jun 20, 2020)
 
 * Add an `error-exit` option to the `diff` command to be able to exit 0 even when diffs are present. This currently has a
