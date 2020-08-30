@@ -44,13 +44,13 @@ func testDeployment(name string) model.K8sMeta {
 
 func TestWaitListener(t *testing.T) {
 	var buf bytes.Buffer
-	oldOutput, oldColors := sio.Output, sio.EnableColors
+	oldOutput, oldColors := sio.Output, sio.ColorsEnabled()
 	defer func() {
 		sio.Output = oldOutput
-		sio.EnableColors = oldColors
+		sio.EnableColors(oldColors)
 	}()
 	sio.Output = &buf
-	sio.EnableColors = false
+	sio.EnableColors(false)
 
 	d1, d2, d3 := testDeployment("d1"), testDeployment("d2"), testDeployment("d3")
 	wl := &waitListener{displayNameFn: testDisplayName}
@@ -75,13 +75,13 @@ func TestWaitListener(t *testing.T) {
 
 func TestWaitListenerTimeout(t *testing.T) {
 	var buf bytes.Buffer
-	oldOutput, oldColors := sio.Output, sio.EnableColors
+	oldOutput, oldColors := sio.Output, sio.ColorsEnabled()
 	defer func() {
 		sio.Output = oldOutput
-		sio.EnableColors = oldColors
+		sio.EnableColors(oldColors)
 	}()
 	sio.Output = &buf
-	sio.EnableColors = false
+	sio.EnableColors(false)
 
 	d1, d2, d3 := testDeployment("d1"), testDeployment("d2"), testDeployment("d3")
 	wl := &waitListener{displayNameFn: testDisplayName}

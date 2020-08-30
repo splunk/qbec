@@ -290,7 +290,7 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 	out := bytes.NewBuffer(nil)
 
 	cp := configFactory{
-		stdout:      out,
+		stdout:      &lockWriter{Writer: out},
 		skipConfirm: true,
 		colors:      false,
 	}
@@ -311,13 +311,13 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 		cmd:        cmd,
 	}
 	oldOut := sio.Output
-	oldColors := sio.EnableColors
-	sio.Output = s.errCapture
-	sio.EnableColors = false
+	oldColors := sio.ColorsEnabled()
+	sio.Output = &lockWriter{Writer: s.errCapture}
+	sio.EnableColors(false)
 	s.reset = func() {
 		reset()
 		sio.Output = oldOut
-		sio.EnableColors = oldColors
+		sio.EnableColors(oldColors)
 	}
 	return s
 }
@@ -325,7 +325,7 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 func (s *baseScaffold) sub() baseScaffold {
 	out := bytes.NewBuffer(nil)
 	cp := configFactory{
-		stdout:      s.outCapture,
+		stdout:      &lockWriter{Writer: out},
 		skipConfirm: true,
 		colors:      false,
 	}

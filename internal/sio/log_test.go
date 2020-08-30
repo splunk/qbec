@@ -27,9 +27,9 @@ import (
 func TestOutputWithoutColors(t *testing.T) {
 	var buf bytes.Buffer
 	orig := Output
-	origC := EnableColors
-	defer func() { Output = orig; EnableColors = origC }()
-	EnableColors = false
+	origC := ColorsEnabled()
+	defer func() { Output = orig; EnableColors(origC) }()
+	EnableColors(false)
 	Output = &buf
 
 	Println("this", "is", "a", "message")
@@ -61,9 +61,9 @@ func TestOutputWithoutColors(t *testing.T) {
 func TestOutputWithColors(t *testing.T) {
 	var buf bytes.Buffer
 	orig := Output
-	origC := EnableColors
-	defer func() { Output = orig; EnableColors = origC }()
-	EnableColors = true
+	origC := ColorsEnabled()
+	defer func() { Output = orig; EnableColors(origC) }()
+	EnableColors(true)
 	Output = &buf
 
 	Println("this", "is", "a", "message")

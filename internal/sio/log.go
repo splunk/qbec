@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 const esc = "\x1b["
@@ -35,17 +36,43 @@ const (
 	unicodeX     = "\u2718"    // X mark
 )
 
-// EnableColors enables colorized output when set. True by default.
-var EnableColors = true
+type colors struct {
+	sync.RWMutex
+	enabled bool
+}
+
+func (ce *colors) isEnabled() bool {
+	ce.RLock()
+	defer ce.RUnlock()
+	return ce.enabled
+}
+
+func (ce *colors) set(flag bool) {
+	ce.Lock()
+	defer ce.Unlock()
+	ce.enabled = flag
+}
+
+var ce = &colors{enabled: true}
+
+// EnableColors enables or disables colored output
+func EnableColors(flag bool) {
+	ce.set(flag)
+}
+
+// ColorsEnabled returns if colored output is enabled
+func ColorsEnabled() bool {
+	return ce.isEnabled()
+}
 
 func startColors(codes ...string) {
-	if EnableColors {
+	if ce.isEnabled() {
 		fmt.Fprint(Output, strings.Join(codes, ""))
 	}
 }
 
 func reset() {
-	if EnableColors {
+	if ce.isEnabled() {
 		fmt.Fprint(Output, codeReset)
 	}
 }

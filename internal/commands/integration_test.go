@@ -110,24 +110,24 @@ func TestIntegrationLazyCustomResources(t *testing.T) {
 
 	extra := []string{"--vm:ext-str=suffix=" + fmt.Sprint(time.Now().Unix())}
 	var err1, err2 error
+	done := make(chan struct{}, 1)
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	s1 := newIntegrationScaffold(t, ns, dir)
 	defer s1.reset()
+	defer s1.executeCommand(append(extra, "delete", "local")...)
+
+	s2 := s1.sub()
+	defer s2.reset()
+
 	go func() {
-		defer wg.Done()
-		err1 = s1.executeCommand(append(extra, "apply", "-C", "crds", "local")...)
+		defer func() { close(done) }()
+		err1 = s2.executeCommand(append(extra, "apply", "-C", "crds", "local")...)
 		require.NoError(t, err1)
 	}()
-	go func() {
-		defer wg.Done()
-		time.Sleep(5 * time.Second)
-		s2 := s1.sub()
-		defer s2.reset()
-		err2 = s2.executeCommand(append(extra, "apply", "-c", "crds", "local")...)
-		require.NoError(t, err2)
-	}()
-	wg.Wait()
-	_ = s1.executeCommand(append(extra, "delete", "local")...)
+	time.Sleep(2 * time.Second)
+	err2 = s1.executeCommand(append(extra, "apply", "-k", "customresourcedefinitions", "local")...)
+	require.NoError(t, err2)
+	<-done
 }
