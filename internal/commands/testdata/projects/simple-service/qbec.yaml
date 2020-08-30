@@ -1,0 +1,18 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: simple-service
+spec:
+  postProcessor: pp.libsonnet
+  environments:
+    local:
+      context: kind-kind
+      defaultNamespace: default
+  vars:
+    external:
+      - name: replicas
+        default: 1
+      - name: cmContent
+        default: 'hello world'
+

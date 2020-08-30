@@ -1,0 +1,33 @@
+run:
+    timeout: 3m
+    tests: true
+
+linters-settings:
+    exhaustive:
+      default-signifies-exhaustive: false
+    golint:
+      min-confidence: 0
+          
+linters:
+    disable-all: true
+    enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unused
+    - varcheck

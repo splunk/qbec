@@ -27,9 +27,6 @@ jobs:
           echo "::add-path::$HOME/go/bin"
           make install-ci install
 
-      - name: Install package dependencies
-        run: make get
-
       - name: Build
         run: make build
 
@@ -37,7 +34,7 @@ jobs:
         run: make lint
 
       - name: Test
-        run: make test
+        run: TEST_FLAGS="-tags integration" make test
 
       - name: Coverage Report
         run: make publish-coverage
