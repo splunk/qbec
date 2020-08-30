@@ -3,8 +3,11 @@
 package commands
 
 import (
+	"fmt"
 	"regexp"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,4 +101,33 @@ func TestIntegrationBasic(t *testing.T) {
 		a.EqualValues(1, stats["same"])
 		a.EqualValues(2, len(stats["updated"].([]interface{})))
 	})
+}
+
+func TestIntegrationLazyCustomResources(t *testing.T) {
+	dir := "testdata/projects/lazy-resources"
+	ns, reset := newNamespace(t)
+	defer reset()
+
+	extra := []string{"--vm:ext-str=suffix=" + fmt.Sprint(time.Now().Unix())}
+	var err1, err2 error
+	done := make(chan struct{}, 1)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	s1 := newIntegrationScaffold(t, ns, dir)
+	defer s1.reset()
+	defer s1.executeCommand(append(extra, "delete", "local")...)
+
+	s2 := s1.sub()
+	defer s2.reset()
+
+	go func() {
+		defer func() { close(done) }()
+		err1 = s2.executeCommand(append(extra, "apply", "-C", "crds", "local")...)
+		require.NoError(t, err1)
+	}()
+	time.Sleep(2 * time.Second)
+	err2 = s1.executeCommand(append(extra, "apply", "-k", "customresourcedefinitions", "local")...)
+	require.NoError(t, err2)
+	<-done
 }

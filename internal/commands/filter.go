@@ -23,6 +23,7 @@ import (
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type filterParams struct {
@@ -30,6 +31,10 @@ type filterParams struct {
 	excludes        []string
 	kindFilter      model.Filter
 	componentFilter model.Filter
+}
+
+func (f filterParams) GVKFilter(gvk schema.GroupVersionKind) bool {
+	return f.kindFilter == nil || f.kindFilter.ShouldInclude(gvk.Kind)
 }
 
 func (f filterParams) Includes(o model.K8sQbecMeta) bool {

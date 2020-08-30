@@ -318,7 +318,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 			Application:    config.App().Name(),
 			Tag:            config.App().Tag(),
 			Environment:    env,
-			KindFilter:     fp.kindFilter,
+			KindFilter:     fp.GVKFilter,
 			ListQueryScope: scope,
 		})
 	}

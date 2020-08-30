@@ -44,9 +44,10 @@ func (s *stubLister) deletions(ignore []model.K8sLocalObject, filter func(obj mo
 }
 
 type remoteLister struct {
-	client listClient
-	ch     chan listResult
-	cfg    remote.ListQueryConfig
+	client       listClient
+	ch           chan listResult
+	cfg          remote.ListQueryConfig
+	unknownTypes map[schema.GroupVersionKind]bool
 }
 
 type listResult struct {
@@ -90,8 +91,9 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 	sort.Strings(nsList)
 
 	return &remoteLister{
-			client: client,
-			ch:     make(chan listResult, 1),
+			client:       client,
+			ch:           make(chan listResult, 1),
+			unknownTypes: unknown,
 		},
 		remote.ListQueryScope{
 			Namespaces:     nsList,
@@ -102,6 +104,16 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 
 func (r *remoteLister) start(config remote.ListQueryConfig) {
 	r.cfg = config
+	if config.KindFilter == nil {
+		config.KindFilter = func(_ schema.GroupVersionKind) bool { return true }
+	}
+	orig := config.KindFilter
+	config.KindFilter = func(gvk schema.GroupVersionKind) bool {
+		if r.unknownTypes[gvk] {
+			return false
+		}
+		return orig(gvk)
+	}
 	go func() {
 		start := time.Now()
 		list, err := r.client.ListObjects(config)
@@ -120,14 +132,13 @@ func (r *remoteLister) deletions(all []model.K8sLocalObject, filter func(obj mod
 	sio.Debugf("server objects load took %v\n", lr.duration)
 
 	cfg := r.cfg
-	if cfg.KindFilter == nil {
-		f, _ := model.NewKindFilter(nil, nil)
-		cfg.KindFilter = f
-	}
 
 	var removals []model.K8sQbecMeta
 	for _, c := range all {
-		if !cfg.KindFilter.ShouldInclude(c.GetKind()) {
+		if !cfg.KindFilter(c.GroupVersionKind()) {
+			continue
+		}
+		if r.unknownTypes[c.GroupVersionKind()] {
 			continue
 		}
 		removals = append(removals, c)

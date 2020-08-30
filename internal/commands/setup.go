@@ -227,7 +227,7 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 		if !cmd.Flags().Changed("colors") {
 			cf.colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
-		sio.EnableColors = cf.colors
+		sio.EnableColors(cf.colors)
 
 		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
 		// directory before we change it

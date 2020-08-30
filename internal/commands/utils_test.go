@@ -191,6 +191,7 @@ func setPwd(t *testing.T, dir string) func() {
 
 type baseScaffold struct {
 	t          *testing.T
+	cp         clientProvider
 	outCapture *bytes.Buffer
 	errCapture *bytes.Buffer
 	reset      func()
@@ -289,7 +290,7 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 	out := bytes.NewBuffer(nil)
 
 	cp := configFactory{
-		stdout:      out,
+		stdout:      &lockWriter{Writer: out},
 		skipConfirm: true,
 		colors:      false,
 	}
@@ -304,20 +305,48 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 	cmd.SilenceUsage = true
 	s := baseScaffold{
 		t:          t,
+		cp:         clientProvider,
 		outCapture: out,
 		errCapture: bytes.NewBuffer(nil),
 		cmd:        cmd,
 	}
 	oldOut := sio.Output
-	oldColors := sio.EnableColors
-	sio.Output = s.errCapture
-	sio.EnableColors = false
+	oldColors := sio.ColorsEnabled()
+	sio.Output = &lockWriter{Writer: s.errCapture}
+	sio.EnableColors(false)
 	s.reset = func() {
 		reset()
 		sio.Output = oldOut
-		sio.EnableColors = oldColors
+		sio.EnableColors(oldColors)
 	}
 	return s
+}
+
+func (s *baseScaffold) sub() baseScaffold {
+	out := bytes.NewBuffer(nil)
+	cp := configFactory{
+		stdout:      &lockWriter{Writer: out},
+		skipConfirm: true,
+		colors:      false,
+	}
+	cmd := &cobra.Command{
+		Use: "qbec-test",
+	}
+	doSetup(cmd, cp, s.cp)
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SilenceErrors = true
+	cmd.SilenceUsage = true
+	s2 := baseScaffold{
+		t:          s.t,
+		cp:         s.cp,
+		outCapture: out,
+		errCapture: bytes.NewBuffer(nil),
+		cmd:        cmd,
+	}
+	s2.reset = func() {
+	}
+	return s2
 }
 
 type scaffold struct {

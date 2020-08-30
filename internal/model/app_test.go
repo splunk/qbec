@@ -233,12 +233,12 @@ func TestAppSimple(t *testing.T) {
 }
 
 func TestAppWarnings(t *testing.T) {
-	o, c := sio.Output, sio.EnableColors
+	o, c := sio.Output, sio.ColorsEnabled()
 	defer func() {
 		sio.Output = o
-		sio.EnableColors = c
+		sio.EnableColors(c)
 	}()
-	sio.EnableColors = false
+	sio.EnableColors(false)
 	reset := setPwd(t, "./testdata/bad-app")
 	defer reset()
 	a := assert.New(t)

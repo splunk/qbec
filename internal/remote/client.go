@@ -235,15 +235,18 @@ type ListQueryScope struct {
 	ClusterObjects bool     // whether to query for cluster objects
 }
 
+// GVKFilter returns true if a gvk needs to be processed
+type GVKFilter func(gvk schema.GroupVersionKind) bool
+
 // ListQueryConfig is the config with which to execute list queries.
 type ListQueryConfig struct {
-	Application         string       // must be non-blank
-	Tag                 string       // may be blank
-	Environment         string       // must be non-blank
-	ListQueryScope                   // the query scope for namespaces and non-namespaced resources
-	KindFilter          model.Filter // filters for object kind
-	Concurrency         int          // concurrent queries to execute
-	DisableAllNsQueries bool         // do not perform list queries across namespaces when multiple namespaces in picture
+	Application         string    // must be non-blank
+	Tag                 string    // may be blank
+	Environment         string    // must be non-blank
+	ListQueryScope                // the query scope for namespaces and non-namespaced resources
+	KindFilter          GVKFilter // filters for group version kind
+	Concurrency         int       // concurrent queries to execute
+	DisableAllNsQueries bool      // do not perform list queries across namespaces when multiple namespaces in picture
 }
 
 // Collection represents a set of k8s objects with the ability to remove a subset of objects from it.
@@ -256,8 +259,7 @@ type Collection interface {
 // and kind filtering indicated by the query configuration.
 func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 	if scope.KindFilter == nil {
-		kf, _ := model.NewKindFilter(nil, nil)
-		scope.KindFilter = kf
+		scope.KindFilter = func(_ schema.GroupVersionKind) bool { return true }
 	}
 
 	// handle special cases
