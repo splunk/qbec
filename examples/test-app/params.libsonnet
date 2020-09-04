@@ -1,10 +1,6 @@
-local p = {
-    _: import './environments/base.libsonnet',
-    dev: import './environments/dev.libsonnet',
-    prod: import './environments/prod.libsonnet',
-};
-
+local p = import 'glob:./environments/*.libsonnet?dirs=0&strip-extension=true';
 local env = std.extVar('qbec.io/env');
+local pEnv = if env == '_' then 'base' else env;
 
-if std.objectHas(p, env) then p[env] else error 'Environment ' + env + ' not defined in ' + std.thisFile
+if std.objectHas(p, pEnv) then p[pEnv] else error 'Environment ' + env + ' not defined in ' + std.thisFile
 
