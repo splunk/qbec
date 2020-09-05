@@ -40,9 +40,9 @@ func init() {
 
 // globImportParams are additional parameters for the glob import expressed as URI query params.
 type globImportParams struct {
-	verb           string // one of 'import' or 'importstr'
+	verb           string // one of 'import' or 'importstr' - the verb to use to import files found
 	dirs           int    // number of directories levels to retain in the returned object (default: all)
-	stripExtension bool   // whether extensions should be stripped
+	stripExtension bool   // whether extensions should be stripped from the base name of the file in the map key
 }
 
 // keyFor returns the key to be used for the supplied file based on whether directory levels should be limited
@@ -68,6 +68,10 @@ func (p globImportParams) keyFor(file string) (string, error) {
 	}
 	finalElements := append(dirs, name)
 	return filepath.Join(finalElements...), nil
+}
+
+func (p globImportParams) String() string {
+	return fmt.Sprintf("?dirs=%d&strip-extension=%t&verb=%s", p.dirs, p.stripExtension, p.verb)
 }
 
 func newGlobParams(query url.Values) (params globImportParams, err error) {
@@ -131,15 +135,21 @@ func NewGlobImporter() *GlobImporter {
 	return &GlobImporter{cache: map[string]*globEntry{}}
 }
 
+func (g *GlobImporter) cacheKey(globPath string, p globImportParams) string {
+	return fmt.Sprintf("%s%s", globPath, p.String())
+}
+
 // getEntry returns an entry from the cache or nil, if not found.
-func (g *GlobImporter) getEntry(globPath string) *globEntry {
-	ret := g.cache[globPath]
+func (g *GlobImporter) getEntry(globPath string, p globImportParams) *globEntry {
+	key := g.cacheKey(globPath, p)
+	ret := g.cache[key]
 	return ret
 }
 
 // setEntry sets the cache entry for the supplied path.
-func (g *GlobImporter) setEntry(globPath string, e *globEntry) {
-	g.cache[globPath] = e
+func (g *GlobImporter) setEntry(globPath string, p globImportParams, e *globEntry) {
+	key := g.cacheKey(globPath, p)
+	g.cache[key] = e
 }
 
 // CanProcess implements the interface method, returning true for paths that start with the string "glob:"
@@ -158,27 +168,27 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		return contents, foundAt, err
 	}
 
-	params, err := newGlobParams(u.Query())
-	if err != nil {
-		return contents, foundAt, errors.Wrap(err, importedPath)
-	}
-
 	// if the opaque path is blank, someone most likely did import glob://rel-path or glob:/abs-path, dont' allow this
 	relativeGlob := u.Opaque
 	if relativeGlob == "" {
 		return contents, foundAt, fmt.Errorf("unable to parse URI %q, ensure you did not use '/' or '//' after 'glob:'", importedPath)
 	}
 
-	// globPath is the glob path relative to the base dir
-	globPath := filepath.Join(baseDir, relativeGlob)
-	r := g.getEntry(globPath)
+	params, err := newGlobParams(u.Query())
+	if err != nil {
+		return contents, foundAt, errors.Wrap(err, importedPath)
+	}
+
+	// globPath is the glob path relative to the working directory
+	globPath := filepath.Clean(filepath.Join(baseDir, relativeGlob))
+	r := g.getEntry(globPath, params)
 	if r != nil {
 		return r.contents, r.foundAt, r.err
 	}
 
 	// once we have successfully gotten a glob path, we can store results in the cache
 	defer func() {
-		g.setEntry(globPath, &globEntry{
+		g.setEntry(globPath, params, &globEntry{
 			contents: contents,
 			foundAt:  foundAt,
 			err:      err,
