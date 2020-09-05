@@ -47,10 +47,10 @@ type globImportParams struct {
 
 // keyFor returns the key to be used for the supplied file based on whether directory levels should be limited
 // and/ or extensions stripped.
-func (p globImportParams) keyFor(file string) (string, error) {
+func (p globImportParams) keyFor(file string) string {
 	// short-circuit simple case
 	if p.dirs < 0 && !p.stripExtension {
-		return file, nil
+		return file
 	}
 	elements := strings.Split(file, string(filepath.Separator))
 	name := elements[len(elements)-1]
@@ -67,7 +67,7 @@ func (p globImportParams) keyFor(file string) (string, error) {
 		}
 	}
 	finalElements := append(dirs, name)
-	return filepath.Join(finalElements...), nil
+	return filepath.Join(finalElements...)
 }
 
 func (p globImportParams) String() string {
@@ -95,7 +95,7 @@ func newGlobParams(query url.Values) (params globImportParams, err error) {
 			return params, fmt.Errorf("invalid value '%s' for '%s' parameter, %v", dirsStr, globParamDirs, err)
 		}
 		if l < 0 {
-			return params, fmt.Errorf("invalid value '%s' for '%s' parameter, must be non-negative", globParamDirs, dirsStr)
+			l = -1
 		}
 		dirs = l
 	}
@@ -173,6 +173,10 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 	if relativeGlob == "" {
 		return contents, foundAt, fmt.Errorf("unable to parse URI %q, ensure you did not use '/' or '//' after 'glob:'", importedPath)
 	}
+	relativeGlob, err = url.PathUnescape(relativeGlob)
+	if err != nil {
+		return contents, foundAt, fmt.Errorf("unable to unescape URI %q, %v", importedPath, err)
+	}
 
 	params, err := newGlobParams(u.Query())
 	if err != nil {
@@ -218,13 +222,10 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 	var out bytes.Buffer
 	out.WriteString("{\n")
 	for _, file := range relativeMatches {
-		key, err := params.keyFor(file)
-		if err != nil {
-			return contents, foundAt, fmt.Errorf("unable to extract key from file '%s', %v", file, err)
-		}
+		key := params.keyFor(file)
 		oldFile, ok := seen[key]
 		if ok {
-			return contents, foundAt, fmt.Errorf("at least 2 files '%s' and '%s' map to the same key '%s'", oldFile, file, key)
+			return contents, foundAt, fmt.Errorf("%s: at least 2 files '%s' and '%s' map to the same key '%s'", importedPath, oldFile, file, key)
 		}
 		seen[key] = file
 		out.WriteString("\t")
