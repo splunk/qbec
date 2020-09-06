@@ -126,6 +126,51 @@ type globEntry struct {
 
 // GlobImporter provides facilities to import a bag of files using a glob pattern. Note that it will NOT
 // honor any library paths and must be exactly resolved from the caller's location.
+//
+// The input to the glob importer is a URI having a scheme "glob" that has a file pattern in its path
+// that is resolved using Go's glob functionality. The return value is an object that is keyed by file names
+// with values importing the contents of the file.
+//
+// That is, given the following directory structure:
+//
+// 		lib
+//			- a.json
+//			- b.json
+//		caller
+//			- c.libsonnet
+//
+// where c.libsonnet has the following contents
+//
+//		import 'glob:../lib/*.json'
+//
+// evaluating `c.libsonnet` will return jsonnet code of the following form:
+//
+//		{
+//			'../lib/a.json': import '../lib/a.json',
+//			'../lib/b.json': import '../lib/b.json',
+//		}
+//
+// The returned keys of the object and the import mechanism can be customized using query parameters to the glob URI. The parameters supported are:
+//
+// dirs: (number, default=-1) - the number of directory paths to include in the keys of the output. A value of 0 will only have the file name. A negative value preserves the full path.
+//
+// strip-extension: (bool, default=false) when `true`, will remove the extension of the file from the key of the returned object
+//
+// verb: (string, one of `import` or `importstr`, default=`import`) - the verb to use for importing inner files
+//
+// So, using the previous example if the jsonnet code were of the form:
+//		import 'glob:../lib/*.json?dirs=0&strip-extension=true&verb=importstr'
+//
+// this will return jsonnet code of the following form:
+//
+//		{
+//			'a': importstr '../lib/a.json',
+//			'b': importstr '../lib/b.json',
+//		}
+//
+// While glob patterns like `*` can be used as-is in the URI, the glob character `?` needs to be escaped as `%3F` so that
+// it is not treated as a query parameter separator.
+//
 type GlobImporter struct {
 	cache map[string]*globEntry
 }
