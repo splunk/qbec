@@ -74,6 +74,9 @@ jobs:
       - name: Test
         run: make test TEST_FLAGS="-tags integration"
 
+      - name: Print
+        run: qbec.exe version
+
       - name: Coverage Report
         run: make publish-coverage
         env:
