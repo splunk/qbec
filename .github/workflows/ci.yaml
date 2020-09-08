@@ -5,7 +5,7 @@ on:
     branches:
       - master
 jobs:
-  build:
+  build-linux:
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -47,3 +47,120 @@ jobs:
           args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-linux:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Install command dependencies
+        run: |
+          mkdir -p $HOME/go/bin
+          export GOPATH=$HOME/go
+          echo "::set-env name=GOPATH::$HOME/go"
+          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
+          echo "::add-path::$HOME/go/bin"
+          make install-ci install
+
+      - name: Build
+        run: make build
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: TEST_FLAGS="-tags integration" make test
+
+      - name: Coverage Report
+        run: make publish-coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: goreleaser
+        uses: goreleaser/goreleaser-action@master
+        with:
+          args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    name: Build(Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Install command dependencies
+        run: |
+          mkdir -p $HOME/go/bin
+          export GOPATH=$HOME/go
+          echo "::set-env name=GOPATH::$HOME/go"
+          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
+          echo "::add-path::$HOME/go/bin"
+          make install-ci install
+
+      - name: Build
+        run: make build
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: TEST_FLAGS="-tags integration" make test
+
+      - name: Coverage Report
+        run: make publish-coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: goreleaser
+        uses: goreleaser/goreleaser-action@master
+        with:
+          args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-windows:
+    name: Build(Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Install command dependencies
+        run: |
+          mkdir -p $HOME/go/bin
+          export GOPATH=$HOME/go
+          echo "::set-env name=GOPATH::$HOME/go"
+          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
+          echo "::add-path::$HOME/go/bin"
+          make install-ci install
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: TEST_FLAGS="-tags integration" make test
+
+      - name: Coverage Report
+        run: make publish-coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
