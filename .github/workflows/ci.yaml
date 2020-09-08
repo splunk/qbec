@@ -72,7 +72,7 @@ jobs:
         run: make build
 
       - name: Test
-        run: TEST_FLAGS="-tags integration" make test
+        run: make test TEST_FLAGS="-tags integration"
 
       - name: Coverage Report
         run: make publish-coverage
