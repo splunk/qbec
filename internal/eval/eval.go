@@ -28,6 +28,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/pathutil"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 )
@@ -209,10 +210,14 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
 	var contextFile string
+	var canonicalFiles []string
+	for _, f := range c.Files {
+		canonicalFiles = append(canonicalFiles, pathutil.ToCanonicalPath(f))
+	}
 	switch {
-	case len(c.Files) > 1:
+	case len(canonicalFiles) > 1:
 		var lines []string
-		for _, file := range c.Files {
+		for _, file := range canonicalFiles {
 			code, _, err := evaluationCode(file)
 			if err != nil {
 				return nil, errors.Wrap(err, "eval code for "+file)
@@ -223,9 +228,9 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		contextFile = "multi-file-loader.jsonnet"
 	default:
 		var err error
-		inputCode, contextFile, err = evaluationCode(c.Files[0])
+		inputCode, contextFile, err = evaluationCode(canonicalFiles[0])
 		if err != nil {
-			return nil, errors.Wrap(err, "eval code for "+c.Files[0])
+			return nil, errors.Wrap(err, "eval code for "+canonicalFiles[0])
 		}
 	}
 	evalCode, err := jvm.EvaluateSnippet(contextFile, inputCode)
@@ -234,7 +239,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 	}
 	var data interface{}
 	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", c.Files[0]))
+		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", canonicalFiles[0]))
 	}
 
 	objs, err := walk(data)
