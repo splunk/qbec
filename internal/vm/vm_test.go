@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -297,7 +298,7 @@ func TestVMNegative(t *testing.T) {
 			args: []string{"show", "--vm:tla-str-file=foo=bar"},
 			asserter: func(a *assert.Assertions, err error) {
 				require.NotNil(t, err)
-				a.Contains(err.Error(), "open bar: no such file or directory")
+				a.Contains(err.Error(), "open bar: "+testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -313,7 +314,7 @@ func TestVMNegative(t *testing.T) {
 			args: []string{"show", "--vm:ext-str-list=no-such-file"},
 			asserter: func(a *assert.Assertions, err error) {
 				require.NotNil(t, err)
-				a.Contains(err.Error(), "no such file or directory")
+				a.Contains(err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{

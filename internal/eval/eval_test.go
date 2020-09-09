@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -200,7 +201,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), "no such file")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{

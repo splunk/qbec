@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -132,7 +133,7 @@ func TestSetupEnvironments(t *testing.T) {
 			fn: func(t *testing.T, s *scaffold) {
 				err := s.executeCommand("env", "list", "-E", "testdata/extra-env2.yaml")
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), "no such file or directory")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{

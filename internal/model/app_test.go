@@ -18,6 +18,7 @@ package model
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -328,7 +330,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "non-existent.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "no such file or directory")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -370,7 +372,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-comps.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "duplicate component a, found bad-comps/a.json and bad-comps/a.yaml")
+				assert.Contains(t, err.Error(), fmt.Sprintf("duplicate component a, found %s and %s", filepath.FromSlash("bad-comps/a.json"), filepath.FromSlash("bad-comps/a.yaml")))
 			},
 		},
 		{
@@ -413,7 +415,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-missing-env-file.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "missing-env.yaml: no such file or directory")
+				assert.Contains(t, err.Error(), "missing-env.yaml: "+testutil.FileNotFoundMessage)
 			},
 		},
 		{

@@ -5,18 +5,24 @@ on:
     branches:
       - master
 jobs:
-  build:
+  build-linux:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.14
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.14
         id: go
 
+      - name: Install helm
+        uses: azure/setup-helm@v1
+        with:
+          version: "v3.3.1" # default is latest stable
+        id: helm
+
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install command dependencies
         run: |
@@ -25,7 +31,7 @@ jobs:
           echo "::set-env name=GOPATH::$HOME/go"
           echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
           echo "::add-path::$HOME/go/bin"
-          make install-ci install
+          make install-ci create-cluster install
 
       - name: Build
         run: make build
@@ -34,7 +40,7 @@ jobs:
         run: make lint
 
       - name: Test
-        run: TEST_FLAGS="-tags integration" make test
+        run: make test TEST_FLAGS="-tags integration"
 
       - name: Coverage Report
         run: make publish-coverage
@@ -47,3 +53,34 @@ jobs:
           args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    name: Build(Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: Install helm
+        uses: azure/setup-helm@v1
+        with:
+          version: "v3.3.1" # default is latest stable
+        id: helm
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Install command dependencies
+        run: |
+          echo "::set-env name=GOPATH::$HOME/go"
+          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
+          echo "::add-path::$HOME/go/bin"
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
