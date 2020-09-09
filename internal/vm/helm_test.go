@@ -25,6 +25,7 @@ func TestHelmOptions(t *testing.T) {
 		"--execute", "a.yaml",
 		"--execute", "b.yaml",
 		"--kube-version", "1.10",
+		"--name", "foo",
 		"--namespace", "foobar",
 	}, h.toArgs())
 }
