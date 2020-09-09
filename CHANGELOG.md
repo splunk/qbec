@@ -1,6 +1,12 @@
 Changelog
 ---
 
+## v0.12.3 (Sep 9, 2020)
+
+* Add ability to import a bag of files using a glob pattern (see #153 for details). At this point this should be
+  considered experimental. Do not rely on it yet until the next release when we will have docs for it.
+* Add windows build in CI, thanks to @harsimranmaan
+
 ## v0.12.2 (Aug 30, 2020)
 
 * Fix a bug where under certain circumstances of failed discovery, qbec would delete resources not meant to be deleted.
