@@ -78,10 +78,9 @@ jobs:
           echo "::set-env name=GOPATH::$HOME/go"
           echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
           echo "::add-path::$HOME/go/bin"
-          kind create cluster
 
       - name: Build
         run: make build
 
       - name: Test
-        run: make test TEST_FLAGS="-tags integration"
+        run: make test
