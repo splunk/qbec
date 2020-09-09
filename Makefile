@@ -58,10 +58,10 @@ check-format:
 	)
 .PHONY: install-ci
 install-ci: .tools/kind
-	# curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
-	# tar -xvzf helm.tar.gz
-	# mv linux-amd64/helm $(GOPATH)/bin/
-	#curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
+	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
+	tar -xvzf helm.tar.gz
+	mv linux-amd64/helm $(GOPATH)/bin/
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
 	.tools/kind create cluster
 
 .PHONY: install
