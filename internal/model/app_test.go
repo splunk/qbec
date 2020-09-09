@@ -18,6 +18,7 @@ package model
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -371,7 +372,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-comps.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "duplicate component a, found bad-comps/a.json and bad-comps/a.yaml")
+				assert.Contains(t, err.Error(), fmt.Sprintf("duplicate component a, found %s and %s", filepath.FromSlash("bad-comps/a.json"), filepath.FromSlash("bad-comps/a.yaml")))
 			},
 		},
 		{
