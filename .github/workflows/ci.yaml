@@ -70,9 +70,6 @@ jobs:
       - name: Build
         run: make build
 
-      - name: Print
-        run: qbec.exe version
-
       - name: Test
         run: make test TEST_FLAGS="-tags integration"
 

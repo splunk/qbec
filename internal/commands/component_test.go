@@ -17,6 +17,8 @@
 package commands
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -31,12 +33,13 @@ func TestComponentListBasic(t *testing.T) {
 	err := s.executeCommand("component", "list", "dev")
 	require.NoError(t, err)
 	lines := strings.Split(strings.Trim(s.stdout(), "\n"), "\n")
+	fmt.Println(lines)
 	a := assert.New(t)
 	a.Equal(4, len(lines))
 	s.assertOutputLineMatch(regexp.MustCompile(`COMPONENT\s+FILE`))
-	s.assertOutputLineMatch(regexp.MustCompile(`cluster-objects\s+components/cluster-objects.yaml`))
-	s.assertOutputLineMatch(regexp.MustCompile(`service2\s+components/service2.jsonnet`))
-	s.assertOutputLineMatch(regexp.MustCompile(`test-job\s+components/test-job.yaml`))
+	s.assertOutputLineMatch(regexp.MustCompile(`cluster-objects\s+` + regexp.QuoteMeta(filepath.FromSlash("components/cluster-objects.yaml"))))
+	s.assertOutputLineMatch(regexp.MustCompile(`service2\s+` + regexp.QuoteMeta(filepath.FromSlash("components/service2.jsonnet"))))
+	s.assertOutputLineMatch(regexp.MustCompile(`test-job\s` + regexp.QuoteMeta(filepath.FromSlash("+components/test-job.yaml"))))
 }
 
 func TestComponentListYAML(t *testing.T) {
