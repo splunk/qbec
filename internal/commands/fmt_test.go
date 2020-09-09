@@ -109,7 +109,7 @@ func TestDoFmt(t *testing.T) {
 				require.Nil(t, err)
 			} else {
 				require.NotNil(t, err)
-				assert.Containsf(t, err.Error(), test.expectedErr, "Expected %v but got %v", test.expectedErr, err.Error())
+				assert.Contains(t, err.Error(), test.expectedErr)
 			}
 		})
 	}

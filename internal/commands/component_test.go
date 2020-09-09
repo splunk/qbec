@@ -17,7 +17,6 @@
 package commands
 
 import (
-	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -33,7 +32,6 @@ func TestComponentListBasic(t *testing.T) {
 	err := s.executeCommand("component", "list", "dev")
 	require.NoError(t, err)
 	lines := strings.Split(strings.Trim(s.stdout(), "\n"), "\n")
-	fmt.Println(lines)
 	a := assert.New(t)
 	a.Equal(4, len(lines))
 	s.assertOutputLineMatch(regexp.MustCompile(`COMPONENT\s+FILE`))
