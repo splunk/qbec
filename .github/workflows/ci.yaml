@@ -72,8 +72,7 @@ jobs:
 
       - name: Test
         run: make test TEST_FLAGS="-tags integration"
-
-      - name: Coverage Report
-        run: make publish-coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Coverage Report
+      #   run: make publish-coverage
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

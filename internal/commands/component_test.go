@@ -39,7 +39,7 @@ func TestComponentListBasic(t *testing.T) {
 	s.assertOutputLineMatch(regexp.MustCompile(`COMPONENT\s+FILE`))
 	s.assertOutputLineMatch(regexp.MustCompile(`cluster-objects\s+` + regexp.QuoteMeta(filepath.FromSlash("components/cluster-objects.yaml"))))
 	s.assertOutputLineMatch(regexp.MustCompile(`service2\s+` + regexp.QuoteMeta(filepath.FromSlash("components/service2.jsonnet"))))
-	s.assertOutputLineMatch(regexp.MustCompile(`test-job\s` + regexp.QuoteMeta(filepath.FromSlash("+components/test-job.yaml"))))
+	s.assertOutputLineMatch(regexp.MustCompile(`test-job\s+` + regexp.QuoteMeta(filepath.FromSlash("components/test-job.yaml"))))
 }
 
 func TestComponentListYAML(t *testing.T) {
@@ -79,7 +79,7 @@ func TestComponentDiffBasic(t *testing.T) {
 	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`--- baseline`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+\+\+ environment: dev`))
-	s.assertOutputLineMatch(regexp.MustCompile(`\+service2\s+components/service2.jsonnet`))
+	s.assertOutputLineMatch(regexp.MustCompile(`\+service2\s+` + regexp.QuoteMeta(filepath.FromSlash("components/service2.jsonnet"))))
 }
 
 func TestComponentDiff2Envs(t *testing.T) {
@@ -89,7 +89,7 @@ func TestComponentDiff2Envs(t *testing.T) {
 	require.NoError(t, err)
 	s.assertOutputLineMatch(regexp.MustCompile(`--- environment: dev`))
 	s.assertOutputLineMatch(regexp.MustCompile(`\+\+\+ environment: prod`))
-	s.assertOutputLineMatch(regexp.MustCompile(`\++service1\s+components/service1.jsonnet`))
+	s.assertOutputLineMatch(regexp.MustCompile(`\++service1\s+` + regexp.QuoteMeta(filepath.FromSlash("components/service1.jsonnet"))))
 }
 
 func TestComponentDiff2EnvObjects(t *testing.T) {
