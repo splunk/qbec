@@ -53,7 +53,7 @@ expandHelmTemplate(
     },
     {
         namespace: 'my-ns',
-        name: 'my-name',
+        nameTemplate: 'my-name',
         thisFile: std.thisFile,
 		verbose: true,
     }

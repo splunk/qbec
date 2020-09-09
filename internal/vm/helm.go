@@ -18,7 +18,7 @@ import (
 type helmOptions struct {
 	Execute      []string `json:"execute"`      // --execute option
 	KubeVersion  string   `json:"kubeVersion"`  // --kube-version option
-	Name         string   `json:"name"`         // The name used for the template
+	Name         string   `json:"name"`         // --name option
 	NameTemplate string   `json:"nameTemplate"` // --name-template option
 	Namespace    string   `json:"namespace"`    // --namespace option
 	ThisFile     string   `json:"thisFile"`     // use supplied file as current file to resolve relative refs, should be set to std.thisFile
@@ -36,6 +36,9 @@ func (h helmOptions) toArgs() []string {
 	}
 	if h.KubeVersion != "" {
 		ret = append(ret, "--kube-version", h.KubeVersion)
+	}
+	if h.Name != "" {
+		ret = append(ret, "--name", h.Name)
 	}
 	if h.NameTemplate != "" {
 		ret = append(ret, "--name-template", h.NameTemplate)
@@ -71,13 +74,8 @@ func expandHelmTemplate(chart string, values map[string]interface{}, options hel
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal values to YAML")
 	}
-	args := []string{"template"}
 
-	if options.Name != "" {
-		args = append(args, options.Name)
-	}
-	args = append(args, chart)
-	args = append(args, options.toArgs()...)
+	args := append([]string{"template", chart}, options.toArgs()...)
 	args = append(args, "--values", "-")
 
 	var stdout bytes.Buffer
