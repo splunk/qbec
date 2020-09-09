@@ -15,6 +15,12 @@ jobs:
           go-version: 1.14
         id: go
 
+      - name: Install helm
+        uses: azure/setup-helm@v1
+        with:
+          version: "v3.3.1" # default is latest stable
+        id: helm
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
@@ -58,6 +64,11 @@ jobs:
           go-version: 1.14
         id: go
 
+      - name: Install helm
+        uses: azure/setup-helm@v1
+        with:
+          version: "v3.3.1" # default is latest stable
+        id: helm
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
