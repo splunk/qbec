@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/splunk/qbec/internal/pathutil"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -330,7 +330,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "non-existent.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), pathutil.FileNotFoundMessage)
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -415,7 +415,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-missing-env-file.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "missing-env.yaml: "+pathutil.FileNotFoundMessage)
+				assert.Contains(t, err.Error(), "missing-env.yaml: "+testutil.FileNotFoundMessage)
 			},
 		},
 		{

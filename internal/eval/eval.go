@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/pathutil"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 )
@@ -212,7 +212,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 	var contextFile string
 	var canonicalFiles []string
 	for _, f := range c.Files {
-		canonicalFiles = append(canonicalFiles, pathutil.ToCanonicalPath(f))
+		canonicalFiles = append(canonicalFiles, filepath.ToSlash(f))
 	}
 	switch {
 	case len(canonicalFiles) > 1:
