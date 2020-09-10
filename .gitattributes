@@ -1,6 +1,10 @@
 # Ensure that git would checkout files with lf instead of crlf on windows
+<<<<<<< HEAD
 * text eol=lf
 *.pb-v1 -text
 *.ico -text
 *.png -text
 
+=======
+*.formatted text eol=lf
+>>>>>>> Only use lf on formatted test files
