@@ -1,14 +1,3 @@
 # Ensure that git would checkout files with lf instead of crlf on windows
-<<<<<<< HEAD
-* text eol=lf
-*.pb-v1 -text
-*.ico -text
-*.png -text
-
-=======
 *.formatted text eol=lf
-<<<<<<< HEAD
->>>>>>> Only use lf on formatted test files
-=======
 *.yml text eol=lf
->>>>>>> add yml
