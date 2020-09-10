@@ -2,3 +2,5 @@
 * text eol=lf
 *.pb-v1 -text
 *.ico -text
+*.png -text
+
