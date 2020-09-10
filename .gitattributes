@@ -7,4 +7,8 @@
 
 =======
 *.formatted text eol=lf
+<<<<<<< HEAD
 >>>>>>> Only use lf on formatted test files
+=======
+*.yml text eol=lf
+>>>>>>> add yml
