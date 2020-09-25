@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.12.4 (Sep 24, 2020)
+
+* Add `--wait-all` flag to the `apply` command to wait on all objects instead of just the ones that were changed in the
+  current run.
+
 ## v0.12.3 (Sep 9, 2020)
 
 * Add ability to import a bag of files using a glob pattern (see #153 for details). At this point this should be
