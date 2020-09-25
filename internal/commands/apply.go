@@ -58,6 +58,7 @@ type applyCommandConfig struct {
 	showDetails bool
 	gc          bool
 	wait        bool
+	waitAll     bool
 	waitTimeout time.Duration
 	filterFunc  func() (filterParams, error)
 }
@@ -158,7 +159,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	var stats applyStats
-	var changedObjects []model.K8sMeta
+	var waitObjects []model.K8sMeta
 
 	printSyncStatus := func(name string, res *remote.SyncResult, err error) {
 		if err != nil {
@@ -201,8 +202,9 @@ func doApply(args []string, config applyCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
-			changedObjects = append(changedObjects, metaWrap{K8sMeta: ob})
+		shouldWait := config.waitAll || (res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated)
+		if shouldWait {
+			waitObjects = append(waitObjects, metaWrap{K8sMeta: ob})
 		}
 		stats.update(name, res)
 	}
@@ -259,11 +261,11 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	defaultNs := config.app.DefaultNamespace(env)
-	if config.wait {
+	if config.wait || config.waitAll {
 		wl := &waitListener{
 			displayNameFn: client.DisplayName,
 		}
-		return applyWaitFn(changedObjects,
+		return applyWaitFn(waitObjects,
 			func(obj model.K8sMeta) (watch.Interface, error) {
 				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
 
@@ -295,6 +297,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
 	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for objects to be ready")
+	cmd.Flags().BoolVar(&config.waitAll, "wait-all", false, "wait for all objects to be ready, not just the ones that have changed")
 	var waitTime string
 	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 

@@ -25,7 +25,15 @@
             name: name,
         },
         spec: {
+            selector: {
+                matchLabels: {
+                    app: name
+                },
+            },
             template: {
+                metadata: {
+                    labels: { app: name },
+                },
                 spec: {
                     containers: [
                     {
