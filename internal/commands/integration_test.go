@@ -101,6 +101,16 @@ func TestIntegrationBasic(t *testing.T) {
 		a.EqualValues(1, stats["same"])
 		a.EqualValues(2, len(stats["updated"].([]interface{})))
 	})
+	t.Run("apply3", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand(append(changeArgs, "apply", "local", "--wait", "--wait-all")...)
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(3, stats["same"])
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 1 objects`))
+	})
 }
 
 func TestIntegrationLazyCustomResources(t *testing.T) {
