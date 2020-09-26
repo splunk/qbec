@@ -27,6 +27,7 @@ type Directives struct {
 	ApplyOrder   string // numeric apply order for object
 	DeletePolicy string // delete policy "default" | "never"
 	UpdatePolicy string // update policy "default" | "never"
+	WaitPolicy   string // wait policy "default" | "never"
 }
 
 // QbecNames is the set of names used by Qbec.
@@ -57,5 +58,6 @@ var QbecNames = struct {
 		ApplyOrder:   QBECDirectivesNamespace + "apply-order",
 		DeletePolicy: QBECDirectivesNamespace + "delete-policy",
 		UpdatePolicy: QBECDirectivesNamespace + "update-policy",
+		WaitPolicy:   QBECDirectivesNamespace + "wait-policy",
 	},
 }

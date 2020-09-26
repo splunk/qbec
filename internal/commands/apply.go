@@ -190,6 +190,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 	}
 
+	waitPolicy := newWaitPolicy()
 	for _, ob := range objects {
 		name := client.DisplayName(ob)
 		res, err := client.Sync(ob, opts)
@@ -204,7 +205,11 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 		shouldWait := config.waitAll || (res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated)
 		if shouldWait {
-			waitObjects = append(waitObjects, metaWrap{K8sMeta: ob})
+			if waitPolicy.disableWait(ob) {
+				sio.Debugf("%s: wait disabled by policy\n", name)
+			} else {
+				waitObjects = append(waitObjects, metaWrap{K8sMeta: ob})
+			}
 		}
 		stats.update(name, res)
 	}
@@ -268,7 +273,6 @@ func doApply(args []string, config applyCommandConfig) error {
 		return applyWaitFn(waitObjects,
 			func(obj model.K8sMeta) (watch.Interface, error) {
 				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
-
 			},
 			rollout.WaitOptions{
 				Listener: wl,

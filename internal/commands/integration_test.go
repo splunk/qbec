@@ -141,3 +141,31 @@ func TestIntegrationLazyCustomResources(t *testing.T) {
 	require.NoError(t, err2)
 	<-done
 }
+
+func TestIntegrationWait(t *testing.T) {
+	dir := "testdata/projects/wait"
+	ns, reset := newNamespace(t)
+	defer reset()
+
+	t.Run("apply", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local", "--wait-all")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["created"].([]interface{})))
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 1 objects`))
+	})
+	t.Run("apply-no-wait", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local", "--wait-all", "--vm:ext-code=wait=false")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["updated"].([]interface{})))
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 0 objects`))
+		s.assertErrorLineMatch(regexp.MustCompile(`: wait disabled by policy`))
+	})
+}

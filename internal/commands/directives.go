@@ -102,3 +102,15 @@ func (d *deletePolicy) disableDelete(ob model.K8sMeta) bool {
 	}
 	return false
 }
+
+type waitPolicy struct {
+	defaultNS string
+}
+
+func newWaitPolicy() *waitPolicy {
+	return &waitPolicy{}
+}
+
+func (d *waitPolicy) disableWait(ob model.K8sMeta) bool {
+	return isSet(ob, model.QbecNames.Directives.WaitPolicy, policyNever, []string{policyDefault})
+}
