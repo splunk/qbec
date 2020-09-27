@@ -117,3 +117,14 @@ func TestDirectivesDeletePolicy(t *testing.T) {
 	a.True(dp.disableDelete(clusterNs))
 	a.False(dp.disableDelete(k8sMetaWithAnnotations("Namespace", "", "yyy", nil)))
 }
+
+func TestDirectivesWaitPolicy(t *testing.T) {
+	wp := newWaitPolicy()
+	a := assert.New(t)
+	ret := wp.disableWait(k8sMetaWithAnnotations("Deployment", "foo", "bar", nil))
+	a.False(ret)
+	ret = wp.disableWait(k8sMetaWithAnnotations("Deployment", "foo", "bar", map[string]interface{}{
+		"directives.qbec.io/wait-policy": "never",
+	}))
+	a.True(ret)
+}
