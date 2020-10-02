@@ -1,6 +1,12 @@
 Changelog
 ---
 
+## v0.12.5 (Oct 2, 2020)
+
+* Add a new `wait-policy` directive to disable waits on specific deployments
+  and daemonsets. The annotation `"directives.qbec.io/wait-policy": "never"`
+  will cause qbec to not wait on the deployment even if it has changed.
+
 ## v0.12.4 (Sep 24, 2020)
 
 * Add `--wait-all` flag to the `apply` command to wait on all objects instead of just the ones that were changed in the
