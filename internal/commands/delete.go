@@ -63,21 +63,10 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			}
 		}
 	} else {
-		all, err := allObjects(config.config, env)
+		lister, _, err := startRemoteList(env, config.config, client, fp)
 		if err != nil {
 			return err
 		}
-		lister, scope, err := newRemoteLister(client, all, config.app.DefaultNamespace(env))
-		if err != nil {
-			return err
-		}
-		lister.start(remote.ListQueryConfig{
-			Application:    config.App().Name(),
-			Tag:            config.App().Tag(),
-			Environment:    env,
-			KindFilter:     fp.GVKFilter,
-			ListQueryScope: scope,
-		})
 		deletions, err = lister.deletions(nil, fp.Includes)
 		if err != nil {
 			return err

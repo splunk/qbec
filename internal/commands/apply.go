@@ -124,30 +124,12 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
-	var all []model.K8sLocalObject
 	var retainObjects []model.K8sLocalObject
 	if config.gc {
-		all, err = allObjects(config.config, env)
+		lister, retainObjects, err = startRemoteList(env, config.config, client, fp)
 		if err != nil {
 			return err
 		}
-		for _, o := range all {
-			if o.GetName() != "" {
-				retainObjects = append(retainObjects, o)
-			}
-		}
-		var scope remote.ListQueryScope
-		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
-		if err != nil {
-			return err
-		}
-		lister.start(remote.ListQueryConfig{
-			Application:    config.App().Name(),
-			Tag:            config.App().Tag(),
-			Environment:    env,
-			KindFilter:     fp.GVKFilter,
-			ListQueryScope: scope,
-		})
 	}
 
 	// continue with apply
