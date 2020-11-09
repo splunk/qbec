@@ -110,6 +110,9 @@ definitions:
       baseProperties:
         description: properties for the baseline environment
         type: object
+      clusterScopedLists:
+        description: whether remote lists should use cluster scoped queries when multiple namespaces present
+        type: boolean
       vars:
         $ref: "#/definitions/qbec.io.v1alpha1.Variables"
       namespaceTagSuffix:

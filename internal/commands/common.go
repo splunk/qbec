@@ -181,7 +181,7 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 }
 
 func startRemoteList(env string, config *config, client kubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
-	all, err := allObjects(config, env)
+	all, err := filteredObjects(config, env, nil, filterParams{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -195,12 +195,17 @@ func startRemoteList(env string, config *config, client kubeClient, fp filterPar
 	if err != nil {
 		return nil, nil, err
 	}
+	clusterScopedLists := false
+	if len(scope.Namespaces) > 1 && config.app.ClusterScopedLists() {
+		clusterScopedLists = true
+	}
 	lister.start(remote.ListQueryConfig{
-		Application:    config.App().Name(),
-		Tag:            config.App().Tag(),
-		Environment:    env,
-		KindFilter:     fp.GVKFilter,
-		ListQueryScope: scope,
+		Application:        config.App().Name(),
+		Tag:                config.App().Tag(),
+		Environment:        env,
+		KindFilter:         fp.GVKFilter,
+		ListQueryScope:     scope,
+		ClusterScopedLists: clusterScopedLists,
 	})
 	return lister, retainObjects, nil
 }
