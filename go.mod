@@ -4,18 +4,13 @@ go 1.15
 
 require (
 	github.com/chzyer/logex v1.1.10 // indirect
-	github.com/chzyer/readline v0.0.0-20160726135117-62c6fe619375
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/analysis v0.19.0 // indirect
-	github.com/go-openapi/errors v0.19.0 // indirect
-	github.com/go-openapi/loads v0.19.0 // indirect
-	github.com/go-openapi/runtime v0.19.0 // indirect
-	github.com/go-openapi/spec v0.19.8
-	github.com/go-openapi/strfmt v0.18.0
-	github.com/go-openapi/swag v0.19.9 // indirect
-	github.com/go-openapi/validate v0.18.0
-	github.com/golang/protobuf v1.3.2
+	github.com/go-openapi/spec v0.19.12
+	github.com/go-openapi/strfmt v0.19.8
+	github.com/go-openapi/validate v0.19.12
+	github.com/golang/protobuf v1.4.3
 	github.com/google/go-jsonnet v0.16.0
 	github.com/googleapis/gnostic v0.2.0
 	github.com/jonboulle/clockwork v0.1.0
