@@ -9,20 +9,17 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.14
-        uses: actions/setup-go@v2
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.14
         id: go
 
-      - name: Install helm
-        uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: Install command dependencies
         run: |
@@ -58,20 +55,17 @@ jobs:
     name: Build(Windows)
     runs-on: windows-latest
     steps:
-      - name: Set up Go 1.14
-        uses: actions/setup-go@v2
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.14
         id: go
 
-      - name: Install helm
-        uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: Install command dependencies
         run: |
