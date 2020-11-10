@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Install package dependencies
         run: |
-          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
+          echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           make get
       - name: Release via goreleaser
         uses: goreleaser/goreleaser-action@master

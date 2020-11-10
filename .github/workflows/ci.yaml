@@ -26,11 +26,11 @@ jobs:
 
       - name: Install command dependencies
         run: |
+          echo $GOPATH $PATH $GOBIN
           mkdir -p $HOME/go/bin
-          export GOPATH=$HOME/go
-          echo "::set-env name=GOPATH::$HOME/go"
-          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
-          echo "::add-path::$HOME/go/bin"
+          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
+          echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
+          echo "$HOME/go/bin" >> $GITHUB_PATH
           make install-ci create-cluster install
 
       - name: Build

@@ -50,10 +50,10 @@ lint: check-format
 .PHONY: check-format
 check-format:
 	@echo "Running gofmt..."
-	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -l))
+	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -s -l))
 	$(if $(strip $(unformatted)),\
 		$(error $(\n) Some files are ill formatted! Run: \
-			$(foreach file,$(unformatted),$(\n)    gofmt -w $(file))$(\n)),\
+			$(foreach file,$(unformatted),$(\n)    gofmt -s -w $(file))$(\n)),\
 		@echo All files are well formatted.\
 	)
 
