@@ -20,11 +20,13 @@ package model
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -45,6 +47,9 @@ var supportedExtensions = map[string]bool{
 	".yaml":    true,
 	".json":    true,
 }
+
+// Basic http client
+var httpClient = &http.Client{Timeout: time.Second * 10}
 
 // Component is one or more logically related files that contains objects to be applied to a cluster.
 type Component struct {
@@ -72,6 +77,40 @@ func makeValError(file string, errs []error) error {
 
 }
 
+func downloadEnvFile(url string) ([]byte, error) {
+	var payload []byte
+	var resp *http.Response
+	var err error
+
+	resp, err = httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		payload, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("failed to retrieve remote env file. Http Status: %d", resp.StatusCode)
+	}
+	return payload, err
+}
+
+// IsRemoteFile distinguishes remote files from local files
+func IsRemoteFile(file string) bool {
+	return strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://")
+}
+
+func readEnvFile(file string) ([]byte, error) {
+	if IsRemoteFile(file) {
+		return downloadEnvFile(file)
+	}
+	return ioutil.ReadFile(file)
+}
+
 func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	if app.Spec.Environments == nil {
 		app.Spec.Environments = map[string]Environment{}
@@ -86,7 +125,7 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	allFiles = append(allFiles, additionalFiles...)
 
 	for _, file := range allFiles {
-		b, err := ioutil.ReadFile(file)
+		b, err := readEnvFile(file)
 		if err != nil {
 			return err
 		}

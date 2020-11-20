@@ -233,11 +233,15 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 		// directory before we change it
 		var envFiles []string
 		if envFile != "" {
-			abs, err := filepath.Abs(envFile)
-			if err != nil {
-				return err
+			if model.IsRemoteFile(envFile) {
+				envFiles = append(envFiles, envFile)
+			} else {
+				abs, err := filepath.Abs(envFile)
+				if err != nil {
+					return err
+				}
+				envFiles = append(envFiles, abs)
 			}
-			envFiles = append(envFiles, abs)
 		}
 		if err := setWorkDir(rootDir); err != nil {
 			return err
