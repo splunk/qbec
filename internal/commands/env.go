@@ -19,11 +19,12 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
-
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"net/http"
+	"sort"
+	"strings"
 )
 
 func newEnvCommand(cp configProvider) *cobra.Command {
@@ -31,7 +32,7 @@ func newEnvCommand(cp configProvider) *cobra.Command {
 		Use:   "env <subcommand>",
 		Short: "environment lists and details",
 	}
-	cmd.AddCommand(newEnvListCommand(cp), newEnvVarsCommand(cp), newEnvPropsCommand(cp))
+	cmd.AddCommand(newEnvListCommand(cp), newEnvVarsCommand(cp), newEnvPropsCommand(cp), newDownloadEnvCommand(cp))
 	return cmd
 }
 
@@ -241,4 +242,48 @@ func environmentProps(name string, config envPropsCommandConfig) error {
 		return newUsageError(fmt.Sprintf("environmentVars: unsupported format %q", config.format))
 	}
 	return nil
+}
+
+type downloadCommandConfig struct {
+	*config
+	format string
+}
+
+func downloadEnv(args []string, config downloadCommandConfig) error {
+	resp, err := httpClient.Get(args[0])
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		w := config.Stdout()
+		_, _ = w.Write(body)
+	}
+	return nil
+}
+
+func doDownloadEnv(args []string, config downloadCommandConfig) error {
+	if len(args) != 1 {
+		return newUsageError("url: arg is required")
+	}
+	return downloadEnv(args, config)
+}
+
+func newDownloadEnvCommand(cp configProvider) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "download <url>",
+		Short: "download environment file from a remote location",
+	}
+
+	config := downloadCommandConfig{}
+	cmd.RunE = func(c *cobra.Command, args []string) error {
+		config.config = cp()
+		return wrapError(doDownloadEnv(args, config))
+	}
+	return cmd
 }

@@ -17,6 +17,9 @@
 package commands
 
 import (
+	"fmt"
+	"net/http"
+	"path"
 	"regexp"
 	"strings"
 	"testing"
@@ -108,6 +111,29 @@ func TestEnvPropsJSON(t *testing.T) {
 	require.NoError(t, err)
 	var data interface{}
 	err = s.jsonOutput(&data)
+	require.NoError(t, err)
+}
+
+func Handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Received %s\n", path.Base(r.URL.Path))
+}
+
+type HandlerTransport struct{ h http.Handler }
+
+func (t HandlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp := &http.Response{
+		Status:  "200 OK",
+		Body:    http.NoBody,
+		Request: req,
+	}
+	return resp, nil
+}
+
+func TestDownloadEnv(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	httpClient.Transport = HandlerTransport{http.HandlerFunc(Handler)}
+	err := s.executeCommand("env", "download", "http://localhost:8080/service/env-file")
 	require.NoError(t, err)
 }
 
@@ -205,6 +231,15 @@ func TestEnvNegative(t *testing.T) {
 				a := assert.New(s.t)
 				a.True(isUsageError(err))
 				a.Equal(`environmentVars: unsupported format "table"`, err.Error())
+			},
+		},
+		{
+			name: "download missing arg",
+			args: []string{"env", "download"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(isUsageError(err))
+				a.Equal(`url: arg is required`, err.Error())
 			},
 		},
 	}

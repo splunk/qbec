@@ -20,9 +20,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -47,6 +49,9 @@ var (
 
 // Executable is the name of the qbec executable.
 var Executable = "qbec"
+
+// Basic http client
+var httpClient = &http.Client{Timeout: time.Second * 10}
 
 func newVersionCommand() *cobra.Command {
 	var jsonOutput bool
