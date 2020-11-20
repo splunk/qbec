@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install command dependencies
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           mkdir -p $HOME/go/bin
           export GOPATH=$HOME/go
@@ -74,6 +76,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install command dependencies
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           echo "::set-env name=GOPATH::$HOME/go"
           echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
