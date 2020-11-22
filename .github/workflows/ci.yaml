@@ -9,28 +9,25 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.14
-        uses: actions/setup-go@v2
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.14
         id: go
 
-      - name: Install helm
-        uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: Install command dependencies
         run: |
           mkdir -p $HOME/go/bin
           export GOPATH=$HOME/go
-          echo "::set-env name=GOPATH::$HOME/go"
-          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
-          echo "::add-path::$HOME/go/bin"
+          echo "GOPATH=$GOPATH" >> $GITHUB_ENV
+          echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
+          echo "$HOME/go/bin" >> $GITHUB_PATH
           make install-ci create-cluster install
 
       - name: Build
@@ -58,20 +55,17 @@ jobs:
     name: Build(Windows)
     runs-on: windows-latest
     steps:
-      - name: Set up Go 1.14
-        uses: actions/setup-go@v2
+      - uses: actions/setup-go@v2
         with:
           go-version: 1.14
         id: go
 
-      - name: Install helm
-        uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: Install command dependencies
         run: |
