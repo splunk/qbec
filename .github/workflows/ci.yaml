@@ -69,9 +69,9 @@ jobs:
 
       - name: Install command dependencies
         run: |
-          echo "::set-env name=GOPATH::$HOME/go"
-          echo "::set-env name=GO_VERSION::$(go version | awk '{ print $3}' | sed 's/^go//')"
-          echo "::add-path::$HOME/go/bin"
+          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
+          echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
+          echo "$HOME/go/bin" >> $GITHUB_PATH
 
       - name: Build
         run: make build
