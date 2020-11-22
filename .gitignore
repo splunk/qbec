@@ -11,3 +11,4 @@ darwin-amd64/
 bin/
 .release-notes.md
 .tools/
+.vscode/

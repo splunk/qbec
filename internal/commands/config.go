@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -363,7 +364,7 @@ func (c config) Confirm(context string) error {
 	}
 	inst, err := readline.NewEx(&readline.Config{
 		Prompt:              "Do you want to continue [y/n]: ",
-		Stdin:               c.stdin,
+		Stdin:               ioutil.NopCloser(c.stdin),
 		Stdout:              c.stdout,
 		Stderr:              c.stderr,
 		ForceUseInteractive: true,
