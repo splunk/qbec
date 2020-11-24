@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -122,7 +123,7 @@ func TestDoFmt(t *testing.T) {
 		expectedErr string
 	}{
 		{[]string{}, fmtCommandConfig{check: true, write: true}, `check and write are not supported together`},
-		{[]string{"nonexistentfile"}, fmtCommandConfig{}, `stat nonexistentfile: no such file or directory`},
+		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
 		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, config: &config{stdout: &b}}, ""},
 		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, ""},
 	}
