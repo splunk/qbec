@@ -1,7 +1,12 @@
 package commands
 
 import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -66,6 +71,42 @@ func TestOptionsCommand(t *testing.T) {
 
 func TestSetupNoFail(t *testing.T) {
 	assert.NotPanics(t, func() { Setup(&cobra.Command{}) })
+}
+
+func Handler(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, "Received %s\n", path.Base(r.URL.Path))
+}
+
+type HandlerTransport struct{ h http.Handler }
+
+var payload = []byte(`
+apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  environments:
+    prod2:
+      server: https://prod-server
+      includes:
+      - service2
+      properties:
+        envType: prod`)
+
+func (t HandlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp := &http.Response{
+		Status:  "200 OK",
+		StatusCode: 200,
+		Body:    ioutil.NopCloser(bytes.NewBuffer(payload)),
+		Request: req,
+	}
+	return resp, nil
+}
+
+func TestDownloadEnv(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	httpClient.Transport = HandlerTransport{http.HandlerFunc(Handler)}
+	err := s.executeCommand("env", "list", "--env-file", "http://localhost:5000/service/env-file")
+	require.NoError(t, err)
 }
 
 func TestSetupEnvironments(t *testing.T) {

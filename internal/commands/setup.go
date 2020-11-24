@@ -19,10 +19,12 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -203,6 +205,28 @@ func setWorkDir(specified string) error {
 	}
 }
 
+func downloadEnv(url string) (error, string) {
+	var envFile string
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return err, ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err, ""
+		}
+		seconds := strconv.Itoa(int(time.Now().Unix()))
+		envFile = fmt.Sprintf("env-%s.yaml", seconds)
+		if err = ioutil.WriteFile(envFile, body, 0644); err != nil {
+			return err, ""
+		}
+	}
+	return nil, envFile
+}
+
 func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 	var rootDir string
 	var appTag string
@@ -238,6 +262,14 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 		// directory before we change it
 		var envFiles []string
 		if envFile != "" {
+			// handle http(s) location
+			if strings.HasPrefix(envFile, "http") {
+				var err error
+				err, envFile = downloadEnv(envFile)
+				if err != nil {
+					return err
+				}
+			}
 			abs, err := filepath.Abs(envFile)
 			if err != nil {
 				return err
