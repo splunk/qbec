@@ -169,3 +169,33 @@ func TestIntegrationWait(t *testing.T) {
 		s.assertErrorLineMatch(regexp.MustCompile(`: wait disabled by policy`))
 	})
 }
+
+func TestIntegrationDiffPolicies(t *testing.T) {
+	dir := "testdata/projects/policies"
+	ns, reset := newNamespace(t)
+	defer reset()
+
+	t.Run("apply", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["updated"].([]interface{})))
+		a.EqualValues(2, len(stats["created"].([]interface{})))
+	})
+	t.Run("diff", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("diff", "local", "--vm:ext-code=hide=true", "--vm:ext-str=foo=xxx --error-exit=false")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		sk := stats["skipped"]
+		skipped, ok := sk.(map[string]interface{})
+		require.True(t, ok)
+		a := assert.New(t)
+		a.EqualValues(1, len(skipped["updates"].([]interface{})))
+		a.EqualValues(1, len(skipped["deletions"].([]interface{})))
+	})
+}
