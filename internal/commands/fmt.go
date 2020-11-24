@@ -106,14 +106,14 @@ func isJSONFile(f os.FileInfo) bool {
 }
 
 func shouldFormat(config *fmtCommandConfig, f os.FileInfo) bool {
-	if config.formatTypes["jsonnet"] {
-		return isJsonnetFile(f)
+	if isJsonnetFile(f) {
+		return config.formatTypes["jsonnet"]
 	}
-	if config.formatTypes["yaml"] {
-		return isYamlFile(f)
+	if isYamlFile(f) {
+		return config.formatTypes["yaml"]
 	}
-	if config.formatTypes["json"] {
-		return isJSONFile(f)
+	if isJSONFile(f) {
+		return config.formatTypes["json"]
 	}
 	return false
 }

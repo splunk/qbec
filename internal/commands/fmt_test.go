@@ -70,7 +70,7 @@ func TestShouldFormat(t *testing.T) {
 		config   fmtCommandConfig
 		expected bool
 	}{
-		{"testdata/qbec.yaml", fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}}, true},
+		{"testdata/qbec.yaml", fmtCommandConfig{formatTypes: map[string]bool{"yaml": true, "jsonnet": true}}, true},
 		{"testdata/test.yml", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, false},
 		{"testdata", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true, "json": true, "yaml": true}}, false},
 		{"testdata/components/c1.jsonnet", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, true},
