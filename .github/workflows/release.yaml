@@ -16,8 +16,6 @@ jobs:
         id: go
       - uses: actions/checkout@v2
       - name: Install package dependencies
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           make get
