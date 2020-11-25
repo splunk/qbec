@@ -31,8 +31,12 @@ type listClient interface {
 	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
 }
 
+// lister lists remote objects and returns a list of objects to be deleted.
 type lister interface {
+	// start starts listing objects based on the supplied query config in the background.
 	start(config remote.ListQueryConfig)
+	// deletions returns a list of objects to be deleted given a list of objects to be retained and
+	// a filter function that should return true for other objects if they can be deleted.
 	deletions(ignore []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error)
 }
 

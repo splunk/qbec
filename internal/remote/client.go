@@ -240,13 +240,13 @@ type GVKFilter func(gvk schema.GroupVersionKind) bool
 
 // ListQueryConfig is the config with which to execute list queries.
 type ListQueryConfig struct {
-	Application         string    // must be non-blank
-	Tag                 string    // may be blank
-	Environment         string    // must be non-blank
-	ListQueryScope                // the query scope for namespaces and non-namespaced resources
-	KindFilter          GVKFilter // filters for group version kind
-	Concurrency         int       // concurrent queries to execute
-	DisableAllNsQueries bool      // do not perform list queries across namespaces when multiple namespaces in picture
+	Application        string    // must be non-blank
+	Tag                string    // may be blank
+	Environment        string    // must be non-blank
+	ListQueryScope               // the query scope for namespaces and non-namespaced resources
+	KindFilter         GVKFilter // filters for group version kind
+	Concurrency        int       // concurrent queries to execute
+	ClusterScopedLists bool      // perform list queries across namespaces when multiple namespaces in picture
 }
 
 // Collection represents a set of k8s objects with the ability to remove a subset of objects from it.

@@ -583,3 +583,9 @@ func (a *App) updateComponentTopLevelVars() {
 		a.allComponents[name] = comp
 	}
 }
+
+// ClusterScopedLists returns the value of the qbec app attribute to determine if cluster scope
+// lists should be performed when multiple namespaces are present.
+func (a *App) ClusterScopedLists() bool {
+	return a.inner.Spec.ClusterScopedLists
+}

@@ -173,12 +173,12 @@ func (o *objectLister) serverObjects(coll *collection) error {
 
 	if len(o.scope.Namespaces) > 0 {
 		switch {
-		case o.scope.DisableAllNsQueries || len(o.scope.Namespaces) == 1:
+		case len(o.scope.Namespaces) == 1 || !o.scope.ClusterScopedLists:
 			for _, ns := range o.scope.Namespaces {
 				addQueries(o.namespacedTypes, ns)
 			}
 		default:
-			sio.Warnf("using cluster scoped queries since multiple namespaces present (%s)\n", strings.Join(o.scope.Namespaces, ", "))
+			sio.Debugln("using cluster scoped queries for multiple namespaces")
 			addQueries(o.namespacedTypes, "")
 		}
 	}
