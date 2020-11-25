@@ -118,7 +118,7 @@ func TestApplyFlags(t *testing.T) {
 			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
 		}
 	}
-	err := s.executeCommand("apply", "dev", "-S", "-n", "--skip-create", "--gc=false")
+	err := s.executeCommand("apply", "dev", "-S", "-n", "--skip-create", "--gc=false", "--wait-all=false")
 	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)

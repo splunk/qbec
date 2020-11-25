@@ -417,7 +417,7 @@ func newDiffCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().StringArrayVar(&config.di.annotationNames, "ignore-annotation", nil, "remove specific annotation from objects before diff")
 	cmd.Flags().BoolVar(&config.di.allLabels, "ignore-all-labels", false, "remove all labels from objects before diff")
 	cmd.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
-	cmd.Flags().BoolVar(&config.exitNonZero, "error-exit", true, "exit with non-zero status code when diffs present")
+	cmd.Flags().BoolVar(&config.exitNonZero, "error-exit", false, "exit with non-zero status code when diffs present")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()

@@ -282,8 +282,8 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
-	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for objects to be ready")
-	cmd.Flags().BoolVar(&config.waitAll, "wait-all", false, "wait for all objects to be ready, not just the ones that have changed")
+	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")
+	cmd.Flags().BoolVar(&config.waitAll, "wait-all", true, "wait for all objects to be ready, not just the ones that have changed")
 	var waitTime string
 	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 
@@ -296,6 +296,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 		}
 		if config.syncOptions.DryRun {
 			config.wait = false
+			config.waitAll = false
 		}
 		if !cmd.Flag("show-details").Changed {
 			config.showDetails = config.syncOptions.DryRun
