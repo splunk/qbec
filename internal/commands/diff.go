@@ -71,13 +71,19 @@ func (di diffIgnores) preprocess(obj *unstructured.Unstructured) {
 	}
 }
 
+type skipStats struct {
+	Updates   []string `json:"updates,omitempty"`
+	Deletions []string `json:"deletions,omitempty"`
+}
+
 type diffStats struct {
 	l         sync.Mutex
-	Additions []string `json:"additions,omitempty"`
-	Changes   []string `json:"changes,omitempty"`
-	Deletions []string `json:"deletions,omitempty"`
-	SameCount int      `json:"same,omitempty"`
-	Errors    []string `json:"errors,omitempty"`
+	Additions []string   `json:"additions,omitempty"`
+	Changes   []string   `json:"changes,omitempty"`
+	Deletions []string   `json:"deletions,omitempty"`
+	SameCount int        `json:"same,omitempty"`
+	Errors    []string   `json:"errors,omitempty"`
+	Skipped   *skipStats `json:"skipped,omitempty"`
 }
 
 func (d *diffStats) added(s string) {
@@ -98,6 +104,24 @@ func (d *diffStats) deleted(s string) {
 	d.Deletions = append(d.Deletions, s)
 }
 
+func (d *diffStats) skippedUpdated(s string) {
+	d.l.Lock()
+	defer d.l.Unlock()
+	if d.Skipped == nil {
+		d.Skipped = &skipStats{}
+	}
+	d.Skipped.Updates = append(d.Skipped.Updates, s)
+}
+
+func (d *diffStats) skippedDeletion(s string) {
+	d.l.Lock()
+	defer d.l.Unlock()
+	if d.Skipped == nil {
+		d.Skipped = &skipStats{}
+	}
+	d.Skipped.Deletions = append(d.Skipped.Deletions, s)
+}
+
 func (d *diffStats) same(s string) {
 	d.l.Lock()
 	defer d.l.Unlock()
@@ -114,6 +138,10 @@ func (d *diffStats) done() {
 	sort.Strings(d.Additions)
 	sort.Strings(d.Changes)
 	sort.Strings(d.Errors)
+	if d.Skipped != nil {
+		sort.Strings(d.Skipped.Deletions)
+		sort.Strings(d.Skipped.Updates)
+	}
 }
 
 type differ struct {
@@ -124,6 +152,8 @@ type differ struct {
 	ignores     diffIgnores
 	showSecrets bool
 	verbose     int
+	upPolicy    *updatePolicy
+	delPolicy   *deletePolicy
 }
 
 func (d *differ) names(ob model.K8sMeta) (name, leftName, rightName string) {
@@ -178,8 +208,12 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 			}
 			d.stats.same(name)
 		} else {
-			fmt.Fprintln(d.w, string(b))
-			d.stats.changed(name)
+			if d.upPolicy.disableUpdate(left.obj) {
+				d.stats.skippedUpdated(name)
+			} else {
+				fmt.Fprintln(d.w, string(b))
+				d.stats.changed(name)
+			}
 		}
 	case left.obj == nil:
 		rightContent, err := asYaml(right.obj)
@@ -198,6 +232,10 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 		fmt.Fprintln(d.w, string(b))
 		d.stats.added(name)
 	default:
+		if d.delPolicy.disableDelete(left.obj) {
+			d.stats.skippedDeletion(name)
+			break
+		}
 		leftContent, err := asYaml(left.obj)
 		if err != nil {
 			return err
@@ -322,6 +360,8 @@ func doDiff(args []string, config diffCommandConfig) error {
 		ignores:     config.di,
 		showSecrets: config.showSecrets,
 		verbose:     config.Verbosity(),
+		upPolicy:    newUpdatePolicy(),
+		delPolicy:   newDeletePolicy(client.IsNamespaced, config.App().DefaultNamespace(env)),
 	}
 	dErr := runInParallel(objects, d.diffLocal, config.parallel)
 
