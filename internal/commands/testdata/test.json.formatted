@@ -1,0 +1,53 @@
+{
+  "groups": {
+    "kind": "APIGroupList",
+    "apiVersion": "v1",
+    "num": 1,
+    "bool": true,
+    "float": 1.12,
+    "groups": [
+      {
+        "name": "",
+        "versions": [
+          {
+            "groupVersion": "v1",
+            "version": "v1"
+          }
+        ],
+        "preferredVersion": {
+          "groupVersion": "v1",
+          "version": "v1"
+        },
+        "serverAddressByClientCIDRs": null
+      }
+    ]
+  },
+  "resourceLists": {
+    ":v1": {
+      "kind": "APIResourceList",
+      "groupVersion": "v1",
+      "resources": [
+        {
+          "name": "bindings",
+          "singularName": "",
+          "namespaced": true,
+          "kind": "Binding",
+          "verbs": [
+            "create"
+          ]
+        },
+        {
+          "name": "resourcequotas/status",
+          "singularName": "",
+          "namespaced": true,
+          "kind": "ResourceQuota",
+          "verbs": [
+            "get",
+            "patch",
+            "update"
+          ]
+        }
+      ]
+    }
+  }
+}

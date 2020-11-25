@@ -14,14 +14,13 @@ require (
 	github.com/google/go-jsonnet v0.17.0
 	github.com/googleapis/gnostic v0.2.0
 	github.com/jonboulle/clockwork v0.1.0
-	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/mattn/go-isatty v0.0.11
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
+	github.com/tidwall/pretty v1.0.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
-	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	k8s.io/api v0.17.13
 	k8s.io/apimachinery v0.17.13
