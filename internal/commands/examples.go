@@ -72,7 +72,7 @@ func fmtExamples() string {
 		newExample("alpha fmt -w", "format all jsonnet and libsonnet files in-place"),
 		newExample("alpha fmt -e", "check if all jsonnet and libsonnet files are formatted well. Non zero exit code in case a unformatted file is found"),
 		newExample("alpha fmt --type=json", "format all json files to stdout"),
-		newExample("alpha fmt somefolder file1.jsonnet file2.libsonnet", "format all json, jsonnet, libsonnet and yaml files in the somefolder, file1.jsonnet and file2.libsonnet files to stdout"),
+		newExample("alpha fmt somefolder file1.jsonnet file2.libsonnet", "format all jsonnet and libsonnet= files in the somefolder, file1.jsonnet and file2.libsonnet files to stdout"),
 		newExample("alpha fmt -t=yaml", "format all yaml files to stdout"),
 		newExample("alpha fmt --type=json,yaml somefolder file1.yaml file2.yml file3.json", "format all json and yaml files in the somefolder, file1.yaml, file2.yml and file3.json files to stdout"),
 	)
