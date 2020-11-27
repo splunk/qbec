@@ -217,6 +217,28 @@ func TestShowOpenSecrets(t *testing.T) {
 	s.assertOutputLineMatch(regexp.MustCompile(secretValue))
 }
 
+func TestShowHiddenStringSecrets(t *testing.T) {
+	s := newCustomScaffold(t, "testdata/projects/string-secrets")
+	defer s.reset()
+	secretValue := "foobar"
+	redactedValue := base64.RawStdEncoding.EncodeToString([]byte("redacted."))
+	err := s.executeCommand("show", "local")
+	require.NoError(t, err)
+	s.assertOutputLineMatch(regexp.MustCompile(redactedValue))
+	s.assertOutputLineNoMatch(regexp.MustCompile(secretValue))
+}
+
+func TestShowOpenStringSecrets(t *testing.T) {
+	s := newCustomScaffold(t, "testdata/projects/string-secrets")
+	defer s.reset()
+	secretValue := "foobar"
+	redactedValue := base64.RawStdEncoding.EncodeToString([]byte("redacted."))
+	err := s.executeCommand("show", "local", "-S")
+	require.NoError(t, err)
+	s.assertOutputLineNoMatch(regexp.MustCompile(redactedValue))
+	s.assertOutputLineMatch(regexp.MustCompile(secretValue))
+}
+
 func TestShowNegative(t *testing.T) {
 	tests := []struct {
 		name     string
