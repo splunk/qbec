@@ -19,10 +19,15 @@ package model
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/template"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
@@ -317,6 +322,38 @@ func TestAppComponentLoadNegative(t *testing.T) {
 	a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 }
 
+func TestHttpEnvFiles(t *testing.T) {
+	reset := setPwd(t, "testdata/http-app")
+	defer reset()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		b, err := ioutil.ReadFile("envs.yaml")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(b)
+	}))
+	defer s.Close()
+
+	b, err := ioutil.ReadFile("qbec-template.yaml")
+	tmpl, err := template.New("qbec").Parse(string(b))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, map[string]interface{}{"URL": s.URL})
+	require.NoError(t, err)
+	err = ioutil.WriteFile("qbec.yaml", buf.Bytes(), 0640)
+	require.NoError(t, err)
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.NoError(t, err)
+	envs := app.Environments()
+	a := assert.New(t)
+	a.Equal(3, len(envs))
+	a.Contains(envs, "stage")
+	a.Contains(envs, "prod")
+	require.Contains(t, envs, "dev")
+	a.EqualValues("https://new-dev-server", envs["dev"].Server)
+}
+
 func TestAppNegative(t *testing.T) {
 	reset := setPwd(t, "./testdata/bad-app")
 	defer reset()
@@ -464,4 +501,36 @@ func TestAppNegative(t *testing.T) {
 			test.asserter(t, err)
 		})
 	}
+}
+
+func TestNegativeDownload(t *testing.T) {
+	t.Run("no-endpoint", func(t *testing.T) {
+		_, err := readEnvFile("http://nonexistent.server")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from http://nonexistent.server")
+	})
+	t.Run("bad-status", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		_, err := readEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "status : 400 Bad Request")
+	})
+	t.Run("slow-server", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			time.Sleep(time.Second)
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		o := httpClient
+		defer func() { httpClient = o }()
+		httpClient = &http.Client{Timeout: 100 * time.Millisecond}
+		_, err := readEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "context deadline exceeded")
+	})
 }

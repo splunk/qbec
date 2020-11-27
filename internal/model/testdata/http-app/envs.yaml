@@ -1,0 +1,10 @@
+apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  environments:
+    stage:
+      server: https://stage-server
+    dev:
+      server: https://new-dev-server
+    prod:
+      server: https://prod-server
