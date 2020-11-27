@@ -27,6 +27,10 @@ spec:
   - default
   - excluded
   - components
+ 
+  # when dealing with apps that deploy to multiple namespaces, use object lists at cluster scope for GC purposes.
+  # by default, this will use namespaced queries for each namespace.
+  clusterScopedLists: true
 
   # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
   vars:

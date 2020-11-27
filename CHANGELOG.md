@@ -1,6 +1,34 @@
 Changelog
 ---
 
+## v0.13.0 (Nov 27, 2020)
+
+* Misc. CI build changes
+* Update jsonnet library to `v0.17.0` and k8s client libs to `v1.17.13`
+* Add json formatter to the `qbec alpha fmt` command
+* Fix diff commands to show skipped updates and deletes based on qbec directives specified for existing objects.
+  This will no longer show spurious diffs for deletes and updates if those have been turned off. 
+* Use per-namespace queries by default when multiple namespaces are present, allow using cluster-scoped queries
+  using an opt-in flag.
+* The `--env-file` option now allows http(s) URLs in addition to local files. In addition, the `envFiles` attribute
+  in `qbec.yaml` can also contain http(s) URLs.
+* String data in secrets is now obfuscated in addition to binary data
+
+### Incompatibilities
+
+This release is incompatible from previous minor versions in the following ways:
+
+* `qbec apply` will now wait on all objects by default. That is, the `--wait-all` now defaults to `true`.
+  To get the previous behavior, you need to add `--wait-all=false` to the `apply` command.
+* `qbec diff` now exits 0 by default even when diffs are found. To restore previous behavior, add `--error-exit`
+  to the command.
+* qbec now defaults to per-namespace queries when multiple namespaces are present. To get the previous behavior
+  of using cluster-scoped queries add `clusterScopedLists: true` under `spec` in `qbec.yaml`
+* The command line syntax of the `qbec alpha fmt` command has changed in incompatible ways. Instead of options like
+ `--jsonnet`, `--yaml` etc. you need to specify options as `--type=jsonnet`, `--type=yaml` and so on.
+* YAML formatter now follows `prettier` conventions requiring arrays to be indented under the parent key.
+* Any corner-case behavior from updating k8s client and jsonnet libraries.  
+
 ## v0.12.5 (Oct 2, 2020)
 
 * Add a new `wait-policy` directive to disable waits on specific deployments
