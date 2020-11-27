@@ -1,0 +1,13 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: string-secrets
+spec:
+  environments:
+    local:
+      context: kind-kind
+      defaultNamespace: default
+  vars:
+    external:
+      - name: secretValue
+        default: foobar
