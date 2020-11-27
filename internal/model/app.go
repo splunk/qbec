@@ -77,24 +77,24 @@ func makeValError(file string, errs []error) error {
 
 }
 
-func downloadEnvFile(url string) ([]byte, error) {
-	var payload []byte
-	var resp *http.Response
-	var err error
-
-	resp, err = httpClient.Get(url)
+func downloadEnvFile(url string) (_ []byte, fErr error) {
+	defer func() {
+		if fErr != nil {
+			fErr = errors.Wrapf(fErr, "download environments from %s", url)
+		}
+	}()
+	res, err := httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer res.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		payload, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("failed to retrieve remote env file. Http Status: %d", resp.StatusCode)
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status : %s", res.Status)
+	}
+	payload, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
 	}
 	return payload, err
 }

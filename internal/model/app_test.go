@@ -27,6 +27,7 @@ import (
 	"strings"
 	"testing"
 	"text/template"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
@@ -500,4 +501,36 @@ func TestAppNegative(t *testing.T) {
 			test.asserter(t, err)
 		})
 	}
+}
+
+func TestNegativeDownload(t *testing.T) {
+	t.Run("no-endpoint", func(t *testing.T) {
+		_, err := downloadEnvFile("http://nonexistent.server")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from http://nonexistent.server")
+	})
+	t.Run("bad-status", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		_, err := downloadEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "status : 400 Bad Request")
+	})
+	t.Run("slow-server", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			time.Sleep(time.Second)
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		o := httpClient
+		defer func() { httpClient = o }()
+		httpClient = &http.Client{Timeout: 100 * time.Millisecond}
+		_, err := downloadEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "context deadline exceeded")
+	})
 }
