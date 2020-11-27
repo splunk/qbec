@@ -505,7 +505,7 @@ func TestAppNegative(t *testing.T) {
 
 func TestNegativeDownload(t *testing.T) {
 	t.Run("no-endpoint", func(t *testing.T) {
-		_, err := downloadEnvFile("http://nonexistent.server")
+		_, err := readEnvFile("http://nonexistent.server")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "download environments from http://nonexistent.server")
 	})
@@ -514,7 +514,7 @@ func TestNegativeDownload(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 		}))
 		defer s.Close()
-		_, err := downloadEnvFile(s.URL)
+		_, err := readEnvFile(s.URL)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "download environments from "+s.URL)
 		assert.Contains(t, err.Error(), "status : 400 Bad Request")
@@ -528,7 +528,7 @@ func TestNegativeDownload(t *testing.T) {
 		o := httpClient
 		defer func() { httpClient = o }()
 		httpClient = &http.Client{Timeout: 100 * time.Millisecond}
-		_, err := downloadEnvFile(s.URL)
+		_, err := readEnvFile(s.URL)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "download environments from "+s.URL)
 		assert.Contains(t, err.Error(), "context deadline exceeded")

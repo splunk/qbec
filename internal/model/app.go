@@ -77,12 +77,7 @@ func makeValError(file string, errs []error) error {
 
 }
 
-func downloadEnvFile(url string) (_ []byte, fErr error) {
-	defer func() {
-		if fErr != nil {
-			fErr = errors.Wrapf(fErr, "download environments from %s", url)
-		}
-	}()
+func downloadEnvFile(url string) ([]byte, error) {
 	res, err := httpClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -106,7 +101,11 @@ func IsRemoteFile(file string) bool {
 
 func readEnvFile(file string) ([]byte, error) {
 	if IsRemoteFile(file) {
-		return downloadEnvFile(file)
+		b, err := downloadEnvFile(file)
+		if err != nil {
+			return nil, errors.Wrapf(err, "download environments from %s", file)
+		}
+		return b, nil
 	}
 	return ioutil.ReadFile(file)
 }
