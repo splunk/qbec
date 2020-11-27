@@ -97,7 +97,7 @@ func TestDiffBasicNoLabels(t *testing.T) {
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
-	err := s.executeCommand("diff", "dev", "--ignore-all-labels", "-S", "--show-deletes=false")
+	err := s.executeCommand("diff", "dev", "--ignore-all-labels", "-S", "--show-deletes=false", "--error-exit=true")
 	require.NotNil(t, err)
 	a := assert.New(t)
 	secretValue := base64.StdEncoding.EncodeToString([]byte("baz"))
@@ -113,7 +113,7 @@ func TestDiffBasicNoSpecificLabels(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-label", "qbec.io/environment", "--show-deletes=false")
-	require.NotNil(t, err)
+	require.NoError(t, err)
 	a := assert.New(t)
 	a.NotContains(s.stdout(), "qbec.io/environment:")
 	a.Contains(s.stdout(), "qbec.io/application:")
@@ -125,7 +125,7 @@ func TestDiffBasicNoSpecificAnnotation(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-annotation", "ann/foo", "--show-deletes=false")
-	require.NotNil(t, err)
+	require.NoError(t, err)
 	a := assert.New(t)
 	a.NotContains(s.stdout(), "ann/foo")
 	a.Contains(s.stdout(), "ann/bar")
@@ -137,7 +137,7 @@ func TestDiffBasicNoAnnotations(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	err := s.executeCommand("diff", "dev", "--ignore-all-annotations", "--show-deletes=false")
-	require.NotNil(t, err)
+	require.NoError(t, err)
 	a := assert.New(t)
 	a.NotContains(s.stdout(), "ann/foo")
 	a.NotContains(s.stdout(), "ann/bar")
