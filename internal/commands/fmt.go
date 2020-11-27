@@ -82,7 +82,7 @@ func newFmtCommand(cp configProvider) *cobra.Command {
 	config := fmtCommandConfig{}
 	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", supportedTypes, "file types that should be formatted")
+	cmd.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		return wrapError(doFmt(args, &config))
