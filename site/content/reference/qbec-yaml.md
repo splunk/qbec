@@ -77,9 +77,10 @@ spec:
 
   # additional environments can be loaded from files. Files are loaded in the order specified.
   # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
-  # The file path is relative to the directory where qbec.yaml resides.
+  # The file path is relative to the directory where qbec.yaml resides. http(s) URLs are also supported
   envFiles:
   - more-envs.yaml
+  - https://my.server/envs.yaml
 ```
 
 ### Environment files

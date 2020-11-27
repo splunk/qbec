@@ -19,10 +19,14 @@ package model
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/template"
 
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
@@ -315,6 +319,38 @@ func TestAppComponentLoadNegative(t *testing.T) {
 	_, err = app.ComponentsForEnvironment("dev", []string{"a"}, []string{"b"})
 	require.NotNil(t, err)
 	a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
+}
+
+func TestHttpEnvFiles(t *testing.T) {
+	reset := setPwd(t, "testdata/http-app")
+	defer reset()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		b, err := ioutil.ReadFile("envs.yaml")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(b)
+	}))
+	defer s.Close()
+
+	b, err := ioutil.ReadFile("qbec-template.yaml")
+	tmpl, err := template.New("qbec").Parse(string(b))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, map[string]interface{}{"URL": s.URL})
+	require.NoError(t, err)
+	err = ioutil.WriteFile("qbec.yaml", buf.Bytes(), 0640)
+	require.NoError(t, err)
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.NoError(t, err)
+	envs := app.Environments()
+	a := assert.New(t)
+	a.Equal(3, len(envs))
+	a.Contains(envs, "stage")
+	a.Contains(envs, "prod")
+	require.Contains(t, envs, "dev")
+	a.EqualValues("https://new-dev-server", envs["dev"].Server)
 }
 
 func TestAppNegative(t *testing.T) {
