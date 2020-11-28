@@ -655,6 +655,7 @@
 <li><a href="#directives-qbec-io-apply-order"><code>directives.qbec.io/apply-order</code></a></li>
 <li><a href="#directives-qbec-io-delete-policy"><code>directives.qbec.io/delete-policy</code></a></li>
 <li><a href="#directives-qbec-io-update-policy"><code>directives.qbec.io/update-policy</code></a></li>
+<li><a href="#directives-qbec-io-wait-policy"><code>directives.qbec.io/wait-policy</code></a></li>
 </ul></li>
 </ul></li>
 </ul></li>
@@ -715,6 +716,17 @@ object to remove this annotation will not work.</p>
 <p>when set to <code>&quot;never&quot;</code>, indicates that the specific object should never be updated.
 If you want qbec to update this object, you need to remove the annotation from the in-cluster object. Changing the source
 object to remove this annotation will not work.</p>
+
+<h4 id="directives-qbec-io-wait-policy"><code>directives.qbec.io/wait-policy</code></h4>
+
+<ul>
+<li>Annotation source: local object</li>
+<li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
+<li>Default value: <code>&quot;default&quot;</code></li>
+</ul>
+
+<p>when set to <code>&quot;never&quot;</code> for deployments or daemonsets, indicates that qbec should not wait for that object even when
+the <code>--wait</code> or <code>--wait-all</code> flags are set for the <code>apply</code> command.</p>
 
 
 <footer class=" footline" >

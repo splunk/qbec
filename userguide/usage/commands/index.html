@@ -662,6 +662,7 @@
 </ul></li>
 <li><a href="#command-help">Command help</a></li>
 <li><a href="#running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</a></li>
+<li><a href="#experimental-commands">Experimental commands</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -694,6 +695,7 @@ Usage:
   qbec [command]
 
 Available Commands:
+  alpha       experimental qbec commands
   apply       apply one or more components to a Kubernetes cluster
   completion  Output shell completion for bash
   component   component lists and diffs
@@ -858,6 +860,22 @@ option.</p>
   &quot;namespace&quot;: &quot;dev-ns&quot;
 }
 </code></pre>
+
+<h2 id="experimental-commands">Experimental commands</h2>
+
+<p><code>qbec</code> includes some experimental commands that are not ready for primetime. These commands are not guaranteed to be backwards compatible between releases. They might also be removed in a future release. Use with caution.</p>
+
+<p>To see a list of experimental commands, run:</p>
+
+<pre><code class="language-shell">qbec alpha --help
+</code></pre>
+
+<p>For example, here&rsquo;s how you use the <code>fmt</code> command.</p>
+
+<pre><code class="language-shell">qbec alpha fmt -w
+</code></pre>
+
+<p>The <code>fmt</code> command would format all jsonnet and libsonnet files.</p>
 
 
 <footer class=" footline" >
