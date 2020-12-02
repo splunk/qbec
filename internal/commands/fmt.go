@@ -56,7 +56,9 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		case err != nil:
 			return err
 		case dir.IsDir():
-			return walkDir(config, path)
+			if err := walkDir(config, path); err != nil {
+				return err
+			}
 		default:
 			if shouldFormat(config, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
