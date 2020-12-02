@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.13.1 (Dec 2, 2020)
+
+* Fix a bug where the `alpha fmt` command would stop processing arguments after encountering a directory.
+
 ## v0.13.0 (Nov 27, 2020)
 
 * Misc. CI build changes
