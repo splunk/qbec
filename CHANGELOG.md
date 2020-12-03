@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.13.2 (Dec 3, 2020)
+
+* Allow force options to be set via environment variables (thanks @splkforrest)
+
 ## v0.13.1 (Dec 2, 2020)
 
 * Fix a bug where the `alpha fmt` command would stop processing arguments after encountering a directory.
@@ -15,7 +19,7 @@ Changelog
 * Use per-namespace queries by default when multiple namespaces are present, allow using cluster-scoped queries
   using an opt-in flag.
 * The `--env-file` option now allows http(s) URLs in addition to local files. In addition, the `envFiles` attribute
-  in `qbec.yaml` can also contain http(s) URLs.
+  in `qbec.yaml` can also contain http(s) URLs. (thanks @dan1)
 * String data in secrets is now obfuscated in addition to binary data
 
 ### Incompatibilities
