@@ -52,12 +52,12 @@ type forceOptions struct {
 // addForceOptions adds flags to the supplied root command and returns forced options.
 func addForceOptions(cmd *cobra.Command, prefix string) func() forceOptions {
 	var f forceOptions
-	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively",
+	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively. Defaulted from QBEC_FORCE_K8S_CONTEXT",
 		remote.ForceInClusterContext, currentMarker)
 	pf := cmd.PersistentFlags()
-	pf.StringVar(&f.k8sContext, prefix+"k8s-context", "", ctxUsage)
-	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", currentMarker)
-	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", "", nsUsage)
+	pf.StringVar(&f.k8sContext, prefix+"k8s-context", envOrDefault("QBEC_FORCE_K8S_CONTEXT", ""), ctxUsage)
+	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config. Defaulted from QBEC_FORCE_K8S_NAMESPACE", currentMarker)
+	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", envOrDefault("QBEC_FORCE_K8S_NAMESPACE", ""), nsUsage)
 	return func() forceOptions { return f }
 }
 
