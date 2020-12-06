@@ -61,7 +61,7 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 				return err
 			}
 		default:
-			if shouldFormat(config, dir) {
+			if shouldFormat(config, path, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
 					return err
 				}
@@ -108,15 +108,23 @@ func isJSONFile(f os.FileInfo) bool {
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "json"
 }
 
-func shouldFormat(config *fmtCommandConfig, f os.FileInfo) bool {
+func contains(files []string, file string) bool {
+	for _, a := range files {
+		if a == file {
+			return true
+		}
+	}
+	return false
+}
+func shouldFormat(config *fmtCommandConfig, path string, f os.FileInfo) bool {
 	if isJsonnetFile(f) {
-		return config.formatTypes["jsonnet"]
+		return config.formatTypes["jsonnet"] || contains(config.files, path)
 	}
 	if isYamlFile(f) {
-		return config.formatTypes["yaml"]
+		return config.formatTypes["yaml"] || contains(config.files, path)
 	}
 	if isJSONFile(f) {
-		return config.formatTypes["json"]
+		return config.formatTypes["json"] || contains(config.files, path)
 	}
 	return false
 }
@@ -126,7 +134,7 @@ func walkDir(config *fmtCommandConfig, path string) error {
 
 func fileVisitor(config *fmtCommandConfig) filepath.WalkFunc {
 	return func(path string, f os.FileInfo, err error) error {
-		if err == nil && shouldFormat(config, f) {
+		if err == nil && shouldFormat(config, path, f) {
 			err = processFile(config, path, nil, config.Stdout())
 		}
 		// Don't complain if a file was deleted in the meantime (i.e.

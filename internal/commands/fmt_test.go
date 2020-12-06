@@ -73,6 +73,7 @@ func TestShouldFormat(t *testing.T) {
 	}{
 		{"testdata/qbec.yaml", fmtCommandConfig{formatTypes: map[string]bool{"yaml": true, "jsonnet": true}}, true},
 		{"testdata/test.yml", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, false},
+		{"testdata/test.yml", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, files: []string{"testdata/test.yml"}}, true},
 		{"testdata", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true, "json": true, "yaml": true}}, false},
 		{"testdata/components/c1.jsonnet", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, true},
 		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
@@ -83,7 +84,7 @@ func TestShouldFormat(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Unexpected error'%v'", err)
 			}
-			var actual = shouldFormat(&test.config, f)
+			var actual = shouldFormat(&test.config, test.fileName, f)
 			if test.expected != actual {
 				t.Errorf("Expected '%t', got '%t'", test.expected, actual)
 			}
