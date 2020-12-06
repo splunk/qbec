@@ -14,6 +14,7 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-jsonnet v0.17.1-0.20210215134408-9b6cbef4caf7
 	github.com/googleapis/gnostic v0.2.0
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/mattn/go-isatty v0.0.11
 	github.com/pkg/errors v0.9.1
