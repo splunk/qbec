@@ -131,6 +131,7 @@ func TestDoFmt(t *testing.T) {
 		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, ""},
 		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, ""},
 		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, "testdata/qbec.yaml\n\t* testdata/test.json"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, "testdata/test.json"},
 	}
 
 	for i, test := range tests {
