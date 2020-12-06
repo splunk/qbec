@@ -126,6 +126,7 @@ func TestDoFmt(t *testing.T) {
 		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
 		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, config: &config{stdout: &b}}, ""},
 		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, ""},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, "testdata/qbec.yaml\n\t* testdata/test.json"},
 	}
 
 	for i, test := range tests {
