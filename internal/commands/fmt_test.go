@@ -125,10 +125,10 @@ func TestDoFmt(t *testing.T) {
 		{[]string{}, fmtCommandConfig{check: true, write: true}, `check and write are not supported together`},
 		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
 		{[]string{"nonexistentfile"}, fmtCommandConfig{check: true}, testutil.FileNotFoundMessage},
-		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, config: &config{stdout: &b}}, ""},
-		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, ""},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, "testdata/qbec.yaml"},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, "testdata/test.json"},
+		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{specifiedTypes: []string{"yaml"}, config: &config{stdout: &b}}, ""},
+		{[]string{"testdata/components"}, fmtCommandConfig{specifiedTypes: []string{"jsonnet"}, config: &config{stdout: &b}}, ""},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, specifiedTypes: []string{"jsonnet", "yaml", "json"}, config: &config{stdout: &b}}, "testdata/qbec.yaml"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, specifiedTypes: []string{"jsonnet", "yaml", "json"}, config: &config{stdout: &b}}, "testdata/test.json"},
 	}
 
 	for i, test := range tests {
