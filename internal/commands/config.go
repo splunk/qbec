@@ -127,6 +127,7 @@ type configFactory struct {
 	stderr          io.Writer // standard error for command
 	skipConfirm     bool      // do not prompt for confirmation
 	colors          bool      // show colorized output
+	componentLabel  bool      // add component as label to Kubernetes objects
 	evalConcurrency int       // concurrency of eval operations
 	verbosity       int       // verbosity level
 	strictVars      bool      // strict mode for variable evaluation
@@ -148,6 +149,7 @@ func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 		clp:             clp,
 		attrsp:          kp,
 		colors:          cp.colors,
+		componentLabel:  cp.componentLabel,
 		yes:             cp.skipConfirm,
 		evalConcurrency: cp.evalConcurrency,
 		verbose:         cp.verbosity,
@@ -186,6 +188,7 @@ type config struct {
 	yes             bool              // auto-confirm
 	evalConcurrency int               // concurrency of component eval
 	verbose         int               // verbosity level
+	componentLabel  bool              // if add component as label
 	stdin           io.Reader         // standard input
 	stdout          io.Writer         // standard output
 	stderr          io.Writer         // standard error
@@ -288,6 +291,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		DefaultNs:       c.App().DefaultNamespace(env),
 		VMConfig:        c.vmConfig,
 		Verbose:         c.Verbosity() > 1,
+		ComponentLabel:  c.componentLabel,
 		Concurrency:     c.EvalConcurrency(),
 		PostProcessFile: c.App().PostProcessor(),
 		CleanMode:       c.cleanEvalMode,

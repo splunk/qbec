@@ -52,7 +52,7 @@ func (i input) makeObject() model.K8sLocalObject {
 			"foo": "bar",
 		},
 	}
-	return model.NewK8sLocalObject(data, "app1", "t1", i.component, i.env)
+	return model.NewK8sLocalObject(data, "app1", "t1", i.component, i.env, false)
 }
 
 func (i input) String() string {

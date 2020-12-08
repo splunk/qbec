@@ -135,7 +135,7 @@ func NewK8sObject(data map[string]interface{}) K8sObject {
 
 // NewK8sLocalObject wraps a K8sLocalObject implementation around the unstructured object data specified as a bag
 // of attributes for the supplied application, component and environment.
-func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env string) K8sLocalObject {
+func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env string, setComponentAsLabel bool) K8sLocalObject {
 	base := toUnstructured(data)
 	ret := &ko{Unstructured: base, app: app, tag: tag, comp: component, env: env}
 	labels := base.GetLabels()
@@ -147,6 +147,9 @@ func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env str
 		labels[QbecNames.TagLabel] = tag
 	}
 	labels[QbecNames.EnvironmentLabel] = env
+	if setComponentAsLabel {
+		labels[QbecNames.ComponentLabel] = component
+	}
 	base.SetLabels(labels)
 
 	anns := base.GetAnnotations()

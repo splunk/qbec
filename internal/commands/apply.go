@@ -282,6 +282,8 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
+	var componentLabel bool
+	cmd.Flags().BoolVar(&componentLabel, "component-label", false, "add component as label to Kubernetes objects")
 	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")
 	cmd.Flags().BoolVar(&config.waitAll, "wait-all", true, "wait for all objects to be ready, not just the ones that have changed")
 	var waitTime string
@@ -289,6 +291,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
+		config.componentLabel = componentLabel
 		var err error
 		config.waitTimeout, err = time.ParseDuration(waitTime)
 		if err != nil {

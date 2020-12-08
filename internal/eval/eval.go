@@ -90,6 +90,7 @@ type Context struct {
 	DefaultNs       string       // the default namespace to expose as an external variable
 	VMConfig        VMConfigFunc // the base VM config to use for eval
 	Verbose         bool         // show generated code
+	ComponentLabel  bool         // add component as label to Kubernetes objects
 	Concurrency     int          // concurrent components to evaluate, default 5
 	PostProcessFile string       // the file that contains post-processing code for all objects
 	CleanMode       bool         // whether clean mode is enabled
@@ -256,7 +257,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		if err := model.AssertMetadataValid(proc); err != nil {
 			return nil, err
 		}
-		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env))
+		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env, ctx.ComponentLabel))
 	}
 	return processed, nil
 }
