@@ -114,6 +114,7 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	opts := config.syncOptions
 	opts.DisableUpdateFn = newUpdatePolicy().disableUpdate
+	opts.RecreateUpdateFn = newUpdatePolicy().recreateUpdate
 
 	if !opts.DryRun && len(objects) > 0 {
 		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))

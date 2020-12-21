@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	policyNever   = "never"
-	policyDefault = "default"
+	policyNever    = "never"
+	policyRecreate = "recreate"
+	policyDefault  = "default"
 )
 
 // isSet return true if the annotation name specified as directive is equal to the supplied value.
@@ -62,6 +63,10 @@ type updatePolicy struct{}
 
 func (u *updatePolicy) disableUpdate(ob model.K8sMeta) bool {
 	return isSet(ob, model.QbecNames.Directives.UpdatePolicy, policyNever, []string{policyDefault})
+}
+
+func (u *updatePolicy) recreateUpdate(ob model.K8sMeta) bool {
+	return isSet(ob, model.QbecNames.Directives.UpdatePolicy, policyRecreate, []string{policyDefault})
 }
 
 func newUpdatePolicy() *updatePolicy {

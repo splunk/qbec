@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiTypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 )
@@ -64,11 +65,12 @@ type ConditionFunc func(obj model.K8sMeta) bool
 
 // SyncOptions provides the caller with options for the sync operation.
 type SyncOptions struct {
-	DryRun          bool            // do not actually create or update objects, return what would happen
-	DisableCreate   bool            // only update objects if they exist, do not create new ones
-	DisableUpdateFn ConditionFunc   // do not update an existing object
-	WaitOptions     TypeWaitOptions // opts for waiting
-	ShowSecrets     bool            // show secrets in patches and creations
+	DryRun           bool            // do not actually create or update objects, return what would happen
+	DisableCreate    bool            // only update objects if they exist, do not create new ones
+	DisableUpdateFn  ConditionFunc   // do not update an existing object
+	RecreateUpdateFn ConditionFunc   // recreate existing object on update
+	WaitOptions      TypeWaitOptions // opts for waiting
+	ShowSecrets      bool            // show secrets in patches and creations
 }
 
 // DeleteOptions provides the caller with options for the delete operation.
@@ -647,6 +649,37 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	return result, nil
 }
 
+func (c *Client) doRecreate(obj model.K8sLocalObject, opts SyncOptions) (*updateResult, error) {
+	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrap(err, "get resource interface")
+	}
+
+	sio.Debugln("delete " + c.DisplayName(obj))
+	pp := metav1.DeletePropagationForeground
+	err = ri.Delete(obj.GetName(), &metav1.DeleteOptions{PropagationPolicy: &pp})
+	if err != nil && !apiErrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	watcher, err := ri.Watch(metav1.ListOptions{
+		FieldSelector: "metadata.name=" + obj.GetName(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sio.Debugln("wait " + c.DisplayName(obj))
+	for {
+		ev := <-watcher.ResultChan()
+		if ev.Type == watch.Deleted {
+			break
+		}
+	}
+	watcher.Stop()
+	return c.maybeCreate(obj, opts)
+}
+
 func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
 	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
 		return &updateResult{
@@ -686,10 +719,16 @@ func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unst
 	}
 
 	var result *updateResult
-	if opts.DryRun {
-		result, err = p.getPatchContents(remObj, obj)
-	} else {
-		result, err = p.patch(remObj, obj)
+
+	patch, err := p.getPatchContents(remObj, obj)
+	if err != nil || opts.DryRun {
+		return patch, err
 	}
+	if patch.SkipReason != identicalObjects && opts.RecreateUpdateFn(model.NewK8sObject(remObj.Object)) {
+		return c.doRecreate(obj, opts)
+	}
+
+	result, err = p.patch(remObj, obj)
+
 	return result, err
 }
