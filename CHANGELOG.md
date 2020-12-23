@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.13.3 (Dec 23, 2020)
+
+* Add ability to add the component name as a label in addition to the existing annotation. This is opt-in and is activated
+  by setting the `addComponentLabel` property to `true` in qbec.yaml (thanks @korroot and @hudymi).
+
 ## v0.13.2 (Dec 3, 2020)
 
 * Allow force options to be set via environment variables (thanks @splkforrest)
