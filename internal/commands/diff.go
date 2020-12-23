@@ -409,6 +409,7 @@ func newDiffCommand(cp configProvider) *cobra.Command {
 	config := diffCommandConfig{
 		filterFunc: addFilterParams(cmd, true),
 	}
+
 	cmd.Flags().BoolVar(&config.showDeletions, "show-deletes", true, "include deletions in diff")
 	cmd.Flags().IntVar(&config.contextLines, "context", 3, "context lines for diff")
 	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")

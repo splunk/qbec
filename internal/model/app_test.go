@@ -105,6 +105,7 @@ func TestAppSimple(t *testing.T) {
 	a.Equal(3, len(app.defaultComponents))
 	a.Contains(app.allComponents, "service2")
 	a.NotContains(app.defaultComponents, "service2")
+	a.Equal(false, app.AddComponentLabel())
 
 	comps, err := app.ComponentsForEnvironment("_", nil, nil)
 	require.Nil(t, err)
@@ -533,4 +534,13 @@ func TestNegativeDownload(t *testing.T) {
 		assert.Contains(t, err.Error(), "download environments from "+s.URL)
 		assert.Contains(t, err.Error(), "context deadline exceeded")
 	})
+}
+
+func TestAppLabel(t *testing.T) {
+	reset := setPwd(t, "testdata/label-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.Equal(true, app.AddComponentLabel())
 }

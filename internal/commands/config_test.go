@@ -67,6 +67,7 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal("t1", ctx.Tag)
 	a.Equal("kube-system-t1", ctx.DefaultNs)
 	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
+	a.Equal(false, ctx.AddComponentLabel)
 
 	testVMC := ctx.VMConfig([]string{"tlaFoo", "tlaBar"})
 	a.EqualValues(map[string]string{"tlaFoo": "xxx"}, testVMC.TopLevelVars())
@@ -206,7 +207,7 @@ data:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ret := ordering(model.NewK8sLocalObject(test.data, "app", "tag", "component", "env"))
+			ret := ordering(model.NewK8sLocalObject(test.data, "app", "tag", "component", "env", false))
 			assert.Equal(t, test.expected, ret)
 		})
 	}

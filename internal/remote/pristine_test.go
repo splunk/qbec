@@ -192,7 +192,7 @@ func TestPristineReaderNoFallback(t *testing.T) {
 func TestCreateFromPristine(t *testing.T) {
 	un := loadFile(t, "input.yaml")
 	p := qbecPristine{}
-	obj := model.NewK8sLocalObject(un.Object, "app", "", "comp1", "dev")
+	obj := model.NewK8sLocalObject(un.Object, "app", "", "comp1", "dev", false)
 	ret, err := p.createFromPristine(obj)
 	require.Nil(t, err)
 	a := assert.New(t)

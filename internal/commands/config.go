@@ -281,16 +281,17 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		sio.Warnln("unable to serialize env properties to JSON:", err)
 	}
 	return eval.Context{
-		App:             c.App().Name(),
-		Tag:             c.App().Tag(),
-		Env:             env,
-		EnvPropsJSON:    string(p),
-		DefaultNs:       c.App().DefaultNamespace(env),
-		VMConfig:        c.vmConfig,
-		Verbose:         c.Verbosity() > 1,
-		Concurrency:     c.EvalConcurrency(),
-		PostProcessFile: c.App().PostProcessor(),
-		CleanMode:       c.cleanEvalMode,
+		App:               c.App().Name(),
+		Tag:               c.App().Tag(),
+		Env:               env,
+		EnvPropsJSON:      string(p),
+		DefaultNs:         c.App().DefaultNamespace(env),
+		VMConfig:          c.vmConfig,
+		Verbose:           c.Verbosity() > 1,
+		AddComponentLabel: c.App().AddComponentLabel(),
+		Concurrency:       c.EvalConcurrency(),
+		PostProcessFile:   c.App().PostProcessor(),
+		CleanMode:         c.cleanEvalMode,
 	}
 }
 

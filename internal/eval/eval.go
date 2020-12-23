@@ -83,16 +83,17 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	App             string       // the application for which the evaluation is done
-	Tag             string       // the gc tag if present
-	Env             string       // the environment for which the evaluation is done
-	EnvPropsJSON    string       // the environment properties to expose as an external variable
-	DefaultNs       string       // the default namespace to expose as an external variable
-	VMConfig        VMConfigFunc // the base VM config to use for eval
-	Verbose         bool         // show generated code
-	Concurrency     int          // concurrent components to evaluate, default 5
-	PostProcessFile string       // the file that contains post-processing code for all objects
-	CleanMode       bool         // whether clean mode is enabled
+	App               string       // the application for which the evaluation is done
+	Tag               string       // the gc tag if present
+	Env               string       // the environment for which the evaluation is done
+	EnvPropsJSON      string       // the environment properties to expose as an external variable
+	DefaultNs         string       // the default namespace to expose as an external variable
+	VMConfig          VMConfigFunc // the base VM config to use for eval
+	Verbose           bool         // show generated code
+	AddComponentLabel bool         // add component name as label to Kubernetes objects
+	Concurrency       int          // concurrent components to evaluate, default 5
+	PostProcessFile   string       // the file that contains post-processing code for all objects
+	CleanMode         bool         // whether clean mode is enabled
 }
 
 func (c Context) baseVMConfig(tlas []string) vm.Config {
@@ -256,7 +257,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		if err := model.AssertMetadataValid(proc); err != nil {
 			return nil, err
 		}
-		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env))
+		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env, ctx.AddComponentLabel))
 	}
 	return processed, nil
 }

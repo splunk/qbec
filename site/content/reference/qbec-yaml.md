@@ -81,6 +81,9 @@ spec:
   envFiles:
   - more-envs.yaml
   - https://my.server/envs.yaml
+
+  # if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. 
+  addComponentLabel: true
 ```
 
 ### Environment files

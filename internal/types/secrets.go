@@ -96,5 +96,5 @@ func HideSensitiveLocalInfo(in model.K8sLocalObject) (model.K8sLocalObject, bool
 	if !changed {
 		return in, false
 	}
-	return model.NewK8sLocalObject(obj.Object, in.Application(), in.Tag(), in.Component(), in.Environment()), true
+	return model.NewK8sLocalObject(obj.Object, in.Application(), in.Tag(), in.Component(), in.Environment(), false), true
 }
