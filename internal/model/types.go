@@ -104,6 +104,8 @@ type AppSpec struct {
 	// whether remote lists for GC purposes should use cluster scoped queries
 	// when multiple namespaces are present. Not used when only one namespace is present.
 	ClusterScopedLists bool `json:"clusterScopedLists,omitempty"`
+	// add component name as label to Kubernetes objects, default to false
+	AddComponentLabel bool `json:"addComponentLabel,omitempty"`
 }
 
 // QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.

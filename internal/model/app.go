@@ -268,6 +268,10 @@ func (a *App) LibPaths() []string {
 	return a.inner.Spec.LibPaths
 }
 
+func (a *App) AddComponentLabel() bool {
+	return a.inner.Spec.AddComponentLabel
+}
+
 func (a *App) envObject(env string) (Environment, error) {
 	envObj, ok := a.inner.Spec.Environments[env]
 	if !ok {

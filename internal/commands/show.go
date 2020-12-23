@@ -214,19 +214,16 @@ func newShowCommand(cp configProvider) *cobra.Command {
 	}
 
 	var clean bool
-	var componentLabel bool
 	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
 	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
 	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
 	cmd.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
-	cmd.Flags().BoolVar(&componentLabel, "component-label", false, "add component as label to Kubernetes objects")
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		config.config.cleanEvalMode = clean
-		config.componentLabel = componentLabel
 		return wrapError(doShow(args, config))
 	}
 	return cmd

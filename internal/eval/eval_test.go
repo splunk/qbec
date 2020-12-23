@@ -143,7 +143,7 @@ func TestEvalComponentsComponentLabel(t *testing.T) {
 			Name:  "a",
 			Files: []string{"testdata/components/a.json"},
 		},
-	}, Context{Env: "dev", CleanMode: true, ComponentLabel: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
+	}, Context{Env: "dev", CleanMode: true, AddComponentLabel: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
 	require.Nil(t, err)
 	require.Equal(t, 1, len(objs))
 	a := assert.New(t)

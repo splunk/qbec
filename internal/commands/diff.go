@@ -419,12 +419,9 @@ func newDiffCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVar(&config.di.allLabels, "ignore-all-labels", false, "remove all labels from objects before diff")
 	cmd.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
 	cmd.Flags().BoolVar(&config.exitNonZero, "error-exit", false, "exit with non-zero status code when diffs present")
-	var componentLabel bool
-	cmd.Flags().BoolVar(&componentLabel, "component-label", false, "add component as label to Kubernetes objects")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
-		config.componentLabel = componentLabel
 		return wrapError(doDiff(args, config))
 	}
 	return cmd

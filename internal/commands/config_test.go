@@ -67,7 +67,7 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal("t1", ctx.Tag)
 	a.Equal("kube-system-t1", ctx.DefaultNs)
 	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
-	a.Equal(false, ctx.ComponentLabel)
+	a.Equal(false, ctx.AddComponentLabel)
 
 	testVMC := ctx.VMConfig([]string{"tlaFoo", "tlaBar"})
 	a.EqualValues(map[string]string{"tlaFoo": "xxx"}, testVMC.TopLevelVars())
