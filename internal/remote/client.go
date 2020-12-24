@@ -662,8 +662,13 @@ func (c *Client) doRecreate(obj model.K8sLocalObject, opts SyncOptions) (*update
 		return nil, err
 	}
 
+	waitTime := int64(opts.WaitOptions.Timeout.Seconds())
+	if waitTime == 0 {
+		waitTime = int64(2 * time.Minute)
+	}
 	watcher, err := ri.Watch(metav1.ListOptions{
-		FieldSelector: "metadata.name=" + obj.GetName(),
+		TimeoutSeconds: &waitTime,
+		FieldSelector:  "metadata.name=" + obj.GetName(),
 	})
 	if err != nil {
 		return nil, err

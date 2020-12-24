@@ -295,6 +295,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 		if err != nil {
 			return newUsageError(fmt.Sprintf("invalid wait timeout: %s, %v", waitTime, err))
 		}
+		config.syncOptions.WaitOptions.Timeout = config.waitTimeout
 		if config.syncOptions.DryRun {
 			config.wait = false
 			config.waitAll = false
