@@ -87,11 +87,10 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	VMConfig        VMConfigFunc        // the base VM config to use for eval
-	ObjectProducer  LocalObjectProducer // function to get a local object
-	Verbose         bool                // show generated code
-	Concurrency     int                 // concurrent components to evaluate, default 5
-	PostProcessFile string              // the file that contains post-processing code for all objects
+	VMConfig        VMConfigFunc // the base VM config to use for eval
+	Verbose         bool         // show generated code
+	Concurrency     int          // concurrent components to evaluate, default 5
+	PostProcessFile string       // the file that contains post-processing code for all objects
 }
 
 func (c Context) baseVMConfig(tlas []string) vm.Config {
@@ -125,7 +124,7 @@ var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
 
 // Components evaluates the specified components using the specific runtime
 // parameters file and returns the result.
-func Components(components []model.Component, ctx Context) (_ []model.K8sLocalObject, finalErr error) {
+func Components(components []model.Component, ctx Context, lop LocalObjectProducer) (_ []model.K8sLocalObject, finalErr error) {
 	start := time.Now()
 	defer func() {
 		if finalErr == nil {
@@ -136,7 +135,7 @@ func Components(components []model.Component, ctx Context) (_ []model.K8sLocalOb
 	if err != nil {
 		return nil, err
 	}
-	ret, err := evalComponents(components, ctx, pe)
+	ret, err := evalComponents(components, ctx, pe, lop)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +192,7 @@ func evaluationCode(file string) (string, string, error) {
 	return inputCode, contextFile, nil
 }
 
-func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLocalObject, error) {
+func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
 	var contextFile string
@@ -245,12 +244,12 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		if err := model.AssertMetadataValid(proc); err != nil {
 			return nil, err
 		}
-		processed = append(processed, ctx.ObjectProducer(c.Name, proc))
+		processed = append(processed, lop(c.Name, proc))
 	}
 	return processed, nil
 }
 
-func evalComponents(list []model.Component, ctx Context, pe postProc) ([]model.K8sLocalObject, error) {
+func evalComponents(list []model.Component, ctx Context, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	var ret []model.K8sLocalObject
 	if len(list) == 0 {
 		return ret, nil
@@ -279,7 +278,7 @@ func evalComponents(list []model.Component, ctx Context, pe postProc) ([]model.K
 		go func() {
 			defer wg.Done()
 			for c := range ch {
-				objs, err := evalComponent(ctx, c, pe)
+				objs, err := evalComponent(ctx, c, pe, lop)
 				l.Lock()
 				if err != nil {
 					errs = append(errs, err)

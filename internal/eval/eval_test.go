@@ -26,6 +26,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func producer(component string, data map[string]interface{}) model.K8sLocalObject {
+	return model.NewK8sLocalObject(data, model.LocalAttrs{App: "foo", Tag: "", Component: component, Env: "dev"})
+}
+
 func decorate(ctx Context) Context {
 	fn := func(tlaVars []string) vm.Config {
 		return vm.Config{}.WithVars(map[string]string{
@@ -38,9 +42,6 @@ func decorate(ctx Context) Context {
 		})
 	}
 	ctx.VMConfig = fn
-	ctx.ObjectProducer = func(component string, data map[string]interface{}) model.K8sLocalObject {
-		return model.NewK8sLocalObject(data, model.LocalAttrs{App: "foo", Tag: "", Component: component, Env: "dev"})
-	}
 	return ctx
 }
 
@@ -92,7 +93,10 @@ func TestEvalComponents(t *testing.T) {
 				"testdata/components/d/subdir-cm2.json",
 			},
 		},
-	}, decorate(Context{Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"}))
+	},
+		decorate(Context{Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"}),
+		producer,
+	)
 	require.Nil(t, err)
 	require.Equal(t, 5, len(objs))
 	a := assert.New(t)
@@ -231,7 +235,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ret, err := evalComponents(test.components, decorate(Context{
 				Concurrency: test.concurrency,
-			}), postProc{})
+			}), postProc{}, producer)
 			test.asserter(t, ret, err)
 		})
 	}
@@ -243,7 +247,7 @@ func TestEvalComponentsBadJson(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad.json"},
 		},
-	}, decorate(Context{}))
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "invalid character")
 }
@@ -254,7 +258,7 @@ func TestEvalComponentsBadPosProcessor(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/good.json"},
 		},
-	}, decorate(Context{PostProcessFile: "foo/bar.jsonnet"}))
+	}, decorate(Context{PostProcessFile: "foo/bar.jsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "read post-eval file:")
 }
@@ -265,7 +269,7 @@ func TestEvalComponentsBadYaml(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad.yaml"},
 		},
-	}, decorate(Context{}))
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "did not find expected node content")
 }
@@ -276,7 +280,7 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad-objects.yaml"},
 		},
-	}, decorate(Context{}))
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `non-kubernetes object found while evaluating path "$[0].foo" (found "string"`)
 }
@@ -287,7 +291,7 @@ func TestEvalComponentsBadMetadata(t *testing.T) {
 			Name:  "bad-metadata",
 			Files: []string{"testdata/components/bad-metadata.yaml"},
 		},
-	}, decorate(Context{}))
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `/v1, Kind=ConfigMap, Name=subdir-config-map1: .metadata.annotations accessor error`)
 }
@@ -298,7 +302,7 @@ func TestEvalComponentsBadPostProc(t *testing.T) {
 			Name:  "bad-postproc",
 			Files: []string{"testdata/components/b.yaml"},
 		},
-	}, decorate(Context{PostProcessFile: "testdata/components/bad-pp.libsonnet"}))
+	}, decorate(Context{PostProcessFile: "testdata/components/bad-pp.libsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `post-eval did not return an object`)
 }

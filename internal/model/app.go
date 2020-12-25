@@ -268,6 +268,8 @@ func (a *App) LibPaths() []string {
 	return a.inner.Spec.LibPaths
 }
 
+// AddComponentLabel returns if the qbec component name should be added as an object label in addition to the
+// standard annotation.
 func (a *App) AddComponentLabel() bool {
 	return a.inner.Spec.AddComponentLabel
 }

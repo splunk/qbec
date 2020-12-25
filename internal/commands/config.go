@@ -293,19 +293,23 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		model.QbecNames.EnvPropsVarName: string(p),
 	})
 	return eval.Context{
-		VMConfig: func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
-		ObjectProducer: func(component string, data map[string]interface{}) model.K8sLocalObject {
-			return model.NewK8sLocalObject(data, model.LocalAttrs{
-				App:               c.app.Name(),
-				Tag:               c.app.Tag(),
-				Component:         component,
-				Env:               env,
-				SetComponentLabel: c.app.AddComponentLabel(),
-			})
-		},
+		VMConfig:        func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
 		Verbose:         c.Verbosity() > 1,
 		Concurrency:     c.EvalConcurrency(),
 		PostProcessFile: c.App().PostProcessor(),
+	}
+}
+
+func (c config) ObjectProducer(env string) eval.LocalObjectProducer {
+	return func(component string, data map[string]interface{}) model.K8sLocalObject {
+		app := c.app
+		return model.NewK8sLocalObject(data, model.LocalAttrs{
+			App:               app.Name(),
+			Tag:               app.Tag(),
+			Component:         component,
+			Env:               env,
+			SetComponentLabel: app.AddComponentLabel(),
+		})
 	}
 }
 
