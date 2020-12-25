@@ -133,22 +133,31 @@ func NewK8sObject(data map[string]interface{}) K8sObject {
 	return &ko{Unstructured: toUnstructured(data)}
 }
 
+// LocalAttrs are the attributes used to create local k8s objects.
+type LocalAttrs struct {
+	App               string
+	Tag               string
+	Component         string
+	Env               string
+	SetComponentLabel bool
+}
+
 // NewK8sLocalObject wraps a K8sLocalObject implementation around the unstructured object data specified as a bag
 // of attributes for the supplied application, component and environment.
-func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env string, setComponentAsLabel bool) K8sLocalObject {
+func NewK8sLocalObject(data map[string]interface{}, attrs LocalAttrs) K8sLocalObject {
 	base := toUnstructured(data)
-	ret := &ko{Unstructured: base, app: app, tag: tag, comp: component, env: env}
+	ret := &ko{Unstructured: base, app: attrs.App, tag: attrs.Tag, comp: attrs.Component, env: attrs.Env}
 	labels := base.GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
 	}
-	labels[QbecNames.ApplicationLabel] = app
-	if tag != "" {
-		labels[QbecNames.TagLabel] = tag
+	labels[QbecNames.ApplicationLabel] = attrs.App
+	if attrs.Tag != "" {
+		labels[QbecNames.TagLabel] = attrs.Tag
 	}
-	labels[QbecNames.EnvironmentLabel] = env
-	if setComponentAsLabel {
-		labels[QbecNames.ComponentLabel] = component
+	labels[QbecNames.EnvironmentLabel] = attrs.Env
+	if attrs.SetComponentLabel {
+		labels[QbecNames.ComponentLabel] = attrs.Component
 	}
 	base.SetLabels(labels)
 
@@ -156,7 +165,7 @@ func NewK8sLocalObject(data map[string]interface{}, app, tag, component, env str
 	if anns == nil {
 		anns = map[string]string{}
 	}
-	anns[QbecNames.ComponentAnnotation] = component
+	anns[QbecNames.ComponentAnnotation] = attrs.Component
 	base.SetAnnotations(anns)
 	return ret
 }
