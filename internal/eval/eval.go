@@ -43,6 +43,10 @@ const (
 // specified top-level variables of interest.
 type VMConfigFunc func(tlaVars []string) vm.Config
 
+// LocalObjectProducer converts a data object that has basic Kubernetes attributes
+// to a local model object.
+type LocalObjectProducer func(component string, data map[string]interface{}) model.K8sLocalObject
+
 type postProc struct {
 	ctx  Context
 	code string
@@ -83,17 +87,10 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	App               string       // the application for which the evaluation is done
-	Tag               string       // the gc tag if present
-	Env               string       // the environment for which the evaluation is done
-	EnvPropsJSON      string       // the environment properties to expose as an external variable
-	DefaultNs         string       // the default namespace to expose as an external variable
-	VMConfig          VMConfigFunc // the base VM config to use for eval
-	Verbose           bool         // show generated code
-	AddComponentLabel bool         // add component name as label to Kubernetes objects
-	Concurrency       int          // concurrent components to evaluate, default 5
-	PostProcessFile   string       // the file that contains post-processing code for all objects
-	CleanMode         bool         // whether clean mode is enabled
+	VMConfig        VMConfigFunc // the base VM config to use for eval
+	Verbose         bool         // show generated code
+	Concurrency     int          // concurrent components to evaluate, default 5
+	PostProcessFile string       // the file that contains post-processing code for all objects
 }
 
 func (c Context) baseVMConfig(tlas []string) vm.Config {
@@ -101,19 +98,7 @@ func (c Context) baseVMConfig(tlas []string) vm.Config {
 	if fn == nil {
 		fn = defaultFunc
 	}
-	cm := "off"
-	if c.CleanMode {
-		cm = "on"
-	}
-	cfg := fn(tlas).WithVars(map[string]string{
-		model.QbecNames.EnvVarName:       c.Env,
-		model.QbecNames.TagVarName:       c.Tag,
-		model.QbecNames.DefaultNsVarName: c.DefaultNs,
-		model.QbecNames.CleanModeVarName: cm,
-	}).WithCodeVars(map[string]string{
-		model.QbecNames.EnvPropsVarName: c.EnvPropsJSON,
-	})
-	return cfg
+	return fn(tlas)
 }
 
 func (c Context) vm(tlas []string) *vm.VM {
@@ -139,7 +124,7 @@ var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
 
 // Components evaluates the specified components using the specific runtime
 // parameters file and returns the result.
-func Components(components []model.Component, ctx Context) (_ []model.K8sLocalObject, finalErr error) {
+func Components(components []model.Component, ctx Context, lop LocalObjectProducer) (_ []model.K8sLocalObject, finalErr error) {
 	start := time.Now()
 	defer func() {
 		if finalErr == nil {
@@ -150,7 +135,7 @@ func Components(components []model.Component, ctx Context) (_ []model.K8sLocalOb
 	if err != nil {
 		return nil, err
 	}
-	ret, err := evalComponents(components, ctx, pe)
+	ret, err := evalComponents(components, ctx, pe, lop)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +192,7 @@ func evaluationCode(file string) (string, string, error) {
 	return inputCode, contextFile, nil
 }
 
-func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLocalObject, error) {
+func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	jvm := ctx.vm(c.TopLevelVars)
 	var inputCode string
 	var contextFile string
@@ -216,6 +201,8 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		canonicalFiles = append(canonicalFiles, filepath.ToSlash(f))
 	}
 	switch {
+	case len(canonicalFiles) == 0:
+		return nil, fmt.Errorf("internal error: component %s did not have any files to evaluate", c.Name)
 	case len(canonicalFiles) > 1:
 		var lines []string
 		for _, file := range canonicalFiles {
@@ -257,12 +244,12 @@ func evalComponent(ctx Context, c model.Component, pe postProc) ([]model.K8sLoca
 		if err := model.AssertMetadataValid(proc); err != nil {
 			return nil, err
 		}
-		processed = append(processed, model.NewK8sLocalObject(proc, ctx.App, ctx.Tag, c.Name, ctx.Env, ctx.AddComponentLabel))
+		processed = append(processed, lop(c.Name, proc))
 	}
 	return processed, nil
 }
 
-func evalComponents(list []model.Component, ctx Context, pe postProc) ([]model.K8sLocalObject, error) {
+func evalComponents(list []model.Component, ctx Context, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	var ret []model.K8sLocalObject
 	if len(list) == 0 {
 		return ret, nil
@@ -291,7 +278,7 @@ func evalComponents(list []model.Component, ctx Context, pe postProc) ([]model.K
 		go func() {
 			defer wg.Done()
 			for c := range ch {
-				objs, err := evalComponent(ctx, c, pe)
+				objs, err := evalComponent(ctx, c, pe, lop)
 				l.Lock()
 				if err != nil {
 					errs = append(errs, err)

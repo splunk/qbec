@@ -64,7 +64,7 @@ func TestK8sObject(t *testing.T) {
 }
 
 func TestK8sLocalObject(t *testing.T) {
-	obj := NewK8sLocalObject(toData(cm), "app1", "", "c1", "e1", false)
+	obj := NewK8sLocalObject(toData(cm), LocalAttrs{App: "app1", Tag: "", Component: "c1", Env: "e1"})
 	a := assert.New(t)
 	a.Equal("app1", obj.Application())
 	a.Equal("c1", obj.Component())
@@ -80,7 +80,7 @@ func TestK8sLocalObject(t *testing.T) {
 }
 
 func TestK8sLocalObjectWithTag(t *testing.T) {
-	obj := NewK8sLocalObject(toData(cm), "app1", "t1", "c1", "e1", false)
+	obj := NewK8sLocalObject(toData(cm), LocalAttrs{App: "app1", Tag: "t1", Component: "c1", Env: "e1"})
 	a := assert.New(t)
 	a.Equal("app1", obj.Application())
 	a.Equal("c1", obj.Component())
@@ -95,7 +95,7 @@ func TestK8sLocalObjectWithTag(t *testing.T) {
 }
 
 func TestK8sLocalObjectWithComponentLabel(t *testing.T) {
-	obj := NewK8sLocalObject(toData(cm), "app1", "t1", "c1", "e1", true)
+	obj := NewK8sLocalObject(toData(cm), LocalAttrs{App: "app1", Tag: "t1", Component: "c1", Env: "e1", SetComponentLabel: true})
 	a := assert.New(t)
 	a.Equal("app1", obj.Application())
 	a.Equal("c1", obj.Component())

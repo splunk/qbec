@@ -60,8 +60,8 @@ func toData(s string) map[string]interface{} {
 }
 
 func TestSecrets(t *testing.T) {
-	cmObj := model.NewK8sLocalObject(toData(cm), "app1", "", "c1", "e1", false)
-	secretObj := model.NewK8sLocalObject(toData(secret), "", "app1", "c1", "e1", false)
+	cmObj := model.NewK8sLocalObject(toData(cm), model.LocalAttrs{App: "app1", Tag: "", Component: "c1", Env: "e1"})
+	secretObj := model.NewK8sLocalObject(toData(secret), model.LocalAttrs{App: "app1", Component: "c1", Env: "e1"})
 	a := assert.New(t)
 	a.False(HasSensitiveInfo(cmObj.ToUnstructured()))
 	a.True(HasSensitiveInfo(secretObj.ToUnstructured()))

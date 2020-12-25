@@ -195,7 +195,7 @@ type config struct {
 // init checks variables and sets up defaults. In strict mode, it requires all variables
 // to be specified and does not allow undeclared variables to be passed in.
 // It also sets the base VM config to include the library paths from the app definition
-// and exclude all TLA variables. Require TLA variables are set per component later.
+// and exclude all TLA variables. Required TLA variables are set per component later.
 func (c *config) init(strict bool) error {
 	var msgs []string
 	c.tlaVars = c.vmc.TopLevelVars()
@@ -280,24 +280,42 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if err != nil {
 		sio.Warnln("unable to serialize env properties to JSON:", err)
 	}
+	cm := "off"
+	if c.cleanEvalMode {
+		cm = "on"
+	}
+	baseConfig := c.vmc.WithVars(map[string]string{
+		model.QbecNames.EnvVarName:       env,
+		model.QbecNames.TagVarName:       c.app.Tag(),
+		model.QbecNames.DefaultNsVarName: c.app.DefaultNamespace(env),
+		model.QbecNames.CleanModeVarName: cm,
+	}).WithCodeVars(map[string]string{
+		model.QbecNames.EnvPropsVarName: string(p),
+	})
 	return eval.Context{
-		App:               c.App().Name(),
-		Tag:               c.App().Tag(),
-		Env:               env,
-		EnvPropsJSON:      string(p),
-		DefaultNs:         c.App().DefaultNamespace(env),
-		VMConfig:          c.vmConfig,
-		Verbose:           c.Verbosity() > 1,
-		AddComponentLabel: c.App().AddComponentLabel(),
-		Concurrency:       c.EvalConcurrency(),
-		PostProcessFile:   c.App().PostProcessor(),
-		CleanMode:         c.cleanEvalMode,
+		VMConfig:        func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
+		Verbose:         c.Verbosity() > 1,
+		Concurrency:     c.EvalConcurrency(),
+		PostProcessFile: c.App().PostProcessor(),
+	}
+}
+
+func (c config) ObjectProducer(env string) eval.LocalObjectProducer {
+	return func(component string, data map[string]interface{}) model.K8sLocalObject {
+		app := c.app
+		return model.NewK8sLocalObject(data, model.LocalAttrs{
+			App:               app.Name(),
+			Tag:               app.Tag(),
+			Component:         component,
+			Env:               env,
+			SetComponentLabel: app.AddComponentLabel(),
+		})
 	}
 }
 
 // vmConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c config) vmConfig(tlaVars []string) vm.Config {
-	cfg := c.vmc.WithoutTopLevel()
+func (c config) vmConfig(baseConfig vm.Config, tlaVars []string) vm.Config {
+	cfg := baseConfig.WithoutTopLevel()
 
 	// common case to avoid useless object creation. If no required vars
 	// needed or none present, just return the config with empty TLAs
