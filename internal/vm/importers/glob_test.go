@@ -57,6 +57,28 @@ func TestGlobSimple(t *testing.T) {
 	}
 }
 
+func TestGlobDoublestar(t *testing.T) {
+	vm, _ := makeVM()
+	data := evaluateVirtual(t, vm, "testdata/caller.jsonnet", `import 'glob-import:example2/**/*.json'`)
+	expectedJSON := `
+{
+   "example2/inc1/a.json": {
+	  "a": "a"
+   },
+   "example2/inc1/subdir/a.json": {
+	  "a": "inner a"
+   },
+   "example2/inc2/a.json": {
+	  "a": "long form a"
+   }
+}
+`
+	var expected interface{}
+	err := json.Unmarshal([]byte(expectedJSON), &expected)
+	require.Nil(t, err)
+	assert.EqualValues(t, expected, data)
+}
+
 func TestDuplicateFileName(t *testing.T) {
 	vm, _ := makeVM()
 	data := evaluateVirtual(t, vm, "testdata/example2/caller.jsonnet", `import 'glob-import:inc?/*.json'`)
