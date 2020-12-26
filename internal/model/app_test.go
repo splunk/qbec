@@ -238,6 +238,7 @@ func TestAppSimple(t *testing.T) {
 
 	envs := app.Environments()
 	a.Equal(4, len(envs))
+	a.False(app.ClusterScopedLists())
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -297,6 +298,33 @@ func TestAppComponentLoadSubdirs(t *testing.T) {
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm1.yaml"))
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm2.json"))
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "index.yaml"))
+}
+
+func TestAppComponentLoadMultidirs(t *testing.T) {
+	reset := setPwd(t, "testdata/multi-dir-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.Nil(t, err)
+	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.Equal(2, len(comps))
+	comp := comps[0]
+	a.Equal("a", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "dir1", "a.jsonnet"))
+	comp = comps[1]
+	a.Equal("b", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "dir2", "b", "index.jsonnet"))
+}
+
+func TestAppComponentNoDirs(t *testing.T) {
+	reset := setPwd(t, "testdata/no-dirs-app")
+	defer reset()
+	_, err := NewApp("qbec.yaml", nil, "")
+	require.Error(t, err)
+	assert.Equal(t, "load components: no component directories found after expanding components/dir*", err.Error())
 }
 
 func TestAppComponentLoadNegative(t *testing.T) {
