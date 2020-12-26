@@ -466,70 +466,94 @@ func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 	return ret
 }
 
-// loadComponents loads metadata for all components for the app.
-// The data is returned as a map keyed by component name. It does _not_ recurse
-// into subdirectories.
+// loadComponents loads metadata for all components for the app. It first expands the components directory
+// for glob patterns and loads components from all directories that match. It does _not_ recurse
+// into subdirectories. The data is returned as a map keyed by component name.
+// Note that component names must be unique across all directories. Support for multiple directories is just a
+// way to partition classes of components and does not introduce any namespace semantics.
 func (a *App) loadComponents() (map[string]Component, error) {
 	var list []Component
-	dir := strings.TrimSuffix(filepath.Clean(a.inner.Spec.ComponentsDir), "/")
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if path == dir {
-			return nil
-		}
-		if info.IsDir() {
-			files, err := filepath.Glob(filepath.Join(path, "*"))
+	loadDirComponents := func(dir string) error {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			var staticFiles []string
-			hasIndexJsonnet := false
-			hasIndexYAML := false
-			for _, f := range files {
-				stat, err := os.Stat(f)
+			if path == dir {
+				return nil
+			}
+			if info.IsDir() {
+				files, err := filepath.Glob(filepath.Join(path, "*"))
 				if err != nil {
 					return err
 				}
-				if stat.IsDir() {
-					continue
+				var staticFiles []string
+				hasIndexJsonnet := false
+				hasIndexYAML := false
+				for _, f := range files {
+					stat, err := os.Stat(f)
+					if err != nil {
+						return err
+					}
+					if stat.IsDir() {
+						continue
+					}
+					switch filepath.Base(f) {
+					case "index.jsonnet":
+						hasIndexJsonnet = true
+					case "index.yaml":
+						hasIndexYAML = true
+					}
+					if strings.HasSuffix(f, ".json") || strings.HasSuffix(f, ".yaml") {
+						staticFiles = append(staticFiles, f)
+					}
 				}
-				switch filepath.Base(f) {
-				case "index.jsonnet":
-					hasIndexJsonnet = true
-				case "index.yaml":
-					hasIndexYAML = true
+				switch {
+				case hasIndexJsonnet:
+					list = append(list, Component{
+						Name:  filepath.Base(path),
+						Files: []string{filepath.Join(path, "index.jsonnet")},
+					})
+				case hasIndexYAML:
+					list = append(list, Component{
+						Name:  filepath.Base(path),
+						Files: staticFiles,
+					})
 				}
-				if strings.HasSuffix(f, ".json") || strings.HasSuffix(f, ".yaml") {
-					staticFiles = append(staticFiles, f)
-				}
+				return filepath.SkipDir
 			}
-			switch {
-			case hasIndexJsonnet:
+			extension := filepath.Ext(path)
+			if supportedExtensions[extension] {
 				list = append(list, Component{
-					Name:  filepath.Base(path),
-					Files: []string{filepath.Join(path, "index.jsonnet")},
-				})
-			case hasIndexYAML:
-				list = append(list, Component{
-					Name:  filepath.Base(path),
-					Files: staticFiles,
+					Name:  strings.TrimSuffix(filepath.Base(path), extension),
+					Files: []string{path},
 				})
 			}
-			return filepath.SkipDir
-		}
-		extension := filepath.Ext(path)
-		if supportedExtensions[extension] {
-			list = append(list, Component{
-				Name:  strings.TrimSuffix(filepath.Base(path), extension),
-				Files: []string{path},
-			})
-		}
-		return nil
-	})
+			return nil
+		})
+		return err
+	}
+	ds, err := filepath.Glob(a.inner.Spec.ComponentsDir)
 	if err != nil {
 		return nil, err
+	}
+	var dirs []string
+	for _, d := range ds {
+		s, err := os.Stat(d)
+		if err != nil {
+			return nil, err
+		}
+		if s.IsDir() {
+			dirs = append(dirs, d)
+		}
+	}
+	if len(dirs) == 0 {
+		return nil, fmt.Errorf("no component directories found after expanding %s", a.inner.Spec.ComponentsDir)
+	}
+	for _, d := range dirs {
+		err := loadDirComponents(d)
+		if err != nil {
+			return nil, err
+		}
 	}
 	m := make(map[string]Component, len(list))
 	for _, c := range list {
