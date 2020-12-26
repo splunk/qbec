@@ -1,0 +1,10 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: no-dirs-app
+spec:
+  componentsDir: components/dir*
+  environments:
+    dev:
+      server: https://dev-server
