@@ -17,6 +17,7 @@ package vm
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/google/go-jsonnet"
@@ -184,4 +185,47 @@ func TestLabelSelectorMatch(t *testing.T) {
 			check(t, err, ret, fmt.Sprintf(`"%s"`+"\n", test.expected))
 		})
 	}
+}
+
+func TestLabelSelectorNegative(t *testing.T) {
+	vm := jsonnet.MakeVM()
+	registerNativeFuncs(vm)
+	tests := []struct {
+		name     string
+		code     string
+		errMatch *regexp.Regexp
+	}{
+		{
+			name:     "bad map",
+			code:     `std.native('labelsMatchSelector')([],'foo')`,
+			errMatch: regexp.MustCompile(`invalid labels type, \[\]interface {}, want a map`),
+		},
+		{
+			name:     "non-string map",
+			code:     `std.native('labelsMatchSelector')({ foo: {} },'foo')`,
+			errMatch: regexp.MustCompile(`invalid label map value, map\[string\]interface {}, want a string`),
+		},
+		{
+			name:     "bad selector type",
+			code:     `std.native('labelsMatchSelector')({},{})`,
+			errMatch: regexp.MustCompile(`invalid selector of type map\[string\]interface {}, want a string`),
+		},
+		{
+			name:     "bad selector",
+			code:     `std.native('labelsMatchSelector')({},'!!env')`,
+			errMatch: regexp.MustCompile(`invalid label selector: '!!env'`),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := vm.EvaluateSnippet("test.jsonnet", test.code)
+			if err == nil {
+				t.Errorf("labelsMatchSelector succeeded on invalid input")
+			}
+			if !test.errMatch.MatchString(err.Error()) {
+				t.Errorf("message %q does not match %v", err.Error(), test.errMatch)
+			}
+		})
+	}
+
 }
