@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v2"
 	"github.com/google/go-jsonnet"
 )
 
@@ -144,7 +145,7 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		})
 	}()
 
-	matches, err := filepath.Glob(globPath)
+	matches, err := doublestar.Glob(globPath)
 	if err != nil {
 		return contents, foundAt, fmt.Errorf("unable to expand glob %q, %v", globPath, err)
 	}
