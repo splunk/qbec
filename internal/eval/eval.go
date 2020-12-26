@@ -90,19 +90,56 @@ type Context struct {
 	VMConfig        VMConfigFunc // the base VM config to use for eval
 	Verbose         bool         // show generated code
 	Concurrency     int          // concurrent components to evaluate, default 5
+	PreProcessFile  string       // preprocessor file that is evaluated if present
 	PostProcessFile string       // the file that contains post-processing code for all objects
 }
 
 func (c Context) baseVMConfig(tlas []string) vm.Config {
-	fn := c.VMConfig
-	if fn == nil {
-		fn = defaultFunc
-	}
-	return fn(tlas)
+	return c.VMConfig(tlas)
 }
 
 func (c Context) vm(tlas []string) *vm.VM {
 	return vm.New(c.baseVMConfig(tlas))
+}
+
+func baseName(file string) string {
+	base := filepath.Base(file)
+	pos := strings.LastIndex(base, ".")
+	if pos > 0 {
+		base = base[:pos]
+	}
+	return base
+}
+
+func (c *Context) initDefaults() {
+	if c.VMConfig == nil {
+		c.VMConfig = defaultFunc
+	}
+}
+
+func (c *Context) runPreprocessor() error {
+	if c.PreProcessFile == "" {
+		return nil
+	}
+	b, err := ioutil.ReadFile(c.PreProcessFile)
+	if err != nil {
+		return errors.Wrap(err, "read preprocessor file")
+	}
+	jvm := c.vm(nil)
+	evalCode, err := jvm.EvaluateSnippet(c.PreProcessFile, string(b))
+	if err != nil {
+		return errors.Wrap(err, "preprocessor eval")
+	}
+	fn := c.VMConfig
+	name := model.QBECComputedNamespace + baseName(c.PreProcessFile)
+	sio.Debugln("setting external variable", name)
+	c.VMConfig = func(tlas []string) vm.Config {
+		ret := fn(tlas)
+		return ret.WithCodeVars(map[string]string{
+			name: evalCode,
+		})
+	}
+	return nil
 }
 
 func (c Context) postProcessor() (postProc, error) {
@@ -131,7 +168,12 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 			sio.Debugf("%d components evaluated in %v\n", len(components), time.Since(start).Round(time.Millisecond))
 		}
 	}()
+	ctx.initDefaults()
 	pe, err := ctx.postProcessor()
+	if err != nil {
+		return nil, err
+	}
+	err = ctx.runPreprocessor()
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +195,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // Params evaluates the supplied parameters file in the supplied VM and
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
+	ctx.initDefaults()
 	jvm := ctx.vm(nil)
 	code := fmt.Sprintf("import '%s'", file)
 	if ctx.Verbose {

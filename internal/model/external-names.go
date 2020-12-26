@@ -22,6 +22,9 @@ const QBECMetadataPrefix = "qbec.io/"
 // QBECDirectivesNamespace is the leading path for all directives set by the user for qbec use.
 const QBECDirectivesNamespace = "directives.qbec.io/"
 
+// QBECComputedNamespace is the leading paths for all preprocessing computations done.
+const QBECComputedNamespace = "computed.qbec.io/"
+
 // Directives is the list of directive names we support.
 type Directives struct {
 	ApplyOrder   string // numeric apply order for object

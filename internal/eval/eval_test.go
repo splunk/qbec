@@ -94,7 +94,11 @@ func TestEvalComponents(t *testing.T) {
 			},
 		},
 	},
-		decorate(Context{Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"}),
+		decorate(Context{
+			Verbose:         true,
+			PostProcessFile: "testdata/components/pp/pp.jsonnet",
+			PreProcessFile:  "testdata/components/pp/std-map.jsonnet",
+		}),
 		producer,
 	)
 	require.Nil(t, err)
@@ -121,7 +125,8 @@ func TestEvalComponents(t *testing.T) {
 
 	obj = objs[2]
 	a.Equal("c", obj.Component())
-	a.Equal("jsonnet-config-map", obj.GetName())
+	a.Equal("pp-name", obj.GetName())
+	t.Log(obj)
 
 	obj = objs[3]
 	a.Equal("d", obj.Component())
@@ -252,7 +257,7 @@ func TestEvalComponentsBadJson(t *testing.T) {
 	require.Contains(t, err.Error(), "invalid character")
 }
 
-func TestEvalComponentsBadPosProcessor(t *testing.T) {
+func TestEvalComponentsBadPostProcessor(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
 			Name:  "bad",
@@ -261,6 +266,17 @@ func TestEvalComponentsBadPosProcessor(t *testing.T) {
 	}, decorate(Context{PostProcessFile: "foo/bar.jsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "read post-eval file:")
+}
+
+func TestEvalComponentsBadPreProcessor(t *testing.T) {
+	_, err := Components([]model.Component{
+		{
+			Name:  "bad",
+			Files: []string{"testdata/components/good.json"},
+		},
+	}, decorate(Context{PreProcessFile: "foo/bar.jsonnet"}), producer)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "read preprocessor file:")
 }
 
 func TestEvalComponentsBadYaml(t *testing.T) {
@@ -305,6 +321,17 @@ func TestEvalComponentsBadPostProc(t *testing.T) {
 	}, decorate(Context{PostProcessFile: "testdata/components/bad-pp.libsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `post-eval did not return an object`)
+}
+
+func TestEvalComponentsBadPreProc(t *testing.T) {
+	_, err := Components([]model.Component{
+		{
+			Name:  "bad-preproc",
+			Files: []string{"testdata/components/b.yaml"},
+		},
+	}, decorate(Context{PreProcessFile: "testdata/components/bad-prep.xsonnet"}), producer)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), `preprocessor eval:`)
 }
 
 func TestEvalPostProcessor(t *testing.T) {

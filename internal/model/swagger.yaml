@@ -2,8 +2,11 @@
 # this file was originally created using go-swagger using the defined types and patched by hand for additional information
 # not supported by go-swagger generation. At this point, this file is the source of truth for the schema and must be
 # maintained by hand to reflect changes in the go model.
-paths: {}
 swagger: "2.0"
+info:
+  version: v1alpha1
+  title: Metadata definition for qbec.yaml
+paths: {}
 definitions:
   qbec.io.v1alpha1.EnvironmentMap:
     additionalProperties: false
@@ -102,6 +105,13 @@ definitions:
           standard file containing parameters for all environments returning correct values based on qbec.io/env external
           variable, defaults to params.libsonnet
         type: string
+      preProcessor:
+        description: |-
+          optional path to a jsonnet file that is loaded before evaluating components. The file must define a no-args function
+          as the top-level. It has access to the standard external variables that are normally set for a component.
+          The object returned by the function is set to the external variable named 'computed.qbec.io/<base-name>'
+          where <base-name> is the basename of the file without its extension.
+        type: string
       postProcessor:
         description: |-
           file containing jsonnet code that can be used to post-process all objects, typically adding metadata like
@@ -192,4 +202,3 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/qbec.io.v1alpha1.TopLevelVar"
-
