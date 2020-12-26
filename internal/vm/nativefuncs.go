@@ -21,11 +21,14 @@ package vm
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"regexp"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // registerNativeFuncs adds kubecfg's native jsonnet functions to provided VM
@@ -106,4 +109,31 @@ func registerNativeFuncs(vm *jsonnet.VM) {
 		},
 	})
 
+	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "labelsMatchSelector",
+		Params: []ast.Identifier{"labels", "selectorString"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			lbls, ok := args[0].(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("invalid labels type, %v, want a map", reflect.TypeOf(args[0]))
+			}
+			selStr, ok := args[1].(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid selector of type %v, want a string", reflect.TypeOf(args[1]))
+			}
+			input := map[string]string{}
+			for k, v := range lbls {
+				val, ok := v.(string)
+				if !ok {
+					return nil, fmt.Errorf("invalid label map value, %v, want a string", reflect.TypeOf(v))
+				}
+				input[k] = val
+			}
+			sel, err := labels.Parse(selStr)
+			if err != nil {
+				return false, fmt.Errorf("invalid label selector: '%s', %v", selStr, err)
+			}
+			return sel.Matches(labels.Set(input)), nil
+		},
+	})
 }
