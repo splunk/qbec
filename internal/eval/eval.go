@@ -47,6 +47,15 @@ type VMConfigFunc func(tlaVars []string) vm.Config
 // to a local model object.
 type LocalObjectProducer func(component string, data map[string]interface{}) model.K8sLocalObject
 
+func baseName(file string) string {
+	base := filepath.Base(file)
+	pos := strings.LastIndex(base, ".")
+	if pos > 0 {
+		base = base[:pos]
+	}
+	return base
+}
+
 type postProc struct {
 	ctx  Context
 	code string
@@ -61,7 +70,8 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
 	}
-	cfg := p.ctx.baseVMConfig(nil).WithTopLevelCodeVars(map[string]string{
+	procName := model.QBECPostprocessorNamespace + baseName(p.file)
+	cfg := p.ctx.baseVMConfig(procName, nil).WithTopLevelCodeVars(map[string]string{
 		postprocessTLAVAr: string(b),
 	})
 
@@ -94,21 +104,18 @@ type Context struct {
 	PostProcessFile string       // the file that contains post-processing code for all objects
 }
 
-func (c Context) baseVMConfig(tlas []string) vm.Config {
-	return c.VMConfig(tlas)
-}
-
-func (c Context) vm(tlas []string) *vm.VM {
-	return vm.New(c.baseVMConfig(tlas))
-}
-
-func baseName(file string) string {
-	base := filepath.Base(file)
-	pos := strings.LastIndex(base, ".")
-	if pos > 0 {
-		base = base[:pos]
+func (c Context) baseVMConfig(componentName string, tlas []string) vm.Config {
+	base := c.VMConfig(tlas)
+	if componentName == "" {
+		return base
 	}
-	return base
+	return base.WithVars(map[string]string{
+		model.QbecNames.ComponentName: componentName,
+	})
+}
+
+func (c Context) vm(componentName string, tlas []string) *vm.VM {
+	return vm.New(c.baseVMConfig(componentName, tlas))
 }
 
 func (c *Context) initDefaults() {
@@ -125,13 +132,14 @@ func (c *Context) runPreprocessor() error {
 	if err != nil {
 		return errors.Wrap(err, "read preprocessor file")
 	}
-	jvm := c.vm(nil)
+	procName := baseName(c.PreProcessFile)
+	jvm := c.vm(model.QBECPreprocessorNamespace+procName, nil)
 	evalCode, err := jvm.EvaluateSnippet(c.PreProcessFile, string(b))
 	if err != nil {
 		return errors.Wrap(err, "preprocessor eval")
 	}
 	fn := c.VMConfig
-	name := model.QBECComputedNamespace + baseName(c.PreProcessFile)
+	name := model.QBECComputedNamespace + procName
 	sio.Debugln("setting external variable", name)
 	c.VMConfig = func(tlas []string) vm.Config {
 		ret := fn(tlas)
@@ -196,7 +204,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
 	ctx.initDefaults()
-	jvm := ctx.vm(nil)
+	jvm := ctx.vm("", nil)
 	code := fmt.Sprintf("import '%s'", file)
 	if ctx.Verbose {
 		sio.Debugln("Eval params:\n" + code)
@@ -236,7 +244,7 @@ func evaluationCode(file string) (string, string, error) {
 }
 
 func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
-	jvm := ctx.vm(c.TopLevelVars)
+	jvm := ctx.vm(c.Name, c.TopLevelVars)
 	var inputCode string
 	var contextFile string
 	var canonicalFiles []string
