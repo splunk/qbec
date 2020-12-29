@@ -177,11 +177,11 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 		}
 	}()
 	ctx.initDefaults()
-	pe, err := ctx.postProcessor()
+	err := ctx.runPreprocessor()
 	if err != nil {
 		return nil, err
 	}
-	err = ctx.runPreprocessor()
+	pe, err := ctx.postProcessor()
 	if err != nil {
 		return nil, err
 	}
