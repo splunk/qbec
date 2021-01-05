@@ -182,9 +182,16 @@ func doShow(args []string, config showCommandConfig) error {
 	}
 
 	for _, o := range objects {
-		p := pristine.QbecPristine{}
-		ret, _ := p.CreateFromPristine(o)
-		displayObjects = append(displayObjects, mapper(ret))
+		if config.showPristine {
+			p := pristine.QbecPristine{}
+			ret, err := p.CreateFromPristine(o)
+			if err != nil {
+				return err
+			}
+			displayObjects = append(displayObjects, mapper(ret))
+		} else {
+			displayObjects = append(displayObjects, mapper(o))
+		}
 	}
 
 	switch format {
@@ -216,17 +223,19 @@ func newShowCommand(cp configProvider) *cobra.Command {
 		filterFunc: addFilterParams(cmd, true),
 	}
 
-	var clean bool
+	var clean, pristine bool
 	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
 	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
 	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
 	cmd.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
+	cmd.Flags().BoolVar(&pristine, "show-pristine", false, "generate and display last-applied annotation")
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		config.config.cleanEvalMode = clean
+		config.config.showPristine = pristine
 		return wrapError(doShow(args, config))
 	}
 	return cmd
