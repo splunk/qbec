@@ -79,7 +79,7 @@ type DeleteOptions struct {
 
 type internalSyncOptions struct {
 	secretDryRun       bool               // dry-run phase for objects having secrets info
-	pristiner          pristineReadWriter // pristine writer
+	pristiner          PristineReadWriter // pristine writer
 	pristineAnnotation string             // pristine annotation to manipulate for secrets dry-run
 }
 
@@ -407,7 +407,7 @@ func (c *Client) ensureType(gvk schema.GroupVersionKind, opts SyncOptions) error
 // It does not do anything in dry-run mode. It also does not create new objects if the caller has disabled the feature.
 func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
 	// set up the pristine strategy.
-	var prw pristineReadWriter = qbecPristine{}
+	var prw PristineReadWriter = QbecPristine{}
 	sensitive := types.HasSensitiveInfo(original.ToUnstructured())
 
 	internal := internalSyncOptions{
@@ -476,7 +476,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 		opts.DryRun = true // won't affect caller since passed by value
 		obj, _ = types.HideSensitiveLocalInfo(original)
 	} else {
-		o, err := internal.pristiner.createFromPristine(original)
+		o, err := internal.pristiner.CreateFromPristine(original)
 		if err != nil {
 			return nil, errors.Wrap(err, "create from pristine")
 		}

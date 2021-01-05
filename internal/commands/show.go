@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
+	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -181,7 +182,9 @@ func doShow(args []string, config showCommandConfig) error {
 	}
 
 	for _, o := range objects {
-		displayObjects = append(displayObjects, mapper(o))
+		p := remote.QbecPristine{}
+		ret, _ := p.CreateFromPristine(o)
+		displayObjects = append(displayObjects, mapper(ret))
 	}
 
 	switch format {

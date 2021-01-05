@@ -76,14 +76,14 @@ type pristineReader interface {
 	getPristine(annotations map[string]string, obj *unstructured.Unstructured) (pristine *unstructured.Unstructured, source string)
 }
 
-type pristineReadWriter interface {
+type PristineReadWriter interface {
 	pristineReader
-	createFromPristine(obj model.K8sLocalObject) (model.K8sLocalObject, error)
+	CreateFromPristine(obj model.K8sLocalObject) (model.K8sLocalObject, error)
 }
 
-type qbecPristine struct{}
+type QbecPristine struct{}
 
-func (k qbecPristine) getPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+func (k QbecPristine) getPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
 	serialized := annotations[model.QbecNames.PristineAnnotation]
 	if serialized == "" {
 		return nil, ""
@@ -96,7 +96,7 @@ func (k qbecPristine) getPristine(annotations map[string]string, _ *unstructured
 	return &unstructured.Unstructured{Object: m}, "qbec annotation"
 }
 
-func (k qbecPristine) createFromPristine(pristine model.K8sLocalObject) (model.K8sLocalObject, error) {
+func (k QbecPristine) CreateFromPristine(pristine model.K8sLocalObject) (model.K8sLocalObject, error) {
 	b, err := json.Marshal(pristine)
 	if err != nil {
 		return nil, errors.Wrap(err, "pristine JSON marshal")
@@ -164,7 +164,7 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 }
 
 func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
-	pristineReaders := []pristineReader{qbecPristine{}, kubectlPristine{}}
+	pristineReaders := []pristineReader{QbecPristine{}, kubectlPristine{}}
 	if includeFallback {
 		pristineReaders = append(pristineReaders, fallbackPristine{})
 	}

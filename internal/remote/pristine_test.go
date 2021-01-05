@@ -191,9 +191,9 @@ func TestPristineReaderNoFallback(t *testing.T) {
 
 func TestCreateFromPristine(t *testing.T) {
 	un := loadFile(t, "input.yaml")
-	p := qbecPristine{}
+	p := QbecPristine{}
 	obj := model.NewK8sLocalObject(un.Object, model.LocalAttrs{App: "app", Tag: "", Component: "comp1", Env: "dev"})
-	ret, err := p.createFromPristine(obj)
+	ret, err := p.CreateFromPristine(obj)
 	require.Nil(t, err)
 	a := assert.New(t)
 	eLabels := obj.ToUnstructured().GetLabels()
