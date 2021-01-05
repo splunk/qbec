@@ -126,6 +126,12 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 	return un
 }
 
+func showPristine(obj model.K8sLocalObject) *unstructured.Unstructured {
+	p := pristine.QbecPristine{}
+	ret, _ := p.CreateFromPristine(obj)
+	return ret.ToUnstructured()
+}
+
 func doShow(args []string, config showCommandConfig) error {
 	if len(args) != 1 {
 		return newUsageError("exactly one environment required")
@@ -177,21 +183,15 @@ func doShow(args []string, config showCommandConfig) error {
 	var displayObjects []*unstructured.Unstructured
 	mapper := func(o model.K8sLocalObject) *unstructured.Unstructured { return o.ToUnstructured() }
 
+	if config.showPristine {
+		mapper = showPristine
+	}
 	if config.cleanEvalMode {
 		mapper = cleanMeta
 	}
 
 	for _, o := range objects {
-		if config.showPristine {
-			p := pristine.QbecPristine{}
-			ret, err := p.CreateFromPristine(o)
-			if err != nil {
-				return err
-			}
-			displayObjects = append(displayObjects, mapper(ret))
-		} else {
-			displayObjects = append(displayObjects, mapper(o))
-		}
+		displayObjects = append(displayObjects, mapper(o))
 	}
 
 	switch format {
