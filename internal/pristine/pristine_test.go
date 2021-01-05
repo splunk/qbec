@@ -1,4 +1,4 @@
-package remote
+package pristine
 
 import (
 	"encoding/base64"
@@ -174,7 +174,7 @@ func testPristineReader(t *testing.T, useFallback bool) {
 			if useFallback {
 				pristine, source = GetPristineVersionForDiff(obj)
 			} else {
-				pristine, source = getPristineVersion(obj, false)
+				pristine, source = GetPristineVersion(obj, false)
 			}
 			test.asserter(t, pristine, source)
 		})

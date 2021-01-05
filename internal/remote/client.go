@@ -26,6 +26,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/pristine"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
@@ -78,9 +79,9 @@ type DeleteOptions struct {
 }
 
 type internalSyncOptions struct {
-	secretDryRun       bool               // dry-run phase for objects having secrets info
-	pristiner          PristineReadWriter // pristine writer
-	pristineAnnotation string             // pristine annotation to manipulate for secrets dry-run
+	secretDryRun       bool                        // dry-run phase for objects having secrets info
+	pristiner          pristine.PristineReadWriter // pristine writer
+	pristineAnnotation string                      // pristine annotation to manipulate for secrets dry-run
 }
 
 type resourceClient interface {
@@ -407,7 +408,7 @@ func (c *Client) ensureType(gvk schema.GroupVersionKind, opts SyncOptions) error
 // It does not do anything in dry-run mode. It also does not create new objects if the caller has disabled the feature.
 func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
 	// set up the pristine strategy.
-	var prw PristineReadWriter = QbecPristine{}
+	var prw pristine.PristineReadWriter = pristine.QbecPristine{}
 	sensitive := types.HasSensitiveInfo(original.ToUnstructured())
 
 	internal := internalSyncOptions{
@@ -665,7 +666,7 @@ func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unst
 	p := patcher{
 		provider: c.resourceInterfaceWithDefaultNs,
 		cfgProvider: func(obj *unstructured.Unstructured) ([]byte, error) {
-			pristine, _ := getPristineVersion(obj, false)
+			pristine, _ := pristine.GetPristineVersion(obj, false)
 			if pristine == nil {
 				p := map[string]interface{}{
 					"kind":       obj.GetKind(),

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package remote
+package pristine
 
 import (
 	"bytes"
@@ -72,18 +72,18 @@ func unzipData(s string) (map[string]interface{}, error) {
 	return data, nil
 }
 
-type pristineReader interface {
-	getPristine(annotations map[string]string, obj *unstructured.Unstructured) (pristine *unstructured.Unstructured, source string)
+type PristineReader interface {
+	GetPristine(annotations map[string]string, obj *unstructured.Unstructured) (pristine *unstructured.Unstructured, source string)
 }
 
 type PristineReadWriter interface {
-	pristineReader
+	PristineReader
 	CreateFromPristine(obj model.K8sLocalObject) (model.K8sLocalObject, error)
 }
 
 type QbecPristine struct{}
 
-func (k QbecPristine) getPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+func (k QbecPristine) GetPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
 	serialized := annotations[model.QbecNames.PristineAnnotation]
 	if serialized == "" {
 		return nil, ""
@@ -125,9 +125,9 @@ func (k QbecPristine) CreateFromPristine(pristine model.K8sLocalObject) (model.K
 
 const kubectlLastConfig = "kubectl.kubernetes.io/last-applied-configuration"
 
-type kubectlPristine struct{}
+type KubectlPristine struct{}
 
-func (k kubectlPristine) getPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+func (k KubectlPristine) GetPristine(annotations map[string]string, _ *unstructured.Unstructured) (*unstructured.Unstructured, string) {
 	serialized := annotations[kubectlLastConfig]
 	if serialized == "" {
 		return nil, ""
@@ -150,7 +150,7 @@ func (k kubectlPristine) getPristine(annotations map[string]string, _ *unstructu
 
 type fallbackPristine struct{}
 
-func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+func (f fallbackPristine) GetPristine(annotations map[string]string, orig *unstructured.Unstructured) (*unstructured.Unstructured, string) {
 	delete(annotations, "deployment.kubernetes.io/revision")
 	orig.SetDeletionTimestamp(nil)
 	orig.SetCreationTimestamp(metav1.Time{})
@@ -163,8 +163,8 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 	return orig, "fallback - live object with some attributes removed"
 }
 
-func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
-	pristineReaders := []pristineReader{QbecPristine{}, kubectlPristine{}}
+func GetPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
+	pristineReaders := []PristineReader{QbecPristine{}, KubectlPristine{}}
 	if includeFallback {
 		pristineReaders = append(pristineReaders, fallbackPristine{})
 	}
@@ -173,7 +173,7 @@ func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*
 		annotations = map[string]string{}
 	}
 	for _, p := range pristineReaders {
-		out, str := p.getPristine(annotations, obj)
+		out, str := p.GetPristine(annotations, obj)
 		if out != nil {
 			return out, str
 		}
@@ -185,5 +185,5 @@ func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*
 // live object. If no annotations are found, it halfheartedly deletes known runtime information that is
 // set on the server and returns the supplied object with those attributes removed.
 func GetPristineVersionForDiff(obj *unstructured.Unstructured) (*unstructured.Unstructured, string) {
-	return getPristineVersion(obj, true)
+	return GetPristineVersion(obj, true)
 }

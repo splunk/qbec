@@ -27,6 +27,7 @@ import (
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
+	"github.com/splunk/qbec/internal/pristine"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
@@ -283,7 +284,7 @@ func (d *differ) diff(ob model.K8sMeta) error {
 	var left, right *unstructured.Unstructured
 	if remoteObject != nil {
 		var source string
-		left, source = remote.GetPristineVersionForDiff(remoteObject)
+		left, source = pristine.GetPristineVersionForDiff(remoteObject)
 		leftName += " (source: " + source + ")"
 	}
 	left = fixup(left)
