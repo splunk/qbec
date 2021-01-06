@@ -33,4 +33,12 @@ when set to `"never"`, indicates that the specific object should never be update
 If you want qbec to update this object, you need to remove the annotation from the in-cluster object. Changing the source
 object to remove this annotation will not work.
 
+#### `directives.qbec.io/wait-policy` 
+
+* Annotation source: local object
+* Allowed values: `"default"`, `"never"`
+* Default value: `"default"` 
+
+when set to `"never"` for deployments or daemonsets, indicates that qbec should not wait for that object even when 
+the `--wait` or `--wait-all` flags are set for the `apply` command.
 

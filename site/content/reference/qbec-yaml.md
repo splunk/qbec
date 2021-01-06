@@ -27,6 +27,10 @@ spec:
   - default
   - excluded
   - components
+ 
+  # when dealing with apps that deploy to multiple namespaces, use object lists at cluster scope for GC purposes.
+  # by default, this will use namespaced queries for each namespace.
+  clusterScopedLists: true
 
   # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
   vars:
@@ -73,9 +77,13 @@ spec:
 
   # additional environments can be loaded from files. Files are loaded in the order specified.
   # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
-  # The file path is relative to the directory where qbec.yaml resides.
+  # The file path is relative to the directory where qbec.yaml resides. http(s) URLs are also supported
   envFiles:
   - more-envs.yaml
+  - https://my.server/envs.yaml
+
+  # if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. 
+  addComponentLabel: true
 ```
 
 ### Environment files

@@ -27,6 +27,7 @@ type Directives struct {
 	ApplyOrder   string // numeric apply order for object
 	DeletePolicy string // delete policy "default" | "never"
 	UpdatePolicy string // update policy "default" | "never"
+	WaitPolicy   string // wait policy "default" | "never"
 }
 
 // QbecNames is the set of names used by Qbec.
@@ -34,6 +35,7 @@ var QbecNames = struct {
 	ApplicationLabel    string // the label to use for tagging an object with an application name
 	TagLabel            string // the label to use for tagging an object with a scoped GC tag
 	ComponentAnnotation string // the label to use for tagging an object with a component
+	ComponentLabel      string // the label to use for tagging an object with a component
 	EnvironmentLabel    string // the label to use for tagging an object with an annotation
 	PristineAnnotation  string // the annotation to use for storing the pristine object
 	EnvVarName          string // the name of the external variable that has the environment name
@@ -46,6 +48,7 @@ var QbecNames = struct {
 	ApplicationLabel:    QBECMetadataPrefix + "application",
 	TagLabel:            QBECMetadataPrefix + "tag",
 	ComponentAnnotation: QBECMetadataPrefix + "component",
+	ComponentLabel:      QBECMetadataPrefix + "component",
 	EnvironmentLabel:    QBECMetadataPrefix + "environment",
 	PristineAnnotation:  QBECMetadataPrefix + "last-applied",
 	EnvVarName:          QBECMetadataPrefix + "env",
@@ -57,5 +60,6 @@ var QbecNames = struct {
 		ApplyOrder:   QBECDirectivesNamespace + "apply-order",
 		DeletePolicy: QBECDirectivesNamespace + "delete-policy",
 		UpdatePolicy: QBECDirectivesNamespace + "update-policy",
+		WaitPolicy:   QBECDirectivesNamespace + "wait-policy",
 	},
 }

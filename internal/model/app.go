@@ -20,11 +20,13 @@ package model
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -45,6 +47,9 @@ var supportedExtensions = map[string]bool{
 	".yaml":    true,
 	".json":    true,
 }
+
+// Basic http client
+var httpClient = &http.Client{Timeout: time.Second * 10}
 
 // Component is one or more logically related files that contains objects to be applied to a cluster.
 type Component struct {
@@ -72,6 +77,39 @@ func makeValError(file string, errs []error) error {
 
 }
 
+func downloadEnvFile(url string) ([]byte, error) {
+	res, err := httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status : %s", res.Status)
+	}
+	payload, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return payload, err
+}
+
+// IsRemoteFile distinguishes remote files from local files
+func IsRemoteFile(file string) bool {
+	return strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://")
+}
+
+func readEnvFile(file string) ([]byte, error) {
+	if IsRemoteFile(file) {
+		b, err := downloadEnvFile(file)
+		if err != nil {
+			return nil, errors.Wrapf(err, "download environments from %s", file)
+		}
+		return b, nil
+	}
+	return ioutil.ReadFile(file)
+}
+
 func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	if app.Spec.Environments == nil {
 		app.Spec.Environments = map[string]Environment{}
@@ -86,7 +124,7 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	allFiles = append(allFiles, additionalFiles...)
 
 	for _, file := range allFiles {
-		b, err := ioutil.ReadFile(file)
+		b, err := readEnvFile(file)
 		if err != nil {
 			return err
 		}
@@ -228,6 +266,12 @@ func (a *App) PostProcessor() string {
 // LibPaths returns the library paths set up for the app.
 func (a *App) LibPaths() []string {
 	return a.inner.Spec.LibPaths
+}
+
+// AddComponentLabel returns if the qbec component name should be added as an object label in addition to the
+// standard annotation.
+func (a *App) AddComponentLabel() bool {
+	return a.inner.Spec.AddComponentLabel
 }
 
 func (a *App) envObject(env string) (Environment, error) {
@@ -422,70 +466,94 @@ func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 	return ret
 }
 
-// loadComponents loads metadata for all components for the app.
-// The data is returned as a map keyed by component name. It does _not_ recurse
-// into subdirectories.
+// loadComponents loads metadata for all components for the app. It first expands the components directory
+// for glob patterns and loads components from all directories that match. It does _not_ recurse
+// into subdirectories. The data is returned as a map keyed by component name.
+// Note that component names must be unique across all directories. Support for multiple directories is just a
+// way to partition classes of components and does not introduce any namespace semantics.
 func (a *App) loadComponents() (map[string]Component, error) {
 	var list []Component
-	dir := strings.TrimSuffix(filepath.Clean(a.inner.Spec.ComponentsDir), "/")
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if path == dir {
-			return nil
-		}
-		if info.IsDir() {
-			files, err := filepath.Glob(filepath.Join(path, "*"))
+	loadDirComponents := func(dir string) error {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			var staticFiles []string
-			hasIndexJsonnet := false
-			hasIndexYAML := false
-			for _, f := range files {
-				stat, err := os.Stat(f)
+			if path == dir {
+				return nil
+			}
+			if info.IsDir() {
+				files, err := filepath.Glob(filepath.Join(path, "*"))
 				if err != nil {
 					return err
 				}
-				if stat.IsDir() {
-					continue
+				var staticFiles []string
+				hasIndexJsonnet := false
+				hasIndexYAML := false
+				for _, f := range files {
+					stat, err := os.Stat(f)
+					if err != nil {
+						return err
+					}
+					if stat.IsDir() {
+						continue
+					}
+					switch filepath.Base(f) {
+					case "index.jsonnet":
+						hasIndexJsonnet = true
+					case "index.yaml":
+						hasIndexYAML = true
+					}
+					if strings.HasSuffix(f, ".json") || strings.HasSuffix(f, ".yaml") {
+						staticFiles = append(staticFiles, f)
+					}
 				}
-				switch filepath.Base(f) {
-				case "index.jsonnet":
-					hasIndexJsonnet = true
-				case "index.yaml":
-					hasIndexYAML = true
+				switch {
+				case hasIndexJsonnet:
+					list = append(list, Component{
+						Name:  filepath.Base(path),
+						Files: []string{filepath.Join(path, "index.jsonnet")},
+					})
+				case hasIndexYAML:
+					list = append(list, Component{
+						Name:  filepath.Base(path),
+						Files: staticFiles,
+					})
 				}
-				if strings.HasSuffix(f, ".json") || strings.HasSuffix(f, ".yaml") {
-					staticFiles = append(staticFiles, f)
-				}
+				return filepath.SkipDir
 			}
-			switch {
-			case hasIndexJsonnet:
+			extension := filepath.Ext(path)
+			if supportedExtensions[extension] {
 				list = append(list, Component{
-					Name:  filepath.Base(path),
-					Files: []string{filepath.Join(path, "index.jsonnet")},
-				})
-			case hasIndexYAML:
-				list = append(list, Component{
-					Name:  filepath.Base(path),
-					Files: staticFiles,
+					Name:  strings.TrimSuffix(filepath.Base(path), extension),
+					Files: []string{path},
 				})
 			}
-			return filepath.SkipDir
-		}
-		extension := filepath.Ext(path)
-		if supportedExtensions[extension] {
-			list = append(list, Component{
-				Name:  strings.TrimSuffix(filepath.Base(path), extension),
-				Files: []string{path},
-			})
-		}
-		return nil
-	})
+			return nil
+		})
+		return err
+	}
+	ds, err := filepath.Glob(a.inner.Spec.ComponentsDir)
 	if err != nil {
 		return nil, err
+	}
+	var dirs []string
+	for _, d := range ds {
+		s, err := os.Stat(d)
+		if err != nil {
+			return nil, err
+		}
+		if s.IsDir() {
+			dirs = append(dirs, d)
+		}
+	}
+	if len(dirs) == 0 {
+		return nil, fmt.Errorf("no component directories found after expanding %s", a.inner.Spec.ComponentsDir)
+	}
+	for _, d := range dirs {
+		err := loadDirComponents(d)
+		if err != nil {
+			return nil, err
+		}
 	}
 	m := make(map[string]Component, len(list))
 	for _, c := range list {
@@ -582,4 +650,10 @@ func (a *App) updateComponentTopLevelVars() {
 		comp.TopLevelVars = tlas
 		a.allComponents[name] = comp
 	}
+}
+
+// ClusterScopedLists returns the value of the qbec app attribute to determine if cluster scope
+// lists should be performed when multiple namespaces are present.
+func (a *App) ClusterScopedLists() bool {
+	return a.inner.Spec.ClusterScopedLists
 }

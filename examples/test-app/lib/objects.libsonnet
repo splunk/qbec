@@ -5,9 +5,7 @@
         metadata: {
             namespace: namespace,
             name: name,
-            labels: {
-                name: name,
-            },
+            labels: { app: name },
         },
         data: vars,
     },
@@ -17,9 +15,7 @@
         metadata: {
             namespace: namespace,
             name: name,
-            labels: {
-                name: name,
-            },
+            labels: { app: name },
         },
         data: vars,
     },
@@ -29,21 +25,17 @@
         metadata: {
             namespace: namespace,
             name: name,
-            labels: {
-                name: name,
-            },
+            labels: { app: name },
         },
         spec: {
             selector: {
                 matchLabels: {
-                    name: name,
+                    app: name
                 },
             },
             template: {
                 metadata: {
-                    labels: {
-                        name: name,
-                    },
+                    labels: { app: name },
                 },
                 spec: {
                     containers: [

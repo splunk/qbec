@@ -42,7 +42,7 @@ func object(d data) model.K8sLocalObject {
 			"namespace": d.namespace,
 			"name":      d.name,
 		},
-	}, "app1", "", d.component, "dev")
+	}, model.LocalAttrs{App: "app1", Tag: "", Component: d.component, Env: "dev"})
 }
 
 func TestBasicSort(t *testing.T) {

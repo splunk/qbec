@@ -20,18 +20,35 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/testutil"
+	"github.com/splunk/qbec/internal/vm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func producer(component string, data map[string]interface{}) model.K8sLocalObject {
+	return model.NewK8sLocalObject(data, model.LocalAttrs{App: "foo", Tag: "", Component: component, Env: "dev"})
+}
+
+func decorate(ctx Context) Context {
+	fn := func(tlaVars []string) vm.Config {
+		return vm.Config{}.WithVars(map[string]string{
+			"qbec.io/tag":       "t1",
+			"qbec.io/env":       "dev",
+			"qbec.io/cleanMode": "off",
+			"qbec.io/defaultNs": "foobar",
+		}).WithCodeVars(map[string]string{
+			"qbec.io/envProperties": `{ foo: "bar"}`,
+		})
+	}
+	ctx.VMConfig = fn
+	return ctx
+}
+
 func TestEvalParams(t *testing.T) {
-	paramsMap, err := Params("testdata/params.libsonnet", Context{
-		Env:          "dev",
-		EnvPropsJSON: `{"foo": "bar"}`,
-		Tag:          "t1",
-		DefaultNs:    "foobar",
-		Verbose:      true,
-	})
+	paramsMap, err := Params("testdata/params.libsonnet", decorate(Context{
+		Verbose: true,
+	}))
 	require.Nil(t, err)
 	a := assert.New(t)
 	comps, ok := paramsMap["components"].(map[string]interface{})
@@ -45,11 +62,11 @@ func TestEvalParams(t *testing.T) {
 }
 
 func TestEvalParamsNegative(t *testing.T) {
-	_, err := Params("testdata/params.invalid.libsonnet", Context{Env: "dev"})
+	_, err := Params("testdata/params.invalid.libsonnet", decorate(Context{}))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "end of file")
 
-	_, err = Params("testdata/params.non-object.libsonnet", Context{Env: "dev"})
+	_, err = Params("testdata/params.non-object.libsonnet", decorate(Context{}))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "cannot unmarshal array")
 }
@@ -76,7 +93,10 @@ func TestEvalComponents(t *testing.T) {
 				"testdata/components/d/subdir-cm2.json",
 			},
 		},
-	}, Context{Env: "dev", Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
+	},
+		decorate(Context{Verbose: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"}),
+		producer,
+	)
 	require.Nil(t, err)
 	require.Equal(t, 5, len(objs))
 	a := assert.New(t)
@@ -110,29 +130,6 @@ func TestEvalComponents(t *testing.T) {
 	obj = objs[4]
 	a.Equal("d", obj.Component())
 	a.Equal("subdir-config-map2", obj.GetName())
-}
-
-func TestEvalComponentsClean(t *testing.T) {
-	objs, err := Components([]model.Component{
-		{
-			Name:  "a",
-			Files: []string{"testdata/components/a.json"},
-		},
-	}, Context{Env: "dev", CleanMode: true, PostProcessFile: "testdata/components/pp/pp.jsonnet"})
-	require.Nil(t, err)
-	require.Equal(t, 1, len(objs))
-	a := assert.New(t)
-
-	obj := objs[0]
-	a.Equal("a", obj.Component())
-	a.Equal("dev", obj.Environment())
-	a.Equal("", obj.GroupVersionKind().Group)
-	a.Equal("v1", obj.GroupVersionKind().Version)
-	a.Equal("ConfigMap", obj.GroupVersionKind().Kind)
-	a.Equal("", obj.GetNamespace())
-	a.Equal("json-config-map", obj.GetName())
-	a.Equal("", obj.ToUnstructured().GetAnnotations()["team"])
-	a.Equal("", obj.ToUnstructured().GetAnnotations()["slack"])
 }
 
 func TestEvalComponentsEdges(t *testing.T) {
@@ -200,7 +197,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), "no such file")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -236,10 +233,9 @@ func TestEvalComponentsEdges(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ret, err := evalComponents(test.components, Context{
-				Env:         "dev",
+			ret, err := evalComponents(test.components, decorate(Context{
 				Concurrency: test.concurrency,
-			}, postProc{})
+			}), postProc{}, producer)
 			test.asserter(t, ret, err)
 		})
 	}
@@ -251,7 +247,7 @@ func TestEvalComponentsBadJson(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad.json"},
 		},
-	}, Context{Env: "dev"})
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "invalid character")
 }
@@ -262,7 +258,7 @@ func TestEvalComponentsBadPosProcessor(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/good.json"},
 		},
-	}, Context{Env: "dev", PostProcessFile: "foo/bar.jsonnet"})
+	}, decorate(Context{PostProcessFile: "foo/bar.jsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "read post-eval file:")
 }
@@ -273,7 +269,7 @@ func TestEvalComponentsBadYaml(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad.yaml"},
 		},
-	}, Context{Env: "dev"})
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "did not find expected node content")
 }
@@ -284,7 +280,7 @@ func TestEvalComponentsBadObjects(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/bad-objects.yaml"},
 		},
-	}, Context{Env: "dev"})
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `non-kubernetes object found while evaluating path "$[0].foo" (found "string"`)
 }
@@ -295,7 +291,7 @@ func TestEvalComponentsBadMetadata(t *testing.T) {
 			Name:  "bad-metadata",
 			Files: []string{"testdata/components/bad-metadata.yaml"},
 		},
-	}, Context{Env: "dev"})
+	}, decorate(Context{}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `/v1, Kind=ConfigMap, Name=subdir-config-map1: .metadata.annotations accessor error`)
 }
@@ -306,7 +302,7 @@ func TestEvalComponentsBadPostProc(t *testing.T) {
 			Name:  "bad-postproc",
 			Files: []string{"testdata/components/b.yaml"},
 		},
-	}, Context{Env: "dev", PostProcessFile: "testdata/components/bad-pp.libsonnet"})
+	}, decorate(Context{PostProcessFile: "testdata/components/bad-pp.libsonnet"}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `post-eval did not return an object`)
 }
@@ -380,7 +376,7 @@ func TestEvalPostProcessor(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := Context{Env: "dev"}
+			ctx := decorate(Context{})
 			pp := postProc{ctx: ctx, code: test.code, file: "pp.jsonnet"}
 			ret, err := pp.run(obj)
 			test.asserter(t, ret, err)

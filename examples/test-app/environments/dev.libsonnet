@@ -1,4 +1,4 @@
-local base = import './base.libsonnet';
+local base = import '_.libsonnet';
 
 base {
     components +: {

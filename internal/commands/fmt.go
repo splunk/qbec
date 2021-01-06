@@ -3,6 +3,7 @@ package commands
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,16 +14,17 @@ import (
 
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/spf13/cobra"
+	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
 
 type fmtCommandConfig struct {
 	*config
-	check         bool
-	write         bool
-	formatJsonnet bool
-	formatYaml    bool
-	files         []string
+	check          bool
+	write          bool
+	formatTypes    map[string]bool
+	specifiedTypes []string
+	files          []string
 }
 
 func doFmt(args []string, config *fmtCommandConfig) error {
@@ -34,12 +36,29 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 	} else {
 		config.files = []string{"."}
 	}
+	config.formatTypes = make(map[string]bool)
+	isSupported := func(s string) bool {
+		for _, t := range supportedTypes {
+			if s == t {
+				return true
+			}
+		}
+		return false
+	}
+	for _, s := range config.specifiedTypes {
+		if !isSupported(s) {
+			return newUsageError(fmt.Sprintf("%q is not a supported type", s))
+		}
+		config.formatTypes[s] = true
+	}
 	for _, path := range config.files {
 		switch dir, err := os.Stat(path); {
 		case err != nil:
 			return err
 		case dir.IsDir():
-			return walkDir(config, path)
+			if err := walkDir(config, path); err != nil {
+				return err
+			}
 		default:
 			if shouldFormat(config, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
@@ -51,6 +70,10 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 	return nil
 }
 
+var (
+	supportedTypes = []string{"json", "jsonnet", "yaml"}
+)
+
 func newFmtCommand(cp configProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "fmt",
@@ -59,11 +82,9 @@ func newFmtCommand(cp configProvider) *cobra.Command {
 	}
 
 	config := fmtCommandConfig{}
-
 	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().BoolVarP(&config.formatJsonnet, "jsonnet", "j", true, "format jsonnet and libsonnet files")
-	cmd.Flags().BoolVar(&config.formatYaml, "yaml", false, "format yaml files")
+	cmd.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		return wrapError(doFmt(args, &config))
@@ -80,15 +101,21 @@ func isJsonnetFile(f os.FileInfo) bool {
 	name := f.Name()
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "jsonnet"
 }
+
+func isJSONFile(f os.FileInfo) bool {
+	name := f.Name()
+	return !f.IsDir() && !strings.HasPrefix(name, ".") && getFileType(name) == "json"
+}
+
 func shouldFormat(config *fmtCommandConfig, f os.FileInfo) bool {
-	if config.formatJsonnet && config.formatYaml {
-		return isJsonnetFile(f) || isYamlFile(f)
+	if isJsonnetFile(f) {
+		return config.formatTypes["jsonnet"]
 	}
-	if config.formatJsonnet {
-		return isJsonnetFile(f)
+	if isYamlFile(f) {
+		return config.formatTypes["yaml"]
 	}
-	if config.formatYaml {
-		return isYamlFile(f)
+	if isJSONFile(f) {
+		return config.formatTypes["json"]
 	}
 	return false
 }
@@ -205,6 +232,9 @@ func format(in []byte, filename string) ([]byte, error) {
 	if getFileType(filename) == "jsonnet" {
 		return formatJsonnet(in)
 	}
+	if getFileType(filename) == "json" {
+		return formatJSON(in)
+	}
 	return nil, fmt.Errorf("unknown file type for file %q", filename)
 }
 
@@ -265,12 +295,27 @@ func formatJsonnet(in []byte) ([]byte, error) {
 	return []byte(ret), nil
 }
 
+func formatJSON(in []byte) ([]byte, error) {
+	var j interface{}
+	decoder := json.NewDecoder(bytes.NewReader(in))
+	decoder.UseNumber()
+	defaultOptions := pretty.DefaultOptions
+	// Make array values to spread across lines
+	defaultOptions.Width = -1
+	//Validate input json
+	var err = decoder.Decode(&j)
+	return pretty.PrettyOptions(in, defaultOptions), err
+}
+
 func getFileType(filename string) string {
 	if strings.HasSuffix(filename, ".yml") || strings.HasSuffix(filename, ".yaml") {
 		return "yaml"
 	}
 	if strings.HasSuffix(filename, ".jsonnet") || strings.HasSuffix(filename, ".libsonnet") {
 		return "jsonnet"
+	}
+	if strings.HasSuffix(filename, ".json") {
+		return "json"
 	}
 	return ""
 }

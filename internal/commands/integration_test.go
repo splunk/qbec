@@ -101,6 +101,16 @@ func TestIntegrationBasic(t *testing.T) {
 		a.EqualValues(1, stats["same"])
 		a.EqualValues(2, len(stats["updated"].([]interface{})))
 	})
+	t.Run("apply3", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand(append(changeArgs, "apply", "local", "--wait", "--wait-all")...)
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(3, stats["same"])
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 1 objects`))
+	})
 }
 
 func TestIntegrationLazyCustomResources(t *testing.T) {
@@ -130,4 +140,62 @@ func TestIntegrationLazyCustomResources(t *testing.T) {
 	err2 = s1.executeCommand(append(extra, "apply", "-k", "customresourcedefinitions", "local")...)
 	require.NoError(t, err2)
 	<-done
+}
+
+func TestIntegrationWait(t *testing.T) {
+	dir := "testdata/projects/wait"
+	ns, reset := newNamespace(t)
+	defer reset()
+
+	t.Run("apply", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local", "--wait-all")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["created"].([]interface{})))
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 1 objects`))
+	})
+	t.Run("apply-no-wait", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local", "--wait-all", "--vm:ext-code=wait=false")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["updated"].([]interface{})))
+		s.assertErrorLineMatch(regexp.MustCompile(`waiting for readiness of 0 objects`))
+		s.assertErrorLineMatch(regexp.MustCompile(`: wait disabled by policy`))
+	})
+}
+
+func TestIntegrationDiffPolicies(t *testing.T) {
+	dir := "testdata/projects/policies"
+	ns, reset := newNamespace(t)
+	defer reset()
+
+	t.Run("apply", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("apply", "local")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		a := assert.New(t)
+		a.EqualValues(1, len(stats["updated"].([]interface{})))
+		a.EqualValues(2, len(stats["created"].([]interface{})))
+	})
+	t.Run("diff", func(t *testing.T) {
+		s := newIntegrationScaffold(t, ns, dir)
+		defer s.reset()
+		err := s.executeCommand("diff", "local", "--vm:ext-code=hide=true", "--vm:ext-str=foo=xxx --error-exit=false")
+		require.NoError(t, err)
+		stats := s.outputStats()
+		sk := stats["skipped"]
+		skipped, ok := sk.(map[string]interface{})
+		require.True(t, ok)
+		a := assert.New(t)
+		a.EqualValues(1, len(skipped["updates"].([]interface{})))
+		a.EqualValues(1, len(skipped["deletions"].([]interface{})))
+	})
 }

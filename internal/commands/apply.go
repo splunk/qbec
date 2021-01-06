@@ -58,6 +58,7 @@ type applyCommandConfig struct {
 	showDetails bool
 	gc          bool
 	wait        bool
+	waitAll     bool
 	waitTimeout time.Duration
 	filterFunc  func() (filterParams, error)
 }
@@ -123,30 +124,12 @@ func doApply(args []string, config applyCommandConfig) error {
 
 	// prepare for GC with object list of deletions
 	var lister lister = &stubLister{}
-	var all []model.K8sLocalObject
 	var retainObjects []model.K8sLocalObject
 	if config.gc {
-		all, err = allObjects(config.config, env)
+		lister, retainObjects, err = startRemoteList(env, config.config, client, fp)
 		if err != nil {
 			return err
 		}
-		for _, o := range all {
-			if o.GetName() != "" {
-				retainObjects = append(retainObjects, o)
-			}
-		}
-		var scope remote.ListQueryScope
-		lister, scope, err = newRemoteLister(client, all, config.app.DefaultNamespace(env))
-		if err != nil {
-			return err
-		}
-		lister.start(remote.ListQueryConfig{
-			Application:    config.App().Name(),
-			Tag:            config.App().Tag(),
-			Environment:    env,
-			KindFilter:     fp.GVKFilter,
-			ListQueryScope: scope,
-		})
 	}
 
 	// continue with apply
@@ -158,7 +141,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	var stats applyStats
-	var changedObjects []model.K8sMeta
+	var waitObjects []model.K8sMeta
 
 	printSyncStatus := func(name string, res *remote.SyncResult, err error) {
 		if err != nil {
@@ -189,6 +172,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 	}
 
+	waitPolicy := newWaitPolicy()
 	for _, ob := range objects {
 		name := client.DisplayName(ob)
 		res, err := client.Sync(ob, opts)
@@ -201,8 +185,13 @@ func doApply(args []string, config applyCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		if res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated {
-			changedObjects = append(changedObjects, metaWrap{K8sMeta: ob})
+		shouldWait := config.waitAll || (res.Type == remote.SyncCreated || res.Type == remote.SyncUpdated)
+		if shouldWait {
+			if waitPolicy.disableWait(ob) {
+				sio.Debugf("%s: wait disabled by policy\n", name)
+			} else {
+				waitObjects = append(waitObjects, metaWrap{K8sMeta: ob})
+			}
 		}
 		stats.update(name, res)
 	}
@@ -259,14 +248,13 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	defaultNs := config.app.DefaultNamespace(env)
-	if config.wait {
+	if config.wait || config.waitAll {
 		wl := &waitListener{
 			displayNameFn: client.DisplayName,
 		}
-		return applyWaitFn(changedObjects,
+		return applyWaitFn(waitObjects,
 			func(obj model.K8sMeta) (watch.Interface, error) {
 				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
-
 			},
 			rollout.WaitOptions{
 				Listener: wl,
@@ -294,7 +282,8 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
-	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for objects to be ready")
+	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")
+	cmd.Flags().BoolVar(&config.waitAll, "wait-all", true, "wait for all objects to be ready, not just the ones that have changed")
 	var waitTime string
 	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 
@@ -307,6 +296,7 @@ func newApplyCommand(cp configProvider) *cobra.Command {
 		}
 		if config.syncOptions.DryRun {
 			config.wait = false
+			config.waitAll = false
 		}
 		if !cmd.Flag("show-details").Changed {
 			config.showDetails = config.syncOptions.DryRun

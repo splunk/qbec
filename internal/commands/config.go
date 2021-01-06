@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -51,12 +52,12 @@ type forceOptions struct {
 // addForceOptions adds flags to the supplied root command and returns forced options.
 func addForceOptions(cmd *cobra.Command, prefix string) func() forceOptions {
 	var f forceOptions
-	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively",
+	ctxUsage := fmt.Sprintf("force K8s context with supplied value. Special values are %s and %s for in-cluster and current contexts respectively. Defaulted from QBEC_FORCE_K8S_CONTEXT",
 		remote.ForceInClusterContext, currentMarker)
 	pf := cmd.PersistentFlags()
-	pf.StringVar(&f.k8sContext, prefix+"k8s-context", "", ctxUsage)
-	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config", currentMarker)
-	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", "", nsUsage)
+	pf.StringVar(&f.k8sContext, prefix+"k8s-context", envOrDefault("QBEC_FORCE_K8S_CONTEXT", ""), ctxUsage)
+	nsUsage := fmt.Sprintf("override default namespace for environment with supplied value. The special value %s can be used to extract the value in the kube config. Defaulted from QBEC_FORCE_K8S_NAMESPACE", currentMarker)
+	pf.StringVar(&f.k8sNamespace, prefix+"k8s-namespace", envOrDefault("QBEC_FORCE_K8S_NAMESPACE", ""), nsUsage)
 	return func() forceOptions { return f }
 }
 
@@ -194,7 +195,7 @@ type config struct {
 // init checks variables and sets up defaults. In strict mode, it requires all variables
 // to be specified and does not allow undeclared variables to be passed in.
 // It also sets the base VM config to include the library paths from the app definition
-// and exclude all TLA variables. Require TLA variables are set per component later.
+// and exclude all TLA variables. Required TLA variables are set per component later.
 func (c *config) init(strict bool) error {
 	var msgs []string
 	c.tlaVars = c.vmc.TopLevelVars()
@@ -279,23 +280,42 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if err != nil {
 		sio.Warnln("unable to serialize env properties to JSON:", err)
 	}
+	cm := "off"
+	if c.cleanEvalMode {
+		cm = "on"
+	}
+	baseConfig := c.vmc.WithVars(map[string]string{
+		model.QbecNames.EnvVarName:       env,
+		model.QbecNames.TagVarName:       c.app.Tag(),
+		model.QbecNames.DefaultNsVarName: c.app.DefaultNamespace(env),
+		model.QbecNames.CleanModeVarName: cm,
+	}).WithCodeVars(map[string]string{
+		model.QbecNames.EnvPropsVarName: string(p),
+	})
 	return eval.Context{
-		App:             c.App().Name(),
-		Tag:             c.App().Tag(),
-		Env:             env,
-		EnvPropsJSON:    string(p),
-		DefaultNs:       c.App().DefaultNamespace(env),
-		VMConfig:        c.vmConfig,
+		VMConfig:        func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
 		Verbose:         c.Verbosity() > 1,
 		Concurrency:     c.EvalConcurrency(),
 		PostProcessFile: c.App().PostProcessor(),
-		CleanMode:       c.cleanEvalMode,
+	}
+}
+
+func (c config) ObjectProducer(env string) eval.LocalObjectProducer {
+	return func(component string, data map[string]interface{}) model.K8sLocalObject {
+		app := c.app
+		return model.NewK8sLocalObject(data, model.LocalAttrs{
+			App:               app.Name(),
+			Tag:               app.Tag(),
+			Component:         component,
+			Env:               env,
+			SetComponentLabel: app.AddComponentLabel(),
+		})
 	}
 }
 
 // vmConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c config) vmConfig(tlaVars []string) vm.Config {
-	cfg := c.vmc.WithoutTopLevel()
+func (c config) vmConfig(baseConfig vm.Config, tlaVars []string) vm.Config {
+	cfg := baseConfig.WithoutTopLevel()
 
 	// common case to avoid useless object creation. If no required vars
 	// needed or none present, just return the config with empty TLAs
@@ -363,7 +383,7 @@ func (c config) Confirm(context string) error {
 	}
 	inst, err := readline.NewEx(&readline.Config{
 		Prompt:              "Do you want to continue [y/n]: ",
-		Stdin:               c.stdin,
+		Stdin:               ioutil.NopCloser(c.stdin),
 		Stdout:              c.stdout,
 		Stderr:              c.stderr,
 		ForceUseInteractive: true,

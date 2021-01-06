@@ -1,10 +1,14 @@
 package commands
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,6 +69,51 @@ func TestOptionsCommand(t *testing.T) {
 
 func TestSetupNoFail(t *testing.T) {
 	assert.NotPanics(t, func() { Setup(&cobra.Command{}) })
+}
+
+var payload = `
+apiVersion: qbec.io/v1alpha1
+kind: EnvironmentMap
+spec:
+  environments:
+    prod2:
+      server: https://prod-server
+      includes:
+      - service2
+      properties:
+        envType: prod
+`
+
+func TestListRemoteEnv(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+
+	// setup test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, payload)
+	}))
+	defer ts.Close()
+
+	// the new env from the remote file should be displayed in env list command
+	err := s.executeCommand("env", "list", "--env-file", ts.URL, "-o", "json")
+	require.NoError(t, err)
+
+	out := map[string][]map[string]string{}
+	err = s.jsonOutput(&out)
+	require.NoError(t, err)
+
+	environments := out["environments"]
+
+	var found = false
+	for i := 0; i < len(environments); i++ {
+		if environments[i]["name"] == "prod2" {
+			env := environments[i]
+			assert.Equal(t, "https://prod-server", env["server"], "prod server should be `https://prod-server`")
+			assert.Equal(t, "default", env["defaultNamespace"], "prod defaultNamespace should be `default`")
+			found = true
+		}
+	}
+	assert.True(t, found, "environments should include prod2")
 }
 
 func TestSetupEnvironments(t *testing.T) {
@@ -132,7 +181,7 @@ func TestSetupEnvironments(t *testing.T) {
 			fn: func(t *testing.T, s *scaffold) {
 				err := s.executeCommand("env", "list", "-E", "testdata/extra-env2.yaml")
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), "no such file or directory")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{

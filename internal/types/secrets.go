@@ -48,6 +48,18 @@ func obfuscate(value string) string {
 	return fmt.Sprintf("redacted.%s", base64.RawURLEncoding.EncodeToString(shasum))
 }
 
+func obfuscateMap(in map[string]interface{}) map[string]interface{} {
+	if len(in) == 0 {
+		return nil
+	}
+	ret := map[string]interface{}{}
+	for k, v := range in {
+		value := obfuscate(fmt.Sprintf("%s:%s", k, v))
+		ret[k] = base64.StdEncoding.EncodeToString([]byte(value))
+	}
+	return ret
+}
+
 // HasSensitiveInfo returns true if the supplied object has sensitive data that might need
 // to be hidden.
 func HasSensitiveInfo(obj *unstructured.Unstructured) bool {
@@ -66,17 +78,15 @@ func HideSensitiveInfo(obj *unstructured.Unstructured) (*unstructured.Unstructur
 	if !HasSensitiveInfo(obj) {
 		return obj, false
 	}
+
 	clone := obj.DeepCopy()
-	secretData, _, _ := unstructured.NestedMap(obj.Object, "data")
-	if secretData == nil {
-		secretData = map[string]interface{}{}
+	for _, section := range []string{"data", "stringData"} {
+		secretData, _, _ := unstructured.NestedMap(obj.Object, section)
+		changed := obfuscateMap(secretData)
+		if changed != nil {
+			clone.Object[section] = changed
+		}
 	}
-	changedData := map[string]interface{}{}
-	for k, v := range secretData {
-		value := obfuscate(fmt.Sprintf("%s:%s", k, v))
-		changedData[k] = base64.StdEncoding.EncodeToString([]byte(value))
-	}
-	clone.Object["data"] = changedData
 	return clone, true
 }
 
@@ -86,5 +96,10 @@ func HideSensitiveLocalInfo(in model.K8sLocalObject) (model.K8sLocalObject, bool
 	if !changed {
 		return in, false
 	}
-	return model.NewK8sLocalObject(obj.Object, in.Application(), in.Tag(), in.Component(), in.Environment()), true
+	return model.NewK8sLocalObject(obj.Object, model.LocalAttrs{
+		App:       in.Application(),
+		Tag:       in.Tag(),
+		Component: in.Component(),
+		Env:       in.Environment(),
+	}), true
 }

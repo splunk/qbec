@@ -1,0 +1,3 @@
+# Ensure that git would checkout files with lf instead of crlf on windows
+*.formatted text eol=lf
+*.yml text eol=lf

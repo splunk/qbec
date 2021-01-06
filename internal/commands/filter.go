@@ -77,10 +77,6 @@ func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filter
 // keyFunc is a function that provides a string key for an object
 type keyFunc func(object model.K8sMeta) string
 
-func allObjects(cfg *config, env string) ([]model.K8sLocalObject, error) {
-	return filteredObjects(cfg, env, nil, filterParams{kindFilter: nil})
-}
-
 func displayName(obj model.K8sLocalObject) string {
 	group := obj.GroupVersionKind().Group
 	if group != "" {
@@ -120,7 +116,7 @@ func filteredObjects(cfg *config, env string, kf keyFunc, fp filterParams) ([]mo
 	if err != nil {
 		return nil, err
 	}
-	output, err := eval.Components(components, cfg.EvalContext(env, props))
+	output, err := eval.Components(components, cfg.EvalContext(env, props), cfg.ObjectProducer(env))
 	if err != nil {
 		return nil, err
 	}

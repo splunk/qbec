@@ -1,0 +1,10 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: multi-dir-app
+spec:
+  componentsDir: components/*
+  environments:
+    dev:
+      server: https://dev-server

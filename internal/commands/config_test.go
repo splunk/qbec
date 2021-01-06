@@ -62,17 +62,22 @@ func TestConfigCreate(t *testing.T) {
 	a.Nil(cfg.Confirm("we will destroy you"))
 
 	ctx := cfg.EvalContext("dev", map[string]interface{}{"foo": "bar"})
-	a.Equal("app1", ctx.App)
-	a.Equal("dev", ctx.Env)
-	a.Equal("t1", ctx.Tag)
-	a.Equal("kube-system-t1", ctx.DefaultNs)
 	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
 
 	testVMC := ctx.VMConfig([]string{"tlaFoo", "tlaBar"})
 	a.EqualValues(map[string]string{"tlaFoo": "xxx"}, testVMC.TopLevelVars())
 	a.EqualValues(map[string]string{"tlaBar": "true"}, testVMC.TopLevelCodeVars())
-	a.EqualValues(map[string]string{"extFoo": "xxx"}, testVMC.Vars())
-	a.EqualValues(map[string]string{"extBar": `{"bar":"quux"}`}, testVMC.CodeVars())
+	a.EqualValues(map[string]string{
+		"extFoo":            "xxx",
+		"qbec.io/cleanMode": "off",
+		"qbec.io/defaultNs": "kube-system-t1",
+		"qbec.io/env":       "dev",
+		"qbec.io/tag":       "t1",
+	}, testVMC.Vars())
+	a.EqualValues(map[string]string{
+		"extBar":                `{"bar":"quux"}`,
+		"qbec.io/envProperties": `{"foo":"bar"}`,
+	}, testVMC.CodeVars())
 }
 
 func TestConfigStrictVarsPass(t *testing.T) {
@@ -206,7 +211,12 @@ data:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ret := ordering(model.NewK8sLocalObject(test.data, "app", "tag", "component", "env"))
+			ret := ordering(model.NewK8sLocalObject(test.data, model.LocalAttrs{
+				App:       "app",
+				Tag:       "tag",
+				Component: "component",
+				Env:       "env",
+			}))
 			assert.Equal(t, test.expected, ret)
 		})
 	}

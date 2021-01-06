@@ -1,6 +1,6 @@
 include Makefile.tools
 
-VERSION         := 0.12.2
+VERSION         := 0.13.3
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
 
@@ -50,18 +50,26 @@ lint: check-format
 .PHONY: check-format
 check-format:
 	@echo "Running gofmt..."
-	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -l))
+	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -s -l))
 	$(if $(strip $(unformatted)),\
 		$(error $(\n) Some files are ill formatted! Run: \
-			$(foreach file,$(unformatted),$(\n)    gofmt -w $(file))$(\n)),\
+			$(foreach file,$(unformatted),$(\n)    gofmt -s -w $(file))$(\n)),\
 		@echo All files are well formatted.\
 	)
+
+
 .PHONY: install-ci
-install-ci: .tools/kind
-	curl -sSL -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz
-	tar -xvzf helm.tar.gz
-	mv linux-amd64/helm $(GOPATH)/bin/
+install-ci: HELM_VERSION := 3.3.1
+install-ci: HELM_PLATFORM := $(shell uname|  tr '[:upper:]' '[:lower:]')
+install-ci:
+	# Refactor helm install into a separate step
+	# curl -sSL -o helm.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-${HELM_PLATFORM}-amd64.tar.gz
+	# tar -xvzf helm.tar.gz
+	# mv ${HELM_PLATFORM}-amd64/helm $(GOPATH)/bin/
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
+
+.PHONY: create-cluster
+create-cluster:	.tools/kind
 	.tools/kind create cluster
 
 .PHONY: install

@@ -41,8 +41,8 @@ var (
 	version         = "dev"
 	commit          = "dev"
 	goVersion       = "unknown"
-	jsonnetVersion  = "v0.16.0"           // update this when library dependency is upgraded
-	clientGoVersion = "kubernetes-1.15.5" // ditto when client go dep is upgraded
+	jsonnetVersion  = "v0.17.0"            // update this when library dependency is upgraded
+	clientGoVersion = "kubernetes-1.17.13" // ditto when client go dep is upgraded
 )
 
 // Executable is the name of the qbec executable.
@@ -233,11 +233,15 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 		// directory before we change it
 		var envFiles []string
 		if envFile != "" {
-			abs, err := filepath.Abs(envFile)
-			if err != nil {
-				return err
+			if model.IsRemoteFile(envFile) {
+				envFiles = append(envFiles, envFile)
+			} else {
+				abs, err := filepath.Abs(envFile)
+				if err != nil {
+					return err
+				}
+				envFiles = append(envFiles, abs)
 			}
-			envFiles = append(envFiles, abs)
 		}
 		if err := setWorkDir(rootDir); err != nil {
 			return err

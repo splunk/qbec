@@ -28,6 +28,7 @@ import (
 	"github.com/google/go-jsonnet"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/vm/importers"
 )
 
 // Config is the desired configuration of the Jsonnet VM.
@@ -353,9 +354,15 @@ func New(config Config) *VM {
 	if config.importer != nil {
 		vm.Importer(config.importer)
 	} else {
-		vm.Importer(&jsonnet.FileImporter{
-			JPaths: config.libPaths,
-		})
+		vm.Importer(
+			importers.NewCompositeImporter(
+				importers.NewGlobImporter("import"),
+				importers.NewGlobImporter("importstr"),
+				importers.NewFileImporter(&jsonnet.FileImporter{
+					JPaths: config.libPaths,
+				}),
+			),
+		)
 	}
 	return &VM{VM: vm, config: config}
 }

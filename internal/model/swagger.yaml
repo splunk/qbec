@@ -110,10 +110,16 @@ definitions:
       baseProperties:
         description: properties for the baseline environment
         type: object
+      clusterScopedLists:
+        description: whether remote lists should use cluster scoped queries when multiple namespaces present
+        type: boolean
       vars:
         $ref: "#/definitions/qbec.io.v1alpha1.Variables"
       namespaceTagSuffix:
         description: suffix default namespace when app-tag provided, with the supplied tag
+        type: boolean
+      addComponentLabel:
+        description: add component name as label to Kubernetes objects
         type: boolean
     title: AppSpec is the user-supplied configuration of the qbec app.
     type: object

@@ -1,0 +1,10 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: label-app
+spec:
+  addComponentLabel: true
+  environments:
+    dev:
+      server: https://dev-server

@@ -179,3 +179,33 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 	lw.l.Unlock()
 	return n, err
 }
+
+func startRemoteList(env string, config *config, client kubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
+	all, err := filteredObjects(config, env, nil, filterParams{})
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, o := range all {
+		if o.GetName() != "" {
+			retainObjects = append(retainObjects, o)
+		}
+	}
+	var scope remote.ListQueryScope
+	lister, scope, err := newRemoteLister(client, all, config.app.DefaultNamespace(env))
+	if err != nil {
+		return nil, nil, err
+	}
+	clusterScopedLists := false
+	if len(scope.Namespaces) > 1 && config.app.ClusterScopedLists() {
+		clusterScopedLists = true
+	}
+	lister.start(remote.ListQueryConfig{
+		Application:        config.App().Name(),
+		Tag:                config.App().Tag(),
+		Environment:        env,
+		KindFilter:         fp.GVKFilter,
+		ListQueryScope:     scope,
+		ClusterScopedLists: clusterScopedLists,
+	})
+	return lister, retainObjects, nil
+}

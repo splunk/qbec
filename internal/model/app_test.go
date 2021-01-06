@@ -18,13 +18,20 @@ package model
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/template"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/sio"
+	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,6 +105,7 @@ func TestAppSimple(t *testing.T) {
 	a.Equal(3, len(app.defaultComponents))
 	a.Contains(app.allComponents, "service2")
 	a.NotContains(app.defaultComponents, "service2")
+	a.Equal(false, app.AddComponentLabel())
 
 	comps, err := app.ComponentsForEnvironment("_", nil, nil)
 	require.Nil(t, err)
@@ -230,6 +238,7 @@ func TestAppSimple(t *testing.T) {
 
 	envs := app.Environments()
 	a.Equal(4, len(envs))
+	a.False(app.ClusterScopedLists())
 }
 
 func TestAppWarnings(t *testing.T) {
@@ -291,6 +300,33 @@ func TestAppComponentLoadSubdirs(t *testing.T) {
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "index.yaml"))
 }
 
+func TestAppComponentLoadMultidirs(t *testing.T) {
+	reset := setPwd(t, "testdata/multi-dir-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.Nil(t, err)
+	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.Equal(2, len(comps))
+	comp := comps[0]
+	a.Equal("a", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "dir1", "a.jsonnet"))
+	comp = comps[1]
+	a.Equal("b", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "dir2", "b", "index.jsonnet"))
+}
+
+func TestAppComponentNoDirs(t *testing.T) {
+	reset := setPwd(t, "testdata/no-dirs-app")
+	defer reset()
+	_, err := NewApp("qbec.yaml", nil, "")
+	require.Error(t, err)
+	assert.Equal(t, "load components: no component directories found after expanding components/dir*", err.Error())
+}
+
 func TestAppComponentLoadNegative(t *testing.T) {
 	reset := setPwd(t, "../../examples/test-app")
 	defer reset()
@@ -315,6 +351,38 @@ func TestAppComponentLoadNegative(t *testing.T) {
 	a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 }
 
+func TestHttpEnvFiles(t *testing.T) {
+	reset := setPwd(t, "testdata/http-app")
+	defer reset()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		b, err := ioutil.ReadFile("envs.yaml")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(b)
+	}))
+	defer s.Close()
+
+	b, err := ioutil.ReadFile("qbec-template.yaml")
+	tmpl, err := template.New("qbec").Parse(string(b))
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, map[string]interface{}{"URL": s.URL})
+	require.NoError(t, err)
+	err = ioutil.WriteFile("qbec.yaml", buf.Bytes(), 0640)
+	require.NoError(t, err)
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.NoError(t, err)
+	envs := app.Environments()
+	a := assert.New(t)
+	a.Equal(3, len(envs))
+	a.Contains(envs, "stage")
+	a.Contains(envs, "prod")
+	require.Contains(t, envs, "dev")
+	a.EqualValues("https://new-dev-server", envs["dev"].Server)
+}
+
 func TestAppNegative(t *testing.T) {
 	reset := setPwd(t, "./testdata/bad-app")
 	defer reset()
@@ -328,7 +396,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "non-existent.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "no such file or directory")
+				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -370,7 +438,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-comps.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "duplicate component a, found bad-comps/a.json and bad-comps/a.yaml")
+				assert.Contains(t, err.Error(), fmt.Sprintf("duplicate component a, found %s and %s", filepath.FromSlash("bad-comps/a.json"), filepath.FromSlash("bad-comps/a.yaml")))
 			},
 		},
 		{
@@ -413,7 +481,7 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-missing-env-file.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "missing-env.yaml: no such file or directory")
+				assert.Contains(t, err.Error(), "missing-env.yaml: "+testutil.FileNotFoundMessage)
 			},
 		},
 		{
@@ -462,4 +530,45 @@ func TestAppNegative(t *testing.T) {
 			test.asserter(t, err)
 		})
 	}
+}
+
+func TestNegativeDownload(t *testing.T) {
+	t.Run("no-endpoint", func(t *testing.T) {
+		_, err := readEnvFile("http://nonexistent.server")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from http://nonexistent.server")
+	})
+	t.Run("bad-status", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		_, err := readEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "status : 400 Bad Request")
+	})
+	t.Run("slow-server", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			time.Sleep(time.Second)
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer s.Close()
+		o := httpClient
+		defer func() { httpClient = o }()
+		httpClient = &http.Client{Timeout: 100 * time.Millisecond}
+		_, err := readEnvFile(s.URL)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "download environments from "+s.URL)
+		assert.Contains(t, err.Error(), "context deadline exceeded")
+	})
+}
+
+func TestAppLabel(t *testing.T) {
+	reset := setPwd(t, "testdata/label-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.Equal(true, app.AddComponentLabel())
 }

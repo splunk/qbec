@@ -55,9 +55,11 @@ func TestNsWrap(t *testing.T) {
 func TestApplyBasic(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
+	origWait := applyWaitFn
 	applyWaitFn = func(objects []model.K8sMeta, wp rollout.WatchProvider, opts rollout.WaitOptions) (finalErr error) {
 		return nil
 	}
+	defer func() { applyWaitFn = origWait }()
 	first := true
 	var captured remote.SyncOptions
 	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
@@ -116,7 +118,7 @@ func TestApplyFlags(t *testing.T) {
 			return &remote.SyncResult{Type: remote.SyncObjectsIdentical, Details: "sync skipped"}, nil
 		}
 	}
-	err := s.executeCommand("apply", "dev", "-S", "-n", "--skip-create", "--gc=false")
+	err := s.executeCommand("apply", "dev", "-S", "-n", "--skip-create", "--gc=false", "--wait-all=false")
 	require.NoError(t, err)
 	stats := s.outputStats()
 	a := assert.New(t)

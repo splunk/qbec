@@ -1,10 +1,5 @@
-local p = {
-    _: import './environments/base.libsonnet',
-    dev: import './environments/dev.libsonnet',
-    prod: import './environments/prod.libsonnet',
-};
+local globutil = import 'globutil.libsonnet';
+local p = globutil.transform(import 'glob-import:environments/*.libsonnet', globutil.nameOnly);
 
-local env = std.extVar('qbec.io/env');
-
-if std.objectHas(p, env) then p[env] else error 'Environment ' + env + ' not defined in ' + std.thisFile
-
+local key = std.extVar('qbec.io/env');
+if std.objectHas(p, key) then p[key] else error 'Environment ' + key + ' not defined in environments/'
