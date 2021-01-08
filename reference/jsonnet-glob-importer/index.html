@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Standard jsonnet variables :: Qbec</title>
+    <title>Jsonnet glob importer :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/reference/jsonnet-vars/">
+  <body class="" data-url="/reference/jsonnet-glob-importer/">
     <nav id="sidebar" class="">
 
 
@@ -424,7 +424,7 @@
  
   
     
-      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item active">
+      <li data-nav-id="/reference/jsonnet-vars/" title="Standard jsonnet variables" class="dd-item ">
         <a href="/reference/jsonnet-vars/">
         Standard jsonnet variables
         
@@ -481,7 +481,7 @@
  
   
     
-      <li data-nav-id="/reference/jsonnet-glob-importer/" title="Jsonnet glob importer" class="dd-item ">
+      <li data-nav-id="/reference/jsonnet-glob-importer/" title="Jsonnet glob importer" class="dd-item active">
         <a href="/reference/jsonnet-glob-importer/">
         Jsonnet glob importer
         
@@ -619,7 +619,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-vars.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-glob-importer.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -650,7 +650,7 @@
             
           
           
-            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Standard jsonnet variables
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Jsonnet glob importer
           
          
           
@@ -663,7 +663,17 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#notes">Notes</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -675,28 +685,66 @@
         
         <div id="body-inner">
           
-            <h1>Standard jsonnet variables</h1>
+            <h1>Jsonnet glob importer</h1>
           
 
         
 
 
-<p>qbec exposes the following standard jsonnet variables whenever it evaluates components.</p>
+
+
+<p>In many situations it is useful to be able to import a bag of files as an object. For instance, it is convenient to
+load all environment configuration files present with a single invocation to <code>import</code> to pick up all files found without
+having to name them individually.</p>
+
+<p>For this purpose, qbec supplies a glob importer for importing a bag of  files using a glob pattern.
+It supports two variants, one for importing the files that match the glob as code
+and another for importing the files as a string (suitable, for example, for YAML files).</p>
+
+<p>The basic syntax is:</p>
+
+<pre><code>import 'glob-import:subdir/*.libsonnet' // imports all libsonnet files from the subdirectory
+</code></pre>
+
+<p>and</p>
+
+<pre><code>import 'glob-importstr:*.yaml' // imports all YAML files in the current directory as strings
+</code></pre>
+
+<p>Let&rsquo;s say that in the first example you had files <code>a.libsonnet</code>, <code>b.libsonnet</code> and <code>c.libsonnet</code> in <code>subdir/</code>.
+This would result in the following code being evaluated by jsonnet.</p>
+
+<pre><code>{
+   'subdir/a.libsonnet': import 'subdir/a.libsonnet',
+   'subdir/b.libsonnet': import 'subdir/b.libsonnet',
+   'subdir/c.libsonnet': import 'subdir/c.libsonnet',
+}
+</code></pre>
+
+<p>In the second example if you had <code>a.yaml</code>, <code>b.yaml</code> and <code>c.yaml</code> in the current directory, the following code
+would be evaluated:</p>
+
+<pre><code>{
+   'a.yaml': importstr 'a.yaml',
+   'b.yaml': importstr 'b.yaml',
+   'c.yaml': importstr 'c.yaml',
+}
+</code></pre>
+
+<p>In both cases, the keys are paths to files relative to the directory where the <code>import</code> was invoked, and the objects
+are the objects as returned by the jsonnet <code>import</code> and <code>importstr</code> directives respectively.</p>
+
+<h3 id="notes">Notes</h3>
 
 <ul>
-<li><code>qbec.io/env</code> - the name of the environment for which processing occurs.</li>
-<li><code>qbec.io/envProperties</code> - the properties associated with the environment if present or an empty object. For the
-baseline environment (<code>_</code>), this is set to the <code>baseProperties</code> object define in <code>qbec.yaml</code>.</li>
-<li><code>qbec.io/tag</code> - the tag specified for the command using the <code>--app-tag</code> option.</li>
-<li><code>qbec.io/defaultNs</code> - the default namespace in use. This is typically picked from the environment definition,
-possibly changed for app tags, or the value forced from the command line using the <code>--force:k8s-namespace</code> option.</li>
-<li><code>qbec.io/cleanMode</code> - has the <code>off</code> or <code>on</code>. The <code>on</code> value is only set for the <code>show --clean</code> command.</li>
+<li>Globs are resolved using Go semantics. It is <strong>not</strong> an error for the pattern to not match any files. In that case,
+an empty object is returned. If you want to treat this case as an error, you can do so in the jsonnet code after the
+import is done.</li>
+<li>Library paths are not considered by this importer. That&rsquo;s because it is ambiguous as to what <code>*.libsonnet</code> means
+when there are libsonnet files in the current directory as well as in the library paths.</li>
+<li>The objects that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
+directory paths, removing extensions etc.). See the <code>globutil.libsonnet</code> file in the qbec source tree for ideas.</li>
 </ul>
-
-<p>In addition to the above, qbec will also set the default values for declared external variables and
-override them from command line arguments.</p>
-
-<p>See the <a href="../component-evaluation">component evaluation page</a> for the gory details.</p>
 
 
 <footer class=" footline" >
@@ -997,26 +1045,6 @@ override them from command line arguments.</p>
             
                 
                     
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
                 
                 
 
@@ -1064,6 +1092,26 @@ override them from command line arguments.</p>
             
             
                 
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -1136,10 +1184,10 @@ override them from command line arguments.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/reference/directives/" title="Qbec directives"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/reference/jsonnet-native-funcs/" title="Jsonnet native functions"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/reference/gen-metadata/" title="Metadata for K8s objects" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/reference/component-evaluation/" title="Component evaluation" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>

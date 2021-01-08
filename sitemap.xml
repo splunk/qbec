@@ -79,6 +79,10 @@
   </url>
   
   <url>
+    <loc>http://qbec.io/reference/jsonnet-glob-importer/</loc>
+  </url>
+  
+  <url>
     <loc>http://qbec.io/reference/component-evaluation/</loc>
   </url>
   

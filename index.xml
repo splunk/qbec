@@ -166,6 +166,16 @@ Usage  local expandHelmTemplate = std.native(&#39;expandHelmTemplate&#39;); expa
     </item>
     
     <item>
+      <title>Jsonnet glob importer</title>
+      <link>http://qbec.io/reference/jsonnet-glob-importer/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://qbec.io/reference/jsonnet-glob-importer/</guid>
+      <description>In many situations it is useful to be able to import a bag of files as an object. For instance, it is convenient to load all environment configuration files present with a single invocation to import to pick up all files found without having to name them individually.
+For this purpose, qbec supplies a glob importer for importing a bag of files using a glob pattern. It supports two variants, one for importing the files that match the glob as code and another for importing the files as a string (suitable, for example, for YAML files).</description>
+    </item>
+    
+    <item>
       <title>Component evaluation</title>
       <link>http://qbec.io/reference/component-evaluation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
