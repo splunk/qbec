@@ -96,8 +96,8 @@ func TestEvalComponents(t *testing.T) {
 	},
 		decorate(Context{
 			Verbose:          true,
-			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet"},
-			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet"},
+			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet", "testdata/components/pp/pp2.jsonnet"},
+			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet", "testdata/components/pp/std-map2.jsonnet"},
 		}),
 		producer,
 	)
@@ -110,6 +110,7 @@ func TestEvalComponents(t *testing.T) {
 		a.Equal("dev", obj.Environment())
 		a.Equal("service2", obj.ToUnstructured().GetAnnotations()["team"])
 		a.Equal("#svc2", obj.ToUnstructured().GetAnnotations()["slack"])
+		a.Equal("bar", obj.ToUnstructured().GetLabels()["foo"])
 	}
 	obj := objs[0]
 	a.Equal("a", obj.Component())
@@ -125,7 +126,7 @@ func TestEvalComponents(t *testing.T) {
 
 	obj = objs[2]
 	a.Equal("c", obj.Component())
-	a.Equal("pp-name", obj.GetName())
+	a.Equal("pp-name.pp2-name", obj.GetName())
 	t.Log(obj)
 
 	obj = objs[3]

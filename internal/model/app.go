@@ -259,16 +259,10 @@ func (a *App) ParamsFile() string {
 }
 
 func splitPath(s string) []string {
-	splat := strings.Split(s, ":")
-	var ret []string
-	for _, s := range splat {
-		s = strings.Trim(s, " \t")
-		if s == "" {
-			continue
-		}
-		ret = append(ret, s)
+	if s == "" {
+		return nil
 	}
-	return ret
+	return strings.Split(s, ":")
 }
 
 // PreProcessors returns the files defined as preprocessors.
