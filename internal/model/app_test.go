@@ -234,6 +234,7 @@ func TestAppSimple(t *testing.T) {
 
 	a.Equal("params.libsonnet", app.ParamsFile())
 	a.Equal("pp.jsonnet", app.PostProcessor())
+	a.Equal("pre-proc.libsonnet", app.PreProcessor())
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 
 	envs := app.Environments()

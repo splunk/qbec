@@ -258,8 +258,8 @@ func (a *App) ParamsFile() string {
 	return a.inner.Spec.ParamsFile
 }
 
-// Preprocessor returns the file defined as a preprocessor.
-func (a *App) Preprocessor() string {
+// PreProcessor returns the file defined as a preprocessor.
+func (a *App) PreProcessor() string {
 	return a.inner.Spec.Preprocessor
 }
 
