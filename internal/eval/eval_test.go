@@ -95,9 +95,9 @@ func TestEvalComponents(t *testing.T) {
 		},
 	},
 		decorate(Context{
-			Verbose:         true,
-			PostProcessFile: "testdata/components/pp/pp.jsonnet",
-			PreProcessFile:  "testdata/components/pp/std-map.jsonnet",
+			Verbose:          true,
+			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet"},
+			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet"},
 		}),
 		producer,
 	)
@@ -240,7 +240,7 @@ func TestEvalComponentsEdges(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ret, err := evalComponents(test.components, decorate(Context{
 				Concurrency: test.concurrency,
-			}), postProc{}, producer)
+			}), nil, producer)
 			test.asserter(t, ret, err)
 		})
 	}
@@ -263,7 +263,7 @@ func TestEvalComponentsBadPostProcessor(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/good.json"},
 		},
-	}, decorate(Context{PostProcessFile: "foo/bar.jsonnet"}), producer)
+	}, decorate(Context{PostProcessFiles: []string{"foo/bar.jsonnet"}}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "read post-eval file:")
 }
@@ -274,7 +274,7 @@ func TestEvalComponentsBadPreProcessor(t *testing.T) {
 			Name:  "bad",
 			Files: []string{"testdata/components/good.json"},
 		},
-	}, decorate(Context{PreProcessFile: "foo/bar.jsonnet"}), producer)
+	}, decorate(Context{PreProcessFiles: []string{"foo/bar.jsonnet"}}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "read preprocessor file:")
 }
@@ -318,7 +318,7 @@ func TestEvalComponentsBadPostProc(t *testing.T) {
 			Name:  "bad-postproc",
 			Files: []string{"testdata/components/b.yaml"},
 		},
-	}, decorate(Context{PostProcessFile: "testdata/components/bad-pp.libsonnet"}), producer)
+	}, decorate(Context{PostProcessFiles: []string{"testdata/components/bad-pp.libsonnet"}}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `post-eval did not return an object`)
 }
@@ -329,7 +329,7 @@ func TestEvalComponentsBadPreProc(t *testing.T) {
 			Name:  "bad-preproc",
 			Files: []string{"testdata/components/b.yaml"},
 		},
-	}, decorate(Context{PreProcessFile: "testdata/components/bad-prep.xsonnet"}), producer)
+	}, decorate(Context{PreProcessFiles: []string{"testdata/components/bad-prep.xsonnet"}}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `preprocessor eval:`)
 }

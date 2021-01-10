@@ -258,14 +258,27 @@ func (a *App) ParamsFile() string {
 	return a.inner.Spec.ParamsFile
 }
 
-// PreProcessor returns the file defined as a preprocessor.
-func (a *App) PreProcessor() string {
-	return a.inner.Spec.Preprocessor
+func splitPath(s string) []string {
+	splat := strings.Split(s, ":")
+	var ret []string
+	for _, s := range splat {
+		s = strings.Trim(s, " \t")
+		if s == "" {
+			continue
+		}
+		ret = append(ret, s)
+	}
+	return ret
 }
 
-// PostProcessor returns the post processor file for the app or the empty string if not defined.
-func (a *App) PostProcessor() string {
-	return a.inner.Spec.PostProcessor
+// PreProcessors returns the files defined as preprocessors.
+func (a *App) PreProcessors() []string {
+	return splitPath(a.inner.Spec.Preprocessor)
+}
+
+// PostProcessors returns the post processor files for the app.
+func (a *App) PostProcessors() []string {
+	return splitPath(a.inner.Spec.PostProcessor)
 }
 
 // LibPaths returns the library paths set up for the app.

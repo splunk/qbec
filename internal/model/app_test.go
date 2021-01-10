@@ -233,8 +233,8 @@ func TestAppSimple(t *testing.T) {
 	require.Error(t, err)
 
 	a.Equal("params.libsonnet", app.ParamsFile())
-	a.Equal("pp.jsonnet", app.PostProcessor())
-	a.Equal("pre-proc.libsonnet", app.PreProcessor())
+	a.EqualValues([]string{"pp.jsonnet"}, app.PostProcessors())
+	a.EqualValues([]string{"pre-proc.libsonnet"}, app.PreProcessors())
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 
 	envs := app.Environments()

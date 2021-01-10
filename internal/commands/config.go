@@ -293,11 +293,11 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		model.QbecNames.EnvPropsVarName: string(p),
 	})
 	return eval.Context{
-		VMConfig:        func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
-		Verbose:         c.Verbosity() > 1,
-		Concurrency:     c.EvalConcurrency(),
-		PreProcessFile:  c.App().PreProcessor(),
-		PostProcessFile: c.App().PostProcessor(),
+		VMConfig:         func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
+		Verbose:          c.Verbosity() > 1,
+		Concurrency:      c.EvalConcurrency(),
+		PreProcessFiles:  c.App().PreProcessors(),
+		PostProcessFiles: c.App().PostProcessors(),
 	}
 }
 
