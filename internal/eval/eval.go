@@ -85,9 +85,6 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", p.file))
 	}
-	if data == nil {
-		return nil, nil
-	}
 	t, ok := data.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("post-eval did not return an object, %s", evalCode)
@@ -295,12 +292,10 @@ func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectP
 		if err != nil {
 			return nil, err
 		}
-		if proc != nil {
-			if err := model.AssertMetadataValid(proc); err != nil {
-				return nil, err
-			}
-			processed = append(processed, lop(c.Name, proc))
+		if err := model.AssertMetadataValid(proc); err != nil {
+			return nil, err
 		}
+		processed = append(processed, lop(c.Name, proc))
 	}
 	return processed, nil
 }
