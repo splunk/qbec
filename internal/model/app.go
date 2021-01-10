@@ -258,6 +258,11 @@ func (a *App) ParamsFile() string {
 	return a.inner.Spec.ParamsFile
 }
 
+// PreProcessor returns the file defined as a preprocessor.
+func (a *App) PreProcessor() string {
+	return a.inner.Spec.Preprocessor
+}
+
 // PostProcessor returns the post processor file for the app or the empty string if not defined.
 func (a *App) PostProcessor() string {
 	return a.inner.Spec.PostProcessor

@@ -296,6 +296,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		VMConfig:        func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
 		Verbose:         c.Verbosity() > 1,
 		Concurrency:     c.EvalConcurrency(),
+		PreProcessFile:  c.App().PreProcessor(),
 		PostProcessFile: c.App().PostProcessor(),
 	}
 }
