@@ -1,6 +1,32 @@
 Changelog
 ---
 
+## v0.13.4
+
+a.k.a the "scale" release. This release mainly contains enhancements that allow qbec to be used at scale on
+large monorepos and/ or when deploying to tens of clusters.
+
+This release has no backwards-incompatible changes.
+
+* update the glob importer to support `**` patterns. Glob references are now matched using the
+  [doublestar library](https://github.com/bmatcuk/doublestar)
+* Add a native function `labelsMatchSelector` to expose K8s label matching in jsonnet code
+* Allow `componentsDir` to be a glob as opposed to a single directory. This change makes qbec load components
+  from potentially multiple directories but does not introduce any namespace semantics. Components must still be
+  uniquely named across all such directories. It is only useful for compartmentalizing files in a monorepo
+  where different directories have different code owners.
+* Add support for pre-processors. A pre-processor is some jsonnet code that is evaluated before any components is.
+  The return value of every such preprocessor is set as the external code variable called `computed.qbec.io/<base-name>`
+  where `<base-name>` is the base name of the preprocessor file without its extension. This variable is available for
+  use in component code. This allows for caching values that are costly to compute.
+* qbec now sets the `qbec.io/component` external variable when it evaluates components, pre- and post-processors.
+  This may be used in component code to key into a params object, for example. For pre- and post-processors,
+  the component name is set to `<pre|post>processor.qbec.io/<base-name>` where `<base-name>` has the same semantics
+  as described above.
+* Allow multiple pre- and post-processors. The qbec.yaml attributes, `preProcessor` and `postProcessor` although
+  singular, can be set to a list of files separated by `:`. Attribute names will be fixed to be in plural form and
+  accept an array of strings in a future, backwards-incompatible release.
+
 ## v0.13.3 (Dec 23, 2020)
 
 * Add ability to add the component name as a label in addition to the existing annotation. This is opt-in and is activated
