@@ -25,10 +25,10 @@ const QBECDirectivesNamespace = "directives.qbec.io/"
 // QBECComputedNamespace is the leading paths for all preprocessing computations done.
 const QBECComputedNamespace = "computed.qbec.io/"
 
-// the namespace to be assigned to the pseudo preprocessor component
+// QBECPreprocessorNamespace is the namespace to be assigned to the pseudo preprocessor component
 const QBECPreprocessorNamespace = "preprocessor.qbec.io/"
 
-// the namespace to be assigned to the pseudo postprocessor component
+// QBECPostprocessorNamespace is the namespace to be assigned to the pseudo postprocessor component
 const QBECPostprocessorNamespace = "postprocessor.qbec.io/"
 
 // Directives is the list of directive names we support.

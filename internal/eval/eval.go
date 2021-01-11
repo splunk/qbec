@@ -134,7 +134,7 @@ func (c *Context) runPreprocessors() error {
 		jvm := c.vm(model.QBECPreprocessorNamespace+procName, nil)
 		evalCode, err := jvm.EvaluateSnippet(file, string(b))
 		if err != nil {
-			return errors.Wrap(err, "preprocessor eval")
+			return errors.Wrapf(err, "preprocessor eval %s", file)
 		}
 		fn := c.VMConfig
 		name := model.QBECComputedNamespace + procName

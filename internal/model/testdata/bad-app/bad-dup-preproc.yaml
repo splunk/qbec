@@ -1,0 +1,10 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: bad-pre-proc
+spec:
+  preProcessor: lib/foo.jsonnet:lib2/foo.jsonnet
+  environments:
+    prod:
+      server: http://baseline-server
+

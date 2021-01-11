@@ -332,7 +332,7 @@ func TestEvalComponentsBadPreProc(t *testing.T) {
 		},
 	}, decorate(Context{PreProcessFiles: []string{"testdata/components/bad-prep.xsonnet"}}), producer)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), `preprocessor eval:`)
+	require.Contains(t, err.Error(), `preprocessor eval testdata/components/bad-prep.xsonnet:`)
 }
 
 func TestEvalPostProcessor(t *testing.T) {

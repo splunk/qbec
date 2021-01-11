@@ -1,0 +1,10 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: bad-post-proc
+spec:
+  postProcessor: lib/foo.jsonnet:lib2/foo.jsonnet
+  environments:
+    prod:
+      server: http://baseline-server
+

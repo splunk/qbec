@@ -204,6 +204,9 @@ func NewApp(file string, envFiles []string, tag string) (*App, error) {
 	if err := app.verifyVariables(); err != nil {
 		return nil, err
 	}
+	if err := app.verifyProcessors(); err != nil {
+		return nil, err
+	}
 
 	app.updateComponentTopLevelVars()
 
@@ -644,6 +647,37 @@ func (a *App) verifyVariables() error {
 			return fmt.Errorf("duplicate external variable %s", v.Name)
 		}
 		seenVar[v.Name] = true
+	}
+	return nil
+}
+
+func baseName(file string) string {
+	base := filepath.Base(file)
+	pos := strings.LastIndex(base, ".")
+	if pos > 0 {
+		base = base[:pos]
+	}
+	return base
+}
+
+func checkProcessors(pType string, files []string) error {
+	seen := map[string]string{}
+	for _, file := range files {
+		b := baseName(file)
+		if seen[b] != "" {
+			return fmt.Errorf("invalid %s-processor '%s', has the same base name as '%s'", pType, file, seen[b])
+		}
+		seen[b] = file
+	}
+	return nil
+}
+
+func (a *App) verifyProcessors() error {
+	if err := checkProcessors("pre", a.PreProcessors()); err != nil {
+		return err
+	}
+	if err := checkProcessors("post", a.PostProcessors()); err != nil {
+		return err
 	}
 	return nil
 }

@@ -522,6 +522,18 @@ func TestAppNegative(t *testing.T) {
 				assert.Contains(t, err.Error(), "verify environment foo: context for environment ('__current__') may not start with __")
 			},
 		},
+		{
+			file: "bad-dup-preproc.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid pre-processor 'lib2/foo.jsonnet', has the same base name as 'lib/foo.jsonnet'")
+			},
+		},
+		{
+			file: "bad-dup-postproc.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid post-processor 'lib2/foo.jsonnet', has the same base name as 'lib/foo.jsonnet'")
+			},
+		},
 	}
 
 	for _, test := range tests {
