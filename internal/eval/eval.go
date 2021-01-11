@@ -63,9 +63,6 @@ type postProc struct {
 }
 
 func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error) {
-	if p.code == "" {
-		return obj, nil
-	}
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
