@@ -1,7 +1,7 @@
 Changelog
 ---
 
-## v0.13.4
+## v0.13.4 (Jan 11, 2021)
 
 a.k.a the "scale" release. This release mainly contains enhancements that allow qbec to be used at scale on
 large monorepos and/ or when deploying to tens of clusters.
