@@ -63,9 +63,6 @@ type postProc struct {
 }
 
 func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error) {
-	if p.code == "" {
-		return obj, nil
-	}
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
@@ -97,11 +94,11 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	VMConfig        VMConfigFunc // the base VM config to use for eval
-	Verbose         bool         // show generated code
-	Concurrency     int          // concurrent components to evaluate, default 5
-	PreProcessFile  string       // preprocessor file that is evaluated if present
-	PostProcessFile string       // the file that contains post-processing code for all objects
+	VMConfig         VMConfigFunc // the base VM config to use for eval
+	Verbose          bool         // show generated code
+	Concurrency      int          // concurrent components to evaluate, default 5
+	PreProcessFiles  []string     // preprocessor files that are evaluated if present
+	PostProcessFiles []string     // files that contains post-processing code for all objects
 }
 
 func (c Context) baseVMConfig(componentName string, tlas []string) vm.Config {
@@ -124,45 +121,45 @@ func (c *Context) initDefaults() {
 	}
 }
 
-func (c *Context) runPreprocessor() error {
-	if c.PreProcessFile == "" {
-		return nil
-	}
-	b, err := ioutil.ReadFile(c.PreProcessFile)
-	if err != nil {
-		return errors.Wrap(err, "read preprocessor file")
-	}
-	procName := baseName(c.PreProcessFile)
-	jvm := c.vm(model.QBECPreprocessorNamespace+procName, nil)
-	evalCode, err := jvm.EvaluateSnippet(c.PreProcessFile, string(b))
-	if err != nil {
-		return errors.Wrap(err, "preprocessor eval")
-	}
-	fn := c.VMConfig
-	name := model.QBECComputedNamespace + procName
-	sio.Debugln("setting external variable", name)
-	c.VMConfig = func(tlas []string) vm.Config {
-		ret := fn(tlas)
-		return ret.WithCodeVars(map[string]string{
-			name: evalCode,
-		})
+func (c *Context) runPreprocessors() error {
+	for _, file := range c.PreProcessFiles {
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			return errors.Wrap(err, "read preprocessor file")
+		}
+		procName := baseName(file)
+		jvm := c.vm(model.QBECPreprocessorNamespace+procName, nil)
+		evalCode, err := jvm.EvaluateSnippet(file, string(b))
+		if err != nil {
+			return errors.Wrapf(err, "preprocessor eval %s", file)
+		}
+		fn := c.VMConfig
+		name := model.QBECComputedNamespace + procName
+		sio.Debugln("setting external variable", name)
+		c.VMConfig = func(tlas []string) vm.Config {
+			ret := fn(tlas)
+			return ret.WithCodeVars(map[string]string{
+				name: evalCode,
+			})
+		}
 	}
 	return nil
 }
 
-func (c Context) postProcessor() (postProc, error) {
-	if c.PostProcessFile == "" {
-		return postProc{}, nil
+func (c Context) postProcessors() ([]postProc, error) {
+	var ret []postProc
+	for _, file := range c.PostProcessFiles {
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, errors.Wrap(err, "read post-eval file")
+		}
+		ret = append(ret, postProc{
+			ctx:  c,
+			code: string(b),
+			file: file,
+		})
 	}
-	b, err := ioutil.ReadFile(c.PostProcessFile)
-	if err != nil {
-		return postProc{}, errors.Wrap(err, "read post-eval file")
-	}
-	return postProc{
-		ctx:  c,
-		code: string(b),
-		file: c.PostProcessFile,
-	}, nil
+	return ret, nil
 }
 
 var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
@@ -177,11 +174,11 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 		}
 	}()
 	ctx.initDefaults()
-	err := ctx.runPreprocessor()
+	err := ctx.runPreprocessors()
 	if err != nil {
 		return nil, err
 	}
-	pe, err := ctx.postProcessor()
+	pe, err := ctx.postProcessors()
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +240,7 @@ func evaluationCode(file string) (string, string, error) {
 	return inputCode, contextFile, nil
 }
 
-func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
+func evalComponent(ctx Context, c model.Component, pe []postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	jvm := ctx.vm(c.Name, c.TopLevelVars)
 	var inputCode string
 	var contextFile string
@@ -286,9 +283,20 @@ func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectP
 		return nil, errors.Wrap(err, "extract objects")
 	}
 
+	runPostProcessors := func(obj map[string]interface{}) (map[string]interface{}, error) {
+		var err error
+		for _, pp := range pe {
+			obj, err = pp.run(obj)
+			if err != nil {
+				return nil, errors.Wrapf(err, "run post-processor %s", pp.file)
+			}
+		}
+		return obj, nil
+	}
+
 	var processed []model.K8sLocalObject
 	for _, o := range objs {
-		proc, err := pe.run(o)
+		proc, err := runPostProcessors(o)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +308,7 @@ func evalComponent(ctx Context, c model.Component, pe postProc, lop LocalObjectP
 	return processed, nil
 }
 
-func evalComponents(list []model.Component, ctx Context, pe postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
+func evalComponents(list []model.Component, ctx Context, pe []postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
 	var ret []model.K8sLocalObject
 	if len(list) == 0 {
 		return ret, nil

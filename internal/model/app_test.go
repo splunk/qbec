@@ -233,8 +233,8 @@ func TestAppSimple(t *testing.T) {
 	require.Error(t, err)
 
 	a.Equal("params.libsonnet", app.ParamsFile())
-	a.Equal("pp.jsonnet", app.PostProcessor())
-	a.Equal("pre-proc.libsonnet", app.PreProcessor())
+	a.EqualValues([]string{"pp.jsonnet"}, app.PostProcessors())
+	a.EqualValues([]string{"pre-proc.libsonnet"}, app.PreProcessors())
 	a.EqualValues([]string{"lib"}, app.LibPaths())
 
 	envs := app.Environments()
@@ -520,6 +520,18 @@ func TestAppNegative(t *testing.T) {
 			file: "bad-env-config3.yaml",
 			asserter: func(t *testing.T, err error) {
 				assert.Contains(t, err.Error(), "verify environment foo: context for environment ('__current__') may not start with __")
+			},
+		},
+		{
+			file: "bad-dup-preproc.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid pre-processor 'lib2/foo.jsonnet', has the same base name as 'lib/foo.jsonnet'")
+			},
+		},
+		{
+			file: "bad-dup-postproc.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "invalid post-processor 'lib2/foo.jsonnet', has the same base name as 'lib/foo.jsonnet'")
 			},
 		},
 	}

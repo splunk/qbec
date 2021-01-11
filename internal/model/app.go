@@ -204,6 +204,9 @@ func NewApp(file string, envFiles []string, tag string) (*App, error) {
 	if err := app.verifyVariables(); err != nil {
 		return nil, err
 	}
+	if err := app.verifyProcessors(); err != nil {
+		return nil, err
+	}
 
 	app.updateComponentTopLevelVars()
 
@@ -258,14 +261,21 @@ func (a *App) ParamsFile() string {
 	return a.inner.Spec.ParamsFile
 }
 
-// PreProcessor returns the file defined as a preprocessor.
-func (a *App) PreProcessor() string {
-	return a.inner.Spec.Preprocessor
+func splitPath(s string) []string {
+	if s == "" {
+		return nil
+	}
+	return strings.Split(s, ":")
 }
 
-// PostProcessor returns the post processor file for the app or the empty string if not defined.
-func (a *App) PostProcessor() string {
-	return a.inner.Spec.PostProcessor
+// PreProcessors returns the files defined as preprocessors.
+func (a *App) PreProcessors() []string {
+	return splitPath(a.inner.Spec.Preprocessor)
+}
+
+// PostProcessors returns the post processor files for the app.
+func (a *App) PostProcessors() []string {
+	return splitPath(a.inner.Spec.PostProcessor)
 }
 
 // LibPaths returns the library paths set up for the app.
@@ -637,6 +647,37 @@ func (a *App) verifyVariables() error {
 			return fmt.Errorf("duplicate external variable %s", v.Name)
 		}
 		seenVar[v.Name] = true
+	}
+	return nil
+}
+
+func baseName(file string) string {
+	base := filepath.Base(file)
+	pos := strings.LastIndex(base, ".")
+	if pos > 0 {
+		base = base[:pos]
+	}
+	return base
+}
+
+func checkProcessors(pType string, files []string) error {
+	seen := map[string]string{}
+	for _, file := range files {
+		b := baseName(file)
+		if seen[b] != "" {
+			return fmt.Errorf("invalid %s-processor '%s', has the same base name as '%s'", pType, file, seen[b])
+		}
+		seen[b] = file
+	}
+	return nil
+}
+
+func (a *App) verifyProcessors() error {
+	if err := checkProcessors("pre", a.PreProcessors()); err != nil {
+		return err
+	}
+	if err := checkProcessors("post", a.PostProcessors()); err != nil {
+		return err
 	}
 	return nil
 }
