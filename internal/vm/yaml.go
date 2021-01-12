@@ -6,7 +6,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func parseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
+// ParseYAMLDocuments parses the contents of the reader into an array of
+// objects, one for each non-nuil document in the input.
+func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 	ret := []interface{}{}
 	d := yaml.NewYAMLToJSONDecoder(reader)
 	for {

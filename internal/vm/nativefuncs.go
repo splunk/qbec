@@ -54,7 +54,7 @@ func registerNativeFuncs(vm *jsonnet.VM) {
 		Params: []ast.Identifier{"yaml"},
 		Func: func(args []interface{}) (res interface{}, err error) {
 			data := []byte(args[0].(string))
-			return parseYAMLDocuments(bytes.NewReader(data))
+			return ParseYAMLDocuments(bytes.NewReader(data))
 		},
 	})
 

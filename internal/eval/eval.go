@@ -18,9 +18,11 @@
 package eval
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -58,7 +60,6 @@ func baseName(file string) string {
 
 type postProc struct {
 	ctx  Context
-	code string
 	file string
 }
 
@@ -73,7 +74,7 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 	})
 
 	jvm := vm.New(cfg)
-	evalCode, err := jvm.EvaluateSnippet(p.file, p.code)
+	evalCode, err := p.ctx.evalFile(jvm, p.file)
 	if err != nil {
 		return nil, errors.Wrap(err, "post-eval object")
 	}
@@ -121,15 +122,22 @@ func (c *Context) initDefaults() {
 	}
 }
 
+func (c *Context) evalFile(jvm *vm.VM, file string) (json string, err error) {
+	s, err := os.Stat(file)
+	if err != nil {
+		return "", err
+	}
+	if s.IsDir() {
+		return "", fmt.Errorf("file '%s' was a directory", file)
+	}
+	file = filepath.ToSlash(file)
+	return jvm.EvaluateFile(file)
+}
+
 func (c *Context) runPreprocessors() error {
 	for _, file := range c.PreProcessFiles {
-		b, err := ioutil.ReadFile(file)
-		if err != nil {
-			return errors.Wrap(err, "read preprocessor file")
-		}
 		procName := baseName(file)
-		jvm := c.vm(model.QBECPreprocessorNamespace+procName, nil)
-		evalCode, err := jvm.EvaluateSnippet(file, string(b))
+		evalCode, err := c.evalFile(c.vm(model.QBECPreprocessorNamespace+procName, nil), file)
 		if err != nil {
 			return errors.Wrapf(err, "preprocessor eval %s", file)
 		}
@@ -149,13 +157,8 @@ func (c *Context) runPreprocessors() error {
 func (c Context) postProcessors() ([]postProc, error) {
 	var ret []postProc
 	for _, file := range c.PostProcessFiles {
-		b, err := ioutil.ReadFile(file)
-		if err != nil {
-			return nil, errors.Wrap(err, "read post-eval file")
-		}
 		ret = append(ret, postProc{
 			ctx:  c,
-			code: string(b),
 			file: file,
 		})
 	}
@@ -201,12 +204,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
 	ctx.initDefaults()
-	jvm := ctx.vm("", nil)
-	code := fmt.Sprintf("import '%s'", file)
-	if ctx.Verbose {
-		sio.Debugln("Eval params:\n" + code)
-	}
-	output, err := jvm.EvaluateSnippet("param-loader.jsonnet", code)
+	output, err := ctx.evalFile(ctx.vm("", nil), file)
 	if err != nil {
 		return nil, err
 	}
@@ -220,65 +218,62 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 	return ret, nil
 }
 
-func evaluationCode(file string) (string, string, error) {
-	var inputCode string
-	contextFile := file
+type evalFn func(file string, component string, tlas []string) (interface{}, error)
+
+func evaluationCode(c Context, file string) evalFn {
 	switch {
 	case strings.HasSuffix(file, ".yaml"):
-		inputCode = fmt.Sprintf("std.native('parseYaml')(importstr '%s')", file)
-		contextFile = "yaml-loader.jsonnet"
-	case strings.HasSuffix(file, ".json"):
-		inputCode = fmt.Sprintf("std.native('parseJson')(importstr '%s')", file)
-		contextFile = "json-loader.jsonnet"
-	default:
-		b, err := ioutil.ReadFile(file)
-		if err != nil {
-			return "", "", errors.Wrap(err, "read inputCode for "+file)
+		return func(file string, component string, tlas []string) (interface{}, error) {
+			b, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			return vm.ParseYAMLDocuments(bytes.NewReader(b))
 		}
-		inputCode = string(b)
+	case strings.HasSuffix(file, ".json"):
+		return func(file string, component string, tlas []string) (interface{}, error) {
+			b, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, err
+			}
+			var data interface{}
+			if err := json.Unmarshal(b, &data); err != nil {
+				return nil, err
+			}
+			return data, nil
+		}
+	default:
+		return func(file string, component string, tlas []string) (interface{}, error) {
+			evalCode, err := c.evalFile(c.vm(component, tlas), file)
+			if err != nil {
+				return nil, err
+			}
+			var data interface{}
+			if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", file))
+			}
+			return data, nil
+		}
 	}
-	return inputCode, contextFile, nil
 }
 
 func evalComponent(ctx Context, c model.Component, pe []postProc, lop LocalObjectProducer) ([]model.K8sLocalObject, error) {
-	jvm := ctx.vm(c.Name, c.TopLevelVars)
-	var inputCode string
-	var contextFile string
-	var canonicalFiles []string
-	for _, f := range c.Files {
-		canonicalFiles = append(canonicalFiles, filepath.ToSlash(f))
-	}
-	switch {
-	case len(canonicalFiles) == 0:
-		return nil, fmt.Errorf("internal error: component %s did not have any files to evaluate", c.Name)
-	case len(canonicalFiles) > 1:
-		var lines []string
-		for _, file := range canonicalFiles {
-			code, _, err := evaluationCode(file)
-			if err != nil {
-				return nil, errors.Wrap(err, "eval code for "+file)
-			}
-			lines = append(lines, "["+code+"]")
-		}
-		inputCode = strings.Join(lines, "+\n")
-		contextFile = "multi-file-loader.jsonnet"
-	default:
-		var err error
-		inputCode, contextFile, err = evaluationCode(canonicalFiles[0])
+	var data []interface{}
+	for _, file := range c.Files {
+		fn := evaluationCode(ctx, file)
+		ret, err := fn(file, c.Name, c.TopLevelVars)
 		if err != nil {
-			return nil, errors.Wrap(err, "eval code for "+canonicalFiles[0])
+			return nil, errors.Wrapf(err, "evaluate '%s'", c.Name)
 		}
+		data = append(data, ret)
 	}
-	evalCode, err := jvm.EvaluateSnippet(contextFile, inputCode)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("evaluate '%s'", c.Name))
+	var evalData interface{}
+	if len(data) == 1 {
+		evalData = data[0]
+	} else {
+		evalData = data
 	}
-	var data interface{}
-	if err := json.Unmarshal([]byte(evalCode), &data); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", canonicalFiles[0]))
-	}
-
-	objs, err := walk(data)
+	objs, err := walk(evalData)
 	if err != nil {
 		return nil, errors.Wrap(err, "extract objects")
 	}

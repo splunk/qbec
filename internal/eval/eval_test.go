@@ -17,6 +17,10 @@
 package eval
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
@@ -262,11 +266,11 @@ func TestEvalComponentsBadPostProcessor(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
 			Name:  "bad",
-			Files: []string{"testdata/components/good.json"},
+			Files: []string{"testdata/components/a.json"},
 		},
 	}, decorate(Context{PostProcessFiles: []string{"foo/bar.jsonnet"}}), producer)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "read post-eval file:")
+	require.Contains(t, err.Error(), "run post-processor foo/bar.jsonnet:")
 }
 
 func TestEvalComponentsBadPreProcessor(t *testing.T) {
@@ -277,7 +281,7 @@ func TestEvalComponentsBadPreProcessor(t *testing.T) {
 		},
 	}, decorate(Context{PreProcessFiles: []string{"foo/bar.jsonnet"}}), producer)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "read preprocessor file:")
+	require.Contains(t, err.Error(), "preprocessor eval foo/bar.jsonnet:")
 }
 
 func TestEvalComponentsBadYaml(t *testing.T) {
@@ -389,7 +393,7 @@ func TestEvalPostProcessor(t *testing.T) {
 			code: `function (object) object2`,
 			asserter: func(t *testing.T, ret map[string]interface{}, err error) {
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), `post-eval object: pp.jsonnet:1`)
+				assert.Contains(t, err.Error(), `post-eval object:`)
 			},
 		},
 		{
@@ -402,10 +406,18 @@ func TestEvalPostProcessor(t *testing.T) {
 		},
 	}
 
+	tmpDir, err := ioutil.TempDir("", "pp*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	count := 0
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			count++
 			ctx := decorate(Context{})
-			pp := postProc{ctx: ctx, code: test.code, file: "pp.jsonnet"}
+			file := filepath.Join(tmpDir, fmt.Sprintf("f%03d.libsonnet", count))
+			err := ioutil.WriteFile(file, []byte(test.code), 0644)
+			require.NoError(t, err)
+			pp := postProc{ctx: ctx, file: file}
 			ret, err := pp.run(obj)
 			test.asserter(t, ret, err)
 		})
