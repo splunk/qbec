@@ -48,7 +48,8 @@ func TestIsJson(t *testing.T) {
 		{"testdata/qbec.yaml", false},
 		{"testdata/test.yml", false},
 		{"testdata", false},
-		{"testdata/test.json", true},
+		{"testdata/test.json", false},
+		{"testdata/test.json/test.json", true},
 		{"testdata/test.libsonnet", false},
 	}
 	for _, test := range tests {
@@ -76,7 +77,8 @@ func TestShouldFormat(t *testing.T) {
 		{"testdata/test.yml", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, files: []string{"testdata/test.yml"}}, true},
 		{"testdata", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true, "json": true, "yaml": true}}, false},
 		{"testdata/components/c1.jsonnet", fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}}, true},
-		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
+		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, false},
+		{"testdata/test.json/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
 	}
 	for _, test := range tests {
 		t.Run(test.fileName, func(t *testing.T) {
@@ -192,11 +194,11 @@ func TestFormatJsonnet(t *testing.T) {
 }
 
 func TestFormatJSON(t *testing.T) {
-	var testfile, err = ioutil.ReadFile("testdata/test.json")
+	var testfile, err = ioutil.ReadFile("testdata/test.json/test.json")
 	require.Nil(t, err)
 	o, err := formatJSON(testfile)
 	require.Nil(t, err)
-	e, err := ioutil.ReadFile("testdata/test.json.formatted")
+	e, err := ioutil.ReadFile("testdata/test.json/test.json.formatted")
 	require.Nil(t, err)
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
@@ -229,7 +231,7 @@ func TestProcessFile(t *testing.T) {
 	}{
 		{input: "testdata/test.libsonnet", output: "testdata/test.libsonnet.formatted"},
 		{input: "testdata/test.yml", output: "testdata/test.yml.formatted"},
-		{input: "testdata/test.json", output: "testdata/test.json.formatted"},
+		{input: "testdata/test.json/test.json", output: "testdata/test.json/test.json.formatted"},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
