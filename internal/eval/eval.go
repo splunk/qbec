@@ -18,10 +18,8 @@
 package eval
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -224,23 +222,21 @@ func evaluationCode(c Context, file string) evalFn {
 	switch {
 	case strings.HasSuffix(file, ".yaml"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			b, err := ioutil.ReadFile(file)
+			f, err := os.Open(file)
 			if err != nil {
 				return nil, err
 			}
-			return vm.ParseYAMLDocuments(bytes.NewReader(b))
+			defer f.Close()
+			return vm.ParseYAMLDocuments(f)
 		}
 	case strings.HasSuffix(file, ".json"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			b, err := ioutil.ReadFile(file)
+			f, err := os.Open(file)
 			if err != nil {
 				return nil, err
 			}
-			var data interface{}
-			if err := json.Unmarshal(b, &data); err != nil {
-				return nil, err
-			}
-			return data, nil
+			defer f.Close()
+			return vm.ParseJSON(f)
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {
