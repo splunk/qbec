@@ -7,7 +7,7 @@ import (
 )
 
 // ParseYAMLDocuments parses the contents of the reader into an array of
-// objects, one for each non-nuil document in the input.
+// objects, one for each non-null document in the input.
 func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 	ret := []interface{}{}
 	d := yaml.NewYAMLToJSONDecoder(reader)
