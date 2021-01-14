@@ -159,7 +159,7 @@ func (c *Context) runPreprocessors() error {
 	return nil
 }
 
-func (c Context) postProcessors() ([]postProc, error) {
+func (c Context) postProcessors() []postProc {
 	var ret []postProc
 	for _, file := range c.PostProcessFiles {
 		ret = append(ret, postProc{
@@ -167,10 +167,8 @@ func (c Context) postProcessors() ([]postProc, error) {
 			file: file,
 		})
 	}
-	return ret, nil
+	return ret
 }
-
-var defaultFunc = func(_ []string) vm.Config { return vm.Config{} }
 
 // Components evaluates the specified components using the specific runtime
 // parameters file and returns the result.
@@ -186,10 +184,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 	if err != nil {
 		return nil, err
 	}
-	pe, err := ctx.postProcessors()
-	if err != nil {
-		return nil, err
-	}
+	pe := ctx.postProcessors()
 	ret, err := evalComponents(components, ctx, pe, lop)
 	if err != nil {
 		return nil, err
@@ -225,11 +220,22 @@ func Params(file string, ctx Context) (map[string]interface{}, error) {
 
 type evalFn func(file string, component string, tlas []string) (interface{}, error)
 
+func openFile(file string) (*os.File, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("%s: file not found", file)
+		}
+		return nil, err
+	}
+	return f, nil
+}
+
 func evaluationCode(c Context, file string) evalFn {
 	switch {
 	case strings.HasSuffix(file, ".yaml"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			f, err := os.Open(file)
+			f, err := openFile(file)
 			if err != nil {
 				return nil, err
 			}
@@ -238,7 +244,7 @@ func evaluationCode(c Context, file string) evalFn {
 		}
 	case strings.HasSuffix(file, ".json"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			f, err := os.Open(file)
+			f, err := openFile(file)
 			if err != nil {
 				return nil, err
 			}
