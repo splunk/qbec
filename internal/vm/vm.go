@@ -43,6 +43,9 @@ type vm struct {
 func (v *vm) EvalFile(file string, vars VariableSet) (string, error) {
 	s, err := os.Stat(file)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("%s: file not found", file)
+		}
 		return "", err
 	}
 	if s.IsDir() {

@@ -39,7 +39,7 @@ func TestConfigCreate(t *testing.T) {
 		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
 		WithTopLevelCodeVars(map[string]string{"tlaBar": "true"}).
 		WithVars(map[string]string{"extFoo": "xxx"})
-	vmc := vm.Config{VariableSet: vs}
+	vmc := vm.Config{Variables: vs}
 
 	f := configFactory{
 		skipConfirm:     true,
@@ -75,7 +75,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	vs := vm.VariableSet{}.
 		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
 		WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
-	vmc := vm.Config{VariableSet: vs}
+	vmc := vm.Config{Variables: vs}
 	f := configFactory{
 		strictVars: true,
 	}
@@ -95,7 +95,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 		WithTopLevelVars(map[string]string{"tlaGargle": "xxx"}).
 		WithTopLevelCodeVars(map[string]string{"tlaBurble": "true"}).
 		WithCodeVars(map[string]string{"extSomethingElse": "some-other-thing"})
-	vmc := vm.Config{VariableSet: vs}
+	vmc := vm.Config{Variables: vs}
 	f := configFactory{
 		strictVars: true,
 	}

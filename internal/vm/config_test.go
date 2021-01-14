@@ -72,7 +72,7 @@ func TestConfigBasic(t *testing.T) {
 				return err
 			}
 			cfg := cfg.WithLibPaths([]string{"testdata/lib2"})
-			vars := cfg.VariableSet.WithVars(map[string]string{"inlineStr": "ifoo"}).
+			vars := cfg.Variables.WithVars(map[string]string{"inlineStr": "ifoo"}).
 				WithCodeVars(map[string]string{"inlineCode": "true"})
 			jvm := newJsonnetVM(cfg.LibPaths)
 			vars.register(jvm)
@@ -128,7 +128,7 @@ func TestConfigShorthands(t *testing.T) {
 				return err
 			}
 			cfg = cfg.WithLibPaths([]string{"testdata/lib2"})
-			vars := cfg.VariableSet.
+			vars := cfg.Variables.
 				WithVars(map[string]string{"inlineStr": "ifoo"}).
 				WithCodeVars(map[string]string{"inlineCode": "true"})
 			jvm := newJsonnetVM(cfg.LibPaths)
@@ -186,7 +186,7 @@ func TestConfigNegative(t *testing.T) {
 					return err
 				}
 				jvm := newJsonnetVM(cfg.LibPaths)
-				cfg.VariableSet.register(jvm)
+				cfg.Variables.register(jvm)
 				if code == "" {
 					code = "{}"
 				}

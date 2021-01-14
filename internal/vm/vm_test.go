@@ -15,3 +15,40 @@
 */
 
 package vm
+
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestVMEvalFile(t *testing.T) {
+	vm := New([]string{"testdata/vmlib"})
+	out, err := vm.EvalFile("testdata/vmtest.jsonnet", VariableSet{}.WithVars(map[string]string{"foo": "fooVal"}).
+		WithCodeVars(map[string]string{"bar": "true"}))
+	require.NoError(t, err)
+	var data struct {
+		Foo string `json:"foo"`
+		Bar bool   `json:"bar"`
+	}
+	err = json.Unmarshal([]byte(out), &data)
+	require.NoError(t, err)
+	assert.Equal(t, "fooVal", data.Foo)
+	assert.True(t, data.Bar)
+}
+
+func TestVMEvalNonExistentFile(t *testing.T) {
+	vm := New(nil)
+	_, err := vm.EvalFile("testdata/does-not-exist.jsonnet", VariableSet{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "testdata/does-not-exist.jsonnet: file not found")
+}
+
+func TestVMEvalDir(t *testing.T) {
+	vm := New(nil)
+	_, err := vm.EvalFile("testdata", VariableSet{})
+	require.Error(t, err)
+	assert.Equal(t, err.Error(), "file 'testdata' was a directory")
+}

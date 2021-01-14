@@ -198,10 +198,10 @@ func (c *config) init(strict bool) error {
 	var msgs []string
 	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
 
-	vars := c.vmc.Vars()
-	codeVars := c.vmc.CodeVars()
-	tlaVars := c.vmc.TopLevelVars()
-	tlaCodeVars := c.vmc.TopLevelCodeVars()
+	vars := c.vmc.Variables.Vars()
+	codeVars := c.vmc.Variables.CodeVars()
+	tlaVars := c.vmc.Variables.TopLevelVars()
+	tlaCodeVars := c.vmc.Variables.TopLevelCodeVars()
 
 	declaredExternals := c.app.DeclaredVars()
 	declaredTLAs := c.app.DeclaredTopLevelVars()
@@ -223,9 +223,9 @@ func (c *config) init(strict bool) error {
 		// check that all declared variables have been specified
 		var fn func(string) bool
 		if tla {
-			fn = c.vmc.HasTopLevelVar
+			fn = c.vmc.Variables.HasTopLevelVar
 		} else {
-			fn = c.vmc.HasVar
+			fn = c.vmc.Variables.HasVar
 		}
 		for k := range declared {
 			ok := fn(k)
@@ -247,7 +247,7 @@ func (c *config) init(strict bool) error {
 	addStrings, addCodes := map[string]string{}, map[string]string{}
 
 	for k, v := range declaredExternals {
-		if c.vmc.HasVar(k) {
+		if c.vmc.Variables.HasVar(k) {
 			continue
 		}
 		if v == nil {
@@ -265,10 +265,10 @@ func (c *config) init(strict bool) error {
 			addCodes[k] = string(b)
 		}
 	}
-	variables := c.vmc.VariableSet.WithVars(addStrings).WithCodeVars(addCodes)
+	variables := c.vmc.Variables.WithVars(addStrings).WithCodeVars(addCodes)
 	c.vmc = vm.Config{
-		VariableSet: variables,
-		LibPaths:    c.vmc.LibPaths,
+		Variables: variables,
+		LibPaths:  c.vmc.LibPaths,
 	}
 	return nil
 }
@@ -286,7 +286,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if c.cleanEvalMode {
 		cm = "on"
 	}
-	baseVars := c.vmc.VariableSet.WithVars(map[string]string{
+	baseVars := c.vmc.Variables.WithVars(map[string]string{
 		model.QbecNames.EnvVarName:       env,
 		model.QbecNames.TagVarName:       c.app.Tag(),
 		model.QbecNames.DefaultNsVarName: c.app.DefaultNamespace(env),

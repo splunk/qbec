@@ -44,7 +44,7 @@ func main() {
 				}
 				jvm := vm.New(config.LibPaths)
 				file := args[0]
-				str, err := jvm.EvalFile(file, config.VariableSet)
+				str, err := jvm.EvalFile(file, config.Variables)
 				if err != nil {
 					return err
 				}

@@ -30,13 +30,13 @@ import (
 
 // Config is the desired configuration of the Jsonnet VM.
 type Config struct {
-	VariableSet
-	LibPaths []string // library paths in filesystem for the file importer
+	Variables VariableSet
+	LibPaths  []string // library paths in filesystem for the file importer
 }
 
 // WithLibPaths returns a config with additional library paths.
 func (c Config) WithLibPaths(paths []string) Config {
-	return Config{VariableSet: c.VariableSet, LibPaths: append(c.LibPaths, paths...)}
+	return Config{Variables: c.Variables, LibPaths: append(c.LibPaths, paths...)}
 }
 
 type strFiles struct {
@@ -145,16 +145,16 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts boo
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")
 
 	return func() (c Config, err error) {
-		if c.vars, err = getValues("ext-str", extStrings); err != nil {
+		if c.Variables.vars, err = getValues("ext-str", extStrings); err != nil {
 			return
 		}
-		if c.codeVars, err = getValues("ext-code", extCodes); err != nil {
+		if c.Variables.codeVars, err = getValues("ext-code", extCodes); err != nil {
 			return
 		}
-		if c.topLevelVars, err = getValues("tla-str", tlaStrings); err != nil {
+		if c.Variables.topLevelVars, err = getValues("tla-str", tlaStrings); err != nil {
 			return
 		}
-		if c.topLevelCodeVars, err = getValues("tla-code", tlaCodes); err != nil {
+		if c.Variables.topLevelCodeVars, err = getValues("tla-code", tlaCodes); err != nil {
 			return
 		}
 		c.LibPaths = paths
