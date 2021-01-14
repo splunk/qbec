@@ -3,6 +3,8 @@ package importers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/google/go-jsonnet"
@@ -26,8 +28,17 @@ func makeVM() (*jsonnet.VM, *GlobImporter) {
 
 type outputData map[string]interface{}
 
+func generateFile(t *testing.T, virtFile string, code string) (outFile string) {
+	file := virtFile + ".generated"
+	err := ioutil.WriteFile(file, []byte(code), 0644)
+	require.NoError(t, err)
+	return file
+}
+
 func evaluateVirtual(t *testing.T, vm *jsonnet.VM, virtFile string, code string) outputData {
-	jsonStr, err := vm.EvaluateSnippet(virtFile, code)
+	file := generateFile(t, virtFile, code)
+	defer os.Remove(file)
+	jsonStr, err := vm.EvaluateFile(file)
 	require.NoError(t, err)
 	t.Logf("input from '%s'\n%s\noutput:%s\n", virtFile, code, jsonStr)
 	var data outputData
@@ -37,8 +48,10 @@ func evaluateVirtual(t *testing.T, vm *jsonnet.VM, virtFile string, code string)
 }
 
 func evaluateVirtualErr(t *testing.T, virtFile string, code string) error {
+	file := generateFile(t, virtFile, code)
+	defer os.Remove(file)
 	vm, _ := makeVM()
-	_, err := vm.EvaluateSnippet(virtFile, code)
+	_, err := vm.EvaluateFile(file)
 	require.Error(t, err)
 	return err
 }
@@ -96,7 +109,9 @@ func TestGlobNoMatch(t *testing.T) {
 
 func TestGlobImportStr(t *testing.T) {
 	vm, _ := makeVM()
-	data, err := vm.EvaluateSnippet("testdata/example1/caller/synthesized.jsonnet", `importstr 'glob-import:../*.json'`)
+	file := generateFile(t, "testdata/example1/caller/synthesized.jsonnet", `importstr 'glob-import:../*.json'`)
+	defer os.Remove(file)
+	data, err := vm.EvaluateFile(file)
 	require.NoError(t, err)
 	var str string
 	err = json.Unmarshal([]byte(data), &str)
@@ -131,7 +146,7 @@ func TestGlobInternalCaching(t *testing.T) {
 	a.Equal(1, len(gi.cache))
 	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized.jsonnet", `import 'glob-import:../../*.json'`)
 	a.Equal(2, len(gi.cache))
-	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized.jsonnet", `import 'glob-import:../../[a,b].json'`)
+	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized2.jsonnet", `import 'glob-import:../../[a,b].json'`)
 	a.Equal(3, len(gi.cache))
 }
 
