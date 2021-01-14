@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/testutil"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,17 +34,14 @@ func producer(component string, data map[string]interface{}) model.K8sLocalObjec
 }
 
 func decorate(ctx Context) Context {
-	fn := func(tlaVars []string) vm.Config {
-		return vm.Config{}.WithVars(map[string]string{
-			"qbec.io/tag":       "t1",
-			"qbec.io/env":       "dev",
-			"qbec.io/cleanMode": "off",
-			"qbec.io/defaultNs": "foobar",
-		}).WithCodeVars(map[string]string{
-			"qbec.io/envProperties": `{ foo: "bar"}`,
-		})
-	}
-	ctx.VMConfig = fn
+	ctx.Vars = ctx.Vars.WithVars(map[string]string{
+		"qbec.io/tag":       "t1",
+		"qbec.io/env":       "dev",
+		"qbec.io/cleanMode": "off",
+		"qbec.io/defaultNs": "foobar",
+	}).WithCodeVars(map[string]string{
+		"qbec.io/envProperties": `{ foo: "bar"}`,
+	})
 	return ctx
 }
 
@@ -97,16 +93,23 @@ func TestEvalComponents(t *testing.T) {
 				"testdata/components/d/subdir-cm2.json",
 			},
 		},
+		{
+			Name:         "tla",
+			Files:        []string{"testdata/components/tla.jsonnet"},
+			TopLevelVars: []string{"foo", "bar"},
+		},
 	},
 		decorate(Context{
 			Verbose:          true,
 			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet", "testdata/components/pp/pp2.jsonnet"},
 			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet", "testdata/components/pp/std-map2.jsonnet"},
+			Vars: vm.VariableSet{}.WithTopLevelVars(map[string]string{"foo": "foo"}).
+				WithTopLevelCodeVars(map[string]string{"bar": "true"}),
 		}),
 		producer,
 	)
 	require.Nil(t, err)
-	require.Equal(t, 5, len(objs))
+	require.Equal(t, 6, len(objs))
 	a := assert.New(t)
 
 	// ensure postprocessor is called everywhere
@@ -140,6 +143,10 @@ func TestEvalComponents(t *testing.T) {
 	obj = objs[4]
 	a.Equal("d", obj.Component())
 	a.Equal("subdir-config-map2", obj.GetName())
+
+	obj = objs[5]
+	a.Equal("tla", obj.Component())
+	a.Equal("tla-config-map", obj.GetName())
 }
 
 func TestEvalComponentsEdges(t *testing.T) {
@@ -207,7 +214,27 @@ func TestEvalComponentsEdges(t *testing.T) {
 			},
 			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
 				require.NotNil(t, err)
-				assert.Contains(t, err.Error(), testutil.FileNotFoundMessage)
+				assert.Contains(t, err.Error(), "file not found")
+			},
+		},
+		{
+			name: "bad YAML file",
+			components: []model.Component{
+				{Name: "e1", Files: []string{"testdata/bad-components/XXX.yaml"}},
+			},
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "file not found")
+			},
+		},
+		{
+			name: "bad JSON file",
+			components: []model.Component{
+				{Name: "e1", Files: []string{"testdata/bad-components/XXX.json"}},
+			},
+			asserter: func(t *testing.T, ret []model.K8sLocalObject, err error) {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), "file not found")
 			},
 		},
 		{

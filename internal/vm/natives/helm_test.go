@@ -1,10 +1,11 @@
-package vm
+package natives
 
 import (
 	"encoding/json"
 	"sort"
 	"testing"
 
+	"github.com/google/go-jsonnet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,25 +43,9 @@ type cmOrSecret struct {
 
 func TestHelmSimpleExpand(t *testing.T) {
 	a := assert.New(t)
-	jvm := New(Config{})
-	file := "./consumer.jsonnet"
-	inputCode := `
-local expandHelmTemplate = std.native('expandHelmTemplate');
-
-expandHelmTemplate(
-    './testdata/charts/foobar',
-    {
-        foo: 'barbar',
-    },
-    {
-        namespace: 'my-ns',
-        nameTemplate: 'my-name',
-        thisFile: std.thisFile,
-		verbose: true,
-    }
-)
-`
-	code, err := jvm.EvaluateSnippet(file, inputCode)
+	jvm := jsonnet.MakeVM()
+	Register(jvm)
+	code, err := jvm.EvaluateFile("./testdata/consumer.jsonnet")
 	require.Nil(t, err)
 
 	var output []cmOrSecret
@@ -89,24 +74,9 @@ expandHelmTemplate(
 
 func TestHelmBadRelative(t *testing.T) {
 	a := assert.New(t)
-	jvm := New(Config{})
-	file := "./consumer.jsonnet"
-	inputCode := `
-local expandHelmTemplate = std.native('expandHelmTemplate');
-
-expandHelmTemplate(
-    './testdata/charts/foobar',
-    {
-        foo: 'barbar',
-    },
-    {
-        namespace: 'my-ns',
-        name: 'my-name',
-		verbose: true,
-    }
-)
-`
-	_, err := jvm.EvaluateSnippet(file, inputCode)
+	jvm := jsonnet.MakeVM()
+	Register(jvm)
+	_, err := jvm.EvaluateFile("./testdata/bad-relative.jsonnet")
 	require.NotNil(t, err)
 	a.Contains(err.Error(), "exit status 1")
 }

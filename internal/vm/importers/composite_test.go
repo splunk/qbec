@@ -17,10 +17,10 @@ func TestCompositeImporter(t *testing.T) {
 			NewFileImporter(&jsonnet.FileImporter{}),
 		),
 	)
-	_, err := vm.EvaluateSnippet("testdata/example1/caller/caller.json", `import '../a.json'`)
+	_, err := vm.EvaluateFile("testdata/example1/caller/import-a.jsonnet")
 	require.NoError(t, err)
 
-	_, err = vm.EvaluateSnippet("testdata/example1/caller/caller.json", `import 'glob-import:../*.json'`)
+	_, err = vm.EvaluateFile("testdata/example1/caller/import-all-json.jsonnet")
 	require.NoError(t, err)
 
 	vm = jsonnet.MakeVM()
@@ -30,7 +30,7 @@ func TestCompositeImporter(t *testing.T) {
 			NewGlobImporter("importstr"),
 		),
 	)
-	_, err = vm.EvaluateSnippet("testdata/example1/caller/caller.json", `import '../bag-of-files/a.json'`)
+	_, err = vm.EvaluateAnonymousSnippet("testdata/example1/caller/caller.jsonnet", `import '../bag-of-files/a.json'`)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "RUNTIME ERROR: no importer for path ../bag-of-files/a.json")
 }

@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,13 +42,9 @@ func main() {
 				if err != nil {
 					return errors.Wrap(err, "create VM config")
 				}
-				jvm := vm.New(config)
+				jvm := vm.New(config.LibPaths)
 				file := args[0]
-				b, err := ioutil.ReadFile(file)
-				if err != nil {
-					return err
-				}
-				str, err := jvm.EvaluateSnippet(file, string(b))
+				str, err := jvm.EvalFile(file, config.Variables)
 				if err != nil {
 					return err
 				}

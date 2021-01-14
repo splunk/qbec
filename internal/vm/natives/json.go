@@ -1,4 +1,4 @@
-package vm
+package natives
 
 import (
 	"encoding/json"

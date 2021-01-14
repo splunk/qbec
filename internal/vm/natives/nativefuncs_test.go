@@ -13,7 +13,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package vm
+package natives
 
 import (
 	"fmt"
@@ -37,17 +37,17 @@ func check(t *testing.T, err error, actual, expected string) {
 
 func TestParseJson(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
-	_, err := vm.EvaluateSnippet("failtest", `std.native("parseJson")("barf{")`)
+	_, err := vm.EvaluateAnonymousSnippet("failtest", `std.native("parseJson")("barf{")`)
 	if err == nil {
 		t.Errorf("parseJson succeeded on invalid json")
 	}
 
-	x, err := vm.EvaluateSnippet("test", `std.native("parseJson")("null")`)
+	x, err := vm.EvaluateAnonymousSnippet("test", `std.native("parseJson")("null")`)
 	check(t, err, x, "null\n")
 
-	x, err = vm.EvaluateSnippet("test", `
+	x, err = vm.EvaluateAnonymousSnippet("test", `
     local a = std.native("parseJson")('{"foo": 3, "bar": 4}');
     a.foo + a.bar`)
 	check(t, err, x, "7\n")
@@ -55,22 +55,22 @@ func TestParseJson(t *testing.T) {
 
 func TestParseYaml(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
-	_, err := vm.EvaluateSnippet("failtest", `std.native("parseYaml")("[barf")`)
+	_, err := vm.EvaluateAnonymousSnippet("failtest", `std.native("parseYaml")("[barf")`)
 	if err == nil {
 		t.Errorf("parseYaml succeeded on invalid yaml")
 	}
 
-	x, err := vm.EvaluateSnippet("test", `std.native("parseYaml")("")`)
+	x, err := vm.EvaluateAnonymousSnippet("test", `std.native("parseYaml")("")`)
 	check(t, err, x, "[ ]\n")
 
-	x, err = vm.EvaluateSnippet("test", `
+	x, err = vm.EvaluateAnonymousSnippet("test", `
     local a = std.native("parseYaml")("foo:\n- 3\n- 4\n")[0];
     a.foo[0] + a.foo[1]`)
 	check(t, err, x, "7\n")
 
-	x, err = vm.EvaluateSnippet("test", `
+	x, err = vm.EvaluateAnonymousSnippet("test", `
     local a = std.native("parseYaml")("---\nhello\n---\nworld");
     a[0] + a[1]`)
 	check(t, err, x, "\"helloworld\"\n")
@@ -78,46 +78,46 @@ func TestParseYaml(t *testing.T) {
 
 func TestRegexMatch(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
-	_, err := vm.EvaluateSnippet("failtest", `std.native("regexMatch")("[f", "foo")`)
+	_, err := vm.EvaluateAnonymousSnippet("failtest", `std.native("regexMatch")("[f", "foo")`)
 	if err == nil {
 		t.Errorf("regexMatch succeeded with invalid regex")
 	}
 
-	x, err := vm.EvaluateSnippet("test", `std.native("regexMatch")("foo.*", "seafood")`)
+	x, err := vm.EvaluateAnonymousSnippet("test", `std.native("regexMatch")("foo.*", "seafood")`)
 	check(t, err, x, "true\n")
 
-	x, err = vm.EvaluateSnippet("test", `std.native("regexMatch")("bar.*", "seafood")`)
+	x, err = vm.EvaluateAnonymousSnippet("test", `std.native("regexMatch")("bar.*", "seafood")`)
 	check(t, err, x, "false\n")
 }
 
 func TestRegexSubst(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
-	_, err := vm.EvaluateSnippet("failtest", `std.native("regexSubst")("[f", "foo", "bar")`)
+	_, err := vm.EvaluateAnonymousSnippet("failtest", `std.native("regexSubst")("[f", "foo", "bar")`)
 	if err == nil {
 		t.Errorf("regexSubst succeeded with invalid regex")
 	}
 
-	x, err := vm.EvaluateSnippet("test", `std.native("regexSubst")("a(x*)b", "-ab-axxb-", "T")`)
+	x, err := vm.EvaluateAnonymousSnippet("test", `std.native("regexSubst")("a(x*)b", "-ab-axxb-", "T")`)
 	check(t, err, x, "\"-T-T-\"\n")
 
-	x, err = vm.EvaluateSnippet("test", `std.native("regexSubst")("a(x*)b", "-ab-axxb-", "${1}W")`)
+	x, err = vm.EvaluateAnonymousSnippet("test", `std.native("regexSubst")("a(x*)b", "-ab-axxb-", "${1}W")`)
 	check(t, err, x, "\"-W-xxW-\"\n")
 }
 
 func TestRegexQuoteMeta(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
-	x, err := vm.EvaluateSnippet("test", `std.native("escapeStringRegex")("[f]")`)
+	Register(vm)
+	x, err := vm.EvaluateAnonymousSnippet("test", `std.native("escapeStringRegex")("[f]")`)
 	check(t, err, x, `"\\[f\\]"`+"\n")
 }
 
 func TestLabelSelectorMatch(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 	tests := []struct {
 		name     string
 		selector string
@@ -181,7 +181,7 @@ func TestLabelSelectorMatch(t *testing.T) {
 			local labels = { env: 'dev', region: 'us-west' };
 			if std.native('labelsMatchSelector')(labels, '%s') then 'yes' else 'no'
 `, test.selector)
-			ret, err := vm.EvaluateSnippet("test.jsonnet", code)
+			ret, err := vm.EvaluateAnonymousSnippet("test.jsonnet", code)
 			check(t, err, ret, fmt.Sprintf(`"%s"`+"\n", test.expected))
 		})
 	}
@@ -189,7 +189,7 @@ func TestLabelSelectorMatch(t *testing.T) {
 
 func TestLabelSelectorNegative(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 	tests := []struct {
 		name     string
 		code     string
@@ -218,7 +218,7 @@ func TestLabelSelectorNegative(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := vm.EvaluateSnippet("test.jsonnet", test.code)
+			_, err := vm.EvaluateAnonymousSnippet("test.jsonnet", test.code)
 			if err == nil {
 				t.Errorf("labelsMatchSelector succeeded on invalid input")
 			}
