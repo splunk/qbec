@@ -110,9 +110,12 @@ func (c *Context) init() {
 }
 
 func (c Context) componentVars(base vm.VariableSet, componentName string, tlas []string) vm.VariableSet {
-	vs := base.WithVars(map[string]string{
-		model.QbecNames.ComponentName: componentName,
-	})
+	vs := base
+	if componentName != "" {
+		vs = base.WithVars(map[string]string{
+			model.QbecNames.ComponentName: componentName,
+		})
+	}
 	if len(tlas) == 0 {
 		return vs
 	}
@@ -206,7 +209,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
 	ctx.init()
-	output, err := ctx.evalFile(file, ctx.componentVars(ctx.Vars, "__params__", nil))
+	output, err := ctx.evalFile(file, ctx.componentVars(ctx.Vars, "", nil))
 	if err != nil {
 		return nil, err
 	}

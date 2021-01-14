@@ -30,8 +30,8 @@ import (
 
 // Config is the desired configuration of the Jsonnet VM.
 type Config struct {
-	Variables VariableSet
-	LibPaths  []string // library paths in filesystem for the file importer
+	Variables VariableSet // variables specified on command line
+	LibPaths  []string    // library paths in filesystem for the file importer
 }
 
 // WithLibPaths returns a config with additional library paths.
