@@ -96,5 +96,5 @@ func expandHelmTemplate(chart string, values map[string]interface{}, options hel
 		return nil, errors.Wrap(err, "run helm template command")
 	}
 
-	return parseYAMLDocuments(bytes.NewReader(stdout.Bytes()))
+	return ParseYAMLDocuments(bytes.NewReader(stdout.Bytes()))
 }
