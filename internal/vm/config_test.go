@@ -76,7 +76,7 @@ func TestConfigBasic(t *testing.T) {
 				WithCodeVars(map[string]string{"inlineCode": "true"})
 			jvm := newJsonnetVM(cfg.LibPaths)
 			vars.register(jvm)
-			output, err = jvm.EvaluateSnippet("test.jsonnet", evalCode)
+			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
 			return err
 		},
 	}
@@ -133,7 +133,7 @@ func TestConfigShorthands(t *testing.T) {
 				WithCodeVars(map[string]string{"inlineCode": "true"})
 			jvm := newJsonnetVM(cfg.LibPaths)
 			vars.register(jvm)
-			output, err = jvm.EvaluateSnippet("test.jsonnet", evalCode)
+			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
 			return err
 		},
 	}
@@ -190,7 +190,7 @@ func TestConfigNegative(t *testing.T) {
 				if code == "" {
 					code = "{}"
 				}
-				_, err = jvm.EvaluateSnippet("test.jsonnet", code)
+				_, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", code)
 				return err
 			},
 		}
@@ -294,7 +294,7 @@ func TestConfigFromScratch(t *testing.T) {
 		WithCodeVars(map[string]string{"bar": "true"})
 	jvm := newJsonnetVM(nil)
 	vars.register(jvm)
-	out, err := jvm.EvaluateSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)
+	out, err := jvm.EvaluateAnonymousSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)
 	require.Nil(t, err)
 	assert.Equal(t, `"bartrue"`+"\n", out)
 }

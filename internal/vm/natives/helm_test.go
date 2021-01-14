@@ -45,24 +45,7 @@ func TestHelmSimpleExpand(t *testing.T) {
 	a := assert.New(t)
 	jvm := jsonnet.MakeVM()
 	Register(jvm)
-	file := "./consumer.jsonnet"
-	inputCode := `
-local expandHelmTemplate = std.native('expandHelmTemplate');
-
-expandHelmTemplate(
-    './testdata/charts/foobar',
-    {
-        foo: 'barbar',
-    },
-    {
-        namespace: 'my-ns',
-        nameTemplate: 'my-name',
-        thisFile: std.thisFile,
-		verbose: true,
-    }
-)
-`
-	code, err := jvm.EvaluateSnippet(file, inputCode)
+	code, err := jvm.EvaluateFile("./testdata/consumer.jsonnet")
 	require.Nil(t, err)
 
 	var output []cmOrSecret
@@ -93,23 +76,7 @@ func TestHelmBadRelative(t *testing.T) {
 	a := assert.New(t)
 	jvm := jsonnet.MakeVM()
 	Register(jvm)
-	file := "./consumer.jsonnet"
-	inputCode := `
-local expandHelmTemplate = std.native('expandHelmTemplate');
-
-expandHelmTemplate(
-    './testdata/charts/foobar',
-    {
-        foo: 'barbar',
-    },
-    {
-        namespace: 'my-ns',
-        name: 'my-name',
-		verbose: true,
-    }
-)
-`
-	_, err := jvm.EvaluateSnippet(file, inputCode)
+	_, err := jvm.EvaluateFile("./testdata/bad-relative.jsonnet")
 	require.NotNil(t, err)
 	a.Contains(err.Error(), "exit status 1")
 }
