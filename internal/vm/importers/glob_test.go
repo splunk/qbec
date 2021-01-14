@@ -146,7 +146,7 @@ func TestGlobInternalCaching(t *testing.T) {
 	a.Equal(1, len(gi.cache))
 	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized.jsonnet", `import 'glob-import:../../*.json'`)
 	a.Equal(2, len(gi.cache))
-	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized.jsonnet", `import 'glob-import:../../[a,b].json'`)
+	_ = evaluateVirtual(t, vm, "testdata/example1/caller/inner/synthesized2.jsonnet", `import 'glob-import:../../[a,b].json'`)
 	a.Equal(3, len(gi.cache))
 }
 
