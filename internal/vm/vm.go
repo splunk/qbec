@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/vm/importers"
+	"github.com/splunk/qbec/internal/vm/natives"
 )
 
 // Config is the desired configuration of the Jsonnet VM.
@@ -341,7 +342,7 @@ type VM struct {
 // New constructs a new VM based on the supplied config.
 func New(config Config) *VM {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	natives.Register(vm)
 	registerVars := func(m map[string]string, registrar func(k, v string)) {
 		for k, v := range m {
 			registrar(k, v)

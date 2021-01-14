@@ -1,10 +1,11 @@
-package vm
+package natives
 
 import (
 	"encoding/json"
 	"sort"
 	"testing"
 
+	"github.com/google/go-jsonnet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,7 +43,8 @@ type cmOrSecret struct {
 
 func TestHelmSimpleExpand(t *testing.T) {
 	a := assert.New(t)
-	jvm := New(Config{})
+	jvm := jsonnet.MakeVM()
+	Register(jvm)
 	file := "./consumer.jsonnet"
 	inputCode := `
 local expandHelmTemplate = std.native('expandHelmTemplate');
@@ -89,7 +91,8 @@ expandHelmTemplate(
 
 func TestHelmBadRelative(t *testing.T) {
 	a := assert.New(t)
-	jvm := New(Config{})
+	jvm := jsonnet.MakeVM()
+	Register(jvm)
 	file := "./consumer.jsonnet"
 	inputCode := `
 local expandHelmTemplate = std.native('expandHelmTemplate');

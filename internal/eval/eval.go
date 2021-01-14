@@ -31,6 +31,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/natives"
 )
 
 const (
@@ -227,7 +228,7 @@ func evaluationCode(c Context, file string) evalFn {
 				return nil, err
 			}
 			defer f.Close()
-			return vm.ParseYAMLDocuments(f)
+			return natives.ParseYAMLDocuments(f)
 		}
 	case strings.HasSuffix(file, ".json"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
@@ -236,7 +237,7 @@ func evaluationCode(c Context, file string) evalFn {
 				return nil, err
 			}
 			defer f.Close()
-			return vm.ParseJSON(f)
+			return natives.ParseJSON(f)
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {

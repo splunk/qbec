@@ -13,7 +13,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package vm
+package natives
 
 // copied from original code at https://github.com/ksonnet/kubecfg/blob/master/utils/nativefuncs.go
 // and modified for use.
@@ -31,8 +31,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// registerNativeFuncs adds kubecfg's native jsonnet functions to provided VM
-func registerNativeFuncs(vm *jsonnet.VM) {
+// Register adds qbec's native jsonnet functions to the provided VM
+func Register(vm *jsonnet.VM) {
 	// NB: libjsonnet native functions can only pass primitive
 	// types, so some functions json-encode the arg.  These
 	// "*FromJson" functions will be replaced by regular native

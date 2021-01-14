@@ -13,7 +13,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package vm
+package natives
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func check(t *testing.T, err error, actual, expected string) {
 
 func TestParseJson(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
 	_, err := vm.EvaluateSnippet("failtest", `std.native("parseJson")("barf{")`)
 	if err == nil {
@@ -55,7 +55,7 @@ func TestParseJson(t *testing.T) {
 
 func TestParseYaml(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
 	_, err := vm.EvaluateSnippet("failtest", `std.native("parseYaml")("[barf")`)
 	if err == nil {
@@ -78,7 +78,7 @@ func TestParseYaml(t *testing.T) {
 
 func TestRegexMatch(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
 	_, err := vm.EvaluateSnippet("failtest", `std.native("regexMatch")("[f", "foo")`)
 	if err == nil {
@@ -94,7 +94,7 @@ func TestRegexMatch(t *testing.T) {
 
 func TestRegexSubst(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 
 	_, err := vm.EvaluateSnippet("failtest", `std.native("regexSubst")("[f", "foo", "bar")`)
 	if err == nil {
@@ -110,14 +110,14 @@ func TestRegexSubst(t *testing.T) {
 
 func TestRegexQuoteMeta(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 	x, err := vm.EvaluateSnippet("test", `std.native("escapeStringRegex")("[f]")`)
 	check(t, err, x, `"\\[f\\]"`+"\n")
 }
 
 func TestLabelSelectorMatch(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 	tests := []struct {
 		name     string
 		selector string
@@ -189,7 +189,7 @@ func TestLabelSelectorMatch(t *testing.T) {
 
 func TestLabelSelectorNegative(t *testing.T) {
 	vm := jsonnet.MakeVM()
-	registerNativeFuncs(vm)
+	Register(vm)
 	tests := []struct {
 		name     string
 		code     string
