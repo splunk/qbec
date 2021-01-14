@@ -35,11 +35,11 @@ func TestConfigCreate(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "t1")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vmc := vm.Config{}
-
-	vmc = vmc.WithTopLevelVars(map[string]string{"tlaFoo": "xxx"})
-	vmc = vmc.WithTopLevelCodeVars(map[string]string{"tlaBar": "true"})
-	vmc = vmc.WithVars(map[string]string{"extFoo": "xxx"})
+	vs := vm.VariableSet{}.
+		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
+		WithTopLevelCodeVars(map[string]string{"tlaBar": "true"}).
+		WithVars(map[string]string{"extFoo": "xxx"})
+	vmc := vm.Config{VariableSet: vs}
 
 	f := configFactory{
 		skipConfirm:     true,
@@ -63,21 +63,6 @@ func TestConfigCreate(t *testing.T) {
 
 	ctx := cfg.EvalContext("dev", map[string]interface{}{"foo": "bar"})
 	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
-
-	testVMC := ctx.VMConfig([]string{"tlaFoo", "tlaBar"})
-	a.EqualValues(map[string]string{"tlaFoo": "xxx"}, testVMC.TopLevelVars())
-	a.EqualValues(map[string]string{"tlaBar": "true"}, testVMC.TopLevelCodeVars())
-	a.EqualValues(map[string]string{
-		"extFoo":            "xxx",
-		"qbec.io/cleanMode": "off",
-		"qbec.io/defaultNs": "kube-system-t1",
-		"qbec.io/env":       "dev",
-		"qbec.io/tag":       "t1",
-	}, testVMC.Vars())
-	a.EqualValues(map[string]string{
-		"extBar":                `{"bar":"quux"}`,
-		"qbec.io/envProperties": `{"foo":"bar"}`,
-	}, testVMC.CodeVars())
 }
 
 func TestConfigStrictVarsPass(t *testing.T) {
@@ -86,15 +71,14 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vmc := vm.Config{}
 
-	vmc = vmc.WithTopLevelVars(map[string]string{"tlaFoo": "xxx"})
-	vmc = vmc.WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
-
+	vs := vm.VariableSet{}.
+		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
+		WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
+	vmc := vm.Config{VariableSet: vs}
 	f := configFactory{
 		strictVars: true,
 	}
-
 	_, err = f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NoError(t, err)
 }
@@ -106,17 +90,15 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vmc := vm.Config{}
-
-	vmc = vmc.WithTopLevelVars(map[string]string{"tlaGargle": "xxx"})
-	vmc = vmc.WithVars(map[string]string{"extSomething": "some-other-thing"})
-	vmc = vmc.WithTopLevelCodeVars(map[string]string{"tlaBurble": "true"})
-	vmc = vmc.WithCodeVars(map[string]string{"extSomethingElse": "some-other-thing"})
-
+	vs := vm.VariableSet{}.
+		WithVars(map[string]string{"extSomething": "some-other-thing"}).
+		WithTopLevelVars(map[string]string{"tlaGargle": "xxx"}).
+		WithTopLevelCodeVars(map[string]string{"tlaBurble": "true"}).
+		WithCodeVars(map[string]string{"extSomethingElse": "some-other-thing"})
+	vmc := vm.Config{VariableSet: vs}
 	f := configFactory{
 		strictVars: true,
 	}
-
 	_, err = f.getConfig(app, vmc, rc, forceOptions{}, nil)
 	require.NotNil(t, err)
 	msg := err.Error()

@@ -178,8 +178,6 @@ func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConf
 type config struct {
 	app             *model.App        // app loaded from file
 	vmc             vm.Config         // jsonnet VM config
-	tlaVars         map[string]string // all top level string vars specified for the command
-	tlaCodeVars     map[string]string // all top level code vars specified for the command
 	clp             clientProvider    // the client provider
 	attrsp          kubeAttrsProvider // the kubernetes attribute provider
 	colors          bool              // colorize output
@@ -198,12 +196,12 @@ type config struct {
 // and exclude all TLA variables. Required TLA variables are set per component later.
 func (c *config) init(strict bool) error {
 	var msgs []string
-	c.tlaVars = c.vmc.TopLevelVars()
-	c.tlaCodeVars = c.vmc.TopLevelCodeVars()
 	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
 
 	vars := c.vmc.Vars()
 	codeVars := c.vmc.CodeVars()
+	tlaVars := c.vmc.TopLevelVars()
+	tlaCodeVars := c.vmc.TopLevelCodeVars()
 
 	declaredExternals := c.app.DeclaredVars()
 	declaredTLAs := c.app.DeclaredTopLevelVars()
@@ -239,7 +237,7 @@ func (c *config) init(strict bool) error {
 
 	if strict {
 		checkStrict(false, declaredExternals, vars, codeVars)
-		checkStrict(true, declaredTLAs, c.tlaVars, c.tlaCodeVars)
+		checkStrict(true, declaredTLAs, tlaVars, tlaCodeVars)
 		if len(msgs) > 0 {
 			return fmt.Errorf("strict vars check failures\n\t%s", strings.Join(msgs, "\n\t"))
 		}
@@ -267,7 +265,11 @@ func (c *config) init(strict bool) error {
 			addCodes[k] = string(b)
 		}
 	}
-	c.vmc = c.vmc.WithoutTopLevel().WithVars(addStrings).WithCodeVars(addCodes)
+	variables := c.vmc.VariableSet.WithVars(addStrings).WithCodeVars(addCodes)
+	c.vmc = vm.Config{
+		VariableSet: variables,
+		LibPaths:    c.vmc.LibPaths,
+	}
 	return nil
 }
 
@@ -284,7 +286,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if c.cleanEvalMode {
 		cm = "on"
 	}
-	baseConfig := c.vmc.WithVars(map[string]string{
+	baseVars := c.vmc.VariableSet.WithVars(map[string]string{
 		model.QbecNames.EnvVarName:       env,
 		model.QbecNames.TagVarName:       c.app.Tag(),
 		model.QbecNames.DefaultNsVarName: c.app.DefaultNamespace(env),
@@ -293,7 +295,8 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		model.QbecNames.EnvPropsVarName: string(p),
 	})
 	return eval.Context{
-		VMConfig:         func(tlaVars []string) vm.Config { return c.vmConfig(baseConfig, tlaVars) },
+		Vars:             baseVars,
+		LibPaths:         c.vmc.LibPaths,
 		Verbose:          c.Verbosity() > 1,
 		Concurrency:      c.EvalConcurrency(),
 		PreProcessFiles:  c.App().PreProcessors(),
@@ -312,37 +315,6 @@ func (c config) ObjectProducer(env string) eval.LocalObjectProducer {
 			SetComponentLabel: app.AddComponentLabel(),
 		})
 	}
-}
-
-// vmConfig returns the VM configuration that only has the supplied top-level arguments.
-func (c config) vmConfig(baseConfig vm.Config, tlaVars []string) vm.Config {
-	cfg := baseConfig.WithoutTopLevel()
-
-	// common case to avoid useless object creation. If no required vars
-	// needed or none present, just return the config with empty TLAs
-	if len(tlaVars) == 0 || (len(c.tlaVars) == 0 && len(c.tlaCodeVars) == 0) {
-		return cfg
-	}
-
-	// else create a subset that match requirements
-	check := map[string]bool{}
-	for _, v := range tlaVars {
-		check[v] = true
-	}
-
-	addStrs := map[string]string{}
-	for k, v := range c.tlaVars {
-		if check[k] {
-			addStrs[k] = v
-		}
-	}
-	addCodes := map[string]string{}
-	for k, v := range c.tlaCodeVars {
-		if check[k] {
-			addCodes[k] = v
-		}
-	}
-	return cfg.WithTopLevelVars(addStrs).WithTopLevelCodeVars(addCodes)
 }
 
 // Client returns a client for the supplied environment

@@ -35,17 +35,14 @@ func producer(component string, data map[string]interface{}) model.K8sLocalObjec
 }
 
 func decorate(ctx Context) Context {
-	fn := func(tlaVars []string) vm.Config {
-		return vm.Config{}.WithVars(map[string]string{
-			"qbec.io/tag":       "t1",
-			"qbec.io/env":       "dev",
-			"qbec.io/cleanMode": "off",
-			"qbec.io/defaultNs": "foobar",
-		}).WithCodeVars(map[string]string{
-			"qbec.io/envProperties": `{ foo: "bar"}`,
-		})
-	}
-	ctx.VMConfig = fn
+	ctx.Vars = vm.VariableSet{}.WithVars(map[string]string{
+		"qbec.io/tag":       "t1",
+		"qbec.io/env":       "dev",
+		"qbec.io/cleanMode": "off",
+		"qbec.io/defaultNs": "foobar",
+	}).WithCodeVars(map[string]string{
+		"qbec.io/envProperties": `{ foo: "bar"}`,
+	})
 	return ctx
 }
 

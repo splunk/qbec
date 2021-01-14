@@ -68,12 +68,11 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 		return nil, errors.Wrap(err, "json marshal")
 	}
 	procName := model.QBECPostprocessorNamespace + baseName(p.file)
-	cfg := p.ctx.baseVMConfig(procName, nil).WithTopLevelCodeVars(map[string]string{
+	baseVars := p.ctx.Vars.WithTopLevelCodeVars(map[string]string{
 		postprocessTLAVAr: string(b),
 	})
 
-	jvm := vm.New(cfg)
-	evalCode, err := p.ctx.evalFile(jvm, p.file)
+	evalCode, err := p.ctx.evalFile(p.file, p.ctx.componentVars(baseVars, procName, nil))
 	if err != nil {
 		return nil, errors.Wrap(err, "post-eval object")
 	}
@@ -94,61 +93,65 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	VMConfig         VMConfigFunc // the base VM config to use for eval
-	Verbose          bool         // show generated code
-	Concurrency      int          // concurrent components to evaluate, default 5
-	PreProcessFiles  []string     // preprocessor files that are evaluated if present
-	PostProcessFiles []string     // files that contains post-processing code for all objects
+	LibPaths         []string
+	Vars             vm.VariableSet
+	Verbose          bool              // show generated code
+	Concurrency      int               // concurrent components to evaluate, default 5
+	PreProcessFiles  []string          // preprocessor files that are evaluated if present
+	PostProcessFiles []string          // files that contains post-processing code for all objects
+	tlaVars          map[string]string // all top level string vars specified for the command
+	tlaCodeVars      map[string]string // all top level code vars specified for the command
 }
 
-func (c Context) baseVMConfig(componentName string, tlas []string) vm.Config {
-	base := c.VMConfig(tlas)
-	if componentName == "" {
-		return base
-	}
-	return base.WithVars(map[string]string{
+func (c *Context) init() {
+	c.tlaVars = c.Vars.TopLevelVars()
+	c.tlaCodeVars = c.Vars.TopLevelCodeVars()
+	c.Vars = c.Vars.WithoutTopLevel()
+}
+
+func (c Context) componentVars(base vm.VariableSet, componentName string, tlas []string) vm.VariableSet {
+	vs := base.WithVars(map[string]string{
 		model.QbecNames.ComponentName: componentName,
 	})
+	if len(tlas) == 0 {
+		return vs
+	}
+	check := map[string]bool{}
+	for _, v := range tlas {
+		check[v] = true
+	}
+	addStrs := map[string]string{}
+	for k, v := range c.tlaVars {
+		if check[k] {
+			addStrs[k] = v
+		}
+	}
+	addCodes := map[string]string{}
+	for k, v := range c.tlaCodeVars {
+		if check[k] {
+			addCodes[k] = v
+		}
+	}
+	return vs.WithTopLevelVars(addStrs).WithTopLevelCodeVars(addCodes)
 }
 
-func (c Context) vm(componentName string, tlas []string) *vm.VM {
-	return vm.New(c.baseVMConfig(componentName, tlas))
-}
-
-func (c *Context) initDefaults() {
-	if c.VMConfig == nil {
-		c.VMConfig = defaultFunc
-	}
-}
-
-func (c *Context) evalFile(jvm *vm.VM, file string) (json string, err error) {
-	s, err := os.Stat(file)
-	if err != nil {
-		return "", err
-	}
-	if s.IsDir() {
-		return "", fmt.Errorf("file '%s' was a directory", file)
-	}
-	file = filepath.ToSlash(file)
-	return jvm.EvaluateFile(file)
+func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
+	jvm := vm.New(c.LibPaths)
+	return jvm.EvalFile(file, vars)
 }
 
 func (c *Context) runPreprocessors() error {
 	for _, file := range c.PreProcessFiles {
 		procName := baseName(file)
-		evalCode, err := c.evalFile(c.vm(model.QBECPreprocessorNamespace+procName, nil), file)
+		evalCode, err := c.evalFile(file, c.componentVars(c.Vars, model.QBECPreprocessorNamespace+procName, nil))
 		if err != nil {
 			return errors.Wrapf(err, "preprocessor eval %s", file)
 		}
-		fn := c.VMConfig
 		name := model.QBECComputedNamespace + procName
 		sio.Debugln("setting external variable", name)
-		c.VMConfig = func(tlas []string) vm.Config {
-			ret := fn(tlas)
-			return ret.WithCodeVars(map[string]string{
-				name: evalCode,
-			})
-		}
+		c.Vars = c.Vars.WithCodeVars(map[string]string{
+			name: evalCode,
+		})
 	}
 	return nil
 }
@@ -175,7 +178,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 			sio.Debugf("%d components evaluated in %v\n", len(components), time.Since(start).Round(time.Millisecond))
 		}
 	}()
-	ctx.initDefaults()
+	ctx.init()
 	err := ctx.runPreprocessors()
 	if err != nil {
 		return nil, err
@@ -202,8 +205,8 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // Params evaluates the supplied parameters file in the supplied VM and
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
-	ctx.initDefaults()
-	output, err := ctx.evalFile(ctx.vm("", nil), file)
+	ctx.init()
+	output, err := ctx.evalFile(file, ctx.componentVars(ctx.Vars, "__params__", nil))
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +244,7 @@ func evaluationCode(c Context, file string) evalFn {
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			evalCode, err := c.evalFile(c.vm(component, tlas), file)
+			evalCode, err := c.evalFile(file, c.componentVars(c.Vars, component, tlas))
 			if err != nil {
 				return nil, err
 			}
