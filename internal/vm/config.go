@@ -45,20 +45,18 @@ type strFiles struct {
 	lists   []string
 }
 
-func getValues(name string, s strFiles) (map[string]string, error) {
-	ret := map[string]string{}
-
+func getValues(ret map[string]Var, name string, s strFiles, fn func(name, value string) Var) error {
 	processStr := func(s string, ctx string) error {
 		parts := strings.SplitN(s, "=", 2)
 		if len(parts) == 2 {
-			ret[parts[0]] = parts[1]
+			ret[parts[0]] = fn(parts[0], parts[1])
 			return nil
 		}
 		v, ok := os.LookupEnv(s)
 		if !ok {
 			return fmt.Errorf("%sno value found from environment for %s", ctx, s)
 		}
-		ret[s] = v
+		ret[s] = fn(s, v)
 		return nil
 	}
 	processFile := func(s string) error {
@@ -70,7 +68,7 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 		if err != nil {
 			return err
 		}
-		ret[parts[0]] = string(b)
+		ret[parts[0]] = fn(parts[0], string(b))
 		return nil
 	}
 	processList := func(l string) error {
@@ -97,20 +95,20 @@ func getValues(name string, s strFiles) (map[string]string, error) {
 	}
 	for _, s := range s.lists {
 		if err := processList(s); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	for _, s := range s.strings {
 		if err := processStr(s, name+" "); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	for _, s := range s.files {
 		if err := processFile(s); err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return ret, nil
+	return nil
 }
 
 // ConfigFromCommandParams attaches VM related flags to the specified command and returns
@@ -145,18 +143,22 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts boo
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")
 
 	return func() (c Config, err error) {
-		if c.Variables.vars, err = getValues("ext-str", extStrings); err != nil {
+		vars := map[string]Var{}
+		tlaVars := map[string]Var{}
+		if err = getValues(vars, "ext-str", extStrings, NewVar); err != nil {
 			return
 		}
-		if c.Variables.codeVars, err = getValues("ext-code", extCodes); err != nil {
+		if err = getValues(vars, "ext-code", extCodes, NewCodeVar); err != nil {
 			return
 		}
-		if c.Variables.topLevelVars, err = getValues("tla-str", tlaStrings); err != nil {
+		if err = getValues(tlaVars, "tla-str", tlaStrings, NewVar); err != nil {
 			return
 		}
-		if c.Variables.topLevelCodeVars, err = getValues("tla-code", tlaCodes); err != nil {
+		if err = getValues(tlaVars, "tla-code", tlaCodes, NewCodeVar); err != nil {
 			return
 		}
+		c.Variables.vars = vars
+		c.Variables.topLevelVars = tlaVars
 		c.LibPaths = paths
 		return
 	}

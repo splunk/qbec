@@ -72,8 +72,10 @@ func TestConfigBasic(t *testing.T) {
 				return err
 			}
 			cfg := cfg.WithLibPaths([]string{"testdata/lib2"})
-			vars := cfg.Variables.WithVars(map[string]string{"inlineStr": "ifoo"}).
-				WithCodeVars(map[string]string{"inlineCode": "true"})
+			vars := cfg.Variables.WithVars(
+				NewVar("inlineStr", "ifoo"),
+				NewCodeVar("inlineCode", "true"),
+			)
 			jvm := newJsonnetVM(cfg.LibPaths)
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
@@ -129,8 +131,10 @@ func TestConfigShorthands(t *testing.T) {
 			}
 			cfg = cfg.WithLibPaths([]string{"testdata/lib2"})
 			vars := cfg.Variables.
-				WithVars(map[string]string{"inlineStr": "ifoo"}).
-				WithCodeVars(map[string]string{"inlineCode": "true"})
+				WithVars(
+					NewVar("inlineStr", "ifoo"),
+					NewCodeVar("inlineCode", "true"),
+				)
 			jvm := newJsonnetVM(cfg.LibPaths)
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
@@ -290,8 +294,7 @@ func TestConfigNegative(t *testing.T) {
 
 func TestConfigFromScratch(t *testing.T) {
 	vars := VariableSet{}.
-		WithVars(map[string]string{"foo": "bar"}).
-		WithCodeVars(map[string]string{"bar": "true"})
+		WithVars(NewVar("foo", "bar"), NewCodeVar("bar", "true"))
 	jvm := newJsonnetVM(nil)
 	vars.register(jvm)
 	out, err := jvm.EvaluateAnonymousSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)

@@ -37,7 +37,7 @@ import (
 const (
 	defaultConcurrency = 5
 	maxDisplayErrors   = 3
-	postprocessTLAVAr  = "object"
+	postprocessTLAVar  = "object"
 )
 
 // VMConfigFunc is a function that returns a VM configuration containing only the
@@ -68,10 +68,7 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 		return nil, errors.Wrap(err, "json marshal")
 	}
 	procName := model.QBECPostprocessorNamespace + baseName(p.file)
-	baseVars := p.ctx.Vars.WithTopLevelCodeVars(map[string]string{
-		postprocessTLAVAr: string(b),
-	})
-
+	baseVars := p.ctx.Vars.WithTopLevelVars(vm.NewCodeVar(postprocessTLAVar, string(b)))
 	evalCode, err := p.ctx.evalFile(p.file, p.ctx.componentVars(baseVars, procName, nil))
 	if err != nil {
 		return nil, errors.Wrap(err, "post-eval object")
@@ -99,22 +96,22 @@ type Context struct {
 	Concurrency      int               // concurrent components to evaluate, default 5
 	PreProcessFiles  []string          // preprocessor files that are evaluated if present
 	PostProcessFiles []string          // files that contains post-processing code for all objects
-	tlaVars          map[string]string // all top level string vars specified for the command
-	tlaCodeVars      map[string]string // all top level code vars specified for the command
+	tlaVars          map[string]vm.Var // all top level string vars specified for the command
 }
 
 func (c *Context) init() {
-	c.tlaVars = c.Vars.TopLevelVars()
-	c.tlaCodeVars = c.Vars.TopLevelCodeVars()
+	tlas := c.Vars.TopLevelVars()
 	c.Vars = c.Vars.WithoutTopLevel()
+	c.tlaVars = map[string]vm.Var{}
+	for _, v := range tlas {
+		c.tlaVars[v.Name] = v
+	}
 }
 
 func (c Context) componentVars(base vm.VariableSet, componentName string, tlas []string) vm.VariableSet {
 	vs := base
 	if componentName != "" {
-		vs = base.WithVars(map[string]string{
-			model.QbecNames.ComponentName: componentName,
-		})
+		vs = base.WithVars(vm.NewVar(model.QbecNames.ComponentName, componentName))
 	}
 	if len(tlas) == 0 {
 		return vs
@@ -123,19 +120,13 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 	for _, v := range tlas {
 		check[v] = true
 	}
-	addStrs := map[string]string{}
+	var add []vm.Var
 	for k, v := range c.tlaVars {
 		if check[k] {
-			addStrs[k] = v
+			add = append(add, v)
 		}
 	}
-	addCodes := map[string]string{}
-	for k, v := range c.tlaCodeVars {
-		if check[k] {
-			addCodes[k] = v
-		}
-	}
-	return vs.WithTopLevelVars(addStrs).WithTopLevelCodeVars(addCodes)
+	return vs.WithTopLevelVars(add...)
 }
 
 func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
@@ -152,9 +143,7 @@ func (c *Context) runPreprocessors() error {
 		}
 		name := model.QBECComputedNamespace + procName
 		sio.Debugln("setting external variable", name)
-		c.Vars = c.Vars.WithCodeVars(map[string]string{
-			name: evalCode,
-		})
+		c.Vars = c.Vars.WithVars(vm.NewCodeVar(name, evalCode))
 	}
 	return nil
 }

@@ -24,25 +24,24 @@ import (
 func TestVMScratchVariableSet(t *testing.T) {
 	a := assert.New(t)
 	c := VariableSet{}
-	a.NotNil(c.Vars())
-	a.NotNil(c.CodeVars())
-	a.NotNil(c.TopLevelVars())
-	a.NotNil(c.TopLevelCodeVars())
+	a.Nil(c.Vars())
+	a.Nil(c.TopLevelVars())
 
-	tla, tlacode, extStr, extCode := map[string]string{"tla-foo": "bar", "tls-bar": "baz"},
-		map[string]string{"tla-code-foo": "100", "tla-code-bar": "true"},
-		map[string]string{"ext-foo": "bar"},
-		map[string]string{"ext-code-foo": "true"}
+	exts := []Var{
+		NewVar("ext-foo", "bar"),
+		NewCodeVar("ext-code-foo", "true"),
+	}
+	tlas := []Var{
+		NewVar("tla-foo", "bar"),
+		NewVar("tls-bar", "baz"),
+		NewCodeVar("tla-code-foo", "100"),
+		NewCodeVar("tla-code-bar", "true"),
+	}
 
-	c = c.WithVars(extStr).
-		WithCodeVars(extCode).
-		WithTopLevelVars(tla).
-		WithTopLevelCodeVars(tlacode)
-
-	a.EqualValues(extStr, c.Vars())
-	a.EqualValues(extCode, c.CodeVars())
-	a.EqualValues(tla, c.TopLevelVars())
-	a.EqualValues(tlacode, c.TopLevelCodeVars())
+	c = c.WithVars(exts...).
+		WithTopLevelVars(tlas...)
+	a.Equal(2, len(c.Vars()))
+	a.Equal(4, len(c.TopLevelVars()))
 	a.True(c.HasTopLevelVar("tla-foo"))
 	a.True(c.HasTopLevelVar("tla-code-foo"))
 	a.False(c.HasTopLevelVar("ext-foo"))
@@ -60,7 +59,7 @@ func TestVMScratchVariableSet(t *testing.T) {
 
 func TestVMNoopVariableSet(t *testing.T) {
 	c := VariableSet{}
-	newC := c.WithoutTopLevel().WithVars(nil).WithCodeVars(map[string]string{}).
-		WithTopLevelVars(nil).WithTopLevelCodeVars(nil)
+	newC := c.WithoutTopLevel().WithVars().
+		WithTopLevelVars()
 	assert.Equal(t, &newC, &c)
 }
