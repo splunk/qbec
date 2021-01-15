@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
+	"github.com/splunk/qbec/internal/pristine"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -125,6 +126,12 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 	return un
 }
 
+func showPristine(obj model.K8sLocalObject) *unstructured.Unstructured {
+	p := pristine.QbecPristine{}
+	ret, _ := p.CreateFromPristine(obj)
+	return ret.ToUnstructured()
+}
+
 func doShow(args []string, config showCommandConfig) error {
 	if len(args) != 1 {
 		return newUsageError("exactly one environment required")
@@ -176,6 +183,9 @@ func doShow(args []string, config showCommandConfig) error {
 	var displayObjects []*unstructured.Unstructured
 	mapper := func(o model.K8sLocalObject) *unstructured.Unstructured { return o.ToUnstructured() }
 
+	if config.showPristine {
+		mapper = showPristine
+	}
 	if config.cleanEvalMode {
 		mapper = cleanMeta
 	}
@@ -213,17 +223,19 @@ func newShowCommand(cp configProvider) *cobra.Command {
 		filterFunc: addFilterParams(cmd, true),
 	}
 
-	var clean bool
+	var clean, pristine bool
 	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
 	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
 	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
 	cmd.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
+	cmd.Flags().BoolVar(&pristine, "show-pristine", false, "generate and display last-applied annotation")
 	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		config.config = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		config.config.cleanEvalMode = clean
+		config.config.showPristine = pristine
 		return wrapError(doShow(args, config))
 	}
 	return cmd

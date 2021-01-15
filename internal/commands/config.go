@@ -188,6 +188,7 @@ type config struct {
 	stdout          io.Writer         // standard output
 	stderr          io.Writer         // standard error
 	cleanEvalMode   bool              // clean mode for eval
+	showPristine    bool              // generate last-applied annotation
 }
 
 // init checks variables and sets up defaults. In strict mode, it requires all variables
