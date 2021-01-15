@@ -26,8 +26,13 @@ import (
 
 func TestVMEvalFile(t *testing.T) {
 	vm := New([]string{"testdata/vmlib"})
-	out, err := vm.EvalFile("testdata/vmtest.jsonnet", VariableSet{}.WithVars(map[string]string{"foo": "fooVal"}).
-		WithCodeVars(map[string]string{"bar": "true"}))
+	out, err := vm.EvalFile(
+		"testdata/vmtest.jsonnet",
+		VariableSet{}.WithVars(
+			NewVar("foo", "fooVal"),
+			NewCodeVar("bar", "true"),
+		),
+	)
 	require.NoError(t, err)
 	var data struct {
 		Foo string `json:"foo"`

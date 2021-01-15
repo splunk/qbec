@@ -36,9 +36,8 @@ func TestConfigCreate(t *testing.T) {
 	require.NoError(t, err)
 	rc := &remote.Config{}
 	vs := vm.VariableSet{}.
-		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
-		WithTopLevelCodeVars(map[string]string{"tlaBar": "true"}).
-		WithVars(map[string]string{"extFoo": "xxx"})
+		WithTopLevelVars(vm.NewVar("tlaFoo", "xxx"), vm.NewCodeVar("tlaBar", "true")).
+		WithVars(vm.NewVar("extFoo", "xxx"))
 	vmc := vm.Config{Variables: vs}
 
 	f := configFactory{
@@ -73,8 +72,14 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	rc := &remote.Config{}
 
 	vs := vm.VariableSet{}.
-		WithTopLevelVars(map[string]string{"tlaFoo": "xxx"}).
-		WithCodeVars(map[string]string{"extFoo": "xxx", "extBar": "yyy", "noDefault": "boo"})
+		WithTopLevelVars(
+			vm.NewVar("tlaFoo", "xxx"),
+		).
+		WithVars(
+			vm.NewVar("extFoo", "xxx"),
+			vm.NewVar("extBar", "yyy"),
+			vm.NewVar("noDefault", "boo"),
+		)
 	vmc := vm.Config{Variables: vs}
 	f := configFactory{
 		strictVars: true,
@@ -91,10 +96,14 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	require.NoError(t, err)
 	rc := &remote.Config{}
 	vs := vm.VariableSet{}.
-		WithVars(map[string]string{"extSomething": "some-other-thing"}).
-		WithTopLevelVars(map[string]string{"tlaGargle": "xxx"}).
-		WithTopLevelCodeVars(map[string]string{"tlaBurble": "true"}).
-		WithCodeVars(map[string]string{"extSomethingElse": "some-other-thing"})
+		WithVars(
+			vm.NewVar("extSomething", "some-other-thing"),
+			vm.NewCodeVar("extSomethingElse", "true"),
+		).
+		WithTopLevelVars(
+			vm.NewVar("tlaGargle", "xxx"),
+			vm.NewCodeVar("tlaBurble", "true"),
+		)
 	vmc := vm.Config{Variables: vs}
 	f := configFactory{
 		strictVars: true,

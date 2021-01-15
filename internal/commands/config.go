@@ -199,25 +199,21 @@ func (c *config) init(strict bool) error {
 	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
 
 	vars := c.vmc.Variables.Vars()
-	codeVars := c.vmc.Variables.CodeVars()
 	tlaVars := c.vmc.Variables.TopLevelVars()
-	tlaCodeVars := c.vmc.Variables.TopLevelCodeVars()
 
 	declaredExternals := c.app.DeclaredVars()
 	declaredTLAs := c.app.DeclaredTopLevelVars()
 
-	checkStrict := func(tla bool, declared map[string]interface{}, varSources ...map[string]string) {
+	checkStrict := func(tla bool, declared map[string]interface{}, src []vm.Var) {
 		kind := "external"
 		if tla {
 			kind = "top level"
 		}
 		// check that all specified variables have been declared
-		for _, src := range varSources {
-			for k := range src {
-				_, ok := declared[k]
-				if !ok {
-					msgs = append(msgs, fmt.Sprintf("specified %s variable '%s' not declared for app", kind, k))
-				}
+		for _, v := range src {
+			_, ok := declared[v.Name]
+			if !ok {
+				msgs = append(msgs, fmt.Sprintf("specified %s variable '%s' not declared for app", kind, v.Name))
 			}
 		}
 		// check that all declared variables have been specified
@@ -236,15 +232,15 @@ func (c *config) init(strict bool) error {
 	}
 
 	if strict {
-		checkStrict(false, declaredExternals, vars, codeVars)
-		checkStrict(true, declaredTLAs, tlaVars, tlaCodeVars)
+		checkStrict(false, declaredExternals, vars)
+		checkStrict(true, declaredTLAs, tlaVars)
 		if len(msgs) > 0 {
 			return fmt.Errorf("strict vars check failures\n\t%s", strings.Join(msgs, "\n\t"))
 		}
 	}
 
 	// apply default values for external vars
-	addStrings, addCodes := map[string]string{}, map[string]string{}
+	var addVars []vm.Var
 
 	for k, v := range declaredExternals {
 		if c.vmc.Variables.HasVar(k) {
@@ -256,16 +252,16 @@ func (c *config) init(strict bool) error {
 		}
 		switch t := v.(type) {
 		case string:
-			addStrings[k] = t
+			addVars = append(addVars, vm.NewVar(k, t))
 		default:
 			b, err := json.Marshal(v)
 			if err != nil {
 				return fmt.Errorf("json marshal: unexpected error marshaling default for variable %s, %v", k, err)
 			}
-			addCodes[k] = string(b)
+			addVars = append(addVars, vm.NewCodeVar(k, string(b)))
 		}
 	}
-	variables := c.vmc.Variables.WithVars(addStrings).WithCodeVars(addCodes)
+	variables := c.vmc.Variables.WithVars(addVars...)
 	c.vmc = vm.Config{
 		Variables: variables,
 		LibPaths:  c.vmc.LibPaths,
@@ -286,14 +282,13 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if c.cleanEvalMode {
 		cm = "on"
 	}
-	baseVars := c.vmc.Variables.WithVars(map[string]string{
-		model.QbecNames.EnvVarName:       env,
-		model.QbecNames.TagVarName:       c.app.Tag(),
-		model.QbecNames.DefaultNsVarName: c.app.DefaultNamespace(env),
-		model.QbecNames.CleanModeVarName: cm,
-	}).WithCodeVars(map[string]string{
-		model.QbecNames.EnvPropsVarName: string(p),
-	})
+	baseVars := c.vmc.Variables.WithVars(
+		vm.NewVar(model.QbecNames.EnvVarName, env),
+		vm.NewVar(model.QbecNames.TagVarName, c.app.Tag()),
+		vm.NewVar(model.QbecNames.DefaultNsVarName, c.app.DefaultNamespace(env)),
+		vm.NewVar(model.QbecNames.CleanModeVarName, cm),
+		vm.NewCodeVar(model.QbecNames.EnvPropsVarName, string(p)),
+	)
 	return eval.Context{
 		Vars:             baseVars,
 		LibPaths:         c.vmc.LibPaths,

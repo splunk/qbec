@@ -16,31 +16,50 @@
 
 package vm
 
-import "github.com/google/go-jsonnet"
+import (
+	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/ast"
+)
+
+type varKind int
+
+const (
+	varKindString varKind = iota
+	varKindCode
+	varKindNode
+)
+
+// Var is an opaque variable to be initialized for the jsonnet VM
+type Var struct {
+	Name  string
+	kind  varKind
+	value string
+	node  ast.Node
+}
+
+// NewVar returns a variable that has a string value
+func NewVar(name, value string) Var {
+	return Var{Name: name, kind: varKindString, value: value}
+}
+
+// NewCodeVar returns a variable that has a code value
+func NewCodeVar(name, code string) Var {
+	return Var{Name: name, kind: varKindCode, value: code}
+}
 
 // VariableSet is an immutable set of variables to be registered with a jsonnet VM
 type VariableSet struct {
-	vars             map[string]string // string variables keyed by name
-	codeVars         map[string]string // code variables keyed by name
-	topLevelVars     map[string]string // TLA string vars keyed by name
-	topLevelCodeVars map[string]string // TLA code vars keyed by name
+	vars         map[string]Var // variables keyed by name
+	topLevelVars map[string]Var // TLA string vars keyed by name
 }
 
-func copyMap(m map[string]string) map[string]string {
+func copyMap(m map[string]Var) map[string]Var {
 	if m == nil {
 		return nil
 	}
-	ret := map[string]string{}
+	ret := map[string]Var{}
 	for k, v := range m {
 		ret[k] = v
-	}
-	return ret
-}
-
-func copyMapNonNil(m map[string]string) map[string]string {
-	ret := copyMap(m)
-	if ret == nil {
-		ret = map[string]string{}
 	}
 	return ret
 }
@@ -49,129 +68,95 @@ func copyMapNonNil(m map[string]string) map[string]string {
 func (vs VariableSet) clone() VariableSet {
 	ret := VariableSet{}
 	ret.vars = copyMap(vs.vars)
-	ret.codeVars = copyMap(vs.codeVars)
 	ret.topLevelVars = copyMap(vs.topLevelVars)
-	ret.topLevelCodeVars = copyMap(vs.topLevelCodeVars)
 	return ret
 }
 
-// Vars returns the string external variables defined for this variable set.
-func (vs VariableSet) Vars() map[string]string {
-	return copyMapNonNil(vs.vars)
+func toVars(v map[string]Var) []Var {
+	var ret []Var
+	for _, v := range v {
+		ret = append(ret, v)
+	}
+	return ret
 }
 
-// CodeVars returns the code external variables defined for this variable set.
-func (vs VariableSet) CodeVars() map[string]string {
-	return copyMapNonNil(vs.codeVars)
+// Vars returns the names of all variables defined for this variable set.
+func (vs VariableSet) Vars() []Var {
+	return toVars(vs.vars)
 }
 
 // TopLevelVars returns the string top-level variables defined for this variable set.
-func (vs VariableSet) TopLevelVars() map[string]string {
-	return copyMapNonNil(vs.topLevelVars)
-}
-
-// TopLevelCodeVars returns the code top-level variables defined for this variable set.
-func (vs VariableSet) TopLevelCodeVars() map[string]string {
-	return copyMapNonNil(vs.topLevelCodeVars)
-}
-
-func keyExists(m map[string]string, key string) bool {
-	if m == nil {
-		return false
-	}
-	_, ok := m[key]
-	return ok
+func (vs VariableSet) TopLevelVars() []Var {
+	return toVars(vs.topLevelVars)
 }
 
 // HasVar returns true if the specified external variable is defined.
 func (vs VariableSet) HasVar(name string) bool {
-	return keyExists(vs.vars, name) || keyExists(vs.codeVars, name)
+	_, ok := vs.vars[name]
+	return ok
 }
 
 // HasTopLevelVar returns true if the specified TLA variable is defined.
 func (vs VariableSet) HasTopLevelVar(name string) bool {
-	return keyExists(vs.topLevelVars, name) || keyExists(vs.topLevelCodeVars, name)
+	_, ok := vs.topLevelVars[name]
+	return ok
 }
 
 // WithoutTopLevel returns a variable set that does not have any top level variables set.
 func (vs VariableSet) WithoutTopLevel() VariableSet {
-	if len(vs.topLevelCodeVars) == 0 && len(vs.topLevelVars) == 0 {
+	if len(vs.topLevelVars) == 0 {
 		return vs
 	}
 	clone := vs.clone()
 	clone.topLevelVars = nil
-	clone.topLevelCodeVars = nil
 	return clone
 }
 
-// WithCodeVars returns a variable set with additional code variables in its environment.
-func (vs VariableSet) WithCodeVars(add map[string]string) VariableSet {
-	if len(add) == 0 {
-		return vs
-	}
-	clone := vs.clone()
-	if clone.codeVars == nil {
-		clone.codeVars = map[string]string{}
-	}
-	for k, v := range add {
-		clone.codeVars[k] = v
-	}
-	return clone
-}
-
-// WithTopLevelCodeVars returns a variable set with additional top-level code variables in its environment.
-func (vs VariableSet) WithTopLevelCodeVars(add map[string]string) VariableSet {
-	if len(add) == 0 {
-		return vs
-	}
-	clone := vs.clone()
-	if clone.topLevelCodeVars == nil {
-		clone.topLevelCodeVars = map[string]string{}
-	}
-	for k, v := range add {
-		clone.topLevelCodeVars[k] = v
-	}
-	return clone
-}
-
-// WithVars returns a variable set with additional string variables in its environment.
-func (vs VariableSet) WithVars(add map[string]string) VariableSet {
+// WithVars returns a variable set with additional variables in its environment.
+func (vs VariableSet) WithVars(add ...Var) VariableSet {
 	if len(add) == 0 {
 		return vs
 	}
 	clone := vs.clone()
 	if clone.vars == nil {
-		clone.vars = map[string]string{}
+		clone.vars = map[string]Var{}
 	}
-	for k, v := range add {
-		clone.vars[k] = v
+	for _, v := range add {
+		clone.vars[v.Name] = v
 	}
 	return clone
 }
 
 // WithTopLevelVars returns a variable set with additional top-level string variables in its environment.
-func (vs VariableSet) WithTopLevelVars(add map[string]string) VariableSet {
+func (vs VariableSet) WithTopLevelVars(add ...Var) VariableSet {
 	if len(add) == 0 {
 		return vs
 	}
 	clone := vs.clone()
 	if clone.topLevelVars == nil {
-		clone.topLevelVars = map[string]string{}
+		clone.topLevelVars = map[string]Var{}
 	}
-	for k, v := range add {
-		clone.topLevelVars[k] = v
+	for _, v := range add {
+		clone.topLevelVars[v.Name] = v
 	}
 	return clone
 }
 
 func (vs VariableSet) register(jvm *jsonnet.VM) {
-	registerVars := func(m map[string]string, registrar func(k, v string)) {
-		for k, v := range m {
-			registrar(k, v)
+	for _, v := range vs.vars {
+		switch v.kind {
+		case varKindCode:
+			jvm.ExtCode(v.Name, v.value)
+		default:
+			jvm.ExtVar(v.Name, v.value)
 		}
 	}
-	registerVars(vs.vars, jvm.ExtVar)
-	registerVars(vs.codeVars, jvm.ExtCode)
-	registerVars(vs.topLevelVars, jvm.TLAVar)
-	registerVars(vs.topLevelCodeVars, jvm.TLACode)
+	for _, v := range vs.topLevelVars {
+		switch v.kind {
+		case varKindCode:
+			jvm.TLACode(v.Name, v.value)
+		default:
+			jvm.TLAVar(v.Name, v.value)
+		}
+	}
 }
