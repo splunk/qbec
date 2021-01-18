@@ -132,7 +132,7 @@ type configFactory struct {
 	strictVars      bool      // strict mode for variable evaluation
 }
 
-func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*config, error) {
+func (cp configFactory) internalConfig(app *model.App, vmConfig vm.CmdlineConfig, clp clientProvider, kp kubeAttrsProvider) (*config, error) {
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
@@ -162,7 +162,7 @@ func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 }
 
 // getConfig returns the command configuration.
-func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts forceOptions,
+func (cp configFactory) getConfig(app *model.App, vmConfig vm.CmdlineConfig, remoteConfig *remote.Config, forceOpts forceOptions,
 	overrideCP func(env string) (kubeClient, error)) (*config, error) {
 	scp := &stdClientProvider{
 		app:                    app,
@@ -177,7 +177,7 @@ func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConf
 // config is the command configuration.
 type config struct {
 	app             *model.App        // app loaded from file
-	vmc             vm.Config         // jsonnet VM config
+	vmc             vm.CmdlineConfig  // jsonnet VM config
 	clp             clientProvider    // the client provider
 	attrsp          kubeAttrsProvider // the kubernetes attribute provider
 	colors          bool              // colorize output
@@ -262,7 +262,7 @@ func (c *config) init(strict bool) error {
 		}
 	}
 	variables := c.vmc.Variables.WithVars(addVars...)
-	c.vmc = vm.Config{
+	c.vmc = vm.CmdlineConfig{
 		Variables: variables,
 		LibPaths:  c.vmc.LibPaths,
 	}

@@ -60,8 +60,8 @@ function (tlaStr,tlaCode) {
 `
 
 func TestConfigBasic(t *testing.T) {
-	var fn func() (Config, error)
-	var cfg Config
+	var fn func() (CmdlineConfig, error)
+	var cfg CmdlineConfig
 	var output string
 	cmd := &cobra.Command{
 		Use: "show",
@@ -76,7 +76,7 @@ func TestConfigBasic(t *testing.T) {
 				NewVar("inlineStr", "ifoo"),
 				NewCodeVar("inlineCode", "true"),
 			)
-			jvm := newJsonnetVM(cfg.LibPaths)
+			jvm := newJsonnetVM(Config{LibPaths: cfg.LibPaths})
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
 			return err
@@ -118,8 +118,8 @@ func TestConfigBasic(t *testing.T) {
 }
 
 func TestConfigShorthands(t *testing.T) {
-	var fn func() (Config, error)
-	var cfg Config
+	var fn func() (CmdlineConfig, error)
+	var cfg CmdlineConfig
 	var output string
 	cmd := &cobra.Command{
 		Use: "show",
@@ -135,7 +135,8 @@ func TestConfigShorthands(t *testing.T) {
 					NewVar("inlineStr", "ifoo"),
 					NewCodeVar("inlineCode", "true"),
 				)
-			jvm := newJsonnetVM(cfg.LibPaths)
+			jvm := newJsonnetVM(Config{LibPaths: cfg.LibPaths})
+			require.NoError(t, err)
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
 			return err
@@ -180,7 +181,7 @@ func TestConfigShorthands(t *testing.T) {
 
 func TestConfigNegative(t *testing.T) {
 	execInVM := func(code string, args []string) error {
-		var fn func() (Config, error)
+		var fn func() (CmdlineConfig, error)
 		cmd := &cobra.Command{
 			Use: "show",
 			RunE: func(c *cobra.Command, args []string) error {
@@ -189,7 +190,7 @@ func TestConfigNegative(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				jvm := newJsonnetVM(cfg.LibPaths)
+				jvm := newJsonnetVM(Config{LibPaths: cfg.LibPaths})
 				cfg.Variables.register(jvm)
 				if code == "" {
 					code = "{}"
@@ -295,7 +296,7 @@ func TestConfigNegative(t *testing.T) {
 func TestConfigFromScratch(t *testing.T) {
 	vars := VariableSet{}.
 		WithVars(NewVar("foo", "bar"), NewCodeVar("bar", "true"))
-	jvm := newJsonnetVM(nil)
+	jvm := newJsonnetVM(Config{})
 	vars.register(jvm)
 	out, err := jvm.EvaluateAnonymousSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)
 	require.Nil(t, err)

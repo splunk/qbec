@@ -28,15 +28,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config is the desired configuration of the Jsonnet VM.
-type Config struct {
+// CmdlineConfig is the desired configuration of the Jsonnet VM that can be set on the command line.
+type CmdlineConfig struct {
 	Variables VariableSet // variables specified on command line
 	LibPaths  []string    // library paths in filesystem for the file importer
 }
 
 // WithLibPaths returns a config with additional library paths.
-func (c Config) WithLibPaths(paths []string) Config {
-	return Config{Variables: c.Variables, LibPaths: append(c.LibPaths, paths...)}
+func (c CmdlineConfig) WithLibPaths(paths []string) CmdlineConfig {
+	return CmdlineConfig{Variables: c.Variables, LibPaths: append(c.LibPaths, paths...)}
 }
 
 type strFiles struct {
@@ -113,7 +113,7 @@ func getValues(ret map[string]Var, name string, s strFiles, fn func(name, value 
 
 // ConfigFromCommandParams attaches VM related flags to the specified command and returns
 // a function that provides the config based on command line flags.
-func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) func() (Config, error) {
+func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) func() (CmdlineConfig, error) {
 	var (
 		extStrings strFiles
 		extCodes   strFiles
@@ -142,7 +142,7 @@ func ConfigFromCommandParams(cmd *cobra.Command, prefix string, addShortcuts boo
 	fs.StringArrayVar(&tlaCodes.files, prefix+"tla-code-file", nil, "top-level code from file: <var>=<filename>")
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")
 
-	return func() (c Config, err error) {
+	return func() (c CmdlineConfig, err error) {
 		vars := map[string]Var{}
 		tlaVars := map[string]Var{}
 		if err = getValues(vars, "ext-str", extStrings, NewVar); err != nil {

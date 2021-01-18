@@ -38,7 +38,7 @@ func TestConfigCreate(t *testing.T) {
 	vs := vm.VariableSet{}.
 		WithTopLevelVars(vm.NewVar("tlaFoo", "xxx"), vm.NewCodeVar("tlaBar", "true")).
 		WithVars(vm.NewVar("extFoo", "xxx"))
-	vmc := vm.Config{Variables: vs}
+	vmc := vm.CmdlineConfig{Variables: vs}
 
 	f := configFactory{
 		skipConfirm:     true,
@@ -80,7 +80,7 @@ func TestConfigStrictVarsPass(t *testing.T) {
 			vm.NewVar("extBar", "yyy"),
 			vm.NewVar("noDefault", "boo"),
 		)
-	vmc := vm.Config{Variables: vs}
+	vmc := vm.CmdlineConfig{Variables: vs}
 	f := configFactory{
 		strictVars: true,
 	}
@@ -104,7 +104,7 @@ func TestConfigStrictVarsFail(t *testing.T) {
 			vm.NewVar("tlaGargle", "xxx"),
 			vm.NewCodeVar("tlaBurble", "true"),
 		)
-	vmc := vm.Config{Variables: vs}
+	vmc := vm.CmdlineConfig{Variables: vs}
 	f := configFactory{
 		strictVars: true,
 	}
@@ -127,7 +127,7 @@ func TestConfigConfirm(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vmc := vm.Config{}
+	vmc := vm.CmdlineConfig{}
 
 	var stdout, stderr bytes.Buffer
 	stdin := bytes.NewReader([]byte("abcd\ny\n"))

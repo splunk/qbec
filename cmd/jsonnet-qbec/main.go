@@ -28,7 +28,7 @@ import (
 )
 
 func main() {
-	var configInit func() (vm.Config, error)
+	var configInit func() (vm.CmdlineConfig, error)
 	exe := filepath.Base(os.Args[0])
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
@@ -42,7 +42,7 @@ func main() {
 				if err != nil {
 					return errors.Wrap(err, "create VM config")
 				}
-				jvm := vm.New(config.LibPaths)
+				jvm := vm.New(vm.Config{LibPaths: config.LibPaths})
 				file := args[0]
 				str, err := jvm.EvalFile(file, config.Variables)
 				if err != nil {

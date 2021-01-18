@@ -31,6 +31,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/splunk/qbec/internal/vm/natives"
 )
 
@@ -42,7 +43,7 @@ const (
 
 // VMConfigFunc is a function that returns a VM configuration containing only the
 // specified top-level variables of interest.
-type VMConfigFunc func(tlaVars []string) vm.Config
+type VMConfigFunc func(tlaVars []string) vm.CmdlineConfig
 
 // LocalObjectProducer converts a data object that has basic Kubernetes attributes
 // to a local model object.
@@ -91,6 +92,7 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 // Context is the evaluation context
 type Context struct {
 	LibPaths         []string
+	DataSources      []importers.DataSource
 	Vars             vm.VariableSet
 	Verbose          bool              // show generated code
 	Concurrency      int               // concurrent components to evaluate, default 5
@@ -130,7 +132,7 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 }
 
 func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
-	jvm := vm.New(c.LibPaths)
+	jvm := vm.New(vm.Config{LibPaths: c.LibPaths, DataSources: c.DataSources})
 	return jvm.EvalFile(file, vars)
 }
 
