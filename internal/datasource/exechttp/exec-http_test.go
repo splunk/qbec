@@ -2,15 +2,23 @@ package exechttp
 
 import (
 	"encoding/json"
+	"runtime"
 	"testing"
 
+	"github.com/splunk/qbec/internal/datasource/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExecBasic(t *testing.T) {
 	a := assert.New(t)
-	ds, err := FromURL("exec-http://replay?exe=go&arg=run&arg=./testdata/replay/main.go")
+	var ds api.DataSource
+	var err error
+	if runtime.GOOS == "windows" {
+		ds, err = FromURL("exec-http://replay?exe=replay-http-server")
+	} else {
+		ds, err = FromURL("exec-http://replay?exe=go&arg=run&arg=./replay-http-server/main.go")
+	}
 	require.NoError(t, err)
 	defer ds.Close()
 	a.Equal("replay", ds.Name())
@@ -35,6 +43,7 @@ func TestExecNegative(t *testing.T) {
 	tests := []struct {
 		name          string
 		url           string
+		winurl        string
 		path          string
 		startAsserter func(t *testing.T, err error)
 		asserter      func(t *testing.T, resolved string, err error)
@@ -48,18 +57,20 @@ func TestExecNegative(t *testing.T) {
 			},
 		},
 		{
-			name: "exe-err",
-			url:  "exec-http://replay?exe=go&arg=run&arg=./testdata/replay/main.go",
-			path: "/fail",
+			name:   "exe-err",
+			url:    "exec-http://replay?exe=go&arg=run&arg=./replay-http-server/main.go",
+			winurl: "exec-http://replay?exe=replay-http-server",
+			path:   "/fail",
 			asserter: func(t *testing.T, resolved string, err error) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "GET /fail returned 400 (body=no data for you\n)")
 			},
 		},
 		{
-			name: "exe-slow",
-			url:  "exec-http://replay?exe=go&arg=run&arg=./testdata/replay/main.go&request-timeout=100ms",
-			path: "/slow",
+			name:   "exe-slow",
+			url:    "exec-http://replay?exe=go&arg=run&arg=./replay-http-server/main.go&request-timeout=100ms",
+			winurl: "exec-http://replay?exe=replay-http-server&request-timeout=100ms",
+			path:   "/slow",
 			asserter: func(t *testing.T, resolved string, err error) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), `context deadline exceeded`)
@@ -68,7 +79,11 @@ func TestExecNegative(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ds, err := FromURL(test.url)
+			u := test.url
+			if runtime.GOOS == "windows" && test.winurl != "" {
+				u = test.winurl
+			}
+			ds, err := FromURL(u)
 			require.NoError(t, err)
 			err = ds.Start(map[string]interface{}{})
 			if test.startAsserter == nil {

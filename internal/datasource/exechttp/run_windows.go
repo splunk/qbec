@@ -19,8 +19,8 @@
 package exechttp
 
 import (
+	"os"
 	"os/exec"
-	"syscall"
 	"time"
 )
 
@@ -36,13 +36,12 @@ func stopCommand(cmd *exec.Cmd) error {
 		_ = cmd.Wait()
 		close(done)
 	}()
-	_ = cmd.Process.Signal(syscall.SIGTERM)
+	_ = cmd.Process.Signal(os.Interrupt)
 	select {
 	case <-done:
 		return nil
 	case <-time.After(2 * time.Second):
 		_ = cmd.Process.Kill()
 	}
-	<-done
 	return nil
 }

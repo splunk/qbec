@@ -27,36 +27,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 )
-
-var envAllowList = []string{
-	"HOME",
-	"LANG",
-	"LC_ALL",
-	"LC_COLLATE",
-	"LC_CTYPE",
-	"LC_MESSAGES",
-	"LC_MONETARY",
-	"LC_NUMERIC",
-	"LC_TIME",
-	"LOGNAME",
-	"PATH",
-	"SHELL",
-	"TERM",
-	"TZ",
-	"USER",
-}
-var envAllowMap map[string]bool
-
-func init() {
-	envAllowMap = map[string]bool{}
-	for _, e := range envAllowList {
-		envAllowMap[e] = true
-	}
-}
 
 // ExecContext is the context for command execution as implemented by exec data sources
 type ExecContext struct {
@@ -80,15 +53,7 @@ func (e *ExecContext) BaseCommand(ctx context.Context, args []string) *exec.Cmd 
 	cmd.Dir = e.workDir
 	cmd.Stderr = e.stderr
 	cmd.Stdin = bytes.NewReader(e.stdin)
-	var env []string
-	for _, v := range os.Environ() {
-		parts := strings.SplitN(v, "=", 2)
-		name := parts[0]
-		if envAllowMap[name] {
-			env = append(env, v)
-		}
-	}
-	cmd.Env = append(env, e.env...)
+	cmd.Env = append(os.Environ(), e.env...)
 	return cmd
 }
 

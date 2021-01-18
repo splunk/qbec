@@ -2,6 +2,7 @@ package exec
 
 import (
 	"encoding/json"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,7 @@ import (
 
 func TestExecBasic(t *testing.T) {
 	a := assert.New(t)
-	ds, err := FromURL("exec://replay?exe=go&arg=run&arg=./testdata/replay/main.go")
+	ds, err := FromURL("exec://replay?exe=go&arg=run&arg=./replay-exec/main.go")
 	require.NoError(t, err)
 	defer ds.Close()
 	a.Equal("replay", ds.Name())
@@ -49,7 +50,7 @@ func TestExecNegative(t *testing.T) {
 		},
 		{
 			name: "exe-err",
-			url:  "exec://replay?exe=go&arg=run&arg=./testdata/replay/main.go",
+			url:  "exec://replay?exe=go&arg=run&arg=./replay-exec/main.go",
 			path: "/fail",
 			asserter: func(t *testing.T, resolved string, err error) {
 				require.Error(t, err)
@@ -58,11 +59,15 @@ func TestExecNegative(t *testing.T) {
 		},
 		{
 			name: "exe-slow",
-			url:  "exec://replay?exe=go&arg=run&arg=./testdata/replay/main.go&timeout=100ms",
+			url:  "exec://replay?exe=go&arg=run&arg=./replay-exec/main.go&timeout=100ms",
 			path: "/slow",
 			asserter: func(t *testing.T, resolved string, err error) {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), `signal: killed`)
+				if runtime.GOOS == "windows" {
+					assert.Contains(t, err.Error(), `exit status 1`)
+				} else {
+					assert.Contains(t, err.Error(), `signal: killed`)
+				}
 			},
 		},
 	}
