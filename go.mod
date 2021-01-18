@@ -16,6 +16,7 @@ require (
 	github.com/googleapis/gnostic v0.2.0
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/mattn/go-isatty v0.0.11
+	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/cobra v1.1.1
@@ -24,6 +25,7 @@ require (
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.13
 	k8s.io/apimachinery v0.17.13
 	k8s.io/client-go v0.17.13
