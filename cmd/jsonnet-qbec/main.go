@@ -18,46 +18,72 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/datasource"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/importers"
 )
 
-func main() {
+func run(args []string, out io.Writer) error {
 	var configInit func() (vm.CmdlineConfig, error)
-	exe := filepath.Base(os.Args[0])
+	var sources []string
+	exe := filepath.Base(args[0])
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
-		Short: "jsonnet with yaml support",
-		Run: func(c *cobra.Command, args []string) {
-			run := func() error {
-				if len(args) != 1 {
-					return fmt.Errorf("exactly one file argument is required")
+		Short: "jsonnet with qbec extensions",
+		RunE: func(c *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("exactly one file argument is required")
+			}
+			config, err := configInit()
+			if err != nil {
+				return errors.Wrap(err, "create VM config")
+			}
+			var dataSources []importers.DataSource
+			var closers []io.Closer
+			defer func() {
+				for _, c := range closers {
+					_ = c.Close()
 				}
-				config, err := configInit()
-				if err != nil {
-					return errors.Wrap(err, "create VM config")
-				}
-				jvm := vm.New(vm.Config{LibPaths: config.LibPaths})
-				file := args[0]
-				str, err := jvm.EvalFile(file, config.Variables)
+			}()
+			for _, src := range sources {
+				ds, err := datasource.Create(src)
 				if err != nil {
 					return err
 				}
-				fmt.Println(str)
-				return nil
+				err = ds.Start(map[string]interface{}{
+					"version": "1.0",
+				})
+				if err != nil {
+					return errors.Wrapf(err, "start data source %s", ds.Name())
+				}
+				dataSources = append(dataSources, ds)
+				closers = append(closers, ds)
 			}
-			if err := run(); err != nil {
-				log.Fatalln(err)
+			jvm := vm.New(vm.Config{LibPaths: config.LibPaths, DataSources: dataSources})
+			file := args[0]
+			str, err := jvm.EvalFile(file, config.Variables)
+			if err != nil {
+				return err
 			}
+			fmt.Fprintln(out, str)
+			return nil
 		},
 	}
 	configInit = vm.ConfigFromCommandParams(root, "", true)
-	if err := root.Execute(); err != nil {
+	root.Flags().StringArrayVar(&sources, "data-source", sources, "data source URL")
+	root.SetArgs(args[1:])
+	return root.Execute()
+}
+
+func main() {
+	if err := run(os.Args, os.Stdout); err != nil {
 		log.Fatalln(err)
 	}
 }
