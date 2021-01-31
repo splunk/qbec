@@ -29,8 +29,7 @@ import (
 
 // Config is the configuration of the VM
 type Config struct {
-	LibPaths  []string    // library paths
-	Variables VariableSet // set of variables
+	LibPaths []string // library paths
 }
 
 // VM provides a narrow interface to the capabilities of a jsonnet VM.
@@ -77,7 +76,6 @@ func defaultImporter(libPaths []string) jsonnet.Importer {
 func newJsonnetVM(config Config) *jsonnet.VM {
 	jvm := jsonnet.MakeVM()
 	natives.Register(jvm)
-	config.Variables.register(jvm)
 	jvm.Importer(defaultImporter(config.LibPaths))
 	return jvm
 }
