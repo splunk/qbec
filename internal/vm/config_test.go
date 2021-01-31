@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/splunk/qbec/internal/testutil"
+	"github.com/splunk/qbec/internal/vm/externals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -60,8 +60,8 @@ function (tlaStr,tlaCode) {
 `
 
 func TestConfigBasic(t *testing.T) {
-	var fn func() (Config, error)
-	var cfg Config
+	var fn func() (externals.Externals, error)
+	var cfg externals.Externals
 	var output string
 	cmd := &cobra.Command{
 		Use: "show",
@@ -72,11 +72,14 @@ func TestConfigBasic(t *testing.T) {
 				return err
 			}
 			cfg := cfg.WithLibPaths([]string{"testdata/lib2"})
-			vars := cfg.Variables.WithVars(
+			vars := VariablesFromConfig(cfg).WithVars(
 				NewVar("inlineStr", "ifoo"),
 				NewCodeVar("inlineCode", "true"),
 			)
-			jvm := newJsonnetVM(cfg.LibPaths)
+			jvm := newJsonnetVM(Config{
+				LibPaths:  cfg.LibPaths,
+				Variables: vars,
+			})
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
 			return err
@@ -84,7 +87,7 @@ func TestConfigBasic(t *testing.T) {
 	}
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
-	fn = ConfigFromCommandParams(cmd, "vm:", false)
+	fn = externals.FromCommandParams(cmd, "vm:", false)
 	cmd.SetArgs([]string{
 		"show",
 		"--vm:ext-str=extStr",
@@ -117,186 +120,10 @@ func TestConfigBasic(t *testing.T) {
 	}, r)
 }
 
-func TestConfigShorthands(t *testing.T) {
-	var fn func() (Config, error)
-	var cfg Config
-	var output string
-	cmd := &cobra.Command{
-		Use: "show",
-		RunE: func(c *cobra.Command, args []string) error {
-			var err error
-			cfg, err = fn()
-			if err != nil {
-				return err
-			}
-			cfg = cfg.WithLibPaths([]string{"testdata/lib2"})
-			vars := cfg.Variables.
-				WithVars(
-					NewVar("inlineStr", "ifoo"),
-					NewCodeVar("inlineCode", "true"),
-				)
-			jvm := newJsonnetVM(cfg.LibPaths)
-			vars.register(jvm)
-			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
-			return err
-		},
-	}
-	cmd.SilenceUsage = true
-	cmd.SilenceErrors = true
-	fn = ConfigFromCommandParams(cmd, "vm:", true)
-	cmd.SetArgs([]string{
-		"show",
-		"-V",
-		"extStr",
-		"--vm:ext-code-file=extCode=testdata/extCode.libsonnet",
-		"-A",
-		"tlaStr=tlafoo",
-		"--vm:tla-code=tlaCode=true",
-		"--vm:jpath=testdata/lib1",
-		"--vm:ext-str-list=testdata/vars.txt",
-	})
-	os.Setenv("extStr", "envFoo")
-	defer os.Unsetenv("extStr")
-	os.Setenv("listVar2", "l2")
-	defer os.Unsetenv("listVar2")
-	err := cmd.Execute()
-	require.Nil(t, err)
-	var r result
-	err = json.Unmarshal([]byte(output), &r)
-	require.Nil(t, err)
-	assert.EqualValues(t, result{
-		TLAStr:     "tlafoo",
-		TLACode:    true,
-		ExtStr:     "envFoo",
-		ExtCode:    code{Foo: "ec1foo", Bar: "ec1bar"},
-		LibPath1:   code{Foo: "lc1foo", Bar: "lc1bar"},
-		LibPath2:   code{Foo: "lc2foo", Bar: "lc2bar"},
-		InlineStr:  "ifoo",
-		InlineCode: true,
-		ListVar1:   "l1",
-		ListVar2:   "l2",
-	}, r)
-}
-
-func TestConfigNegative(t *testing.T) {
-	execInVM := func(code string, args []string) error {
-		var fn func() (Config, error)
-		cmd := &cobra.Command{
-			Use: "show",
-			RunE: func(c *cobra.Command, args []string) error {
-				var err error
-				cfg, err := fn()
-				if err != nil {
-					return err
-				}
-				jvm := newJsonnetVM(cfg.LibPaths)
-				cfg.Variables.register(jvm)
-				if code == "" {
-					code = "{}"
-				}
-				_, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", code)
-				return err
-			},
-		}
-		fn = ConfigFromCommandParams(cmd, "vm:", false)
-		cmd.SetArgs(args)
-		cmd.SilenceUsage = true
-		cmd.SilenceErrors = true
-		return cmd.Execute()
-	}
-	tests := []struct {
-		name     string
-		code     string
-		args     []string
-		asserter func(a *assert.Assertions, err error)
-	}{
-		{
-			name: "ext-str-undef",
-			args: []string{"show", "--vm:ext-str=undef_foo"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "no value found from environment for undef_foo")
-			},
-		},
-		{
-			name: "ext-code-undef",
-			args: []string{"show", "--vm:ext-code=undef_foo"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "no value found from environment for undef_foo")
-			},
-		},
-		{
-			name: "tla-str-undef",
-			args: []string{"show", "--vm:tla-str=undef_foo"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "no value found from environment for undef_foo")
-			},
-		},
-		{
-			name: "tla-code-undef",
-			args: []string{"show", "--vm:tla-code=undef_foo"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "no value found from environment for undef_foo")
-			},
-		},
-		{
-			name: "ext-file-undef",
-			args: []string{"show", "--vm:ext-str-file=foo"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "ext-str-file no filename specified for foo")
-			},
-		},
-		{
-			name: "tla-file-undef",
-			args: []string{"show", "--vm:tla-str-file=foo=bar"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "open bar: "+testutil.FileNotFoundMessage)
-			},
-		},
-		{
-			name: "shorthand-not-enabled",
-			args: []string{"show", "-A extStr"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "unknown shorthand flag: 'A'")
-			},
-		},
-		{
-			name: "ext-list-bad-file",
-			args: []string{"show", "--vm:ext-str-list=no-such-file"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), testutil.FileNotFoundMessage)
-			},
-		},
-		{
-			name: "ext-list-bad-file",
-			args: []string{"show", "--vm:ext-str-list=testdata/vars.txt"},
-			asserter: func(a *assert.Assertions, err error) {
-				require.NotNil(t, err)
-				a.Contains(err.Error(), "process list testdata/vars.txt, line 3: no value found from environment for listVar2")
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			a := assert.New(t)
-			err := execInVM(test.code, test.args)
-			test.asserter(a, err)
-		})
-	}
-}
-
 func TestConfigFromScratch(t *testing.T) {
 	vars := VariableSet{}.
 		WithVars(NewVar("foo", "bar"), NewCodeVar("bar", "true"))
-	jvm := newJsonnetVM(nil)
-	vars.register(jvm)
+	jvm := newJsonnetVM(Config{Variables: vars})
 	out, err := jvm.EvaluateAnonymousSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)
 	require.Nil(t, err)
 	assert.Equal(t, `"bartrue"`+"\n", out)

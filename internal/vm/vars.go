@@ -19,6 +19,7 @@ package vm
 import (
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/splunk/qbec/internal/vm/externals"
 )
 
 type varKind int
@@ -51,6 +52,29 @@ func NewCodeVar(name, code string) Var {
 type VariableSet struct {
 	vars         map[string]Var // variables keyed by name
 	topLevelVars map[string]Var // TLA string vars keyed by name
+}
+
+// VariablesFromConfig returns a variable set containing the user-supplied variables.
+func VariablesFromConfig(config externals.Externals) VariableSet {
+	ret := VariableSet{
+		vars:         map[string]Var{},
+		topLevelVars: map[string]Var{},
+	}
+	for name, v := range config.Variables.Vars {
+		if v.Code {
+			ret.vars[name] = NewCodeVar(name, v.Value)
+		} else {
+			ret.vars[name] = NewVar(name, v.Value)
+		}
+	}
+	for name, v := range config.Variables.TopLevelVars {
+		if v.Code {
+			ret.topLevelVars[name] = NewCodeVar(name, v.Value)
+		} else {
+			ret.topLevelVars[name] = NewVar(name, v.Value)
+		}
+	}
+	return ret
 }
 
 func copyMap(m map[string]Var) map[string]Var {

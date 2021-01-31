@@ -30,7 +30,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/externals"
 )
 
 const (
@@ -203,7 +203,7 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 	var appTag string
 	var envFile string
 
-	vmConfigFn := vm.ConfigFromCommandParams(root, "vm:", true)
+	vmConfigFn := externals.FromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, "force:")
 

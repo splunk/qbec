@@ -40,10 +40,6 @@ const (
 	postprocessTLAVar  = "object"
 )
 
-// VMConfigFunc is a function that returns a VM configuration containing only the
-// specified top-level variables of interest.
-type VMConfigFunc func(tlaVars []string) vm.Config
-
 // LocalObjectProducer converts a data object that has basic Kubernetes attributes
 // to a local model object.
 type LocalObjectProducer func(component string, data map[string]interface{}) model.K8sLocalObject
@@ -130,7 +126,10 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 }
 
 func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
-	jvm := vm.New(c.LibPaths)
+	jvm := vm.New(vm.Config{
+		LibPaths:  c.LibPaths,
+		Variables: c.Vars,
+	})
 	return jvm.EvalFile(file, vars)
 }
 
