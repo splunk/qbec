@@ -26,3 +26,13 @@ func (c *CompositeImporter) Import(importedFrom, importedPath string) (contents 
 	}
 	return contents, foundAt, fmt.Errorf("no importer for path %s", importedPath)
 }
+
+// CanProcess implements the interface method of the ExtendedImporter
+func (c *CompositeImporter) CanProcess(importedPath string) bool {
+	for _, importer := range c.importers {
+		if importer.CanProcess(importedPath) {
+			return true
+		}
+	}
+	return false
+}

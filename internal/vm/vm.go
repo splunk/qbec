@@ -29,7 +29,8 @@ import (
 
 // Config is the configuration of the VM
 type Config struct {
-	LibPaths []string // library paths
+	LibPaths    []string               // library paths
+	DataSources []importers.DataSource // data sources
 }
 
 // VM provides a narrow interface to the capabilities of a jsonnet VM.
@@ -62,21 +63,26 @@ func (v *vm) EvalFile(file string, vars VariableSet) (string, error) {
 }
 
 // defaultImporter returns the standard importer.
-func defaultImporter(libPaths []string) jsonnet.Importer {
-	return importers.NewCompositeImporter(
+func defaultImporter(c Config) jsonnet.Importer {
+	var imps []importers.ExtendedImporter
+	for _, ds := range c.DataSources {
+		imps = append(imps, importers.NewDataSourceImporter(ds))
+	}
+	std := []importers.ExtendedImporter{
 		importers.NewGlobImporter("import"),
 		importers.NewGlobImporter("importstr"),
 		importers.NewFileImporter(&jsonnet.FileImporter{
-			JPaths: libPaths,
+			JPaths: c.LibPaths,
 		}),
-	)
+	}
+	return importers.NewCompositeImporter(append(imps, std...)...)
 }
 
 // newJsonnetVM create a new jsonnet VM with native functions and importer registered.
 func newJsonnetVM(config Config) *jsonnet.VM {
 	jvm := jsonnet.MakeVM()
 	natives.Register(jvm)
-	jvm.Importer(defaultImporter(config.LibPaths))
+	jvm.Importer(defaultImporter(config))
 	return jvm
 }
 
