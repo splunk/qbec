@@ -17,20 +17,44 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/datasource"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/splunk/qbec/internal/vm/externals"
+	"github.com/splunk/qbec/internal/vm/importers"
 )
 
-func main() {
+func toStdin(vars map[string]externals.UserVal) map[string]interface{} {
+	data := map[string]interface{}{}
+	for k, v := range vars {
+		if !v.Code {
+			data[k] = v
+			continue
+		}
+		var inner interface{}
+		err := json.Unmarshal([]byte(v.Value), &inner)
+		if err != nil {
+			sio.Warnf("invalid code variable '%s', unmarshal failed with error: %v\n", k, err)
+			continue
+		}
+		data[k] = inner
+	}
+	return data
+}
+
+func run(args []string, out io.Writer) error {
 	var configInit func() (externals.Externals, error)
-	exe := filepath.Base(os.Args[0])
+	var sources []string
+	exe := filepath.Base(args[0])
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
 		Short: "jsonnet with yaml support",
@@ -43,13 +67,35 @@ func main() {
 				if err != nil {
 					return errors.Wrap(err, "create VM ext")
 				}
-				jvm := vm.New(vm.Config{LibPaths: ext.LibPaths})
+				var dataSources []importers.DataSource
+				var closers []io.Closer
+				defer func() {
+					for _, c := range closers {
+						_ = c.Close()
+					}
+				}()
+				for _, src := range sources {
+					ds, err := datasource.Create(src)
+					if err != nil {
+						return err
+					}
+					err = ds.Start(toStdin(ext.Variables.Vars))
+					if err != nil {
+						return errors.Wrapf(err, "start data source %s", ds.Name())
+					}
+					dataSources = append(dataSources, ds)
+					closers = append(closers, ds)
+				}
+				jvm := vm.New(vm.Config{
+					LibPaths:    ext.LibPaths,
+					DataSources: dataSources,
+				})
 				file := args[0]
 				str, err := jvm.EvalFile(file, vm.VariablesFromConfig(ext))
 				if err != nil {
 					return err
 				}
-				fmt.Println(str)
+				_, _ = fmt.Fprintln(out, str)
 				return nil
 			}
 			if err := run(); err != nil {
@@ -58,7 +104,16 @@ func main() {
 		},
 	}
 	configInit = externals.FromCommandParams(root, "", true)
+	root.Flags().StringArrayVar(&sources, "data-source", sources, "data source URL")
+	root.SetArgs(args[1:])
 	if err := root.Execute(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	if err := run(os.Args, os.Stdout); err != nil {
 		log.Fatalln(err)
 	}
 }
