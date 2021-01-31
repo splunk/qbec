@@ -43,9 +43,9 @@ func main() {
 				if err != nil {
 					return errors.Wrap(err, "create VM ext")
 				}
-				jvm := vm.New(vm.Config{LibPaths: ext.LibPaths, Variables: vm.VariablesFromConfig(ext)})
+				jvm := vm.New(vm.Config{LibPaths: ext.LibPaths})
 				file := args[0]
-				str, err := jvm.EvalFile(file, vm.VariableSet{})
+				str, err := jvm.EvalFile(file, vm.VariablesFromConfig(ext))
 				if err != nil {
 					return err
 				}

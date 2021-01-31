@@ -180,6 +180,7 @@ type config struct {
 	app             *model.App          // app loaded from file
 	ext             externals.Externals // external config
 	vmc             vm.Config           // VM config
+	vars            vm.VariableSet      // std VM variables
 	clp             clientProvider      // the client provider
 	attrsp          kubeAttrsProvider   // the kubernetes attribute provider
 	colors          bool                // colorize output
@@ -263,10 +264,9 @@ func (c *config) init(strict bool) error {
 			addVars = append(addVars, vm.NewCodeVar(k, string(b)))
 		}
 	}
-	variables := vs.WithVars(addVars...)
+	c.vars = vs.WithVars(addVars...)
 	c.vmc = vm.Config{
-		Variables: variables,
-		LibPaths:  c.ext.LibPaths,
+		LibPaths: c.ext.LibPaths,
 	}
 	return nil
 }
@@ -284,7 +284,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if c.cleanEvalMode {
 		cm = "on"
 	}
-	baseVars := c.vmc.Variables.WithVars(
+	baseVars := c.vars.WithVars(
 		vm.NewVar(model.QbecNames.EnvVarName, env),
 		vm.NewVar(model.QbecNames.TagVarName, c.app.Tag()),
 		vm.NewVar(model.QbecNames.DefaultNsVarName, c.app.DefaultNamespace(env)),

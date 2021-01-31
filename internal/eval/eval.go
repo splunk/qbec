@@ -127,8 +127,7 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 
 func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
 	jvm := vm.New(vm.Config{
-		LibPaths:  c.LibPaths,
-		Variables: c.Vars,
+		LibPaths: c.LibPaths,
 	})
 	return jvm.EvalFile(file, vars)
 }

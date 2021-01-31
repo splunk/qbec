@@ -77,8 +77,7 @@ func TestConfigBasic(t *testing.T) {
 				NewCodeVar("inlineCode", "true"),
 			)
 			jvm := newJsonnetVM(Config{
-				LibPaths:  cfg.LibPaths,
-				Variables: vars,
+				LibPaths: cfg.LibPaths,
 			})
 			vars.register(jvm)
 			output, err = jvm.EvaluateAnonymousSnippet("test.jsonnet", evalCode)
@@ -123,7 +122,8 @@ func TestConfigBasic(t *testing.T) {
 func TestConfigFromScratch(t *testing.T) {
 	vars := VariableSet{}.
 		WithVars(NewVar("foo", "bar"), NewCodeVar("bar", "true"))
-	jvm := newJsonnetVM(Config{Variables: vars})
+	jvm := newJsonnetVM(Config{})
+	vars.register(jvm)
 	out, err := jvm.EvaluateAnonymousSnippet("test.jsonnet", `std.extVar('foo') + std.toString(std.extVar('bar'))`)
 	require.Nil(t, err)
 	assert.Equal(t, `"bartrue"`+"\n", out)
