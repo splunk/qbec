@@ -34,6 +34,7 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/externals"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -132,7 +133,7 @@ type configFactory struct {
 	strictVars      bool      // strict mode for variable evaluation
 }
 
-func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp clientProvider, kp kubeAttrsProvider) (*config, error) {
+func (cp configFactory) internalConfig(app *model.App, ext externals.Externals, clp clientProvider, kp kubeAttrsProvider) (*config, error) {
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
@@ -144,7 +145,7 @@ func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 	}
 	cfg := &config{
 		app:             app,
-		vmc:             vmConfig,
+		ext:             ext,
 		clp:             clp,
 		attrsp:          kp,
 		colors:          cp.colors,
@@ -162,7 +163,7 @@ func (cp configFactory) internalConfig(app *model.App, vmConfig vm.Config, clp c
 }
 
 // getConfig returns the command configuration.
-func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConfig *remote.Config, forceOpts forceOptions,
+func (cp configFactory) getConfig(app *model.App, ext externals.Externals, remoteConfig *remote.Config, forceOpts forceOptions,
 	overrideCP func(env string) (kubeClient, error)) (*config, error) {
 	scp := &stdClientProvider{
 		app:                    app,
@@ -171,23 +172,24 @@ func (cp configFactory) getConfig(app *model.App, vmConfig vm.Config, remoteConf
 		forceContext:           forceOpts.k8sContext,
 		overrideClientProvider: overrideCP,
 	}
-	return cp.internalConfig(app, vmConfig, scp.Client, scp.Attrs)
+	return cp.internalConfig(app, ext, scp.Client, scp.Attrs)
 }
 
 // config is the command configuration.
 type config struct {
-	app             *model.App        // app loaded from file
-	vmc             vm.Config         // jsonnet VM config
-	clp             clientProvider    // the client provider
-	attrsp          kubeAttrsProvider // the kubernetes attribute provider
-	colors          bool              // colorize output
-	yes             bool              // auto-confirm
-	evalConcurrency int               // concurrency of component eval
-	verbose         int               // verbosity level
-	stdin           io.Reader         // standard input
-	stdout          io.Writer         // standard output
-	stderr          io.Writer         // standard error
-	cleanEvalMode   bool              // clean mode for eval
+	app             *model.App          // app loaded from file
+	ext             externals.Externals // external config
+	vmc             vm.Config           // VM config
+	clp             clientProvider      // the client provider
+	attrsp          kubeAttrsProvider   // the kubernetes attribute provider
+	colors          bool                // colorize output
+	yes             bool                // auto-confirm
+	evalConcurrency int                 // concurrency of component eval
+	verbose         int                 // verbosity level
+	stdin           io.Reader           // standard input
+	stdout          io.Writer           // standard output
+	stderr          io.Writer           // standard error
+	cleanEvalMode   bool                // clean mode for eval
 }
 
 // init checks variables and sets up defaults. In strict mode, it requires all variables
@@ -196,10 +198,10 @@ type config struct {
 // and exclude all TLA variables. Required TLA variables are set per component later.
 func (c *config) init(strict bool) error {
 	var msgs []string
-	c.vmc = c.vmc.WithLibPaths(c.app.LibPaths())
-
-	vars := c.vmc.Variables.Vars()
-	tlaVars := c.vmc.Variables.TopLevelVars()
+	c.ext = c.ext.WithLibPaths(c.app.LibPaths())
+	vs := vm.VariablesFromConfig(c.ext)
+	vars := vs.Vars()
+	tlaVars := vs.TopLevelVars()
 
 	declaredExternals := c.app.DeclaredVars()
 	declaredTLAs := c.app.DeclaredTopLevelVars()
@@ -219,9 +221,9 @@ func (c *config) init(strict bool) error {
 		// check that all declared variables have been specified
 		var fn func(string) bool
 		if tla {
-			fn = c.vmc.Variables.HasTopLevelVar
+			fn = vs.HasTopLevelVar
 		} else {
-			fn = c.vmc.Variables.HasVar
+			fn = vs.HasVar
 		}
 		for k := range declared {
 			ok := fn(k)
@@ -243,7 +245,7 @@ func (c *config) init(strict bool) error {
 	var addVars []vm.Var
 
 	for k, v := range declaredExternals {
-		if c.vmc.Variables.HasVar(k) {
+		if vs.HasVar(k) {
 			continue
 		}
 		if v == nil {
@@ -261,10 +263,10 @@ func (c *config) init(strict bool) error {
 			addVars = append(addVars, vm.NewCodeVar(k, string(b)))
 		}
 	}
-	variables := c.vmc.Variables.WithVars(addVars...)
+	variables := vs.WithVars(addVars...)
 	c.vmc = vm.Config{
 		Variables: variables,
-		LibPaths:  c.vmc.LibPaths,
+		LibPaths:  c.ext.LibPaths,
 	}
 	return nil
 }
@@ -291,7 +293,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	)
 	return eval.Context{
 		Vars:             baseVars,
-		LibPaths:         c.vmc.LibPaths,
+		LibPaths:         c.ext.LibPaths,
 		Verbose:          c.Verbosity() > 1,
 		Concurrency:      c.EvalConcurrency(),
 		PreProcessFiles:  c.App().PreProcessors(),
@@ -343,9 +345,9 @@ func (c config) Stderr() io.Writer {
 
 // Confirm prompts for confirmation if needed.
 func (c config) Confirm(context string) error {
-	fmt.Fprintln(c.stderr)
-	fmt.Fprintln(c.stderr, context)
-	fmt.Fprintln(c.stderr)
+	_, _ = fmt.Fprintln(c.stderr)
+	_, _ = fmt.Fprintln(c.stderr, context)
+	_, _ = fmt.Fprintln(c.stderr)
 	if c.yes {
 		return nil
 	}

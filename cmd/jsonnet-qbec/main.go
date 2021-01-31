@@ -25,10 +25,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/externals"
 )
 
 func main() {
-	var configInit func() (vm.Config, error)
+	var configInit func() (externals.Externals, error)
 	exe := filepath.Base(os.Args[0])
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
@@ -38,13 +39,13 @@ func main() {
 				if len(args) != 1 {
 					return fmt.Errorf("exactly one file argument is required")
 				}
-				config, err := configInit()
+				ext, err := configInit()
 				if err != nil {
-					return errors.Wrap(err, "create VM config")
+					return errors.Wrap(err, "create VM ext")
 				}
-				jvm := vm.New(config.LibPaths)
+				jvm := vm.New(vm.Config{LibPaths: ext.LibPaths, Variables: vm.VariablesFromConfig(ext)})
 				file := args[0]
-				str, err := jvm.EvalFile(file, config.Variables)
+				str, err := jvm.EvalFile(file, vm.VariableSet{})
 				if err != nil {
 					return err
 				}
@@ -56,7 +57,7 @@ func main() {
 			}
 		},
 	}
-	configInit = vm.ConfigFromCommandParams(root, "", true)
+	configInit = externals.FromCommandParams(root, "", true)
 	if err := root.Execute(); err != nil {
 		log.Fatalln(err)
 	}

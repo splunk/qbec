@@ -23,7 +23,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
-	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/externals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,10 +35,17 @@ func TestConfigCreate(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "t1")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vs := vm.VariableSet{}.
-		WithTopLevelVars(vm.NewVar("tlaFoo", "xxx"), vm.NewCodeVar("tlaBar", "true")).
-		WithVars(vm.NewVar("extFoo", "xxx"))
-	vmc := vm.Config{Variables: vs}
+	vmc := externals.Externals{
+		Variables: externals.UserVariables{
+			Vars: map[string]externals.UserVal{
+				"extFoo": {Value: "xxxx"},
+			},
+			TopLevelVars: map[string]externals.UserVal{
+				"tlaFoo": {Value: "xxx"},
+				"tlaBar": {Value: "true", Code: true},
+			},
+		},
+	}
 
 	f := configFactory{
 		skipConfirm:     true,
@@ -70,17 +77,18 @@ func TestConfigStrictVarsPass(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-
-	vs := vm.VariableSet{}.
-		WithTopLevelVars(
-			vm.NewVar("tlaFoo", "xxx"),
-		).
-		WithVars(
-			vm.NewVar("extFoo", "xxx"),
-			vm.NewVar("extBar", "yyy"),
-			vm.NewVar("noDefault", "boo"),
-		)
-	vmc := vm.Config{Variables: vs}
+	vmc := externals.Externals{
+		Variables: externals.UserVariables{
+			Vars: map[string]externals.UserVal{
+				"extFoo":    {Value: "xxx"},
+				"extBar":    {Value: "yyy"},
+				"noDefault": {Value: "boo"},
+			},
+			TopLevelVars: map[string]externals.UserVal{
+				"tlaFoo": {Value: "xxx"},
+			},
+		},
+	}
 	f := configFactory{
 		strictVars: true,
 	}
@@ -95,16 +103,19 @@ func TestConfigStrictVarsFail(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vs := vm.VariableSet{}.
-		WithVars(
-			vm.NewVar("extSomething", "some-other-thing"),
-			vm.NewCodeVar("extSomethingElse", "true"),
-		).
-		WithTopLevelVars(
-			vm.NewVar("tlaGargle", "xxx"),
-			vm.NewCodeVar("tlaBurble", "true"),
-		)
-	vmc := vm.Config{Variables: vs}
+	vmc := externals.Externals{
+		Variables: externals.UserVariables{
+			Vars: map[string]externals.UserVal{
+				"extSomething":     {Value: "some-other-thing"},
+				"extSomethingElse": {Value: "true", Code: true},
+			},
+			TopLevelVars: map[string]externals.UserVal{
+				"tlaGargle": {Value: "xxx"},
+				"tlaBurble": {Value: "true", Code: true},
+			},
+		},
+	}
+
 	f := configFactory{
 		strictVars: true,
 	}
@@ -127,7 +138,7 @@ func TestConfigConfirm(t *testing.T) {
 	app, err := model.NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)
 	rc := &remote.Config{}
-	vmc := vm.Config{}
+	vmc := externals.Externals{}
 
 	var stdout, stderr bytes.Buffer
 	stdin := bytes.NewReader([]byte("abcd\ny\n"))

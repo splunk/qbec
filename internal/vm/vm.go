@@ -27,6 +27,12 @@ import (
 	"github.com/splunk/qbec/internal/vm/natives"
 )
 
+// Config is the configuration of the VM
+type Config struct {
+	LibPaths  []string    // library paths
+	Variables VariableSet // set of variables
+}
+
 // VM provides a narrow interface to the capabilities of a jsonnet VM.
 type VM interface {
 	// EvalFile evaluates the supplied file initializing the VM with the supplied variables
@@ -68,14 +74,15 @@ func defaultImporter(libPaths []string) jsonnet.Importer {
 }
 
 // newJsonnetVM create a new jsonnet VM with native functions and importer registered.
-func newJsonnetVM(libPaths []string) *jsonnet.VM {
+func newJsonnetVM(config Config) *jsonnet.VM {
 	jvm := jsonnet.MakeVM()
 	natives.Register(jvm)
-	jvm.Importer(defaultImporter(libPaths))
+	config.Variables.register(jvm)
+	jvm.Importer(defaultImporter(config.LibPaths))
 	return jvm
 }
 
 // New constructs a new VM based on the supplied config.
-func New(libPaths []string) VM {
-	return &vm{jvm: newJsonnetVM(libPaths)}
+func New(config Config) VM {
+	return &vm{jvm: newJsonnetVM(config)}
 }

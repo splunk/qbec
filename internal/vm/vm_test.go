@@ -25,7 +25,7 @@ import (
 )
 
 func TestVMEvalFile(t *testing.T) {
-	vm := New([]string{"testdata/vmlib"})
+	vm := New(Config{LibPaths: []string{"testdata/vmlib"}})
 	out, err := vm.EvalFile(
 		"testdata/vmtest.jsonnet",
 		VariableSet{}.WithVars(
@@ -45,14 +45,14 @@ func TestVMEvalFile(t *testing.T) {
 }
 
 func TestVMEvalNonExistentFile(t *testing.T) {
-	vm := New(nil)
+	vm := New(Config{})
 	_, err := vm.EvalFile("testdata/does-not-exist.jsonnet", VariableSet{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "testdata/does-not-exist.jsonnet: file not found")
 }
 
 func TestVMEvalDir(t *testing.T) {
-	vm := New(nil)
+	vm := New(Config{})
 	_, err := vm.EvalFile("testdata", VariableSet{})
 	require.Error(t, err)
 	assert.Equal(t, err.Error(), "file 'testdata' was a directory")
