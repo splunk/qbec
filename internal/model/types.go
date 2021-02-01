@@ -102,6 +102,8 @@ type AppSpec struct {
 	Excludes []string `json:"excludes,omitempty"`
 	// list of library paths to add to the jsonnet VM at evaluation
 	LibPaths []string `json:"libPaths,omitempty"`
+	// list of data sources to add to the jsonnet VM at evaluation
+	DataSources []string `json:"dataSources,omitempty"`
 	// automatically suffix default namespace defined for environment when app-tag provided.
 	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
 	// properties for the baseline environment, can be used to define what env properties should look like

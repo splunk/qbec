@@ -100,6 +100,11 @@ definitions:
         items:
           type: string
         type: array
+      dataSources:
+        description: list of datasources to be configured for the jsonnet VM
+        items:
+          type: string
+        type: array
       paramsFile:
         description: |-
           standard file containing parameters for all environments returning correct values based on qbec.io/env external

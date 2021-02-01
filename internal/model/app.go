@@ -283,6 +283,11 @@ func (a *App) LibPaths() []string {
 	return a.inner.Spec.LibPaths
 }
 
+// DataSources returns the data sources set up for the app.
+func (a *App) DataSources() []string {
+	return a.inner.Spec.DataSources
+}
+
 // AddComponentLabel returns if the qbec component name should be added as an object label in addition to the
 // standard annotation.
 func (a *App) AddComponentLabel() bool {

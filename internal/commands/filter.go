@@ -116,7 +116,13 @@ func filteredObjects(cfg *config, env string, kf keyFunc, fp filterParams) ([]mo
 	if err != nil {
 		return nil, err
 	}
-	output, err := eval.Components(components, cfg.EvalContext(env, props), cfg.ObjectProducer(env))
+	ctx, err := cfg.EvalContext(env, props)
+	if err != nil {
+		return nil, err
+	}
+	defer ctx.Close()
+
+	output, err := eval.Components(components, ctx, cfg.ObjectProducer(env))
 	if err != nil {
 		return nil, err
 	}

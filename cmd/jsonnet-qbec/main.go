@@ -17,7 +17,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -27,29 +26,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/datasource"
-	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/splunk/qbec/internal/vm/externals"
 	"github.com/splunk/qbec/internal/vm/importers"
 )
-
-func toStdin(vars map[string]externals.UserVal) map[string]interface{} {
-	data := map[string]interface{}{}
-	for k, v := range vars {
-		if !v.Code {
-			data[k] = v
-			continue
-		}
-		var inner interface{}
-		err := json.Unmarshal([]byte(v.Value), &inner)
-		if err != nil {
-			sio.Warnf("invalid code variable '%s', unmarshal failed with error: %v\n", k, err)
-			continue
-		}
-		data[k] = inner
-	}
-	return data
-}
 
 func run(args []string, out io.Writer) error {
 	var configInit func() (externals.Externals, error)
@@ -79,7 +59,7 @@ func run(args []string, out io.Writer) error {
 					if err != nil {
 						return err
 					}
-					err = ds.Start(toStdin(ext.Variables.Vars))
+					err = ds.Start(ext.ToVarMap())
 					if err != nil {
 						return errors.Wrapf(err, "start data source %s", ds.Name())
 					}

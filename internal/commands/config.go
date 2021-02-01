@@ -28,6 +28,7 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/datasource"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
@@ -35,6 +36,7 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/splunk/qbec/internal/vm/externals"
+	"github.com/splunk/qbec/internal/vm/importers"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -275,7 +277,7 @@ func (c *config) init(strict bool) error {
 func (c config) App() *model.App { return c.app }
 
 // EvalContext returns the evaluation context for the supplied environment.
-func (c config) EvalContext(env string, props map[string]interface{}) eval.Context {
+func (c config) EvalContext(env string, props map[string]interface{}) (eval.Context, error) {
 	p, err := json.Marshal(props)
 	if err != nil {
 		sio.Warnln("unable to serialize env properties to JSON:", err)
@@ -284,6 +286,7 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 	if c.cleanEvalMode {
 		cm = "on"
 	}
+
 	baseVars := c.vars.WithVars(
 		vm.NewVar(model.QbecNames.EnvVarName, env),
 		vm.NewVar(model.QbecNames.TagVarName, c.app.Tag()),
@@ -291,14 +294,42 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		vm.NewVar(model.QbecNames.CleanModeVarName, cm),
 		vm.NewCodeVar(model.QbecNames.EnvPropsVarName, string(p)),
 	)
+
+	sources := c.app.DataSources()
+	var dataSources []importers.DataSource
+	var closers []io.Closer
+
+	if len(sources) > 0 {
+		dsInput := c.ext.ToVarMap()
+		dsInput[model.QbecNames.EnvVarName] = env
+		dsInput[model.QbecNames.TagVarName] = c.app.Tag()
+		dsInput[model.QbecNames.DefaultNsVarName] = c.app.DefaultNamespace(env)
+		dsInput[model.QbecNames.CleanModeVarName] = cm
+		dsInput[model.QbecNames.EnvPropsVarName] = props
+		for _, s := range sources {
+			ds, err := datasource.Create(s)
+			if err != nil {
+				return eval.Context{}, errors.Wrapf(err, "create datasource %s", s)
+			}
+			err = ds.Start(dsInput)
+			if err != nil {
+				return eval.Context{}, errors.Wrapf(err, "start datasource %s", s)
+			}
+			dataSources = append(dataSources, ds)
+			closers = append(closers, ds)
+		}
+	}
+
 	return eval.Context{
 		Vars:             baseVars,
+		DataSources:      dataSources,
 		LibPaths:         c.ext.LibPaths,
 		Verbose:          c.Verbosity() > 1,
 		Concurrency:      c.EvalConcurrency(),
 		PreProcessFiles:  c.App().PreProcessors(),
 		PostProcessFiles: c.App().PostProcessors(),
-	}
+		Closers:          closers,
+	}, nil
 }
 
 func (c config) ObjectProducer(env string) eval.LocalObjectProducer {

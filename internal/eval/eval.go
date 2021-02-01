@@ -20,6 +20,7 @@ package eval
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,6 +32,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/splunk/qbec/internal/vm/natives"
 )
 
@@ -86,13 +88,27 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // Context is the evaluation context
 type Context struct {
-	LibPaths         []string
-	Vars             vm.VariableSet
-	Verbose          bool              // show generated code
-	Concurrency      int               // concurrent components to evaluate, default 5
-	PreProcessFiles  []string          // preprocessor files that are evaluated if present
-	PostProcessFiles []string          // files that contains post-processing code for all objects
-	tlaVars          map[string]vm.Var // all top level string vars specified for the command
+	LibPaths         []string               // library paths to use
+	DataSources      []importers.DataSource // data sources to set up
+	Vars             vm.VariableSet         // variables to set
+	Verbose          bool                   // show generated code
+	Concurrency      int                    // concurrent components to evaluate, default 5
+	PreProcessFiles  []string               // preprocessor files that are evaluated if present
+	PostProcessFiles []string               // files that contains post-processing code for all objects
+	Closers          []io.Closer            // the closers to close
+	tlaVars          map[string]vm.Var      // all top level string vars specified for the command
+}
+
+// Close closes resources attached to this context.
+func (c *Context) Close() error {
+	var err error
+	for _, c := range c.Closers {
+		e := c.Close()
+		if e != nil {
+			err = e
+		}
+	}
+	return err
 }
 
 func (c *Context) init() {
@@ -127,7 +143,8 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 
 func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
 	jvm := vm.New(vm.Config{
-		LibPaths: c.LibPaths,
+		LibPaths:    c.LibPaths,
+		DataSources: c.DataSources,
 	})
 	return jvm.EvalFile(file, vars)
 }

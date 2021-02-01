@@ -19,6 +19,7 @@ package externals
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/sio"
 )
 
 // UserVal is a user-supplied variable value to be initialized for the jsonnet VM
@@ -59,6 +61,27 @@ type Externals struct {
 // WithLibPaths returns a config with additional library paths.
 func (c Externals) WithLibPaths(paths []string) Externals {
 	return Externals{Variables: c.Variables, LibPaths: append(c.LibPaths, paths...)}
+}
+
+// ToVarMap returns a map of all external variable values keyed by variable names.
+func (c Externals) ToVarMap() map[string]interface{} {
+	data := map[string]interface{}{}
+	for k, v := range c.Variables.Vars {
+		if v.Code {
+			if !v.Code {
+				data[k] = v
+				continue
+			}
+			var inner interface{}
+			err := json.Unmarshal([]byte(v.Value), &inner)
+			if err != nil {
+				sio.Warnf("invalid code variable '%s', unmarshal failed with error: %v\n", k, err)
+				continue
+			}
+			data[k] = inner
+		}
+	}
+	return data
 }
 
 type strFiles struct {
