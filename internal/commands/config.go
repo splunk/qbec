@@ -292,9 +292,11 @@ func (c config) EvalContext(env string, props map[string]interface{}) eval.Conte
 		vm.NewCodeVar(model.QbecNames.EnvPropsVarName, string(p)),
 	)
 	return eval.Context{
-		Vars:             baseVars,
-		LibPaths:         c.ext.LibPaths,
-		Verbose:          c.Verbosity() > 1,
+		BaseContext: eval.BaseContext{
+			Vars:     baseVars,
+			LibPaths: c.ext.LibPaths,
+			Verbose:  c.Verbosity() > 1,
+		},
 		Concurrency:      c.EvalConcurrency(),
 		PreProcessFiles:  c.App().PreProcessors(),
 		PostProcessFiles: c.App().PostProcessors(),

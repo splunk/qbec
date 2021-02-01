@@ -84,11 +84,28 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 	return t, nil
 }
 
+// BaseContext is the context required to evaluate a single file
+type BaseContext struct {
+	LibPaths []string       // library paths
+	Vars     vm.VariableSet // variables for the VM
+	Verbose  bool           // show generated code
+}
+
+func (c *BaseContext) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
+	jvm := vm.New(vm.Config{
+		LibPaths: c.LibPaths,
+	})
+	return jvm.EvalFile(file, vars)
+}
+
+// File evaluates the supplied file using the base context.
+func File(file string, ctx BaseContext) (jsonData string, err error) {
+	return ctx.evalFile(file, ctx.Vars)
+}
+
 // Context is the evaluation context
 type Context struct {
-	LibPaths         []string
-	Vars             vm.VariableSet
-	Verbose          bool              // show generated code
+	BaseContext
 	Concurrency      int               // concurrent components to evaluate, default 5
 	PreProcessFiles  []string          // preprocessor files that are evaluated if present
 	PostProcessFiles []string          // files that contains post-processing code for all objects
@@ -123,13 +140,6 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 		}
 	}
 	return vs.WithTopLevelVars(add...)
-}
-
-func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
-	jvm := vm.New(vm.Config{
-		LibPaths: c.LibPaths,
-	})
-	return jvm.EvalFile(file, vars)
 }
 
 func (c *Context) runPreprocessors() error {

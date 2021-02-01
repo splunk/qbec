@@ -17,6 +17,7 @@
 package eval
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -44,9 +45,34 @@ func decorate(ctx Context) Context {
 	return ctx
 }
 
+func TestEvalFile(t *testing.T) {
+	data, err := File("testdata/params.libsonnet", BaseContext{
+		Vars: vm.VariableSet{}.WithVars(
+			vm.NewVar("qbec.io/tag", "t1"),
+			vm.NewVar("qbec.io/env", "dev"),
+			vm.NewVar("qbec.io/cleanMode", "off"),
+			vm.NewVar("qbec.io/defaultNs", "foobar"),
+			vm.NewCodeVar("qbec.io/envProperties", `{ foo: "bar"}`),
+		),
+	})
+	require.Nil(t, err)
+	a := assert.New(t)
+	var paramsMap map[string]interface{}
+	err = json.Unmarshal([]byte(data), &paramsMap)
+	require.NoError(t, err)
+	comps, ok := paramsMap["components"].(map[string]interface{})
+	require.True(t, ok)
+	base, ok := comps["base"].(map[string]interface{})
+	require.True(t, ok)
+	a.EqualValues("dev", base["env"])
+	a.EqualValues("foobar", base["ns"])
+	a.EqualValues("t1", base["tag"])
+	a.EqualValues("bar", base["foo"])
+}
+
 func TestEvalParams(t *testing.T) {
 	paramsMap, err := Params("testdata/params.libsonnet", decorate(Context{
-		Verbose: true,
+		BaseContext: BaseContext{Verbose: true},
 	}))
 	require.Nil(t, err)
 	a := assert.New(t)
@@ -99,10 +125,12 @@ func TestEvalComponents(t *testing.T) {
 		},
 	},
 		decorate(Context{
-			Verbose:          true,
+			BaseContext: BaseContext{
+				Vars:    vm.VariableSet{}.WithTopLevelVars(vm.NewVar("foo", "foo"), vm.NewCodeVar("bar", "true")),
+				Verbose: true,
+			},
 			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet", "testdata/components/pp/pp2.jsonnet"},
 			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet", "testdata/components/pp/std-map2.jsonnet"},
-			Vars:             vm.VariableSet{}.WithTopLevelVars(vm.NewVar("foo", "foo"), vm.NewCodeVar("bar", "true")),
 		}),
 		producer,
 	)
