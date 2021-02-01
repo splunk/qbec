@@ -67,7 +67,7 @@ func TestConfigCreate(t *testing.T) {
 	a.Equal("default-t1", cfg.app.DefaultNamespace("prod"))
 	a.Nil(cfg.Confirm("we will destroy you"))
 
-	ctx := cfg.EvalContext("dev", map[string]interface{}{"foo": "bar"})
+	ctx, _ := cfg.EvalContext("dev", map[string]interface{}{"foo": "bar"})
 	a.Equal(cfg.EvalConcurrency(), ctx.Concurrency)
 }
 

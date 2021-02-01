@@ -49,7 +49,10 @@ func doEval(args []string, config evalCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		ctx := config.EvalContext(config.env, props)
+		ctx, err := config.EvalContext(config.env, props)
+		if err != nil {
+			return err
+		}
 		output, err = eval.File(args[0], ctx.BaseContext)
 	}
 	if err != nil {

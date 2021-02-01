@@ -20,6 +20,7 @@ package eval
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,6 +32,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/splunk/qbec/internal/vm/natives"
 )
 
@@ -106,10 +108,24 @@ func File(file string, ctx BaseContext) (jsonData string, err error) {
 // Context is the evaluation context
 type Context struct {
 	BaseContext
-	Concurrency      int               // concurrent components to evaluate, default 5
-	PreProcessFiles  []string          // preprocessor files that are evaluated if present
-	PostProcessFiles []string          // files that contains post-processing code for all objects
-	tlaVars          map[string]vm.Var // all top level string vars specified for the command
+	Concurrency      int                    // concurrent components to evaluate, default 5
+	PreProcessFiles  []string               // preprocessor files that are evaluated if present
+	PostProcessFiles []string               // files that contains post-processing code for all objects
+	DataSources      []importers.DataSource // data sources to set up
+	Closers          []io.Closer            // the closers to close
+	tlaVars          map[string]vm.Var      // all top level string vars specified for the command
+}
+
+// Close closes resources attached to this context.
+func (c *Context) Close() error {
+	var err error
+	for _, c := range c.Closers {
+		e := c.Close()
+		if e != nil {
+			err = e
+		}
+	}
+	return err
 }
 
 func (c *Context) init() {
@@ -140,6 +156,14 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 		}
 	}
 	return vs.WithTopLevelVars(add...)
+}
+
+func (c *Context) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
+	jvm := vm.New(vm.Config{
+		LibPaths:    c.LibPaths,
+		DataSources: c.DataSources,
+	})
+	return jvm.EvalFile(file, vars)
 }
 
 func (c *Context) runPreprocessors() error {

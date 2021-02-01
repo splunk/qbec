@@ -107,3 +107,7 @@ endif
 release-notes:
 	go test cmd/changelog-extractor/*.go
 	go run cmd/changelog-extractor/main.go CHANGELOG.md > .release-notes.md
+
+.PHONY: gen
+gen:
+	go run ./cmd/gen-qbec-swagger/main.go ./internal/model/swagger.yaml ./internal/model/swagger-schema.go
