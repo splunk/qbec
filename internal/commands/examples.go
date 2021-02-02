@@ -67,6 +67,13 @@ func showExamples() string {
 	)
 }
 
+func evalExamples() string {
+	return exampleHelp(
+		newExample("eval some/file.jsonnet --vm:ext-str foo=bar", "evaluate the supplied file using simple jsonnet semantics, does not require qbec.yaml"),
+		newExample("eval some/file.jsonnet --env dev", "evaluate the supplied file using qbec semantics, automatically setting all external variables like qbec would set them for the environment"),
+	)
+}
+
 func fmtExamples() string {
 	return exampleHelp(
 		newExample("alpha fmt -w", "format all jsonnet and libsonnet files in-place"),

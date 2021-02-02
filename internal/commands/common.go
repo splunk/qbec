@@ -103,6 +103,7 @@ func setupCommands(root *cobra.Command, cp configProvider) {
 	root.AddCommand(newApplyCommand(cp))
 	root.AddCommand(newValidateCommand(cp))
 	root.AddCommand(newShowCommand(cp))
+	root.AddCommand(newEvalCommand(cp))
 	root.AddCommand(newDiffCommand(cp))
 	root.AddCommand(newDeleteCommand(cp))
 	root.AddCommand(newComponentCommand(cp))

@@ -203,7 +203,7 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 	var appTag string
 	var envFile string
 
-	vmConfigFn := externals.FromCommandParams(root, "vm:", true)
+	extConfigFn := externals.FromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, "force:")
 
@@ -221,13 +221,39 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 
 	var cmdCfg *config
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion" { // don't make these commands dependent on work dir
-			return nil
-		}
 		if !cmd.Flags().Changed("colors") {
 			cf.colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
 		sio.EnableColors(cf.colors)
+
+		if cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion" { // don't make these commands dependent on work dir
+			return nil
+		}
+
+		extConfig, err := extConfigFn()
+		if err != nil {
+			return newRuntimeError(err)
+		}
+
+		// for the eval command, require qbec machinery only if the env option is specified
+		if cmd.Name() == "eval" {
+			e, err := cmd.Flags().GetString("env")
+			if err != nil {
+				return err
+			}
+			if e == "" {
+				cmdCfg = &config{
+					ext:             extConfig,
+					colors:          cf.colors,
+					yes:             cf.skipConfirm,
+					evalConcurrency: 0,
+					verbose:         cf.verbosity,
+					stdout:          cf.stdout,
+					stderr:          cf.stderr,
+				}
+				return nil
+			}
+		}
 
 		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
 		// directory before we change it
@@ -267,12 +293,8 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 			forceOpts.k8sNamespace = cc.Namespace
 		}
 		app.SetOverrideNamespace(forceOpts.k8sNamespace)
-		vmConfig, err := vmConfigFn()
-		if err != nil {
-			return newRuntimeError(err)
-		}
 
-		cmdCfg, err = cf.getConfig(app, vmConfig, remoteConfig, forceOpts, overrideCP)
+		cmdCfg, err = cf.getConfig(app, extConfig, remoteConfig, forceOpts, overrideCP)
 		return err
 	}
 	setupCommands(root, func() *config {
@@ -284,6 +306,8 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 // to access common options.
 func Setup(root *cobra.Command) {
 	doSetup(root, configFactory{
+		stdout:          os.Stdout,
+		stderr:          os.Stderr,
 		skipConfirm:     skipPrompts(),
 		evalConcurrency: 5,
 	}, nil)
