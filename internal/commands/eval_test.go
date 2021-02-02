@@ -92,7 +92,7 @@ func TestEvalInQBECContext(t *testing.T) {
 	a.Equal("development", data["bar"])
 }
 
-func TestEvalBarArgs(t *testing.T) {
+func TestEvalBadArgs(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("eval", "misc/qbec.jsonnet", "misc/simple.jsonnet")
