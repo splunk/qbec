@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -122,7 +123,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "list"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -131,7 +132,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "list", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -140,7 +141,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "list", "dev", "-o", "table"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`listComponents: unsupported format "table"`, err.Error())
 			},
 		},
@@ -149,7 +150,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "list", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},
@@ -158,7 +159,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "diff"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`one or two environments required`, err.Error())
 			},
 		},
@@ -167,7 +168,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "diff", "dev", "prod", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`one or two environments required`, err.Error())
 			},
 		},
@@ -176,7 +177,7 @@ func TestComponentNegative(t *testing.T) {
 			args: []string{"component", "diff", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},

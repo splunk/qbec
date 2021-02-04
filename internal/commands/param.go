@@ -25,6 +25,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
@@ -33,7 +34,7 @@ import (
 
 var maxDisplayValueLength = 1024
 
-func newParamCommand(cp configProvider) *cobra.Command {
+func newParamCommand(cp ctxProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "param <subcommand>",
 		Short:   "parameter lists and diffs",
@@ -87,7 +88,7 @@ func listParams(components map[string]interface{}, formatSpecified bool, format 
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(p)
 	default:
-		return newUsageError(fmt.Sprintf("listParams: unsupported format %q", format))
+		return cmd.NewUsageError(fmt.Sprintf("listParams: unsupported format %q", format))
 	}
 }
 
@@ -121,14 +122,14 @@ func extractComponentParams(paramsObject map[string]interface{}, fp filterParams
 }
 
 type paramListCommandConfig struct {
-	*config
+	cmd.AppContext
 	format     string
 	filterFunc func() (filterParams, error)
 }
 
 func doParamList(args []string, config paramListCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	if env != model.Baseline {
@@ -138,11 +139,11 @@ func doParamList(args []string, config paramListCommandConfig) error {
 		}
 	}
 	paramsFile := config.App().ParamsFile()
-	props, err := config.App().Properties(env)
+	envCtx, err := config.EnvContext(env)
 	if err != nil {
 		return err
 	}
-	paramsObject, err := eval.Params(paramsFile, config.EvalContext(env, props))
+	paramsObject, err := eval.Params(paramsFile, envCtx.EvalContext(cleanEvalMode))
 	if err != nil {
 		return err
 	}
@@ -157,25 +158,25 @@ func doParamList(args []string, config paramListCommandConfig) error {
 	return listParams(components, config.format != "", config.format, config.Stdout())
 }
 
-func newParamListCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newParamListCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "list [-c component]...  <environment>|_",
 		Short:   "list all parameters for an environment, optionally for a subset of components",
 		Example: paramListExamples(),
 	}
 	config := paramListCommandConfig{
-		filterFunc: addFilterParams(cmd, false),
+		filterFunc: addFilterParams(c, false),
 	}
-	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doParamList(args, config))
+	c.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doParamList(args, config))
 	}
-	return cmd
+	return c
 }
 
 type paramDiffCommandConfig struct {
-	*config
+	cmd.AppContext
 	filterFunc func() (filterParams, error)
 }
 
@@ -189,7 +190,7 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 		leftEnv = args[0]
 		rightEnv = args[1]
 	default:
-		return newUsageError("one or two environments required")
+		return cmd.NewUsageError("one or two environments required")
 	}
 
 	fp, err := config.filterFunc()
@@ -204,11 +205,11 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 			}
 		}
 		paramsFile := config.App().ParamsFile()
-		props, err := config.App().Properties(env)
+		envCtx, err := config.AppContext.EnvContext(env)
 		if err != nil {
 			return "", "", err
 		}
-		paramsObject, err := eval.Params(paramsFile, config.EvalContext(env, props))
+		paramsObject, err := eval.Params(paramsFile, envCtx.EvalContext(cleanEvalMode))
 		if err != nil {
 			return "", "", err
 		}
@@ -248,20 +249,20 @@ func doParamDiff(args []string, config paramDiffCommandConfig) error {
 
 }
 
-func newParamDiffCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newParamDiffCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "diff [-c component]... <environment>|_ [<environment>|_]",
 		Short:   "diff parameter lists across two environments or between the baseline (use _ for baseline) and an environment",
 		Example: paramDiffExamples(),
 	}
 
 	config := paramDiffCommandConfig{
-		filterFunc: addFilterParams(cmd, false),
+		filterFunc: addFilterParams(c, false),
 	}
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doParamDiff(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doParamDiff(args, config))
 	}
-	return cmd
+	return c
 }

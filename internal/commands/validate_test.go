@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,7 +82,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -90,7 +91,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -99,7 +100,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},
@@ -108,7 +109,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "dev", "-c", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`specified components: bad component reference(s): foo`, err.Error())
 			},
 		},
@@ -117,7 +118,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "dev", "-c", "svc1-cm", "-C", "svc2-cm"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 			},
 		},
@@ -127,7 +128,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "dev"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(IsRuntimeError(err))
+				a.True(cmd.IsRuntimeError(err))
 				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
 			},
 		},
@@ -137,7 +138,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "dev", "-K", "configmap"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(IsRuntimeError(err))
+				a.True(cmd.IsRuntimeError(err))
 				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
 			},
 		},
@@ -146,7 +147,7 @@ func TestValidateNegative(t *testing.T) {
 			args: []string{"validate", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot validate baseline environment, use a real environment`, err.Error())
 			},
 		},
@@ -160,7 +161,7 @@ func TestValidateNegative(t *testing.T) {
 			},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Contains(err.Error(), "no validator for you")
 			},
 		},

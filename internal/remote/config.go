@@ -190,10 +190,8 @@ type ContextInfo struct {
 }
 
 // CurrentContextInfo returns information for the current context found in kubeconfig.
-func CurrentContextInfo() (*ContextInfo, error) {
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	overrides := &clientcmd.ConfigOverrides{}
-	cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
+func (c *Config) CurrentContextInfo() (*ContextInfo, error) {
+	cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(c.loadingRules, c.overrides)
 	kc, err := cc.RawConfig()
 	if err != nil {
 		return nil, err

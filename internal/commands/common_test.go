@@ -112,29 +112,6 @@ func TestRunInParallel(t *testing.T) {
 	a.Contains(err.Error(), "/v1, Kind=ConfigMap:kube-system:k1: kserr")
 }
 
-func TestUsageError(t *testing.T) {
-	ue := newUsageError("foobar")
-	a := assert.New(t)
-	a.True(isUsageError(ue))
-	a.Equal("foobar", ue.Error())
-}
-
-func TestRuntimeError(t *testing.T) {
-	re := newRuntimeError(errors.New("foobar"))
-	a := assert.New(t)
-	a.True(IsRuntimeError(re))
-	a.False(isUsageError(re))
-	a.Equal("foobar", re.Error())
-}
-
-func TestWrapError(t *testing.T) {
-	ue := newUsageError("foobar")
-	a := assert.New(t)
-	a.Nil(wrapError(nil))
-	a.True(isUsageError(wrapError(ue)))
-	a.True(IsRuntimeError(wrapError(errors.New("foobar"))))
-}
-
 func TestStats(t *testing.T) {
 	data := map[string]int{
 		"processed": 10,

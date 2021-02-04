@@ -32,6 +32,7 @@ import (
 	yamllib "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
@@ -191,7 +192,7 @@ func setPwd(t *testing.T, dir string) func() {
 
 type baseScaffold struct {
 	t          *testing.T
-	cp         clientProvider
+	cp         cmd.ClientProvider
 	outCapture *bytes.Buffer
 	errCapture *bytes.Buffer
 	reset      func()
@@ -285,30 +286,28 @@ func (s *baseScaffold) outputStats() map[string]interface{} {
 	return data.Stats
 }
 
-func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) baseScaffold {
+func newBaseScaffold(t *testing.T, dir string, clientProvider cmd.ClientProvider) baseScaffold {
 	reset := setPwd(t, dir)
 	out := bytes.NewBuffer(nil)
 
-	cp := configFactory{
-		stdout:      &lockWriter{Writer: out},
-		skipConfirm: true,
-		colors:      false,
-	}
-
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use: "qbec-test",
 	}
-	doSetup(cmd, cp, clientProvider)
-	cmd.SetOut(out)
-	cmd.SetErr(out)
-	cmd.SilenceErrors = true
-	cmd.SilenceUsage = true
+	doSetup(c, cmd.Options{
+		SkipConfirm:    true,
+		Stdout:         &lockWriter{Writer: out},
+		ClientProvider: clientProvider,
+	})
+	c.SetOut(out)
+	c.SetErr(out)
+	c.SilenceErrors = true
+	c.SilenceUsage = true
 	s := baseScaffold{
 		t:          t,
 		cp:         clientProvider,
 		outCapture: out,
 		errCapture: bytes.NewBuffer(nil),
-		cmd:        cmd,
+		cmd:        c,
 	}
 	oldOut := sio.Output
 	oldColors := sio.ColorsEnabled()
@@ -324,25 +323,23 @@ func newBaseScaffold(t *testing.T, dir string, clientProvider clientProvider) ba
 
 func (s *baseScaffold) sub() baseScaffold {
 	out := bytes.NewBuffer(nil)
-	cp := configFactory{
-		stdout:      &lockWriter{Writer: out},
-		skipConfirm: true,
-		colors:      false,
-	}
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use: "qbec-test",
 	}
-	doSetup(cmd, cp, s.cp)
-	cmd.SetOut(out)
-	cmd.SetErr(out)
-	cmd.SilenceErrors = true
-	cmd.SilenceUsage = true
+	doSetup(c, cmd.Options{
+		SkipConfirm: true,
+		Stdout:      &lockWriter{Writer: out},
+	})
+	c.SetOut(out)
+	c.SetErr(out)
+	c.SilenceErrors = true
+	c.SilenceUsage = true
 	s2 := baseScaffold{
 		t:          s.t,
 		cp:         s.cp,
 		outCapture: out,
 		errCapture: bytes.NewBuffer(nil),
-		cmd:        cmd,
+		cmd:        c,
 	}
 	s2.reset = func() {
 	}
@@ -359,7 +356,7 @@ func newCustomScaffold(t *testing.T, dir string) *scaffold {
 		dir = "../../examples/test-app"
 	}
 	c := &client{}
-	clientProvider := func(env string) (kubeClient, error) { return c, nil }
+	clientProvider := func(env string) (cmd.KubeClient, error) { return c, nil }
 	base := newBaseScaffold(t, dir, clientProvider)
 	s := &scaffold{
 		baseScaffold: base,

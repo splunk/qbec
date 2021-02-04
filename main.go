@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/commands"
 	"github.com/splunk/qbec/internal/sio"
 )
@@ -44,7 +45,7 @@ func main() {
 	root.SilenceUsage = true
 	root.SilenceErrors = true
 	commands.Setup(root)
-	cmd, err := root.ExecuteC()
+	c, err := root.ExecuteC()
 
 	exit := func(code int) {
 		duration := time.Since(start).Round(time.Second / 100)
@@ -57,11 +58,11 @@ func main() {
 	switch {
 	case err == nil:
 		exit(0)
-	case commands.IsRuntimeError(err):
+	case cmd.IsRuntimeError(err):
 	default:
 		sio.Println()
-		cmd.Example = "" // do not print examples when there is a usage error
-		_ = cmd.Usage()
+		c.Example = "" // do not print examples when there is a usage error
+		_ = c.Usage()
 		sio.Println()
 	}
 	sio.Errorln(err)

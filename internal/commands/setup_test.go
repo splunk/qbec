@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -117,6 +118,8 @@ func TestListRemoteEnv(t *testing.T) {
 }
 
 func TestSetupEnvironments(t *testing.T) {
+	kc, err := filepath.Abs("../../examples/test-app/kubeconfig.yaml")
+	require.NoError(t, err)
 	tests := []struct {
 		name   string
 		fn     func(t *testing.T, s *scaffold)
@@ -188,7 +191,7 @@ func TestSetupEnvironments(t *testing.T) {
 			name: "force current context",
 			envMap: map[string]string{
 				"QBEC_ROOT":  "testdata",
-				"KUBECONFIG": "../../../examples/test-app/kubeconfig.yaml",
+				"KUBECONFIG": kc,
 			},
 			fn: func(t *testing.T, s *scaffold) {
 				err := s.executeCommand("env", "vars",

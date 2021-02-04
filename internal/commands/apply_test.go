@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/rollout"
@@ -143,7 +144,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -152,7 +153,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -161,7 +162,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
 			},
 		},
@@ -170,7 +171,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("cannot apply baseline environment, use a real environment", err.Error())
 			},
 		},
@@ -179,7 +180,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply", "dev", "-c", "cluster-objects", "-C", "service2"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 			},
 		},
@@ -188,7 +189,7 @@ func TestApplyNegative(t *testing.T) {
 			args: []string{"apply", "dev", "-k", "namespace", "-K", "secret"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
 			},
 		},

@@ -22,6 +22,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -154,7 +155,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -163,7 +164,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -172,7 +173,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
 			},
 		},
@@ -181,7 +182,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("cannot diff baseline environment, use a real environment", err.Error())
 			},
 		},
@@ -190,7 +191,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff", "dev", "-c", "cluster-objects", "-C", "service2"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 			},
 		},
@@ -199,7 +200,7 @@ func TestDiffNegative(t *testing.T) {
 			args: []string{"diff", "dev", "-k", "namespace", "-K", "secret"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
 			},
 		},

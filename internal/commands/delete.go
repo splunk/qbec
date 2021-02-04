@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -27,7 +28,7 @@ import (
 )
 
 type deleteCommandConfig struct {
-	*config
+	cmd.AppContext
 	dryRun     bool
 	useLocal   bool
 	filterFunc func() (filterParams, error)
@@ -35,25 +36,29 @@ type deleteCommandConfig struct {
 
 func doDelete(args []string, config deleteCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	if env == model.Baseline { // cannot apply for the baseline environment
-		return newUsageError("cannot delete baseline environment, use a real environment")
+		return cmd.NewUsageError("cannot delete baseline environment, use a real environment")
 	}
 	fp, err := config.filterFunc()
 	if err != nil {
 		return err
 	}
+	envCtx, err := config.EnvContext(env)
+	if err != nil {
+		return err
+	}
 
-	client, err := config.Client(env)
+	client, err := envCtx.Client()
 	if err != nil {
 		return err
 	}
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
+		objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
 		if err != nil {
 			return err
 		}
@@ -63,7 +68,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			}
 		}
 	} else {
-		lister, _, err := startRemoteList(env, config.config, client, fp)
+		lister, _, err := startRemoteList(envCtx, client, fp)
 		if err != nil {
 			return err
 		}
@@ -127,23 +132,23 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	return nil
 }
 
-func newDeleteCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newDeleteCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "delete [-n] <environment>",
 		Short:   "delete one or more components from a Kubernetes cluster",
 		Example: deleteExamples(),
 	}
 
 	config := deleteCommandConfig{
-		filterFunc: addFilterParams(cmd, true),
+		filterFunc: addFilterParams(c, true),
 	}
 
-	cmd.Flags().BoolVarP(&config.dryRun, "dry-run", "n", false, "dry-run, do not delete resources but show what would happen")
-	cmd.Flags().BoolVar(&config.useLocal, "local", false, "use local object names to delete, do not derive list from server")
+	c.Flags().BoolVarP(&config.dryRun, "dry-run", "n", false, "dry-run, do not delete resources but show what would happen")
+	c.Flags().BoolVar(&config.useLocal, "local", false, "use local object names to delete, do not derive list from server")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doDelete(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doDelete(args, config))
 	}
-	return cmd
+	return c
 }

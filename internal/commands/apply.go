@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -53,7 +54,7 @@ func (a *applyStats) update(name string, s *remote.SyncResult) {
 }
 
 type applyCommandConfig struct {
-	*config
+	cmd.AppContext
 	syncOptions remote.SyncOptions
 	showDetails bool
 	gc          bool
@@ -93,21 +94,25 @@ var applyWaitFn = rollout.WaitUntilComplete // allow override in tests
 
 func doApply(args []string, config applyCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	if env == model.Baseline { // cannot apply for the baseline environment
-		return newUsageError("cannot apply baseline environment, use a real environment")
+		return cmd.NewUsageError("cannot apply baseline environment, use a real environment")
+	}
+	envCtx, err := config.EnvContext(env)
+	if err != nil {
+		return err
 	}
 	fp, err := config.filterFunc()
 	if err != nil {
 		return err
 	}
-	client, err := config.Client(env)
+	client, err := envCtx.Client()
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
+	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -126,7 +131,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	var lister lister = &stubLister{}
 	var retainObjects []model.K8sLocalObject
 	if config.gc {
-		lister, retainObjects, err = startRemoteList(env, config.config, client, fp)
+		lister, retainObjects, err = startRemoteList(envCtx, client, fp)
 		if err != nil {
 			return err
 		}
@@ -247,7 +252,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		sio.Noticeln("** dry-run mode, nothing was actually changed **")
 	}
 
-	defaultNs := config.app.DefaultNamespace(env)
+	defaultNs := envCtx.App().DefaultNamespace(env)
 	if config.wait || config.waitAll {
 		wl := &waitListener{
 			displayNameFn: client.DisplayName,
@@ -266,42 +271,42 @@ func doApply(args []string, config applyCommandConfig) error {
 	return nil
 }
 
-func newApplyCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newApplyCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "apply [-n] <environment>",
 		Short:   "apply one or more components to a Kubernetes cluster",
 		Example: applyExamples(),
 	}
 
 	config := applyCommandConfig{
-		filterFunc: addFilterParams(cmd, true),
+		filterFunc: addFilterParams(c, true),
 	}
 
-	cmd.Flags().BoolVar(&config.syncOptions.DisableCreate, "skip-create", false, "set to true to only update existing resources but not create new ones")
-	cmd.Flags().BoolVarP(&config.syncOptions.DryRun, "dry-run", "n", false, "dry-run, do not create/ update resources but show what would happen")
-	cmd.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
-	cmd.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
-	cmd.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
-	cmd.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")
-	cmd.Flags().BoolVar(&config.waitAll, "wait-all", true, "wait for all objects to be ready, not just the ones that have changed")
+	c.Flags().BoolVar(&config.syncOptions.DisableCreate, "skip-create", false, "set to true to only update existing resources but not create new ones")
+	c.Flags().BoolVarP(&config.syncOptions.DryRun, "dry-run", "n", false, "dry-run, do not create/ update resources but show what would happen")
+	c.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
+	c.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
+	c.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
+	c.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")
+	c.Flags().BoolVar(&config.waitAll, "wait-all", true, "wait for all objects to be ready, not just the ones that have changed")
 	var waitTime string
-	cmd.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
+	c.Flags().StringVar(&waitTime, "wait-timeout", "5m", "wait timeout")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
 		var err error
 		config.waitTimeout, err = time.ParseDuration(waitTime)
 		if err != nil {
-			return newUsageError(fmt.Sprintf("invalid wait timeout: %s, %v", waitTime, err))
+			return cmd.NewUsageError(fmt.Sprintf("invalid wait timeout: %s, %v", waitTime, err))
 		}
 		if config.syncOptions.DryRun {
 			config.wait = false
 			config.waitAll = false
 		}
-		if !cmd.Flag("show-details").Changed {
+		if !c.Flag("show-details").Changed {
 			config.showDetails = config.syncOptions.DryRun
 		}
-		return wrapError(doApply(args, config))
+		return cmd.WrapError(doApply(args, config))
 	}
-	return cmd
+	return c
 }

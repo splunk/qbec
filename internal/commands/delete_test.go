@@ -3,6 +3,7 @@ package commands
 import (
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +84,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -92,7 +93,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -101,7 +102,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
 			},
 		},
@@ -110,7 +111,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("cannot delete baseline environment, use a real environment", err.Error())
 			},
 		},
@@ -119,7 +120,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete", "dev", "-c", "cluster-objects", "-C", "service2"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 			},
 		},
@@ -128,7 +129,7 @@ func TestDeleteNegative(t *testing.T) {
 			args: []string{"delete", "dev", "-k", "namespace", "-K", "secret"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
 			},
 		},

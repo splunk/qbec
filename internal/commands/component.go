@@ -25,11 +25,12 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/model"
 )
 
-func newComponentCommand(cp configProvider) *cobra.Command {
+func newComponentCommand(cp ctxProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "component <subcommand>",
 		Short: "component lists and diffs",
@@ -60,23 +61,27 @@ func listComponents(components []model.Component, formatSpecified bool, format s
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(components)
 	default:
-		return newUsageError(fmt.Sprintf("listComponents: unsupported format %q", format))
+		return cmd.NewUsageError(fmt.Sprintf("listComponents: unsupported format %q", format))
 	}
 }
 
 type componentListCommandConfig struct {
-	*config
+	cmd.AppContext
 	format  string
 	objects bool
 }
 
 func doComponentList(args []string, config componentListCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	if config.objects {
-		objects, err := filteredObjects(config.config, env, nil, filterParams{})
+		envCtx, err := config.EnvContext(env)
+		if err != nil {
+			return err
+		}
+		objects, err := filteredObjects(envCtx, nil, filterParams{})
 		if err != nil {
 			return err
 		}
@@ -89,43 +94,57 @@ func doComponentList(args []string, config componentListCommandConfig) error {
 	return listComponents(components, config.format != "", config.format, config.Stdout())
 }
 
-func newComponentListCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newComponentListCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "list [-objects] <environment>",
 		Short:   "list all components for an environment, optionally listing all objects as well",
 		Example: componentListExamples(),
 	}
 
 	config := componentListCommandConfig{}
-	cmd.Flags().BoolVarP(&config.objects, "objects", "O", false, "set to true to also list objects in each component")
-	cmd.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
+	c.Flags().BoolVarP(&config.objects, "objects", "O", false, "set to true to also list objects in each component")
+	c.Flags().StringVarP(&config.format, "format", "o", "", "use json|yaml to display machine readable input")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doComponentList(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doComponentList(args, config))
 	}
-	return cmd
+	return c
 }
 
 type componentDiffCommandConfig struct {
-	*config
+	cmd.AppContext
 	objects bool
 }
 
 func doComponentDiff(args []string, config componentDiffCommandConfig) error {
-	var leftEnv, rightEnv string
+	var leftEnv, rightEnv cmd.EnvContext
+	var err error
 	switch len(args) {
 	case 1:
-		leftEnv = model.Baseline
-		rightEnv = args[0]
+		leftEnv, err = config.EnvContext("_")
+		if err != nil {
+			return err
+		}
+		rightEnv, err = config.EnvContext(args[0])
+		if err != nil {
+			return err
+		}
 	case 2:
-		leftEnv = args[0]
-		rightEnv = args[1]
+		leftEnv, err = config.EnvContext(args[0])
+		if err != nil {
+			return err
+		}
+		rightEnv, err = config.EnvContext(args[1])
+		if err != nil {
+			return err
+		}
 	default:
-		return newUsageError("one or two environments required")
+		return cmd.NewUsageError("one or two environments required")
 	}
 
-	getComponents := func(env string) (str string, name string, err error) {
+	getComponents := func(envCtx cmd.EnvContext) (str string, name string, err error) {
+		env := envCtx.Env()
 		comps, err := config.App().ComponentsForEnvironment(env, nil, nil)
 		if err != nil {
 			return
@@ -142,8 +161,8 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 		return
 	}
 
-	getObjects := func(env string) (str string, name string, err error) {
-		objs, err := filteredObjects(config.config, env, nil, filterParams{})
+	getObjects := func(envCtx cmd.EnvContext) (str string, name string, err error) {
+		objs, err := filteredObjects(envCtx, nil, filterParams{})
 		if err != nil {
 			return
 		}
@@ -152,14 +171,13 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 			return
 		}
 		str = buf.String()
-		name = "environment: " + env
-		if env == model.Baseline {
+		name = "environment: " + envCtx.Env()
+		if envCtx.Env() == model.Baseline {
 			name = "baseline"
 		}
 		return
 	}
 	var left, right, leftName, rightName string
-	var err error
 
 	if config.objects {
 		left, leftName, err = getObjects(leftEnv)
@@ -190,19 +208,19 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 	return nil
 }
 
-func newComponentDiffCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newComponentDiffCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "diff [-objects] <environment>|_ [<environment>|_]",
 		Short:   "diff component lists across two environments or between the baseline (use _ for baseline) and an environment",
 		Example: componentDiffExamples(),
 	}
 
 	config := componentDiffCommandConfig{}
-	cmd.Flags().BoolVarP(&config.objects, "objects", "O", false, "set to true to also list objects in each component")
+	c.Flags().BoolVarP(&config.objects, "objects", "O", false, "set to true to also list objects in each component")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doComponentDiff(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doComponentDiff(args, config))
 	}
-	return cmd
+	return c
 }
