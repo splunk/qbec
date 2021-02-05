@@ -18,7 +18,9 @@ package vm
 import (
 	"testing"
 
+	"github.com/google/go-jsonnet"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVMScratchVariableSet(t *testing.T) {
@@ -62,4 +64,31 @@ func TestVMNoopVariableSet(t *testing.T) {
 	newC := c.WithoutTopLevel().WithVars().
 		WithTopLevelVars()
 	assert.Equal(t, &newC, &c)
+}
+
+func TestVMBadCodeVar(t *testing.T) {
+	c := VariableSet{}.WithVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	_, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `std.extVar('foo')`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "<extvar:foo>:1:11 Expected a comma before next field")
+}
+
+func TestVMBadTLACodeVar(t *testing.T) {
+	c := VariableSet{}.WithTopLevelVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	_, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `function (foo) foo`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "<top-level-arg:foo>:1:11 Expected a comma before next field")
+}
+
+func TestVMBadCodeVarNoRef(t *testing.T) {
+	c := VariableSet{}.WithVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	ret, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `10`)
+	require.NoError(t, err)
+	assert.Equal(t, "10\n", ret)
 }

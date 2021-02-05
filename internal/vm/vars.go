@@ -17,6 +17,8 @@
 package vm
 
 import (
+	"fmt"
+
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/splunk/qbec/internal/vm/externals"
@@ -45,7 +47,11 @@ func NewVar(name, value string) Var {
 
 // NewCodeVar returns a variable that has a code value
 func NewCodeVar(name, code string) Var {
-	return Var{Name: name, kind: varKindCode, value: code}
+	node, err := jsonnet.SnippetToAST(fmt.Sprintf("var<%s>", name), code)
+	if err != nil { // we'll let it fail later on in eval
+		return Var{Name: name, kind: varKindCode, value: code}
+	}
+	return Var{Name: name, kind: varKindNode, node: node}
 }
 
 // VariableSet is an immutable set of variables to be registered with a jsonnet VM
@@ -167,10 +173,14 @@ func (vs VariableSet) WithTopLevelVars(add ...Var) VariableSet {
 }
 
 func (vs VariableSet) register(jvm *jsonnet.VM) {
+	jvm.ExtReset()
+	jvm.TLAReset()
 	for _, v := range vs.vars {
 		switch v.kind {
 		case varKindCode:
 			jvm.ExtCode(v.Name, v.value)
+		case varKindNode:
+			jvm.ExtNode(v.Name, v.node)
 		default:
 			jvm.ExtVar(v.Name, v.value)
 		}
@@ -179,6 +189,8 @@ func (vs VariableSet) register(jvm *jsonnet.VM) {
 		switch v.kind {
 		case varKindCode:
 			jvm.TLACode(v.Name, v.value)
+		case varKindNode:
+			jvm.TLANode(v.Name, v.node)
 		default:
 			jvm.TLAVar(v.Name, v.value)
 		}
