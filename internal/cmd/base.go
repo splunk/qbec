@@ -14,6 +14,7 @@
    limitations under the License.
 */
 
+// Package cmd provides an execution context for qbec commands and implements process-level lifecycle operations.
 package cmd
 
 import (
