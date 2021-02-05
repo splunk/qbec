@@ -23,6 +23,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/sio"
 )
 
 type profiler struct {
@@ -43,12 +44,14 @@ func (p *profiler) init() error {
 		if err != nil {
 			return errors.Wrap(err, "start CPU profile")
 		}
+		sio.Debugln("profiling CPU to file", p.cpuProfile)
 	}
 	if p.memoryProfile != "" {
 		p.memory, err = os.Create(p.memoryProfile)
 		if err != nil {
 			return err
 		}
+		sio.Debugln("profiling memory to file", p.memoryProfile)
 	}
 	return nil
 }
@@ -56,12 +59,14 @@ func (p *profiler) init() error {
 func (p *profiler) Close() error {
 	var cpuError, writeError, memError error
 	if p.cpu != nil {
+		sio.Debugln("stop CPU profile")
 		pprof.StopCPUProfile()
 		cpuError = p.cpu.Close()
 	}
 	if p.memory != nil {
 		runtime.GC()
 		err := pprof.WriteHeapProfile(p.memory)
+		sio.Debugln("write memory profile")
 		if err != nil {
 			writeError = errors.Wrap(err, "write memory profile")
 		}

@@ -188,18 +188,19 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
-	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	root.PersistentPreRunE = func(c *cobra.Command, args []string) error {
 		var err error
 		ctx, err = ccFn()
 		if err != nil {
 			return err
 		}
 		sio.EnableColors(ctx.Colorize())
+		cmd.RegisterSignalHandlers()
 
-		skipApp := noQbecContext[cmd.Name()]
+		skipApp := noQbecContext[c.Name()]
 		// for the eval command, require qbec machinery only if the env option is specified
-		if cmd.Name() == "eval" {
-			e, err := cmd.Flags().GetString("env")
+		if c.Name() == "eval" {
+			e, err := c.Flags().GetString("env")
 			if err != nil {
 				return err
 			}
@@ -242,8 +243,8 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		return err
 	}
 
-	root.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
-		return ctx.Close()
+	root.PersistentPostRunE = func(c *cobra.Command, args []string) error {
+		return cmd.Close()
 	}
 
 	setupCommands(root, func() cmd.AppContext {

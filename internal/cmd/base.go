@@ -171,6 +171,7 @@ func NewContext(root *cobra.Command, opts Options) func() (Context, error) {
 		if err != nil {
 			return cf, err
 		}
+		RegisterCleanupTask(cf.profiler)
 		return cf, nil
 	}
 }
@@ -248,14 +249,6 @@ func (c Context) Confirm(action string) error {
 			return errors.New("canceled")
 		}
 	}
-}
-
-// Close closes resources held by this context.
-func (c *Context) Close() error {
-	if c.profiler != nil {
-		return c.profiler.Close()
-	}
-	return nil
 }
 
 // AppContext returns an application context for the supplied app. It is valid for the app to be nil
