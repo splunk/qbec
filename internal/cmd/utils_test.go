@@ -56,3 +56,20 @@ func getContext(t *testing.T, opts Options, args []string) Context {
 	require.NoError(t, err)
 	return ctx
 }
+
+func getBadContext(t *testing.T, opts Options, args []string) error {
+	var ctxMaker func() (Context, error)
+	root := &cobra.Command{
+		Use:   "qbec-test",
+		Short: "qbec test tool",
+		RunE: func(c *cobra.Command, args []string) error {
+			_, err := ctxMaker()
+			return err
+		},
+	}
+	ctxMaker = NewContext(root, opts)
+	root.SetArgs(args)
+	err := root.Execute()
+	require.Error(t, err)
+	return err
+}

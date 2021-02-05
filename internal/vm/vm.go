@@ -103,7 +103,7 @@ func newJsonnetVM(config Config) *jsonnet.VM {
 	return jvm
 }
 
-// New constructs a new VM based on the supplied config.
+// New constructs a new VM based on the supplied config. The returned VM interface is safe for concurrent use.
 func New(config Config) VM {
 	return newPool(config)
 }

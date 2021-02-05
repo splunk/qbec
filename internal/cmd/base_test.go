@@ -25,6 +25,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestContextCreateSimple(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	ctx := getContext(t, Options{}, []string{})
+	a.False(ctx.strictVars)
+	a.Equal(0, ctx.Verbosity())
+	a.Equal("", ctx.AppTag())
+	a.Equal("", ctx.RootDir())
+	a.Nil(ctx.EnvFiles())
+	a.Equal(0, ctx.EvalConcurrency())
+	a.Equal(os.Stdout, ctx.Stdout())
+	a.Equal(os.Stdin, ctx.stdin)
+	a.Equal(os.Stderr, ctx.Stderr())
+}
+
 func TestContextCreate(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
@@ -79,6 +95,26 @@ func TestContextCreate(t *testing.T) {
 
 	err = ctx.Confirm("foo")
 	require.NoError(t, err)
+}
+
+func TestContextBadExt(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	err := getBadContext(t, Options{}, []string{
+		"-V", "non-existent-env-var",
+	})
+	a.Contains(err.Error(), "no value found from environment for non-existent-env-var")
+}
+
+func TestContextBadProfile(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	err := getBadContext(t, Options{}, []string{
+		"--pprof:cpu", "non-existent-dir/file.pprof",
+	})
+	a.Contains(err.Error(), "init profiler")
 }
 
 func TestContextConfirm(t *testing.T) {
