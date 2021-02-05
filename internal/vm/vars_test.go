@@ -16,9 +16,16 @@
 package vm
 
 import (
+	"fmt"
+	"math/rand"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/google/go-jsonnet"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVMScratchVariableSet(t *testing.T) {
@@ -62,4 +69,113 @@ func TestVMNoopVariableSet(t *testing.T) {
 	newC := c.WithoutTopLevel().WithVars().
 		WithTopLevelVars()
 	assert.Equal(t, &newC, &c)
+}
+
+func TestVMBadCodeVar(t *testing.T) {
+	c := VariableSet{}.WithVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	_, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `std.extVar('foo')`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "<extvar:foo>:1:11 Expected a comma before next field")
+}
+
+func TestVMBadTLACodeVar(t *testing.T) {
+	c := VariableSet{}.WithTopLevelVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	_, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `function (foo) foo`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "<top-level-arg:foo>:1:11 Expected a comma before next field")
+}
+
+func TestVMBadCodeVarNoRef(t *testing.T) {
+	c := VariableSet{}.WithVars(NewCodeVar("foo", "{ foo: bar"))
+	jvm := jsonnet.MakeVM()
+	c.register(jvm)
+	ret, err := jvm.EvaluateAnonymousSnippet("foo.jsonnet", `10`)
+	require.NoError(t, err)
+	assert.Equal(t, "10\n", ret)
+}
+
+func testExtVar(vm VM) error {
+	val := fmt.Sprint(rand.Intn(10000000))
+	ret, err := vm.EvalFile("testdata/parallel-ext-vars.jsonnet", VariableSet{}.WithVars(NewCodeVar("foo", val)))
+	if err != nil {
+		return err
+	}
+	ret = strings.TrimRight(ret, "\r\n")
+	if ret != val {
+		return fmt.Errorf("EXT: want '%s', got '%s'", val, ret)
+	}
+	return nil
+}
+
+func testTLAVar(vm VM) error {
+	val := fmt.Sprint(rand.Intn(10000000))
+	ret, err := vm.EvalFile("testdata/parallel-tla-vars.jsonnet", VariableSet{}.WithTopLevelVars(NewCodeVar("foo", val)))
+	if err != nil {
+		return err
+	}
+	ret = strings.TrimRight(ret, "\r\n")
+	if ret != val {
+		return fmt.Errorf("TLA: want '%s', got '%s'", val, ret)
+	}
+	return nil
+}
+
+func TestVMConcurrency(t *testing.T) {
+	vm := New(Config{})
+	concurrency := 20
+	total := 20000
+
+	rand.Seed(time.Now().Unix())
+	queue := make(chan struct{}, total)
+	for i := 0; i < total; i++ {
+		queue <- struct{}{}
+	}
+	close(queue)
+
+	done := make(chan struct{}) // barrier for early exit
+	var once sync.Once
+	var evalError error
+	closeDone := func(err error) {
+		evalError = err
+		once.Do(func() { close(done) })
+	}
+	worker := func() {
+		for {
+			select {
+			case <-done:
+				return
+			case _, ok := <-queue:
+				if !ok {
+					return
+				}
+			}
+			var err error
+			if rand.Intn(2) == 0 {
+				err = testExtVar(vm)
+			} else {
+				err = testTLAVar(vm)
+			}
+			if err != nil {
+				closeDone(err)
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
+	startCh := make(chan struct{}) // barrier for start
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-startCh
+			worker()
+		}()
+	}
+	close(startCh)
+	wg.Wait()
+	require.NoError(t, evalError)
 }
