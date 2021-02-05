@@ -89,9 +89,13 @@ type BaseContext struct {
 	LibPaths []string       // library paths
 	Vars     vm.VariableSet // variables for the VM
 	Verbose  bool           // show generated code
+	jvm      vm.VM
 }
 
 func (c *BaseContext) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
+	if c.jvm != nil {
+		return c.jvm.EvalFile(file, vars)
+	}
 	jvm := vm.New(vm.Config{
 		LibPaths: c.LibPaths,
 	})
@@ -119,6 +123,7 @@ func (c *Context) init() {
 	for _, v := range tlas {
 		c.tlaVars[v.Name] = v
 	}
+	c.jvm = vm.New(vm.Config{LibPaths: c.LibPaths})
 }
 
 func (c Context) componentVars(base vm.VariableSet, componentName string, tlas []string) vm.VariableSet {

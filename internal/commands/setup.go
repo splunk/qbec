@@ -35,8 +35,8 @@ var (
 	version         = "dev"
 	commit          = "dev"
 	goVersion       = "unknown"
-	jsonnetVersion  = "v0.17.0"            // update this when library dependency is upgraded
-	clientGoVersion = "kubernetes-1.17.13" // ditto when client go dep is upgraded
+	jsonnetVersion  = "v0.17.1-0.20210204110509-6d6c293079e3" // update this when library dependency is upgraded
+	clientGoVersion = "kubernetes-1.17.13"                    // ditto when client go dep is upgraded
 )
 
 // Executable is the name of the qbec executable.
@@ -172,6 +172,13 @@ func setWorkDir(specified string) error {
 	}
 }
 
+var noQbecContext = map[string]bool{
+	"version":    true,
+	"init":       true,
+	"completion": true,
+	"options":    true,
+}
+
 func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	ccFn := cmd.NewContext(root, opts)
@@ -187,7 +194,7 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		}
 		sio.EnableColors(ctx.Colorize())
 
-		skipApp := cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion"
+		skipApp := noQbecContext[cmd.Name()]
 		// for the eval command, require qbec machinery only if the env option is specified
 		if cmd.Name() == "eval" {
 			e, err := cmd.Flags().GetString("env")

@@ -19,6 +19,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -42,10 +44,15 @@ func main() {
 		Long:                   longdesc,
 		BashCompletionFunction: commands.BashCompletionFunc,
 	}
+
+	var cpuProf, memProf string
+	pf := root.PersistentFlags()
+	pf.StringVar(&cpuProf, "pprof:cpu", cpuProf, "filename to write CPU profile")
+	pf.StringVar(&memProf, "pprof:mem", memProf, "filename to write memory profile")
+
 	root.SilenceUsage = true
 	root.SilenceErrors = true
 	commands.Setup(root)
-	c, err := root.ExecuteC()
 
 	exit := func(code int) {
 		duration := time.Since(start).Round(time.Second / 100)
@@ -55,6 +62,37 @@ func main() {
 		os.Exit(code)
 	}
 
+	f := func() (*cobra.Command, error) {
+		if cpuProf != "" {
+			f, err := os.Create(cpuProf)
+			if err != nil {
+				sio.Errorln(err)
+				exit(1)
+			}
+			defer func() { _ = f.Close() }()
+			err = pprof.StartCPUProfile(f)
+			if err != nil {
+				sio.Errorln("could not start CPU profile:", err)
+				exit(1)
+			}
+			defer pprof.StopCPUProfile()
+		}
+		if memProf != "" {
+			f, err := os.Create(memProf)
+			if err != nil {
+				sio.Errorln(err)
+				exit(1)
+			}
+			defer func() { _ = f.Close() }()
+			runtime.GC()
+			err = pprof.WriteHeapProfile(f)
+			if err != nil {
+				sio.Errorln("could not write memory profile:", err)
+			}
+		}
+		return root.ExecuteC()
+	}
+	c, err := f()
 	switch {
 	case err == nil:
 		exit(0)

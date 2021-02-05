@@ -12,7 +12,7 @@ require (
 	github.com/go-openapi/strfmt v0.19.8
 	github.com/go-openapi/validate v0.19.12
 	github.com/golang/protobuf v1.4.3
-	github.com/google/go-jsonnet v0.17.0
+	github.com/google/go-jsonnet v0.17.1-0.20210204110509-6d6c293079e3
 	github.com/googleapis/gnostic v0.2.0
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/mattn/go-isatty v0.0.11

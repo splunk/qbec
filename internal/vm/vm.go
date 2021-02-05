@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/google/go-jsonnet"
 	"github.com/splunk/qbec/internal/vm/importers"
@@ -61,6 +62,28 @@ func (v *vm) EvalFile(file string, vars VariableSet) (string, error) {
 	return v.jvm.EvaluateFile(file)
 }
 
+type vmPool struct {
+	pool sync.Pool
+}
+
+func newPool(config Config) *vmPool {
+	return &vmPool{
+		pool: sync.Pool{
+			New: func() interface{} {
+				return &vm{jvm: newJsonnetVM(config)}
+			},
+		},
+	}
+}
+
+// EvalFile implements the interface method.
+func (v *vmPool) EvalFile(file string, vars VariableSet) (string, error) {
+	vm := v.pool.Get().(*vm)
+	out, err := vm.EvalFile(file, vars)
+	v.pool.Put(vm)
+	return out, err
+}
+
 // defaultImporter returns the standard importer.
 func defaultImporter(libPaths []string) jsonnet.Importer {
 	return importers.NewCompositeImporter(
@@ -82,5 +105,5 @@ func newJsonnetVM(config Config) *jsonnet.VM {
 
 // New constructs a new VM based on the supplied config.
 func New(config Config) VM {
-	return &vm{jvm: newJsonnetVM(config)}
+	return newPool(config)
 }
