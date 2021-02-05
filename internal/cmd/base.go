@@ -108,6 +108,7 @@ func skipPrompts() bool {
 	return os.Getenv("QBEC_YES") == "true"
 }
 
+// memoizeForceFn caches the output of the first call to supplied function and returns the same outputs always.
 func memoizeForceFn(fn func() (ForceOptions, error)) func() (ForceOptions, error) {
 	var fOpts ForceOptions
 	var fErr error
@@ -127,6 +128,9 @@ func New(root *cobra.Command, opts Options) func() (Context, error) {
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, remoteConfig, "force:")
 
+	// the reason that we don't immediately evaluate the force function has to do with kubeconfig set to a relative
+	// path that changes if qbec changes directory to the qbec root. Historically any override kubeconfigs with relative
+	// path evaluated w.r.t to the qbec root and the lazy eval of the force function preserves this behavior./
 	cf := Context{
 		remote:      remoteConfig,
 		clp:         opts.ClientProvider,

@@ -31,10 +31,6 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 )
 
-const (
-	currentMarker = "__current__"
-)
-
 var (
 	version         = "dev"
 	commit          = "dev"
@@ -97,14 +93,6 @@ func newOptionsCommand(root *cobra.Command) *cobra.Command {
 		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
 	}
 	return cmd
-}
-
-func envOrDefault(name, def string) string {
-	v := os.Getenv(name)
-	if v != "" {
-		return v
-	}
-	return def
 }
 
 func usageTemplate(rootCmd string) string {
