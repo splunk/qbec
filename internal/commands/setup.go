@@ -182,13 +182,15 @@ var noQbecContext = map[string]bool{
 func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	ccFn := cmd.NewContext(root, opts)
+	var ctx cmd.Context
 	var appCtx cmd.AppContext
 
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		ctx, err := ccFn()
+		var err error
+		ctx, err = ccFn()
 		if err != nil {
 			return err
 		}
@@ -239,6 +241,11 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		appCtx, err = ctx.AppContext(app)
 		return err
 	}
+
+	root.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		return ctx.Close()
+	}
+
 	setupCommands(root, func() cmd.AppContext {
 		return appCtx
 	})

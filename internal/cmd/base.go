@@ -85,6 +85,7 @@ type Context struct {
 	stdout          io.Writer                    // standard output
 	stderr          io.Writer                    // standard error
 	strictVars      bool                         // strict vars
+	profiler        *profiler                    // profiler
 	app             *model.App                   // app loaded from file
 }
 
@@ -127,6 +128,7 @@ func NewContext(root *cobra.Command, opts Options) func() (Context, error) {
 	extConfigFn := externals.FromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, remoteConfig, "force:")
+	profilerFn := addProfilerOptions(root, "pprof:")
 
 	// the reason that we don't immediately evaluate the force function has to do with kubeconfig set to a relative
 	// path that changes if qbec changes directory to the qbec root. Historically any override kubeconfigs with relative
@@ -157,13 +159,17 @@ func NewContext(root *cobra.Command, opts Options) func() (Context, error) {
 	root.PersistentFlags().StringVar(&cf.appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
 	root.PersistentFlags().StringVarP(&cf.envFile, "env-file", "E", defaultEnvironmentFile(), "use additional environment file not declared in qbec.yaml")
 
-	return func() (ret Context, err error) {
+	return func() (_ Context, err error) {
 		if !root.Flags().Changed("colors") {
 			cf.colors = isatty.IsTerminal(os.Stdout.Fd())
 		}
 		cf.ext, err = extConfigFn()
 		if err != nil {
-			return ret, err
+			return cf, err
+		}
+		cf.profiler, err = profilerFn()
+		if err != nil {
+			return cf, err
 		}
 		return cf, nil
 	}
@@ -242,6 +248,14 @@ func (c Context) Confirm(action string) error {
 			return errors.New("canceled")
 		}
 	}
+}
+
+// Close closes resources held by this context.
+func (c *Context) Close() error {
+	if c.profiler != nil {
+		return c.profiler.Close()
+	}
+	return nil
 }
 
 // AppContext returns an application context for the supplied app. It is valid for the app to be nil
