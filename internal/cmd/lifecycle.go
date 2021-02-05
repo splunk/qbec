@@ -39,6 +39,8 @@ func (c *closers) add(closer io.Closer) {
 }
 
 func (c *closers) close() error {
+	c.l.Lock()
+	defer c.l.Unlock()
 	var lastError error
 	for _, c := range c.closers {
 		err := c.Close()
@@ -74,7 +76,7 @@ func RegisterSignalHandlers() {
 			defer close(done)
 			err = Close()
 		}()
-		gracePeriod := 5 * time.Second
+		gracePeriod := 3 * time.Second
 		sio.Println()
 		for {
 			select {
