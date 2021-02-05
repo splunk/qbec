@@ -236,7 +236,10 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		if err != nil {
 			return err
 		}
-		forceOpts := ctx.ForceOptions()
+		forceOpts, err := ctx.ForceOptions()
+		if err != nil {
+			return err
+		}
 		app.SetOverrideNamespace(forceOpts.K8sNamespace)
 		appCtx, err = ctx.AppContext(app)
 		return err

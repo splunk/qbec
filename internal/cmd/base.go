@@ -1,3 +1,19 @@
+/*
+   Copyright 2021 Splunk Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -6,6 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/chzyer/readline"
 	"github.com/mattn/go-isatty"
@@ -42,7 +59,6 @@ type KubeAttrsProvider func(env string) (*remote.KubeAttributes, error)
 
 // Options are optional attributes to create a context, mostly used for testing.
 type Options struct {
-	Stdin             io.Reader
 	Stdout            io.Writer
 	Stderr            io.Writer
 	SkipConfirm       bool
@@ -53,23 +69,23 @@ type Options struct {
 // Context is the global context of the qbec command that handles all global options supported by
 // the tool.
 type Context struct {
-	root            string              // qbec root directory
-	appTag          string              // tag for GC scope
-	envFile         string              // additional environment file
-	remote          *remote.Config      // remote config
-	forceOpts       ForceOptions        // options to force cluster/ namespace
-	ext             externals.Externals // external config
-	clp             ClientProvider      // the client provider
-	attrsp          KubeAttrsProvider   // the kubernetes attribute provider
-	colors          bool                // colorize output
-	yes             bool                // auto-confirm
-	evalConcurrency int                 // concurrency of component eval
-	verbose         int                 // verbosity level
-	stdin           io.Reader           // standard input
-	stdout          io.Writer           // standard output
-	stderr          io.Writer           // standard error
-	strictVars      bool                // strict vars
-	app             *model.App          // app loaded from file
+	root            string                       // qbec root directory
+	appTag          string                       // tag for GC scope
+	envFile         string                       // additional environment file
+	remote          *remote.Config               // remote config
+	forceOptsFn     func() (ForceOptions, error) // options to force cluster/ namespace
+	ext             externals.Externals          // external config
+	clp             ClientProvider               // the client provider
+	attrsp          KubeAttrsProvider            // the kubernetes attribute provider
+	colors          bool                         // colorize output
+	yes             bool                         // auto-confirm
+	evalConcurrency int                          // concurrency of component eval
+	verbose         int                          // verbosity level
+	stdin           io.Reader                    // standard input
+	stdout          io.Writer                    // standard output
+	stderr          io.Writer                    // standard error
+	strictVars      bool                         // strict vars
+	app             *model.App                   // app loaded from file
 }
 
 func envOrDefault(name, def string) string {
@@ -92,6 +108,18 @@ func skipPrompts() bool {
 	return os.Getenv("QBEC_YES") == "true"
 }
 
+func memoizeForceFn(fn func() (ForceOptions, error)) func() (ForceOptions, error) {
+	var fOpts ForceOptions
+	var fErr error
+	var once sync.Once
+	return func() (ForceOptions, error) {
+		once.Do(func() {
+			fOpts, fErr = fn()
+		})
+		return fOpts, fErr
+	}
+}
+
 // New sets up the supplied root command with common options and returns a function to
 // get the context after arguments have been parsed.
 func New(root *cobra.Command, opts Options) func() (Context, error) {
@@ -100,17 +128,15 @@ func New(root *cobra.Command, opts Options) func() (Context, error) {
 	forceOptsFn := addForceOptions(root, remoteConfig, "force:")
 
 	cf := Context{
-		remote: remoteConfig,
-		clp:    opts.ClientProvider,
-		attrsp: opts.KubeAttrsProvider,
-		stdin:  opts.Stdin,
-		stdout: opts.Stdout,
-		stderr: opts.Stderr,
-		yes:    opts.SkipConfirm || skipPrompts(),
+		remote:      remoteConfig,
+		clp:         opts.ClientProvider,
+		forceOptsFn: memoizeForceFn(forceOptsFn),
+		attrsp:      opts.KubeAttrsProvider,
+		stdout:      opts.Stdout,
+		stderr:      opts.Stderr,
+		yes:         opts.SkipConfirm || skipPrompts(),
 	}
-	if cf.stdin == nil {
-		cf.stdin = os.Stdin
-	}
+	cf.stdin = os.Stdin
 	if cf.stdout == nil {
 		cf.stdout = os.Stdout
 	}
@@ -135,11 +161,6 @@ func New(root *cobra.Command, opts Options) func() (Context, error) {
 		if err != nil {
 			return ret, err
 		}
-		forceOpts, err := forceOptsFn()
-		if err != nil {
-			return ret, err
-		}
-		cf.forceOpts = forceOpts
 		return cf, nil
 	}
 }
@@ -175,8 +196,8 @@ func (c Context) Stderr() io.Writer { return c.stderr }
 
 // ForceOptions returns the forced context and/ or namespace if any. The caller will never
 // see the value __current__ since that is already resolved by the option processor.
-func (c Context) ForceOptions() ForceOptions {
-	return c.forceOpts
+func (c Context) ForceOptions() (ForceOptions, error) {
+	return c.forceOptsFn()
 }
 
 // KubeContextInfo returns kube context information.
@@ -185,9 +206,9 @@ func (c Context) KubeContextInfo() (*remote.ContextInfo, error) {
 }
 
 // Confirm prompts for confirmation if needed.
-func (c Context) Confirm(context string) error {
+func (c Context) Confirm(action string) error {
 	_, _ = fmt.Fprintln(c.stderr)
-	_, _ = fmt.Fprintln(c.stderr, context)
+	_, _ = fmt.Fprintln(c.stderr, action)
 	_, _ = fmt.Fprintln(c.stderr)
 	if c.yes {
 		return nil

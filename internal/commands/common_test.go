@@ -22,6 +22,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -128,4 +129,64 @@ stats:
 
 `
 	assert.Equal(t, expected, buf.String())
+}
+
+func TestOrdering(t *testing.T) {
+	simple := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+data:
+  foo: bar
+`
+	good := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  annotations:
+    directives.qbec.io/apply-order: "1000"
+data:
+  foo: bar
+`
+	bad := `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foo
+  annotations:
+    directives.qbec.io/apply-order: "foo"
+data:
+  foo: bar
+`
+	unmarshal := func(s string) map[string]interface{} {
+		ret := map[string]interface{}{}
+		err := yaml.Unmarshal([]byte(s), &ret)
+		if err != nil {
+			panic(err)
+		}
+		return ret
+	}
+	tests := []struct {
+		name     string
+		data     map[string]interface{}
+		expected int
+	}{
+		{"no annotations", unmarshal(simple), 0},
+		{"bad", unmarshal(bad), 0},
+		{"good", unmarshal(good), 1000},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ret := ordering(model.NewK8sLocalObject(test.data, model.LocalAttrs{
+				App:       "app",
+				Tag:       "tag",
+				Component: "component",
+				Env:       "env",
+			}))
+			assert.Equal(t, test.expected, ret)
+		})
+	}
 }
