@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -100,7 +101,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "list"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -109,7 +110,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "list", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -118,7 +119,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "list", "dev", "-o", "table"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`listParams: unsupported format "table"`, err.Error())
 			},
 		},
@@ -127,7 +128,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "list", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},
@@ -136,7 +137,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "diff"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`one or two environments required`, err.Error())
 			},
 		},
@@ -145,7 +146,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "diff", "dev", "prod", "_"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`one or two environments required`, err.Error())
 			},
 		},
@@ -154,7 +155,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "diff", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},
@@ -163,7 +164,7 @@ func TestParamNegative(t *testing.T) {
 			args: []string{"param", "diff", "dev", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment "foo"`, err.Error())
 			},
 		},

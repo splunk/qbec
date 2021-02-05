@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 )
@@ -72,7 +73,7 @@ func (v *validatorStats) errors(s string) {
 
 type validator struct {
 	w                      io.Writer
-	client                 kubeClient
+	client                 cmd.KubeClient
 	stats                  validatorStats
 	red, green, dim, reset string
 	silent                 bool
@@ -110,7 +111,7 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	return nil
 }
 
-func validateObjects(objs []model.K8sLocalObject, client kubeClient, parallel int, colors bool, out io.Writer, silent bool) error {
+func validateObjects(objs []model.K8sLocalObject, client cmd.KubeClient, parallel int, colors bool, out io.Writer, silent bool) error {
 	v := &validator{
 		w:      &lockWriter{Writer: out},
 		client: client,
@@ -137,7 +138,7 @@ func validateObjects(objs []model.K8sLocalObject, client kubeClient, parallel in
 }
 
 type validateCommandConfig struct {
-	*config
+	cmd.AppContext
 	parallel   int
 	silent     bool
 	filterFunc func() (filterParams, error)
@@ -145,21 +146,25 @@ type validateCommandConfig struct {
 
 func doValidate(args []string, config validateCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	if env == model.Baseline {
-		return newUsageError("cannot validate baseline environment, use a real environment")
+		return cmd.NewUsageError("cannot validate baseline environment, use a real environment")
 	}
 	fp, err := config.filterFunc()
 	if err != nil {
 		return err
 	}
-	client, err := config.Client(env)
+	envCtx, err := config.EnvContext(env)
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
+	client, err := envCtx.Client()
+	if err != nil {
+		return err
+	}
+	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -167,22 +172,22 @@ func doValidate(args []string, config validateCommandConfig) error {
 
 }
 
-func newValidateCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newValidateCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "validate <environment>",
 		Short:   "validate one or more components against the spec of a kubernetes cluster",
 		Example: validateExamples(),
 	}
 
 	config := validateCommandConfig{
-		filterFunc: addFilterParams(cmd, true),
+		filterFunc: addFilterParams(c, true),
 	}
 
-	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
-	cmd.Flags().BoolVar(&config.silent, "silent", false, "do not print success messages for every object")
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doValidate(args, config))
+	c.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
+	c.Flags().BoolVar(&config.silent, "silent", false, "do not print success messages for every object")
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doValidate(args, config))
 	}
-	return cmd
+	return c
 }

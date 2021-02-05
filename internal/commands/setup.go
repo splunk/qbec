@@ -24,17 +24,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm/externals"
-)
-
-const (
-	currentMarker = "__current__"
 )
 
 var (
@@ -99,26 +93,6 @@ func newOptionsCommand(root *cobra.Command) *cobra.Command {
 		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
 	}
 	return cmd
-}
-
-func envOrDefault(name, def string) string {
-	v := os.Getenv(name)
-	if v != "" {
-		return v
-	}
-	return def
-}
-
-func defaultRoot() string {
-	return envOrDefault("QBEC_ROOT", "")
-}
-
-func defaultEnvironmentFile() string {
-	return envOrDefault("QBEC_ENV_FILE", "")
-}
-
-func skipPrompts() bool {
-	return os.Getenv("QBEC_YES") == "true"
 }
 
 func usageTemplate(rootCmd string) string {
@@ -198,43 +172,22 @@ func setWorkDir(specified string) error {
 	}
 }
 
-func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
-	var rootDir string
-	var appTag string
-	var envFile string
-
-	extConfigFn := externals.FromCommandParams(root, "vm:", true)
-	remoteConfig := remote.NewConfig(root, "k8s:")
-	forceOptsFn := addForceOptions(root, "force:")
-
+func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
-	root.PersistentFlags().StringVar(&rootDir, "root", defaultRoot(), "root directory of repo (from QBEC_ROOT or auto-detect)")
-	root.PersistentFlags().IntVarP(&cf.verbosity, "verbose", "v", cf.verbosity, "verbosity level")
-	root.PersistentFlags().BoolVar(&cf.colors, "colors", cf.colors, "colorize output (set automatically if not specified)")
-	root.PersistentFlags().BoolVar(&cf.skipConfirm, "yes", cf.skipConfirm, "do not prompt for confirmation. The default value can be overridden by setting QBEC_YES=true")
-	root.PersistentFlags().BoolVar(&cf.strictVars, "strict-vars", cf.strictVars, "require declared variables to be specified, do not allow undeclared variables")
-	root.PersistentFlags().IntVar(&cf.evalConcurrency, "eval-concurrency", cf.evalConcurrency, "concurrency with which to evaluate components")
-	root.PersistentFlags().StringVar(&appTag, "app-tag", "", "build tag to create suffixed objects, indicates GC scope")
-	root.PersistentFlags().StringVarP(&envFile, "env-file", "E", defaultEnvironmentFile(), "use additional environment file not declared in qbec.yaml")
+	ccFn := cmd.NewContext(root, opts)
+	var appCtx cmd.AppContext
+
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
-	var cmdCfg *config
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if !cmd.Flags().Changed("colors") {
-			cf.colors = isatty.IsTerminal(os.Stdout.Fd())
-		}
-		sio.EnableColors(cf.colors)
-
-		if cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion" { // don't make these commands dependent on work dir
-			return nil
-		}
-
-		extConfig, err := extConfigFn()
+		ctx, err := ccFn()
 		if err != nil {
-			return newRuntimeError(err)
+			return err
 		}
+		sio.EnableColors(ctx.Colorize())
 
+		skipApp := cmd.Name() == "version" || cmd.Name() == "init" || cmd.Name() == "completion"
 		// for the eval command, require qbec machinery only if the env option is specified
 		if cmd.Name() == "eval" {
 			e, err := cmd.Flags().GetString("env")
@@ -242,23 +195,18 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 				return err
 			}
 			if e == "" {
-				cmdCfg = &config{
-					ext:             extConfig,
-					colors:          cf.colors,
-					yes:             cf.skipConfirm,
-					evalConcurrency: 0,
-					verbose:         cf.verbosity,
-					stdout:          cf.stdout,
-					stderr:          cf.stderr,
-				}
-				return nil
+				skipApp = true
 			}
 		}
 
+		if skipApp { // do not change work dir, do not load app
+			appCtx, err = ctx.AppContext(nil)
+			return err
+		}
 		// if env file has been specified on the command line, ensure it is resolved w.r.t to the current working
 		// directory before we change it
 		var envFiles []string
-		if envFile != "" {
+		for _, envFile := range ctx.EnvFiles() {
 			if model.IsRemoteFile(envFile) {
 				envFiles = append(envFiles, envFile)
 			} else {
@@ -269,46 +217,28 @@ func doSetup(root *cobra.Command, cf configFactory, overrideCP clientProvider) {
 				envFiles = append(envFiles, abs)
 			}
 		}
-		if err := setWorkDir(rootDir); err != nil {
+		if err := setWorkDir(ctx.RootDir()); err != nil {
 			return err
 		}
-		app, err := model.NewApp("qbec.yaml", envFiles, appTag)
+		app, err := model.NewApp("qbec.yaml", envFiles, ctx.AppTag())
 		if err != nil {
 			return err
 		}
-
-		var cc *remote.ContextInfo
-		forceOpts := forceOptsFn()
-		if forceOpts.k8sContext == currentMarker {
-			cc, err = remote.CurrentContextInfo()
-			if err != nil {
-				return err
-			}
-			forceOpts.k8sContext = cc.ContextName
+		forceOpts, err := ctx.ForceOptions()
+		if err != nil {
+			return err
 		}
-		if forceOpts.k8sNamespace == currentMarker {
-			if cc == nil {
-				return newUsageError(fmt.Sprintf("current namespace can only be forced when the context is also forced to current"))
-			}
-			forceOpts.k8sNamespace = cc.Namespace
-		}
-		app.SetOverrideNamespace(forceOpts.k8sNamespace)
-
-		cmdCfg, err = cf.getConfig(app, extConfig, remoteConfig, forceOpts, overrideCP)
+		app.SetOverrideNamespace(forceOpts.K8sNamespace)
+		appCtx, err = ctx.AppContext(app)
 		return err
 	}
-	setupCommands(root, func() *config {
-		return cmdCfg
+	setupCommands(root, func() cmd.AppContext {
+		return appCtx
 	})
 }
 
 // Setup sets up all sub-commands for the supplied root command and adds facilities for commands
 // to access common options.
 func Setup(root *cobra.Command) {
-	doSetup(root, configFactory{
-		stdout:          os.Stdout,
-		stderr:          os.Stderr,
-		skipConfirm:     skipPrompts(),
-		evalConcurrency: 5,
-	}, nil)
+	doSetup(root, cmd.Options{})
 }

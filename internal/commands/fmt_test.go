@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -116,7 +117,7 @@ func TestIsJsonnet(t *testing.T) {
 }
 
 func TestDoFmt(t *testing.T) {
-	var b bytes.Buffer
+	//var b bytes.Buffer
 	var tests = []struct {
 		args        []string
 		config      fmtCommandConfig
@@ -124,8 +125,8 @@ func TestDoFmt(t *testing.T) {
 	}{
 		{[]string{}, fmtCommandConfig{check: true, write: true}, `check and write are not supported together`},
 		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
-		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, config: &config{stdout: &b}}, ""},
-		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, config: &config{stdout: &b}}, ""},
+		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, ""},
+		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, ""},
 	}
 
 	for i, test := range tests {

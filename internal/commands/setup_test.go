@@ -205,6 +205,27 @@ func TestSetupEnvironments(t *testing.T) {
 				assert.Equal(t, "prod", out["cluster"])
 			},
 		},
+		{
+			name: "force current context2",
+			envMap: map[string]string{
+				"QBEC_ROOT": "testdata",
+			},
+			fn: func(t *testing.T, s *scaffold) {
+				err := s.executeCommand("env", "vars",
+					"--force:k8s-context=__current__",
+					"--force:k8s-namespace=__current__",
+					"--k8s:kubeconfig=../../../examples/test-app/kubeconfig.yaml",
+					"-o", "json",
+					"dev")
+				require.NoError(t, err)
+				out := map[string]string{}
+				err = s.jsonOutput(&out)
+				require.NoError(t, err)
+				assert.Equal(t, "prod", out["context"])
+				assert.Equal(t, "barbaz", out["namespace"])
+				assert.Equal(t, "prod", out["cluster"])
+			},
+		},
 	}
 
 	for _, test := range tests {

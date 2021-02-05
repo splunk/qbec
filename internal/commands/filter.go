@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
@@ -47,23 +48,23 @@ func (f filterParams) Includes(o model.K8sQbecMeta) bool {
 	return true
 }
 
-func addFilterParams(cmd *cobra.Command, includeKindFilters bool) func() (filterParams, error) {
+func addFilterParams(c *cobra.Command, includeKindFilters bool) func() (filterParams, error) {
 	var includes, excludes, kindIncludes, kindExcludes []string
 
-	cmd.Flags().StringArrayVarP(&includes, "component", "c", nil, "include just this component")
-	cmd.Flags().StringArrayVarP(&excludes, "exclude-component", "C", nil, "exclude this component")
+	c.Flags().StringArrayVarP(&includes, "component", "c", nil, "include just this component")
+	c.Flags().StringArrayVarP(&excludes, "exclude-component", "C", nil, "exclude this component")
 	if includeKindFilters {
-		cmd.Flags().StringArrayVarP(&kindIncludes, "kind", "k", nil, "include objects with this kind")
-		cmd.Flags().StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
+		c.Flags().StringArrayVarP(&kindIncludes, "kind", "k", nil, "include objects with this kind")
+		c.Flags().StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
 	}
 	return func() (filterParams, error) {
 		of, err := model.NewKindFilter(kindIncludes, kindExcludes)
 		if err != nil {
-			return filterParams{}, newUsageError(err.Error())
+			return filterParams{}, cmd.NewUsageError(err.Error())
 		}
 		cf, err := model.NewComponentFilter(includes, excludes)
 		if err != nil {
-			return filterParams{}, newUsageError(err.Error())
+			return filterParams{}, cmd.NewUsageError(err.Error())
 		}
 		return filterParams{
 			includes:        includes,
@@ -107,16 +108,14 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 	return nil
 }
 
-func filteredObjects(cfg *config, env string, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
-	components, err := cfg.App().ComponentsForEnvironment(env, fp.includes, fp.excludes)
+var cleanEvalMode bool
+
+func filteredObjects(ctx cmd.EnvContext, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
+	components, err := ctx.App().ComponentsForEnvironment(ctx.Env(), fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err
 	}
-	props, err := cfg.App().Properties(env)
-	if err != nil {
-		return nil, err
-	}
-	output, err := eval.Components(components, cfg.EvalContext(env, props), cfg.ObjectProducer(env))
+	output, err := eval.Components(components, ctx.EvalContext(cleanEvalMode), ctx.ObjectProducer())
 	if err != nil {
 		return nil, err
 	}

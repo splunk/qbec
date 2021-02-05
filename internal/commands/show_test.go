@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -251,7 +252,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -260,7 +261,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("exactly one environment required", err.Error())
 			},
 		},
@@ -269,7 +270,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
 			},
 		},
@@ -278,7 +279,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev", "-o", "table"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`invalid output format: "table"`, err.Error())
 			},
 		},
@@ -287,7 +288,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev", "-c", "cluster-objects", "-C", "service2"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude components, specify one or the other`, err.Error())
 			},
 		},
@@ -296,7 +297,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev", "-k", "namespace", "-K", "secret"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
 			},
 		},
@@ -305,7 +306,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(IsRuntimeError(err))
+				a.True(cmd.IsRuntimeError(err))
 				a.Equal(`duplicate objects ConfigMap cm1 (component: x) and ConfigMap cm1 (component: y)`, err.Error())
 			},
 			dir: "testdata/dups",
@@ -315,7 +316,7 @@ func TestShowNegative(t *testing.T) {
 			args: []string{"show", "dev", "--force:k8s-namespace=__current__"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`current namespace can only be forced when the context is also forced to current`, err.Error())
 			},
 		},

@@ -26,12 +26,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 )
 
 type initCommandConfig struct {
+	cmd.AppContext
 	withExample bool // create a hello world example
 }
 
@@ -224,7 +226,7 @@ func doInit(args []string, config initCommandConfig) error {
 		return err
 	}
 
-	ctx, err := remote.CurrentContextInfo()
+	ctx, err := config.KubeContextInfo()
 	if err != nil {
 		sio.Warnf("could not get current K8s context info, %v\n", err)
 		sio.Warnln("using fake parameters for the default environment")
@@ -251,17 +253,18 @@ func doInit(args []string, config initCommandConfig) error {
 	return writeFiles(name, app, config)
 }
 
-func newInitCommand() *cobra.Command {
-	cmd := &cobra.Command{
+func newInitCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:   "init <app-name>",
 		Short: "initialize a qbec app",
 	}
 
 	config := initCommandConfig{}
-	cmd.Flags().BoolVar(&config.withExample, "with-example", false, "create a hello world sample component")
+	c.Flags().BoolVar(&config.withExample, "with-example", false, "create a hello world sample component")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		return wrapError(doInit(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doInit(args, config))
 	}
-	return cmd
+	return c
 }

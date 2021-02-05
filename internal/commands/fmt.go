@@ -14,12 +14,13 @@ import (
 
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
 
 type fmtCommandConfig struct {
-	*config
+	cmd.AppContext
 	check          bool
 	write          bool
 	formatTypes    map[string]bool
@@ -29,7 +30,7 @@ type fmtCommandConfig struct {
 
 func doFmt(args []string, config *fmtCommandConfig) error {
 	if config.check && config.write {
-		return newUsageError(fmt.Sprintf("check and write are not supported together"))
+		return cmd.NewUsageError(fmt.Sprintf("check and write are not supported together"))
 	}
 	if len(args) > 0 {
 		config.files = args
@@ -47,7 +48,7 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 	}
 	for _, s := range config.specifiedTypes {
 		if !isSupported(s) {
-			return newUsageError(fmt.Sprintf("%q is not a supported type", s))
+			return cmd.NewUsageError(fmt.Sprintf("%q is not a supported type", s))
 		}
 		config.formatTypes[s] = true
 	}
@@ -74,22 +75,22 @@ var (
 	supportedTypes = []string{"json", "jsonnet", "yaml"}
 )
 
-func newFmtCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newFmtCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "fmt",
 		Short:   "format files",
 		Example: fmtExamples(),
 	}
 
 	config := fmtCommandConfig{}
-	cmd.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
-	cmd.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
-	cmd.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doFmt(args, &config))
+	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
+	c.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
+	c.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doFmt(args, &config))
 	}
-	return cmd
+	return c
 }
 
 func isYamlFile(f os.FileInfo) bool {

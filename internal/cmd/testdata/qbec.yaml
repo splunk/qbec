@@ -1,0 +1,26 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: app1
+spec:
+  libPaths:
+    - lib
+  namespaceTagSuffix: true
+  vars:
+    topLevel:
+      - name: tlaFoo
+        components: [ 'c1' ]
+    external:
+      - name: extFoo
+        default: 'baz'
+      - name: extBar
+        default: { bar: 'quux' }
+      - name: noDefault
+  environments:
+    minikube:
+      context: minikube
+      defaultNamespace: kube-public
+    dev:
+      server: https://dev-server
+      defaultNamespace: kube-system

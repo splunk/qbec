@@ -20,86 +20,26 @@ package commands
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
-	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/sio"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 )
 
-// usageError indicates that the user supplied incorrect arguments or flags to the command.
-type usageError struct {
-	error
-}
-
-// newUsageError returns a usage error
-func newUsageError(msg string) error {
-	return &usageError{
-		error: errors.New(msg),
-	}
-}
-
-// isUsageError returns if the supplied error was caused due to incorrect command usage.
-func isUsageError(err error) bool {
-	_, ok := err.(*usageError)
-	return ok
-}
-
-// runtimeError indicates that there were runtime issues with execution.
-type runtimeError struct {
-	error
-}
-
-// newRuntimeError returns a runtime error
-func newRuntimeError(err error) error {
-	return &runtimeError{
-		error: err,
-	}
-}
-
-// IsRuntimeError returns if the supplied error was a runtime error as opposed to an error arising out of user input.
-func IsRuntimeError(err error) bool {
-	_, ok := err.(*runtimeError)
-	return ok
-}
-
-// wrapError passes through usage errors and wraps all other errors with a runtime marker.
-func wrapError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if isUsageError(err) {
-		return err
-	}
-	return newRuntimeError(err)
-}
-
-// kubeClient encapsulates all remote operations needed for the superset of all commands.
-type kubeClient interface {
-	DisplayName(o model.K8sMeta) string
-	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
-	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
-	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
-	Delete(model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
-	ObjectKey(obj model.K8sMeta) string
-	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
-}
-
-// configProvider provides standard configuration available to all commands
-type configProvider func() *config
+// ctxProvider provides standard configuration available to all commands
+type ctxProvider func() cmd.AppContext
 
 // setupCommands sets up all subcommands for the supplied root command.
-func setupCommands(root *cobra.Command, cp configProvider) {
+func setupCommands(root *cobra.Command, cp ctxProvider) {
 	root.AddCommand(newApplyCommand(cp))
 	root.AddCommand(newValidateCommand(cp))
 	root.AddCommand(newShowCommand(cp))
@@ -109,7 +49,7 @@ func setupCommands(root *cobra.Command, cp configProvider) {
 	root.AddCommand(newComponentCommand(cp))
 	root.AddCommand(newParamCommand(cp))
 	root.AddCommand(newEnvCommand(cp))
-	root.AddCommand(newInitCommand())
+	root.AddCommand(newInitCommand(cp))
 	root.AddCommand(newCompletionCommand(root))
 	alplhaCmd := newAlphaCommand()
 	alplhaCmd.AddCommand(newFmtCommand(cp))
@@ -181,8 +121,8 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
-func startRemoteList(env string, config *config, client kubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
-	all, err := filteredObjects(config, env, nil, filterParams{})
+func startRemoteList(envCtx cmd.EnvContext, client cmd.KubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
+	all, err := filteredObjects(envCtx, nil, filterParams{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -192,21 +132,52 @@ func startRemoteList(env string, config *config, client kubeClient, fp filterPar
 		}
 	}
 	var scope remote.ListQueryScope
-	lister, scope, err := newRemoteLister(client, all, config.app.DefaultNamespace(env))
+	lister, scope, err := newRemoteLister(client, all, envCtx.App().DefaultNamespace(envCtx.Env()))
 	if err != nil {
 		return nil, nil, err
 	}
 	clusterScopedLists := false
-	if len(scope.Namespaces) > 1 && config.app.ClusterScopedLists() {
+	if len(scope.Namespaces) > 1 && envCtx.App().ClusterScopedLists() {
 		clusterScopedLists = true
 	}
 	lister.start(remote.ListQueryConfig{
-		Application:        config.App().Name(),
-		Tag:                config.App().Tag(),
-		Environment:        env,
+		Application:        envCtx.App().Name(),
+		Tag:                envCtx.App().Tag(),
+		Environment:        envCtx.Env(),
 		KindFilter:         fp.GVKFilter,
 		ListQueryScope:     scope,
 		ClusterScopedLists: clusterScopedLists,
 	})
 	return lister, retainObjects, nil
+}
+
+func ordering(item model.K8sQbecMeta) int {
+	a := item.GetAnnotations()
+	if a == nil {
+		return 0
+	}
+	v := a[model.QbecNames.Directives.ApplyOrder]
+	if v == "" {
+		return 0
+	}
+	val, err := strconv.Atoi(v)
+	if err != nil {
+		sio.Warnf("invalid apply order directive '%s' for %s, ignored\n", v, model.NameForDisplay(item))
+		return 0
+	}
+	return val
+}
+
+// sortConfig returns the sort configuration.
+func sortConfig(provider objsort.Namespaced) objsort.Config {
+	return objsort.Config{
+		NamespacedIndicator: func(gvk schema.GroupVersionKind) (bool, error) {
+			ret, err := provider(gvk)
+			if err != nil {
+				return false, err
+			}
+			return ret, nil
+		},
+		OrderingProvider: ordering,
+	}
 }

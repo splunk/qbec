@@ -22,34 +22,30 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
-	"github.com/splunk/qbec/internal/vm"
 )
 
 type evalCommandConfig struct {
-	*config
+	cmd.AppContext
 	format string
 	env    string
 }
 
 func doEval(args []string, config evalCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one file required")
+		return cmd.NewUsageError("exactly one file required")
 	}
 	var output string
 	var err error
 	if config.env == "" {
-		output, err = eval.File(args[0], eval.BaseContext{
-			LibPaths: config.ext.LibPaths,
-			Vars:     vm.VariablesFromConfig(config.ext),
-			Verbose:  config.verbose > 1,
-		})
+		output, err = eval.File(args[0], config.BasicEvalContext())
 	} else {
-		props, err := config.App().Properties(config.env)
+		envCtx, err := config.EnvContext(config.env)
 		if err != nil {
 			return err
 		}
-		ctx := config.EvalContext(config.env, props)
+		ctx := envCtx.EvalContext(cleanEvalMode)
 		output, err = eval.File(args[0], ctx.BaseContext)
 	}
 	if err != nil {
@@ -74,18 +70,18 @@ func doEval(args []string, config evalCommandConfig) error {
 	return nil
 }
 
-func newEvalCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newEvalCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "eval [--env <env>] path/to/file.jsonnet",
 		Short:   "evaluate the supplied file optionally under a qbec environment",
 		Example: evalExamples(),
 	}
 	cfg := evalCommandConfig{}
-	cmd.Flags().StringVarP(&cfg.format, "format", "o", "json", "Output format. Supported values are: json, yaml")
-	cmd.Flags().StringVar(&cfg.env, "env", "", "qbec environment context, optional")
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		cfg.config = cp()
-		return wrapError(doEval(args, cfg))
+	c.Flags().StringVarP(&cfg.format, "format", "o", "json", "Output format. Supported values are: json, yaml")
+	c.Flags().StringVar(&cfg.env, "env", "", "qbec environment context, optional")
+	c.RunE = func(c *cobra.Command, args []string) error {
+		cfg.AppContext = cp()
+		return cmd.WrapError(doEval(args, cfg))
 	}
-	return cmd
+	return c
 }

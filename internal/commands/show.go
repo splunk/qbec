@@ -24,6 +24,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/sio"
@@ -83,7 +84,7 @@ func showNames(objects []model.K8sLocalObject, formatSpecified bool, format stri
 }
 
 type showCommandConfig struct {
-	*config
+	cmd.AppContext
 	showSecrets     bool
 	format          string
 	formatSpecified bool
@@ -127,12 +128,12 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 
 func doShow(args []string, config showCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 	env := args[0]
 	format := config.format
 	if format != "json" && format != "yaml" {
-		return newUsageError(fmt.Sprintf("invalid output format: %q", format))
+		return cmd.NewUsageError(fmt.Sprintf("invalid output format: %q", format))
 	}
 	fp, err := config.filterFunc()
 	if err != nil {
@@ -146,7 +147,12 @@ func doShow(args []string, config showCommandConfig) error {
 		return fmt.Sprintf("%s:%s:%s:%s", gvk.Group, gvk.Kind, ns, obj.GetName())
 	}
 
-	objects, err := filteredObjects(config.config, env, keyFunc, fp)
+	envCtx, err := config.EnvContext(env)
+	if err != nil {
+		return err
+	}
+
+	objects, err := filteredObjects(envCtx, keyFunc, fp)
 	if err != nil {
 		return err
 	}
@@ -161,7 +167,7 @@ func doShow(args []string, config showCommandConfig) error {
 		if env == model.Baseline {
 			sio.Warnln("cannot sort in apply order for baseline environment")
 		} else {
-			client, err := config.Client(env)
+			client, err := envCtx.Client()
 			if err != nil {
 				return err
 			}
@@ -176,7 +182,7 @@ func doShow(args []string, config showCommandConfig) error {
 	var displayObjects []*unstructured.Unstructured
 	mapper := func(o model.K8sLocalObject) *unstructured.Unstructured { return o.ToUnstructured() }
 
-	if config.cleanEvalMode {
+	if cleanEvalMode {
 		mapper = cleanMeta
 	}
 
@@ -202,29 +208,29 @@ func doShow(args []string, config showCommandConfig) error {
 	}
 }
 
-func newShowCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newShowCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "show <environment>",
 		Short:   "show output in YAML or JSON format for one or more components",
 		Example: showExamples(),
 	}
 
 	config := showCommandConfig{
-		filterFunc: addFilterParams(cmd, true),
+		filterFunc: addFilterParams(c, true),
 	}
 
 	var clean bool
-	cmd.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
-	cmd.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
-	cmd.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
-	cmd.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
-	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
+	c.Flags().StringVarP(&config.format, "format", "o", "yaml", "Output format. Supported values are: json, yaml")
+	c.Flags().BoolVarP(&config.namesOnly, "objects", "O", false, "Only print names of objects instead of their contents")
+	c.Flags().BoolVar(&config.sortAsApply, "sort-apply", false, "sort output in apply order (requires cluster access)")
+	c.Flags().BoolVar(&clean, "clean", false, "do not display qbec-generated labels and annotations")
+	c.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
 		config.formatSpecified = c.Flags().Changed("format")
-		config.config.cleanEvalMode = clean
-		return wrapError(doShow(args, config))
+		cleanEvalMode = clean
+		return cmd.WrapError(doShow(args, config))
 	}
-	return cmd
+	return c
 }

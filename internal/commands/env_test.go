@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -122,7 +123,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "list", "dev"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal("extra arguments specified", err.Error())
 			},
 		},
@@ -131,7 +132,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "list", "-o", "table"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`listEnvironments: unsupported format "table"`, err.Error())
 			},
 		},
@@ -140,7 +141,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "vars", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`exactly one environment required`, err.Error())
 			},
 		},
@@ -149,7 +150,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "vars", "dev", "prod", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`exactly one environment required`, err.Error())
 			},
 		},
@@ -158,7 +159,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "vars", "foo", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment: "foo"`, err.Error())
 			},
 		},
@@ -167,7 +168,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "vars", "-o", "table", "dev", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`environmentVars: unsupported format "table"`, err.Error())
 			},
 		},
@@ -176,7 +177,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "props"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`exactly one environment required`, err.Error())
 			},
 		},
@@ -185,7 +186,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "props", "dev", "prod"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`exactly one environment required`, err.Error())
 			},
 		},
@@ -194,7 +195,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "props", "foo"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.False(isUsageError(err))
+				a.False(cmd.IsUsageError(err))
 				a.Equal(`invalid environment: "foo"`, err.Error())
 			},
 		},
@@ -203,7 +204,7 @@ func TestEnvNegative(t *testing.T) {
 			args: []string{"env", "props", "-o", "table", "dev"},
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
-				a.True(isUsageError(err))
+				a.True(cmd.IsUsageError(err))
 				a.Equal(`environmentVars: unsupported format "table"`, err.Error())
 			},
 		},

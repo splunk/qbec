@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 )
 
 const (
@@ -97,7 +98,7 @@ func newCompletionCommand(root *cobra.Command) *cobra.Command {
 			if len(customFlagCompletions) > 0 {
 				addCustomFlagCompletions(root)
 			}
-			return wrapError(root.GenBashCompletion(os.Stdout))
+			return cmd.WrapError(root.GenBashCompletion(os.Stdout))
 		},
 	}
 	return cmd

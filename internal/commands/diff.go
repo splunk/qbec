@@ -24,6 +24,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
@@ -146,7 +147,7 @@ func (d *diffStats) done() {
 
 type differ struct {
 	w           io.Writer
-	client      kubeClient
+	client      cmd.KubeClient
 	opts        diff.Options
 	stats       diffStats
 	ignores     diffIgnores
@@ -300,7 +301,7 @@ func (d *differ) diffLocal(ob model.K8sLocalObject) error {
 }
 
 type diffCommandConfig struct {
-	*config
+	cmd.AppContext
 	showDeletions bool
 	showSecrets   bool
 	parallel      int
@@ -312,24 +313,29 @@ type diffCommandConfig struct {
 
 func doDiff(args []string, config diffCommandConfig) error {
 	if len(args) != 1 {
-		return newUsageError("exactly one environment required")
+		return cmd.NewUsageError("exactly one environment required")
 	}
 
 	env := args[0]
 	if env == model.Baseline {
-		return newUsageError("cannot diff baseline environment, use a real environment")
+		return cmd.NewUsageError("cannot diff baseline environment, use a real environment")
 	}
 	fp, err := config.filterFunc()
 	if err != nil {
 		return err
 	}
 
-	client, err := config.Client(env)
+	envCtx, err := config.EnvContext(env)
 	if err != nil {
 		return err
 	}
 
-	objects, err := filteredObjects(config.config, env, client.ObjectKey, fp)
+	client, err := envCtx.Client()
+	if err != nil {
+		return err
+	}
+
+	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -337,7 +343,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 	var lister lister = &stubLister{}
 	var retainObjects []model.K8sLocalObject
 	if config.showDeletions {
-		lister, retainObjects, err = startRemoteList(env, config.config, client, fp)
+		lister, retainObjects, err = startRemoteList(envCtx, client, fp)
 		if err != nil {
 			return err
 		}
@@ -399,30 +405,30 @@ func doDiff(args []string, config diffCommandConfig) error {
 	}
 }
 
-func newDiffCommand(cp configProvider) *cobra.Command {
-	cmd := &cobra.Command{
+func newDiffCommand(cp ctxProvider) *cobra.Command {
+	c := &cobra.Command{
 		Use:     "diff <environment>",
 		Short:   "diff one or more components against objects in a Kubernetes cluster",
 		Example: diffExamples(),
 	}
 
 	config := diffCommandConfig{
-		filterFunc: addFilterParams(cmd, true),
+		filterFunc: addFilterParams(c, true),
 	}
 
-	cmd.Flags().BoolVar(&config.showDeletions, "show-deletes", true, "include deletions in diff")
-	cmd.Flags().IntVar(&config.contextLines, "context", 3, "context lines for diff")
-	cmd.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
-	cmd.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the diff")
-	cmd.Flags().BoolVar(&config.di.allAnnotations, "ignore-all-annotations", false, "remove all annotations from objects before diff")
-	cmd.Flags().StringArrayVar(&config.di.annotationNames, "ignore-annotation", nil, "remove specific annotation from objects before diff")
-	cmd.Flags().BoolVar(&config.di.allLabels, "ignore-all-labels", false, "remove all labels from objects before diff")
-	cmd.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
-	cmd.Flags().BoolVar(&config.exitNonZero, "error-exit", false, "exit with non-zero status code when diffs present")
+	c.Flags().BoolVar(&config.showDeletions, "show-deletes", true, "include deletions in diff")
+	c.Flags().IntVar(&config.contextLines, "context", 3, "context lines for diff")
+	c.Flags().IntVar(&config.parallel, "parallel", 5, "number of parallel routines to run")
+	c.Flags().BoolVarP(&config.showSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the diff")
+	c.Flags().BoolVar(&config.di.allAnnotations, "ignore-all-annotations", false, "remove all annotations from objects before diff")
+	c.Flags().StringArrayVar(&config.di.annotationNames, "ignore-annotation", nil, "remove specific annotation from objects before diff")
+	c.Flags().BoolVar(&config.di.allLabels, "ignore-all-labels", false, "remove all labels from objects before diff")
+	c.Flags().StringArrayVar(&config.di.labelNames, "ignore-label", nil, "remove specific label from objects before diff")
+	c.Flags().BoolVar(&config.exitNonZero, "error-exit", false, "exit with non-zero status code when diffs present")
 
-	cmd.RunE = func(c *cobra.Command, args []string) error {
-		config.config = cp()
-		return wrapError(doDiff(args, config))
+	c.RunE = func(c *cobra.Command, args []string) error {
+		config.AppContext = cp()
+		return cmd.WrapError(doDiff(args, config))
 	}
-	return cmd
+	return c
 }
