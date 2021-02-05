@@ -50,7 +50,7 @@ func getContext(t *testing.T, opts Options, args []string) Context {
 			return err
 		},
 	}
-	ctxMaker = New(root, opts)
+	ctxMaker = NewContext(root, opts)
 	root.SetArgs(args)
 	err := root.Execute()
 	require.NoError(t, err)

@@ -121,9 +121,9 @@ func memoizeForceFn(fn func() (ForceOptions, error)) func() (ForceOptions, error
 	}
 }
 
-// New sets up the supplied root command with common options and returns a function to
+// NewContext sets up the supplied root command with common options and returns a function to
 // get the context after arguments have been parsed.
-func New(root *cobra.Command, opts Options) func() (Context, error) {
+func NewContext(root *cobra.Command, opts Options) func() (Context, error) {
 	extConfigFn := externals.FromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, remoteConfig, "force:")

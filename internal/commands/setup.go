@@ -174,7 +174,7 @@ func setWorkDir(specified string) error {
 
 func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
-	ccFn := cmd.New(root, opts)
+	ccFn := cmd.NewContext(root, opts)
 	var appCtx cmd.AppContext
 
 	root.AddCommand(newOptionsCommand(root))
