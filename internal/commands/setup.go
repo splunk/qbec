@@ -87,12 +87,12 @@ func newVersionCommand() *cobra.Command {
 func newOptionsCommand(root *cobra.Command) *cobra.Command {
 	leader := fmt.Sprintf("All %s commands accept the following options (some may not use them unless relevant):\n", root.CommandPath())
 	trailer := "Note: using options that begin with 'force:' will cause qbec to drop its safety checks. Use with care."
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use:   "options",
 		Short: "print global options for program",
 		Long:  strings.Join([]string{"", leader, root.LocalFlags().FlagUsages(), "", trailer, ""}, "\n"),
 	}
-	return cmd
+	return c
 }
 
 func usageTemplate(rootCmd string) string {
@@ -182,15 +182,13 @@ var noQbecContext = map[string]bool{
 func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.SetUsageTemplate(usageTemplate(root.CommandPath()))
 	ccFn := cmd.NewContext(root, opts)
-	var ctx cmd.Context
 	var appCtx cmd.AppContext
 
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
 	root.PersistentPreRunE = func(c *cobra.Command, args []string) error {
-		var err error
-		ctx, err = ccFn()
+		ctx, err := ccFn()
 		if err != nil {
 			return err
 		}
