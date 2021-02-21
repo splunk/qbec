@@ -481,6 +481,11 @@ func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 	return ret
 }
 
+// DeclaredComputedVars returns a list of all computed variables.
+func (a *App) DeclaredComputedVars() []ComputedVar {
+	return a.inner.Spec.Vars.Computed
+}
+
 // loadComponents loads metadata for all components for the app. It first expands the components directory
 // for glob patterns and loads components from all directories that match. It does _not_ recurse
 // into subdirectories. The data is returned as a map keyed by component name.

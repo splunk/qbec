@@ -152,6 +152,12 @@ func TestAppSimple(t *testing.T) {
 		"tlaFoo": true,
 	}, app.DeclaredTopLevelVars())
 
+	computed := app.DeclaredComputedVars()
+	require.Equal(t, 3, len(computed))
+	a.Equal("c1", computed[0].Name)
+	a.Equal("c2", computed[1].Name)
+	a.Equal("c3", computed[2].Name)
+
 	u, err := app.ServerURL("dev")
 	require.Nil(t, err)
 	a.Equal("https://dev-server", u)
