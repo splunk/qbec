@@ -68,8 +68,7 @@ type ExternalVar struct {
 // ComputedVar is a variable that is computed based on evaluating jsonnet code.
 type ComputedVar struct {
 	Var
-	Code string `json:"code,omitempty"` // inline code, or...
-	File string `json:"file,omitempty"` // jsonnet file name
+	Code string `json:"code"` // inline code
 }
 
 // Variables is a collection of external and top-level variables.

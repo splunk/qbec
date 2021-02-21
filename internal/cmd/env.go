@@ -39,15 +39,8 @@ func (c *EnvContext) computeVars() error {
 	cVars := c.App().DeclaredComputedVars()
 	for _, varObj := range cVars {
 		name := varObj.Name
-		var jsonData string
-		var err error
 		baseCtx := c.EvalContext(false).BaseContext
-		switch varObj.File {
-		case "": // use inline code
-			jsonData, err = eval.Code(fmt.Sprintf("<%s.computed-var>", name), vm.MakeCode(varObj.Code), baseCtx)
-		default:
-			jsonData, err = eval.File(varObj.File, baseCtx)
-		}
+		jsonData, err := eval.Code(fmt.Sprintf("<%s>", name), vm.MakeCode(varObj.Code), baseCtx)
 		if err != nil {
 			return errors.Wrapf(err, "eval computed var %s", name)
 		}

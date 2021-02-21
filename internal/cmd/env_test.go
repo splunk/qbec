@@ -80,7 +80,7 @@ func TestEnvContextBadCompute(t *testing.T) {
 	require.NoError(t, err)
 	_, err = ac.EnvContext("dev")
 	require.Error(t, err)
-	a.Contains(err.Error(), `eval computed var compFoo: <compFoo.computed-var>:1:2 Unexpected: end of file`)
+	a.Contains(err.Error(), `eval computed var compFoo: <compFoo>:1:2 Unexpected: end of file`)
 }
 
 func TestEnvContextForceContext(t *testing.T) {

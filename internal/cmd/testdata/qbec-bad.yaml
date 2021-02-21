@@ -2,24 +2,13 @@
 apiVersion: qbec.io/v1alpha1
 kind: App
 metadata:
-  name: app1
+  name: bad-app
 spec:
-  libPaths:
-    - lib
   vars:
-    external:
-      - name: extFoo
-        default: 'baz'
-      - name: extBar
-        default: { bar: 'quux' }
-      - name: noDefault
     computed:
       - name: compFoo
         code: '{'
   environments:
-    minikube:
-      context: minikube
-      defaultNamespace: kube-public
     dev:
       server: https://dev-server
       defaultNamespace: kube-system

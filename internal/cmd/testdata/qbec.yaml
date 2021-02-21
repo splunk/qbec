@@ -27,7 +27,8 @@ spec:
             env: std.extVar('qbec.io/env'),
           }
       - name: compBar
-        file: comp-file.jsonnet
+        code: |
+          import 'comp-file.jsonnet'
   environments:
     minikube:
       context: minikube

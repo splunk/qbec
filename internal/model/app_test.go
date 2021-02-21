@@ -541,19 +541,7 @@ func TestAppNegative(t *testing.T) {
 			},
 		},
 		{
-			file: "bad-computed1.yaml",
-			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "one of 'file' or 'code' must be specified for computed variable foo")
-			},
-		},
-		{
-			file: "bad-computed2.yaml",
-			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "only one of 'file' or 'code' may be specified for computed variable foo")
-			},
-		},
-		{
-			file: "bad-computed3.yaml",
+			file: "bad-computed.yaml",
 			asserter: func(t *testing.T, err error) {
 				assert.Contains(t, err.Error(), "duplicate external variable foo")
 			},

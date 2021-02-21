@@ -197,18 +197,16 @@ definitions:
         type: string
       code:
         type: string
-      file:
-        type: string
       secret:
         type: boolean
     required:
       - name
+      - code
     title: |-
-      ComputedVar is a named code variable that is computed using inline jsonnet code or code from a file.
+      ComputedVar is a named code variable that is computed using inline jsonnet code.
       The computation is allowed to refer to other external variables including those set by qbec for an environment
-      as well as previously computed variables.
-      Either code or file must be set but not both. Inline code is evaluated as though it were a file in the qbec root.
-      This means that relative references to imports are first resolved against the qbec root before lib paths specified.
+      as well as previously computed variables. Inline code is evaluated as though it were defined in a file in the qbec root.
+      This means that relative references to imports will be resolved as expected.
   qbec.io.v1alpha1.Variables:
     additionalProperties: false
     type: object

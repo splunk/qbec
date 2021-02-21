@@ -37,7 +37,8 @@ spec:
             vars: std.extVar('c1'),
           }
       - name: c3
-        file: compute.jsonnet
+        code: |
+          import 'compute.jsonnet'
   environments:
     local:
       context: minikube
