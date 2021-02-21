@@ -49,6 +49,29 @@ func TestVMEvalFile(t *testing.T) {
 	assert.True(t, data.Bar)
 }
 
+func TestVMEvalCode(t *testing.T) {
+	vm := New(Config{LibPaths: []string{".", "testdata/vmlib"}})
+	out, err := vm.EvalCode(
+		"fake.jsonnet",
+		MakeCode(`
+			import 'testdata/vmtest.jsonnet'
+		`),
+		VariableSet{}.WithVars(
+			NewVar("foo", "fooVal"),
+			NewCodeVar("bar", "true"),
+		),
+	)
+	require.NoError(t, err)
+	var data struct {
+		Foo string `json:"foo"`
+		Bar bool   `json:"bar"`
+	}
+	err = json.Unmarshal([]byte(out), &data)
+	require.NoError(t, err)
+	assert.Equal(t, "fooVal", data.Foo)
+	assert.True(t, data.Bar)
+}
+
 func TestVMEvalNonExistentFile(t *testing.T) {
 	vm := New(Config{})
 	_, err := vm.EvalFile("testdata/does-not-exist.jsonnet", VariableSet{})

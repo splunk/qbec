@@ -28,6 +28,16 @@ import (
 	"github.com/splunk/qbec/internal/vm/natives"
 )
 
+// Code wraps string to distinguish it from string file names
+type Code struct {
+	code string
+}
+
+// MakeCode returns a code object from the supplied string.
+func MakeCode(s string) Code {
+	return Code{code: s}
+}
+
 // Config is the configuration of the VM
 type Config struct {
 	LibPaths []string // library paths
@@ -38,6 +48,9 @@ type VM interface {
 	// EvalFile evaluates the supplied file initializing the VM with the supplied variables
 	// and returns its output as a JSON string.
 	EvalFile(file string, v VariableSet) (string, error)
+	// EvalCode evaluates the supplied code initializing the VM with the supplied variables
+	// and returns its output as a JSON string.
+	EvalCode(diagnosticFile string, code Code, v VariableSet) (string, error)
 }
 
 // vm is an implementation of VM
@@ -62,6 +75,12 @@ func (v *vm) EvalFile(file string, vars VariableSet) (string, error) {
 	return v.jvm.EvaluateFile(file)
 }
 
+// EvalCode implements the interface method.
+func (v *vm) EvalCode(diagnosticFile string, code Code, vars VariableSet) (string, error) {
+	vars.register(v.jvm)
+	return v.jvm.EvaluateAnonymousSnippet(diagnosticFile, code.code)
+}
+
 type vmPool struct {
 	pool sync.Pool
 }
@@ -80,6 +99,14 @@ func newPool(config Config) *vmPool {
 func (v *vmPool) EvalFile(file string, vars VariableSet) (string, error) {
 	vm := v.pool.Get().(*vm)
 	out, err := vm.EvalFile(file, vars)
+	v.pool.Put(vm)
+	return out, err
+}
+
+// EvalCode implements the interface method.
+func (v *vmPool) EvalCode(diagnosticFile string, code Code, vars VariableSet) (string, error) {
+	vm := v.pool.Get().(*vm)
+	out, err := vm.EvalCode(diagnosticFile, code, vars)
 	v.pool.Put(vm)
 	return out, err
 }
