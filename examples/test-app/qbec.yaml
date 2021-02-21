@@ -25,6 +25,20 @@ spec:
     external:
       - name: externalFoo
         default: 'bar'
+    computed:
+      - name: c1
+        code: |
+          {
+            env: std.extVar('qbec.io/env'),
+          }
+      - name: c2
+        code: |
+          {
+            vars: std.extVar('c1'),
+          }
+      - name: c3
+        code: |
+          import 'compute.jsonnet'
   environments:
     local:
       context: minikube

@@ -92,6 +92,13 @@ type BaseContext struct {
 	jvm      vm.VM
 }
 
+func (c *BaseContext) evalCode(diagnosticFile string, code vm.Code, vars vm.VariableSet) (jsonData string, err error) {
+	jvm := vm.New(vm.Config{
+		LibPaths: c.LibPaths,
+	})
+	return jvm.EvalCode(diagnosticFile, code, vars)
+}
+
 func (c *BaseContext) evalFile(file string, vars vm.VariableSet) (jsonData string, err error) {
 	if c.jvm != nil {
 		return c.jvm.EvalFile(file, vars)
@@ -100,6 +107,11 @@ func (c *BaseContext) evalFile(file string, vars vm.VariableSet) (jsonData strin
 		LibPaths: c.LibPaths,
 	})
 	return jvm.EvalFile(file, vars)
+}
+
+// Code evaluates the supplied file using the base context.
+func Code(diagnosticFile string, code vm.Code, ctx BaseContext) (jsonData string, err error) {
+	return ctx.evalCode(diagnosticFile, code, ctx.Vars)
 }
 
 // File evaluates the supplied file using the base context.

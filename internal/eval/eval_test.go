@@ -70,6 +70,32 @@ func TestEvalFile(t *testing.T) {
 	a.EqualValues("bar", base["foo"])
 }
 
+func TestEvalCode(t *testing.T) {
+	data, err := Code("params", vm.MakeCode(`import 'testdata/params.libsonnet'`), BaseContext{
+		LibPaths: []string{"."},
+		Vars: vm.VariableSet{}.WithVars(
+			vm.NewVar("qbec.io/tag", "t1"),
+			vm.NewVar("qbec.io/env", "dev"),
+			vm.NewVar("qbec.io/cleanMode", "off"),
+			vm.NewVar("qbec.io/defaultNs", "foobar"),
+			vm.NewCodeVar("qbec.io/envProperties", `{ foo: "bar"}`),
+		),
+	})
+	require.Nil(t, err)
+	a := assert.New(t)
+	var paramsMap map[string]interface{}
+	err = json.Unmarshal([]byte(data), &paramsMap)
+	require.NoError(t, err)
+	comps, ok := paramsMap["components"].(map[string]interface{})
+	require.True(t, ok)
+	base, ok := comps["base"].(map[string]interface{})
+	require.True(t, ok)
+	a.EqualValues("dev", base["env"])
+	a.EqualValues("foobar", base["ns"])
+	a.EqualValues("t1", base["tag"])
+	a.EqualValues("bar", base["foo"])
+}
+
 func TestEvalParams(t *testing.T) {
 	paramsMap, err := Params("testdata/params.libsonnet", decorate(Context{
 		BaseContext: BaseContext{Verbose: true},

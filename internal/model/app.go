@@ -481,6 +481,11 @@ func (a *App) DeclaredTopLevelVars() map[string]interface{} {
 	return ret
 }
 
+// DeclaredComputedVars returns a list of all computed variables.
+func (a *App) DeclaredComputedVars() []ComputedVar {
+	return a.inner.Spec.Vars.Computed
+}
+
 // loadComponents loads metadata for all components for the app. It first expands the components directory
 // for glob patterns and loads components from all directories that match. It does _not_ recurse
 // into subdirectories. The data is returned as a map keyed by component name.
@@ -643,6 +648,12 @@ func (a *App) verifyVariables() error {
 	}
 	seenVar := map[string]bool{}
 	for _, v := range a.inner.Spec.Vars.External {
+		if seenVar[v.Name] {
+			return fmt.Errorf("duplicate external variable %s", v.Name)
+		}
+		seenVar[v.Name] = true
+	}
+	for _, v := range a.inner.Spec.Vars.Computed {
 		if seenVar[v.Name] {
 			return fmt.Errorf("duplicate external variable %s", v.Name)
 		}

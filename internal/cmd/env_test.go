@@ -44,6 +44,8 @@ func TestEnvContextBasic(t *testing.T) {
 	a.True(ect.Vars.HasVar("qbec.io/envProperties"))
 	a.True(ect.Vars.HasVar("qbec.io/defaultNs"))
 	a.True(ect.Vars.HasVar("qbec.io/tag"))
+	a.True(ect.Vars.HasVar("compFoo"))
+	a.True(ect.Vars.HasVar("compBar"))
 
 	attrs, err := ec.KubeAttributes()
 	require.NoError(t, err)
@@ -63,6 +65,22 @@ func TestEnvContextBasic(t *testing.T) {
 		},
 	})
 	t.Log(obj)
+}
+
+func TestEnvContextBadCompute(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	app, err := model.NewApp("qbec-bad.yaml", nil, "")
+	require.NoError(t, err)
+	ctx := getContext(t, Options{}, []string{
+		"--k8s:kubeconfig=kubeconfig.yaml",
+	})
+	ac, err := ctx.AppContext(app)
+	require.NoError(t, err)
+	_, err = ac.EnvContext("dev")
+	require.Error(t, err)
+	a.Contains(err.Error(), `eval computed var compFoo: <compFoo>:1:2 Unexpected: end of file`)
 }
 
 func TestEnvContextForceContext(t *testing.T) {

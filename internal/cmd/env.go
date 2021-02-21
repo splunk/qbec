@@ -18,7 +18,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
@@ -31,6 +33,20 @@ type EnvContext struct {
 	AppContext
 	env   string
 	props map[string]interface{}
+}
+
+func (c *EnvContext) computeVars() error {
+	cVars := c.App().DeclaredComputedVars()
+	for _, varObj := range cVars {
+		name := varObj.Name
+		baseCtx := c.EvalContext(false).BaseContext
+		jsonData, err := eval.Code(fmt.Sprintf("<%s>", name), vm.MakeCode(varObj.Code), baseCtx)
+		if err != nil {
+			return errors.Wrapf(err, "eval computed var %s", name)
+		}
+		c.vars = c.vars.WithVars(vm.NewCodeVar(name, jsonData))
+	}
+	return nil
 }
 
 // Env returns the environment name for this context.

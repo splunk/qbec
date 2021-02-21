@@ -65,10 +65,17 @@ type ExternalVar struct {
 	Default interface{} `json:"default,omitempty"` // the default value to use if none specified on the command line.
 }
 
+// ComputedVar is a variable that is computed based on evaluating jsonnet code.
+type ComputedVar struct {
+	Var
+	Code string `json:"code"` // inline code
+}
+
 // Variables is a collection of external and top-level variables.
 type Variables struct {
 	External []ExternalVar `json:"external,omitempty"` // collection of ext vars
 	TopLevel []TopLevelVar `json:"topLevel,omitempty"` // collection of TLAs
+	Computed []ComputedVar `json:"computed,omitempty"` // ordered collection of computed vars
 }
 
 // AppMeta is the simplified metadata object for a qbec app.

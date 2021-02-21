@@ -1,0 +1,14 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: bad-app
+spec:
+  vars:
+    computed:
+      - name: compFoo
+        code: '{'
+  environments:
+    dev:
+      server: https://dev-server
+      defaultNamespace: kube-system

@@ -17,6 +17,18 @@ spec:
       - name: extBar
         default: { bar: 'quux' }
       - name: noDefault
+    computed:
+      - name: compFoo
+        code: |
+          {
+            foo: std.extVar('extFoo'),
+            bar: std.extVar('extBar'),
+            baz: (import 'lib/baz.libsonnet').baz,
+            env: std.extVar('qbec.io/env'),
+          }
+      - name: compBar
+        code: |
+          import 'comp-file.jsonnet'
   environments:
     minikube:
       context: minikube
