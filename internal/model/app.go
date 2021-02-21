@@ -648,6 +648,18 @@ func (a *App) verifyVariables() error {
 		}
 		seenVar[v.Name] = true
 	}
+	for _, v := range a.inner.Spec.Vars.Computed {
+		if seenVar[v.Name] {
+			return fmt.Errorf("duplicate external variable %s", v.Name)
+		}
+		seenVar[v.Name] = true
+		if v.Code == "" && v.File == "" {
+			return fmt.Errorf("one of 'file' or 'code' must be specified for computed variable %s", v.Name)
+		}
+		if v.Code != "" && v.File != "" {
+			return fmt.Errorf("only one of 'file' or 'code' may be specified for computed variable %s", v.Name)
+		}
+	}
 	return nil
 }
 

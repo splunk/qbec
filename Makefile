@@ -36,6 +36,10 @@ build:
 test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.txt -covermode=atomic -race ./...
 
+.PHONY: generate
+generate:
+	go run ./cmd/gen-qbec-swagger internal/model/swagger.yaml internal/model/swagger-schema.go
+
 .PHONY: lint
 lint: check-format
 	go vet ./...

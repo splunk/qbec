@@ -534,6 +534,24 @@ func TestAppNegative(t *testing.T) {
 				assert.Contains(t, err.Error(), "invalid post-processor 'lib2/foo.jsonnet', has the same base name as 'lib/foo.jsonnet'")
 			},
 		},
+		{
+			file: "bad-computed1.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "one of 'file' or 'code' must be specified for computed variable foo")
+			},
+		},
+		{
+			file: "bad-computed2.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "only one of 'file' or 'code' may be specified for computed variable foo")
+			},
+		},
+		{
+			file: "bad-computed3.yaml",
+			asserter: func(t *testing.T, err error) {
+				assert.Contains(t, err.Error(), "duplicate external variable foo")
+			},
+		},
 	}
 
 	for _, test := range tests {

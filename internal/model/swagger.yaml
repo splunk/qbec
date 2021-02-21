@@ -189,6 +189,26 @@ definitions:
     title: |-
       TopLevelVar is a variable that is set as a TLA in the jsonnet VM. Note that there is no provision to set
       a default value - default values should be set in the jsonnet code instead.
+  qbec.io.v1alpha1.ComputedVar:
+    additionalProperties: false
+    type: object
+    properties:
+      name:
+        type: string
+      code:
+        type: string
+      file:
+        type: string
+      secret:
+        type: boolean
+    required:
+      - name
+    title: |-
+      ComputedVar is a named code variable that is computed using inline jsonnet code or code from a file.
+      The computation is allowed to refer to other external variables including those set by qbec for an environment
+      as well as previously computed variables.
+      Either code or file must be set but not both. Inline code is evaluated as though it were a file in the qbec root.
+      This means that relative references to imports are first resolved against the qbec root before lib paths specified.
   qbec.io.v1alpha1.Variables:
     additionalProperties: false
     type: object
@@ -202,3 +222,7 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/qbec.io.v1alpha1.TopLevelVar"
+      computed:
+        type: array
+        items:
+          $ref: "#/definitions/qbec.io.v1alpha1.ComputedVar"

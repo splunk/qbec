@@ -1,0 +1,15 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: test-app
+spec:
+  vars:
+    computed:
+      - name: foo
+        code: "{}"
+        file: compute.jsonnet
+  environments:
+    dev:
+      server: https://dev-server
+
+

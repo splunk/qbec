@@ -1,0 +1,18 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: test-app
+spec:
+  vars:
+    external:
+      - name: foo
+        default: 'abc'
+    computed:
+      - name: foo
+        code: |
+          { foo: 'abc' }
+  environments:
+    dev:
+      server: https://dev-server
+
+
