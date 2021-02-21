@@ -6,11 +6,7 @@ metadata:
 spec:
   libPaths:
     - lib
-  namespaceTagSuffix: true
   vars:
-    topLevel:
-      - name: tlaFoo
-        components: [ 'c1' ]
     external:
       - name: extFoo
         default: 'baz'
@@ -19,15 +15,7 @@ spec:
       - name: noDefault
     computed:
       - name: compFoo
-        code: |
-          {
-            foo: std.extVar('extFoo'),
-            bar: std.extVar('extBar'),
-            baz: (import 'lib/baz.libsonnet').baz,
-            env: std.extVar('qbec.io/env'),
-          }
-      - name: compBar
-        file: comp-file.jsonnet
+        code: '{'
   environments:
     minikube:
       context: minikube

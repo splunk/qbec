@@ -50,7 +50,7 @@ func TestVMEvalFile(t *testing.T) {
 }
 
 func TestVMEvalCode(t *testing.T) {
-	vm := New(Config{LibPaths: []string{".", "testdata/vmlib"}})
+	vm := New(Config{LibPaths: []string{"testdata/vmlib"}})
 	out, err := vm.EvalCode(
 		"fake.jsonnet",
 		MakeCode(`
