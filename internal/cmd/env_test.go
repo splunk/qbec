@@ -83,6 +83,22 @@ func TestEnvContextBadCompute(t *testing.T) {
 	a.Contains(err.Error(), `eval computed var compFoo: <compFoo>:1:2 Unexpected: end of file`)
 }
 
+func TestEnvContextBadCompute2(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	app, err := model.NewApp("qbec-bad2.yaml", nil, "")
+	require.NoError(t, err)
+	ctx := getContext(t, Options{}, []string{
+		"--k8s:kubeconfig=kubeconfig.yaml",
+	})
+	ac, err := ctx.AppContext(app)
+	require.NoError(t, err)
+	_, err = ac.EnvContext("dev")
+	require.Error(t, err)
+	a.Contains(err.Error(), `eval computed var compFoo: RUNTIME ERROR: variable compBar has not yet been computed`)
+}
+
 func TestEnvContextForceContext(t *testing.T) {
 	a := assert.New(t)
 	fn := setPwd(t, "testdata")
