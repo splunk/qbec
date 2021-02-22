@@ -106,6 +106,12 @@ func (c *AppContext) init() error {
 			addVars = append(addVars, vm.NewCodeVar(k, string(b)))
 		}
 	}
+
+	// add an 'error' variable for every computed var until they are replaced for real
+	for _, c := range c.App().DeclaredComputedVars() {
+		addVars = append(addVars, vm.NewCodeVar(c.Name, fmt.Sprintf(`error 'variable %s has not yet been computed'`, c.Name)))
+	}
+
 	c.vars = vs.WithVars(addVars...)
 	c.vmc = vm.Config{
 		LibPaths: c.ext.LibPaths,
