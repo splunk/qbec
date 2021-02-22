@@ -44,6 +44,7 @@ func TestExternals(t *testing.T) {
 		"--vm:tla-code=tlaCode=true",
 		"--vm:jpath=testdata/lib1",
 		"--vm:ext-str-list=testdata/vars.txt",
+		"--vm:data-source=exec://foobar?configVar=extCode",
 	})
 	os.Setenv("extStr", "envFoo")
 	defer os.Unsetenv("extStr")
@@ -52,6 +53,7 @@ func TestExternals(t *testing.T) {
 	err := cmd.Execute()
 	require.Nil(t, err)
 	assert.EqualValues(t, []string{"testdata/lib1"}, cfg.LibPaths)
+	assert.EqualValues(t, []string{"exec://foobar?configVar=extCode"}, cfg.DataSources)
 	assert.EqualValues(t, map[string]UserVal{
 		"extStr":   {Value: "envFoo"},
 		"extCode":  {Value: `{ foo: 'ec1foo', bar: 'ec1bar'}` + getCR(), Code: true},
