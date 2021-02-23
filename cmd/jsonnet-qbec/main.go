@@ -24,9 +24,50 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/datasource"
+	"github.com/splunk/qbec/internal/datasource/api"
 	"github.com/splunk/qbec/internal/vm"
 	"github.com/splunk/qbec/internal/vm/externals"
+	"github.com/splunk/qbec/internal/vm/importers"
 )
+
+func getProvider(cfg vm.Config, vs vm.VariableSet) func(name string) (string, error) {
+	return func(name string) (string, error) {
+		jvm := vm.New(cfg)
+		return jvm.EvalCode(
+			fmt.Sprintf("<%s>", name),
+			vm.MakeCode(fmt.Sprintf(`std.extVar('%s')`, name)),
+			vs,
+		)
+	}
+}
+
+func run(file string, ext externals.Externals) (string, error) {
+	var dataSources []importers.DataSource
+	for _, s := range ext.DataSources {
+		ds, err := datasource.Create(s)
+		if err != nil {
+			return "", errors.Wrapf(err, "create data source %s", s)
+		}
+		dataSources = append(dataSources, ds)
+	}
+	cfg := vm.Config{
+		LibPaths:    ext.LibPaths,
+		DataSources: dataSources,
+	}
+	vs := vm.VariablesFromConfig(ext)
+	provider := getProvider(cfg, vs)
+	for _, ds := range dataSources {
+		apiDs := ds.(api.DataSource)
+		if err := apiDs.Init(provider); err != nil {
+			return "", errors.Wrapf(err, "init data source %s", apiDs.Name())
+		}
+		cmd.RegisterCleanupTask(apiDs)
+	}
+	jvm := vm.New(cfg)
+	return jvm.EvalFile(file, vs)
+}
 
 func main() {
 	var configInit func() (externals.Externals, error)
@@ -34,29 +75,24 @@ func main() {
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
 		Short: "jsonnet with yaml support",
-		Run: func(c *cobra.Command, args []string) {
-			run := func() error {
-				if len(args) != 1 {
-					return fmt.Errorf("exactly one file argument is required")
-				}
-				ext, err := configInit()
-				if err != nil {
-					return errors.Wrap(err, "create VM ext")
-				}
-				jvm := vm.New(vm.Config{LibPaths: ext.LibPaths})
-				file := args[0]
-				str, err := jvm.EvalFile(file, vm.VariablesFromConfig(ext))
-				if err != nil {
-					return err
-				}
-				fmt.Println(str)
-				return nil
+		RunE: func(c *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return fmt.Errorf("exactly one file argument is required")
 			}
-			if err := run(); err != nil {
-				log.Fatalln(err)
+			ext, err := configInit()
+			if err != nil {
+				return errors.Wrap(err, "create VM ext")
 			}
+			s, err := run(args[0], ext)
+			if err != nil {
+				return err
+			}
+			fmt.Println(s)
+			return nil
 		},
 	}
+	cmd.RegisterSignalHandlers()
+	defer cmd.Close()
 	configInit = externals.FromCommandParams(root, "", true)
 	if err := root.Execute(); err != nil {
 		log.Fatalln(err)
