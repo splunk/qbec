@@ -23,7 +23,7 @@ func runConfig() string {
 		foo: 'bar',
 	},
 	stdin: '{ "bar": "baz" }',
-	timeout: '100ms',
+	timeout: '1s',
 }
 `
 }
@@ -91,7 +91,6 @@ func TestExecDataSourceFail(t *testing.T) {
 	}
 	_, err := run("testdata/fail.jsonnet", ext)
 	require.Error(t, err)
-	t.Log(err)
 	assert.Contains(t, err.Error(), "RUNTIME ERROR: data source replay, target=/fail:")
 }
 
@@ -114,6 +113,5 @@ func TestExecDataSourceTimeout(t *testing.T) {
 	}
 	_, err := run("testdata/slow.jsonnet", ext)
 	require.Error(t, err)
-	t.Log(err)
 	assert.Contains(t, err.Error(), "RUNTIME ERROR: data source replay, target=/slow")
 }

@@ -489,6 +489,11 @@ func (a *App) DeclaredComputedVars() []ComputedVar {
 	return a.inner.Spec.Vars.Computed
 }
 
+// DataSources returns the datasource URIs defined for the app.
+func (a *App) DataSources() []string {
+	return a.inner.Spec.DataSources
+}
+
 // loadComponents loads metadata for all components for the app. It first expands the components directory
 // for glob patterns and loads components from all directories that match. It does _not_ recurse
 // into subdirectories. The data is returned as a map keyed by component name.

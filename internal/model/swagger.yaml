@@ -131,6 +131,12 @@ definitions:
       addComponentLabel:
         description: add component name as label to Kubernetes objects
         type: boolean
+      dataSources:
+        description: a list of data sources to be defined for the qbec app.
+        items:
+          type: string
+        type: array
+
     title: AppSpec is the user-supplied configuration of the qbec app.
     type: object
   qbec.io.v1alpha1.Environment:

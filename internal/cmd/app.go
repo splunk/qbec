@@ -126,7 +126,7 @@ func (c AppContext) EnvContext(env string) (EnvContext, error) {
 		return EnvContext{}, err
 	}
 	ret := EnvContext{AppContext: c, env: env, props: props}
-	if err := ret.computeVars(); err != nil {
+	if err := ret.initEnv(); err != nil {
 		return EnvContext{}, err
 	}
 	fc, err := c.forceOptsFn()
