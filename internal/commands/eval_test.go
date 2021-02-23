@@ -99,3 +99,19 @@ func TestEvalBadArgs(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "exactly one file required", err.Error())
 }
+
+func TestEvalBadFile(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("eval", "non-existent.jsonnet")
+	require.Error(t, err)
+	assert.Equal(t, "non-existent.jsonnet: file not found", err.Error())
+}
+
+func TestEvalBadFileQbecCtx(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("eval", "--env=dev", "non-existent.jsonnet")
+	require.Error(t, err)
+	assert.Equal(t, "non-existent.jsonnet: file not found", err.Error())
+}
