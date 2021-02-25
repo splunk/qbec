@@ -95,13 +95,8 @@ func downloadEnvFile(url string) ([]byte, error) {
 	return payload, err
 }
 
-// IsRemoteFile distinguishes remote files from local files
-func IsRemoteFile(file string) bool {
-	return strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://")
-}
-
 func readEnvFile(file string) ([]byte, error) {
-	if IsRemoteFile(file) {
+	if filematcher.IsRemoteFile(file) {
 		b, err := downloadEnvFile(file)
 		if err != nil {
 			return nil, errors.Wrapf(err, "download environments from %s", file)
@@ -125,10 +120,6 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	envFiles = append(envFiles, additionalFiles...)
 	var allFiles []string
 	for _, filePattern := range envFiles {
-		if IsRemoteFile(filePattern) {
-			allFiles = append(allFiles, filePattern)
-			continue
-		}
 		matchedFiles, err := filematcher.Match(filePattern)
 		if err != nil {
 			return err

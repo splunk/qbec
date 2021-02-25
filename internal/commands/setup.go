@@ -216,15 +216,11 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		// directory before we change it
 		var envFiles []string
 		for _, envFile := range ctx.EnvFiles() {
-			if model.IsRemoteFile(envFile) {
-				envFiles = append(envFiles, envFile)
-			} else {
-				files, err := filematcher.Match(envFile)
-				if err != nil {
-					return err
-				}
-				envFiles = append(envFiles, files...)
+			files, err := filematcher.Match(envFile)
+			if err != nil {
+				return err
 			}
+			envFiles = append(envFiles, files...)
 		}
 		if err := setWorkDir(ctx.RootDir()); err != nil {
 			return err

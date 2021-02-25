@@ -22,6 +22,7 @@ func TestMatch(t *testing.T) {
 		{"testdata/non-existentenv.yaml", false, nil},
 		{"testdata/*.yaml", true, []string{filepath.Join(cwd, "testdata/.env.yaml"), filepath.Join(cwd, "testdata/1env.yaml"), filepath.Join(cwd, "testdata/env.yaml"), filepath.Join(cwd, "testdata/env1.yaml")}},
 		{"testdata", true, []string{filepath.Join(cwd, "testdata")}},
+		{"https://testdata", true, []string{"https://testdata"}},
 		{"testdata/testDirForGlobPatterns/*", true, []string{filepath.Join(cwd, "testdata/testDirForGlobPatterns/.keep"), filepath.Join(cwd, "testdata/testDirForGlobPatterns/childDir")}},
 	}
 	for i, test := range tests {

@@ -267,8 +267,8 @@ func TestAppWarnings(t *testing.T) {
 	require.Nil(t, err)
 	cwd, err := filepath.Abs(".")
 	assert.Nil(t, err)
-	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: inline)", filepath.Join(cwd, "dev.yaml"))
-	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: dev2.yaml)",filepath.Join(cwd, "envs/override-dev.yaml"), filepath.Join(cwd, "dev2.yaml"))
+	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: inline)", filepath.Join(cwd, "dev2.yaml")))
+	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: %s)", filepath.Join(cwd, "envs/override-dev.yaml"), filepath.Join(cwd, "dev2.yaml")))
 
 	buf = bytes.NewBuffer(nil)
 	sio.Output = buf

@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"strings"
 )
 
 // Match returns list of files and dirs matching a glob pattern
 func Match(pattern string) ([]string, error) {
+	if IsRemoteFile(pattern) {
+		return []string{pattern}, nil
+	}
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, err
@@ -25,4 +29,9 @@ func Match(pattern string) ([]string, error) {
 		envFiles = append(envFiles, abs)
 	}
 	return envFiles, nil
+}
+
+// IsRemoteFile distinguishes remote files from local files
+func IsRemoteFile(file string) bool {
+	return strings.HasPrefix(file, "http://") || strings.HasPrefix(file, "https://")
 }
