@@ -49,7 +49,7 @@ func (c *EnvContext) createDataSources() error {
 	for _, ds := range c.App().DataSources() {
 		src, err := datasource.Create(ds)
 		if err != nil {
-			return errors.Wrapf(err, "create data source %s", src)
+			return errors.Wrapf(err, "create data source %s", ds)
 		}
 		if err := src.Init(c.configProvider); err != nil {
 			return errors.Wrapf(err, "init data source %s", src.Name())

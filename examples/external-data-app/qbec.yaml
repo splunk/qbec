@@ -1,0 +1,27 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: external-data
+spec:
+  vars:
+    external:
+      - name: cm-value
+        default: def
+    computed:
+      - name: cmdConfig
+        code: |
+          {
+            command: './config-map.sh',
+            args: [ std.extVar('cm-value') ],
+            env: {
+              qbec_env: std.extVar('qbec.io/env'),
+            },
+            stdin: 'now is the time for all good men to come to the aid of the party',
+          }
+  dataSources:
+    - exec://config-map?configVar=cmdConfig
+  environments:
+    local:
+      context: minikube
+
