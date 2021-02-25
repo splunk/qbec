@@ -120,11 +120,7 @@ func (d *execSource) Init(p api.ConfigProvider) (fErr error) {
 		return err
 	}
 	c.initDefaults()
-	r, err := newRunner(&c)
-	if err != nil {
-		return err
-	}
-	d.runner = r
+	d.runner = newRunner(&c)
 	return nil
 }
 

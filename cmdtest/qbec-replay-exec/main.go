@@ -11,16 +11,9 @@ import (
 )
 
 func main() {
-	var input interface{}
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatalln(err)
-	}
-	if len(b) > 0 {
-		err = json.Unmarshal(b, &input)
-		if err != nil {
-			log.Fatalln(err)
-		}
 	}
 	exe := os.Args[0]
 	args := os.Args[1:]
@@ -39,7 +32,7 @@ func main() {
 		"args":    args,
 		"dir":     wd,
 		"env":     env,
-		"stdin":   input,
+		"stdin":   string(b),
 	}
 	b, err = json.MarshalIndent(data, "", "  ")
 	if err != nil {

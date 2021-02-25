@@ -12,8 +12,8 @@ type runner struct {
 	c *Config
 }
 
-func newRunner(c *Config) (*runner, error) {
-	return &runner{c: c}, nil
+func newRunner(c *Config) *runner {
+	return &runner{c: c}
 }
 
 func (r *runner) runWithEnv(e map[string]string) (string, error) {

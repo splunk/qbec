@@ -6,6 +6,9 @@ import (
 	"github.com/splunk/qbec/internal/datasource/api"
 )
 
+// lazySource wraps a data source and defers initialization of its delegate until the first call to Resolve.
+// This allows data sources to be initialized before computed variables are, such that code in computed
+// variables can also refer to data sources.
 type lazySource struct {
 	delegate api.DataSource
 	provider api.ConfigProvider
