@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# the implementation of the config-map data source that shows that you can pull data out
+# of arguments, the environment and stdin
 cat <<EOF
 apiVersion: v1
 kind: ConfigMap

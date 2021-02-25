@@ -9,6 +9,9 @@ spec:
       - name: cm-value
         default: def
     computed:
+      # the variable below is the configuration of the config-map data source where
+      # you can specify a command, arguments to the program, environment variables,
+      # and standard input
       - name: cmdConfig
         code: |
           {
@@ -20,6 +23,9 @@ spec:
             stdin: 'now is the time for all good men to come to the aid of the party',
           }
   dataSources:
+    # data sources are declared to be of the form
+    #   <kind>://<name>?configVar=<configuration-variable-name>
+    # in this case kind=exec, name=config-map, and config var is cmdConfig defined above
     - exec://config-map?configVar=cmdConfig
   environments:
     local:
