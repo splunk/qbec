@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/splunk/qbec/internal/eval"
@@ -67,10 +68,12 @@ func TestEnvContextBasic(t *testing.T) {
 	})
 	t.Log(obj)
 
-	baseCtx := ec.EvalContext(false).BaseContext
-	out, err := eval.File("components/c2.jsonnet", baseCtx)
-	require.NoError(t, err)
-	assert.Contains(t, out, `"bar": "hello world\n"`)
+	if runtime.GOOS != "windows" {
+		baseCtx := ec.EvalContext(false).BaseContext
+		out, err := eval.File("components/c2.jsonnet", baseCtx)
+		require.NoError(t, err)
+		assert.Contains(t, out, `"bar": "hello world\n"`)
+	}
 }
 
 func TestEnvContextBadCompute(t *testing.T) {
