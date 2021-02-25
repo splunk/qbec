@@ -1,0 +1,12 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: bad-ds1
+spec:
+  dataSources:
+    - exec://foo
+  environments:
+    dev:
+      server: https://dev-server
+      defaultNamespace: kube-system

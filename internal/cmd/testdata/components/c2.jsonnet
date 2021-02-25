@@ -6,5 +6,6 @@
     },
     data: {
         foo: std.extVar('extFoo'),
+        bar: importstr 'data://myds',
     },
 }

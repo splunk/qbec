@@ -1,0 +1,22 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: bad-ds1
+spec:
+  vars:
+    computed:
+      - name: c1
+        code: |
+          import 'data://foo'
+      - name: c2
+        code: |
+          {
+            command: 'cat',
+          }
+  dataSources:
+    - exec://foo?configVar=c2
+  environments:
+    dev:
+      server: https://dev-server
+      defaultNamespace: kube-system
