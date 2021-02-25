@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
-// Match returns list of files and dirs matching a glob pattern
+// Match returns a sorted list of files and dirs matching a glob pattern
 func Match(pattern string) ([]string, error) {
 	if IsRemoteFile(pattern) {
 		return []string{pattern}, nil
@@ -28,6 +29,7 @@ func Match(pattern string) ([]string, error) {
 		}
 		envFiles = append(envFiles, abs)
 	}
+	sort.Strings(envFiles)
 	return envFiles, nil
 }
 
