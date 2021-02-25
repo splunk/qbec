@@ -40,6 +40,9 @@ func Create(u string) (api.DataSource, error) {
 	}
 	name := parsed.Host
 	if name == "" {
+		if parsed.Opaque != "" {
+			return nil, fmt.Errorf("data source '%s' does not have a name (did you forget the '//' after the ':'?)", u)
+		}
 		return nil, fmt.Errorf("data source '%s' does not have a name", u)
 	}
 	varName := parsed.Query().Get("configVar")

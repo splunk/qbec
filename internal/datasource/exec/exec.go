@@ -89,6 +89,7 @@ type execSource struct {
 	runner    *runner
 }
 
+// New creates a new exec data source
 func New(name string, configVar string) api.DataSource {
 	return &execSource{
 		name:      name,
@@ -101,7 +102,7 @@ func (d *execSource) Name() string {
 	return d.name
 }
 
-// Start implements the interface method.
+// Init implements the interface method.
 func (d *execSource) Init(p api.ConfigProvider) (fErr error) {
 	defer func() {
 		fErr = errors.Wrapf(fErr, "init data source %s", d.name) // nil wraps as nil

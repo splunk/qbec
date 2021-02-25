@@ -23,7 +23,7 @@ func runConfig() string {
 		foo: 'bar',
 	},
 	stdin: '{ "bar": "baz" }',
-	timeout: '2s',
+	timeout: '3s',
 }
 `
 }
