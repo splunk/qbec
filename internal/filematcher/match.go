@@ -2,6 +2,7 @@ package filematcher
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 )
 
@@ -13,7 +14,7 @@ func Match(pattern string) ([]string, error) {
 	}
 	// files is nil when pattern does not match any files
 	if files == nil {
-		return nil, fmt.Errorf("no files match the pattern %q", pattern)
+		return nil, fmt.Errorf("%s: %w", pattern, fs.ErrNotExist)
 	}
 	var envFiles []string
 	for _, f := range files {

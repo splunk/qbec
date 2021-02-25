@@ -18,7 +18,9 @@ package model
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -263,8 +265,10 @@ func TestAppWarnings(t *testing.T) {
 	sio.Output = buf
 	app, err := NewApp("app-warn.yaml", []string{"envs/override-dev.yaml"}, "foobar")
 	require.Nil(t, err)
-	a.Contains(buf.String(), "[warn] override env definition 'dev' from file dev2.yaml (previous: inline)")
-	a.Contains(buf.String(), "[warn] override env definition 'dev' from file envs/override-dev.yaml (previous: dev2.yaml)")
+	cwd, err := filepath.Abs(".")
+	assert.Nil(t, err)
+	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: inline)", filepath.Join(cwd, "dev.yaml"))
+	a.Contains(buf.String(), fmt.Sprintf("[warn] override env definition 'dev' from file %s (previous: dev2.yaml)",filepath.Join(cwd, "envs/override-dev.yaml"), filepath.Join(cwd, "dev2.yaml"))
 
 	buf = bytes.NewBuffer(nil)
 	sio.Output = buf
@@ -488,7 +492,8 @@ func TestAppNegative(t *testing.T) {
 		{
 			file: "bad-missing-env-file.yaml",
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "missing-env.yaml: "+testutil.FileNotFoundMessage)
+				assert.Contains(t, err.Error(), "missing-env.yaml")
+				assert.True(t, errors.Is(err, fs.ErrNotExist))
 			},
 		},
 		{
@@ -507,7 +512,9 @@ func TestAppNegative(t *testing.T) {
 			file:     "app-warn.yaml",
 			envFiles: []string{"foobar.yaml"},
 			asserter: func(t *testing.T, err error) {
-				assert.Contains(t, err.Error(), "open foobar.yaml")
+				assert.Contains(t, err.Error(), "foobar.yaml")
+				assert.True(t, errors.Is(err, fs.ErrNotExist))
+
 			},
 		},
 		{

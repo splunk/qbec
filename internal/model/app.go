@@ -125,6 +125,10 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 	envFiles = append(envFiles, additionalFiles...)
 	var allFiles []string
 	for _, filePattern := range envFiles {
+		if IsRemoteFile(filePattern) {
+			allFiles = append(allFiles, filePattern)
+			continue
+		}
 		matchedFiles, err := filematcher.Match(filePattern)
 		if err != nil {
 			return err
