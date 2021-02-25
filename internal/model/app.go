@@ -30,6 +30,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/filematcher"
 	"github.com/splunk/qbec/internal/sio"
 )
 
@@ -119,10 +120,17 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 		sources[k] = "inline"
 	}
 
+	var envFiles []string
+	envFiles = append(envFiles, app.Spec.EnvFiles...)
+	envFiles = append(envFiles, additionalFiles...)
 	var allFiles []string
-	allFiles = append(allFiles, app.Spec.EnvFiles...)
-	allFiles = append(allFiles, additionalFiles...)
-
+	for _, filePattern := range envFiles {
+		matchedFiles, err := filematcher.Match(filePattern)
+		if err != nil {
+			return err
+		}
+		allFiles = append(allFiles, matchedFiles...)
+	}
 	for _, file := range allFiles {
 		b, err := readEnvFile(file)
 		if err != nil {
