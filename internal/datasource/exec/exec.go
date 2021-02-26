@@ -14,6 +14,8 @@
    limitations under the License.
 */
 
+// Package exec provides a data source implementation that can execute external commands and return
+// its standard output for import or importstr use.
 package exec
 
 import (
