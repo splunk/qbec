@@ -101,6 +101,8 @@ type AppSpec struct {
 	Preprocessor string `json:"preProcessor,omitempty"`
 	// the interface for jsonnet variables.
 	Vars Variables `json:"vars,omitempty"`
+	// data sources defined for the app.
+	DataSources []string `json:"dataSources,omitempty"`
 	// set of environments for the app
 	Environments map[string]Environment `json:"environments"`
 	// additional environments pulled in from external files

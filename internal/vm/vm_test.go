@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -166,4 +167,58 @@ func TestVMConcurrency(t *testing.T) {
 	close(startCh)
 	wg.Wait()
 	require.NoError(t, evalError)
+}
+
+type replay struct {
+	name string
+}
+
+func (d *replay) Name() string {
+	return d.name
+}
+
+func (d *replay) Resolve(path string) (string, error) {
+	out := struct {
+		Source string `json:"source"`
+		Path   string `json:"path"`
+	}{d.name, path}
+	b, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func TestVMDataSource(t *testing.T) {
+	jvm := New(Config{
+		LibPaths:    []string{},
+		DataSources: []importers.DataSource{&replay{name: "replay"}},
+	})
+	jsonCode, err := jvm.EvalFile("testdata/data-sources/replay.jsonnet", VariableSet{})
+	require.NoError(t, err)
+	var data map[string]interface{}
+	err = json.Unmarshal([]byte(jsonCode), &data)
+	require.NoError(t, err)
+	assert.Equal(t, "replay", data["source"])
+	assert.Equal(t, "/foo/bar", data["path"])
+}
+
+func TestVMTwoDataSources(t *testing.T) {
+	jvm := New(Config{
+		LibPaths: []string{},
+		DataSources: []importers.DataSource{
+			&replay{name: "replay"},
+			&replay{name: "replay2"},
+		},
+	})
+	jsonCode, err := jvm.EvalFile("testdata/data-sources/replay2.jsonnet", VariableSet{})
+	require.NoError(t, err)
+	var data []map[string]interface{}
+	err = json.Unmarshal([]byte(jsonCode), &data)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(data))
+	assert.Equal(t, "replay", data[0]["source"])
+	assert.Equal(t, "/foo/bar", data[0]["path"])
+	assert.Equal(t, "replay2", data[1]["source"])
+	assert.Equal(t, "/bar/baz", data[1]["path"])
 }

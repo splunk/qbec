@@ -52,8 +52,9 @@ type UserVariables struct {
 
 // Externals is the desired configuration of the Jsonnet VM as specified by the user.
 type Externals struct {
-	Variables UserVariables // variables specified on command line
-	LibPaths  []string      // library paths in filesystem for the file importer
+	Variables   UserVariables // variables specified on command line
+	LibPaths    []string      // library paths in filesystem for the file importer
+	DataSources []string      // data sources defined on the command line
 }
 
 // WithLibPaths returns a config with additional library paths.
@@ -137,11 +138,12 @@ func getValues(ret map[string]UserVal, name string, s strFiles, fn func(value st
 // a function that provides the config based on command line flags.
 func FromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) func() (Externals, error) {
 	var (
-		extStrings strFiles
-		extCodes   strFiles
-		tlaStrings strFiles
-		tlaCodes   strFiles
-		paths      []string
+		extStrings  strFiles
+		extCodes    strFiles
+		tlaStrings  strFiles
+		tlaCodes    strFiles
+		paths       []string
+		dataSources []string
 	)
 	fs := cmd.PersistentFlags()
 	if addShortcuts {
@@ -163,6 +165,7 @@ func FromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) fun
 	fs.StringArrayVar(&tlaCodes.strings, prefix+"tla-code", nil, "top-level code: <var>=[val], if <val> is omitted, get from environment var <var>")
 	fs.StringArrayVar(&tlaCodes.files, prefix+"tla-code-file", nil, "top-level code from file: <var>=<filename>")
 	fs.StringArrayVar(&paths, prefix+"jpath", nil, "additional jsonnet library path")
+	fs.StringArrayVar(&dataSources, prefix+"data-source", nil, "additional data sources in URL format")
 
 	return func() (c Externals, err error) {
 		vars := map[string]UserVal{}
@@ -182,6 +185,7 @@ func FromCommandParams(cmd *cobra.Command, prefix string, addShortcuts bool) fun
 		c.Variables.Vars = vars
 		c.Variables.TopLevelVars = tlaVars
 		c.LibPaths = paths
+		c.DataSources = dataSources
 		return
 	}
 }

@@ -248,6 +248,16 @@ func TestAppSimple(t *testing.T) {
 	envs := app.Environments()
 	a.Equal(4, len(envs))
 	a.False(app.ClusterScopedLists())
+	a.Equal(0, len(app.DataSources()))
+}
+
+func TestAppDataSources(t *testing.T) {
+	reset := setPwd(t, "../../examples/external-data-app")
+	defer reset()
+	app, err := NewApp("qbec.yaml", nil, "")
+	require.Nil(t, err)
+	a := assert.New(t)
+	a.EqualValues([]string{"exec://config-map?configVar=cmdConfig"}, app.DataSources())
 }
 
 func TestAppWarnings(t *testing.T) {

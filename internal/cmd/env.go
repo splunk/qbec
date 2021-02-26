@@ -21,18 +21,43 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/datasource"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/internal/vm/importers"
 )
 
 // EnvContext is the command context for the intersection of an app and environment
 type EnvContext struct {
 	AppContext
-	env   string
-	props map[string]interface{}
+	env         string
+	props       map[string]interface{}
+	dataSources []importers.DataSource
+}
+
+func (c *EnvContext) configProvider(name string) (string, error) {
+	baseCtx := c.EvalContext(false).BaseContext
+	code := fmt.Sprintf(`std.extVar('%s')`, name)
+	return eval.Code(fmt.Sprintf("<%s>", name), vm.MakeCode(code), baseCtx)
+}
+
+func (c *EnvContext) createDataSources() error {
+	var sources []importers.DataSource
+	for _, ds := range c.App().DataSources() {
+		src, err := datasource.Create(ds)
+		if err != nil {
+			return errors.Wrapf(err, "create data source %s", ds)
+		}
+		if err := src.Init(c.configProvider); err != nil {
+			return errors.Wrapf(err, "init data source %s", src.Name())
+		}
+		sources = append(sources, src)
+	}
+	c.dataSources = sources
+	return nil
 }
 
 func (c *EnvContext) computeVars() error {
@@ -45,6 +70,16 @@ func (c *EnvContext) computeVars() error {
 			return errors.Wrapf(err, "eval computed var %s", name)
 		}
 		c.vars = c.vars.WithVars(vm.NewCodeVar(name, jsonData))
+	}
+	return nil
+}
+
+func (c *EnvContext) initEnv() error {
+	if err := c.createDataSources(); err != nil {
+		return err
+	}
+	if err := c.computeVars(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -71,9 +106,10 @@ func (c EnvContext) EvalContext(cleanMode bool) eval.Context {
 	)
 	return eval.Context{
 		BaseContext: eval.BaseContext{
-			Vars:     baseVars,
-			LibPaths: c.ext.LibPaths,
-			Verbose:  c.Verbosity() > 1,
+			Vars:        baseVars,
+			LibPaths:    c.ext.LibPaths,
+			DataSources: c.dataSources,
+			Verbose:     c.Verbosity() > 1,
 		},
 		Concurrency:      c.EvalConcurrency(),
 		PreProcessFiles:  c.App().PreProcessors(),

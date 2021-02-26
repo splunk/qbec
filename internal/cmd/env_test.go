@@ -17,8 +17,10 @@
 package cmd
 
 import (
+	"runtime"
 	"testing"
 
+	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,6 +67,13 @@ func TestEnvContextBasic(t *testing.T) {
 		},
 	})
 	t.Log(obj)
+
+	if runtime.GOOS != "windows" {
+		baseCtx := ec.EvalContext(false).BaseContext
+		out, err := eval.File("components/c2.jsonnet", baseCtx)
+		require.NoError(t, err)
+		assert.Contains(t, out, `"bar": "hello world\n"`)
+	}
 }
 
 func TestEnvContextBadCompute(t *testing.T) {
@@ -152,4 +161,32 @@ func TestEnvContextBadForceNamespace(t *testing.T) {
 	_, err = ac.EnvContext("dev")
 	require.Error(t, err)
 	a.Equal("current namespace can only be forced when the context is also forced to current", err.Error())
+}
+
+func TestEnvContextBadDataSourceDef(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	app, err := model.NewApp("qbec-bad-ds1.yaml", nil, "")
+	require.NoError(t, err)
+	ctx := getContext(t, Options{}, nil)
+	ac, err := ctx.AppContext(app)
+	require.NoError(t, err)
+	_, err = ac.EnvContext("dev")
+	require.Error(t, err)
+	a.Contains(err.Error(), "create data source exec://foo:")
+}
+
+func TestEnvContextBadDataSourceComputeOrder(t *testing.T) {
+	a := assert.New(t)
+	fn := setPwd(t, "testdata")
+	defer fn()
+	app, err := model.NewApp("qbec-bad-ds2.yaml", nil, "")
+	require.NoError(t, err)
+	ctx := getContext(t, Options{}, nil)
+	ac, err := ctx.AppContext(app)
+	require.NoError(t, err)
+	_, err = ac.EnvContext("dev")
+	require.Error(t, err)
+	a.Contains(err.Error(), `eval computed var c1: RUNTIME ERROR: data source foo, target=/: init data source foo: RUNTIME ERROR: variable c2 has not yet been computed`)
 }
