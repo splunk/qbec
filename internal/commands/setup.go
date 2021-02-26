@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/filematcher"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 )
@@ -215,15 +216,11 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 		// directory before we change it
 		var envFiles []string
 		for _, envFile := range ctx.EnvFiles() {
-			if model.IsRemoteFile(envFile) {
-				envFiles = append(envFiles, envFile)
-			} else {
-				abs, err := filepath.Abs(envFile)
-				if err != nil {
-					return err
-				}
-				envFiles = append(envFiles, abs)
+			files, err := filematcher.Match(envFile)
+			if err != nil {
+				return err
 			}
+			envFiles = append(envFiles, files...)
 		}
 		if err := setWorkDir(ctx.RootDir()); err != nil {
 			return err

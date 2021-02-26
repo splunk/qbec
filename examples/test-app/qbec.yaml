@@ -56,6 +56,4 @@ spec:
           foo: baz
           bar: null
   envFiles: 
-  - prod-env.yaml
-  - stage-env.yaml
-
+  - '*-env.yaml'
