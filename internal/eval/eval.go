@@ -128,7 +128,6 @@ func File(file string, ctx BaseContext) (jsonData string, err error) {
 type Context struct {
 	BaseContext
 	Concurrency      int               // concurrent components to evaluate, default 5
-	PreProcessFiles  []string          // preprocessor files that are evaluated if present
 	PostProcessFiles []string          // files that contains post-processing code for all objects
 	tlaVars          map[string]vm.Var // all top level string vars specified for the command
 }
@@ -164,20 +163,6 @@ func (c Context) componentVars(base vm.VariableSet, componentName string, tlas [
 	return vs.WithTopLevelVars(add...)
 }
 
-func (c *Context) runPreprocessors() error {
-	for _, file := range c.PreProcessFiles {
-		procName := baseName(file)
-		evalCode, err := c.evalFile(file, c.componentVars(c.Vars, model.QBECPreprocessorNamespace+procName, nil))
-		if err != nil {
-			return errors.Wrapf(err, "preprocessor eval %s", file)
-		}
-		name := model.QBECComputedNamespace + procName
-		sio.Debugln("setting external variable", name)
-		c.Vars = c.Vars.WithVars(vm.NewCodeVar(name, evalCode))
-	}
-	return nil
-}
-
 func (c Context) postProcessors() []postProc {
 	var ret []postProc
 	for _, file := range c.PostProcessFiles {
@@ -199,10 +184,6 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 		}
 	}()
 	ctx.init()
-	err := ctx.runPreprocessors()
-	if err != nil {
-		return nil, err
-	}
 	pe := ctx.postProcessors()
 	ret, err := evalComponents(components, ctx, pe, lop)
 	if err != nil {

@@ -94,11 +94,6 @@ type AppSpec struct {
 	// file containing jsonnet code that can be used to post-process all objects, typically adding metadata like
 	// annotations.
 	PostProcessor string `json:"postProcessor,omitempty"`
-	// file containing jsonnet code that is invoked before components are evaluated. It has access to the standard
-	// external variables that are normally set for a component.
-	// The object returned by the function is set to the external variable named 'computed.qbec.io/<base-name>'
-	// where <base-name> is the basename of the file without its extension.
-	Preprocessor string `json:"preProcessor,omitempty"`
 	// the interface for jsonnet variables.
 	Vars Variables `json:"vars,omitempty"`
 	// data sources defined for the app.

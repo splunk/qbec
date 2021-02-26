@@ -6,7 +6,6 @@ metadata:
 spec:
   # componentsDir: components
   # paramsFile: params.libsonnet
-  preProcessor: pre-proc.libsonnet
   postProcessor: pp.jsonnet
   libPaths:
   - lib

@@ -271,11 +271,6 @@ func splitPath(s string) []string {
 	return strings.Split(s, ":")
 }
 
-// PreProcessors returns the files defined as preprocessors.
-func (a *App) PreProcessors() []string {
-	return splitPath(a.inner.Spec.Preprocessor)
-}
-
 // PostProcessors returns the post processor files for the app.
 func (a *App) PostProcessors() []string {
 	return splitPath(a.inner.Spec.PostProcessor)
@@ -692,9 +687,6 @@ func checkProcessors(pType string, files []string) error {
 }
 
 func (a *App) verifyProcessors() error {
-	if err := checkProcessors("pre", a.PreProcessors()); err != nil {
-		return err
-	}
 	if err := checkProcessors("post", a.PostProcessors()); err != nil {
 		return err
 	}
