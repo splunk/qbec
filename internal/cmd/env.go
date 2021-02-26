@@ -112,7 +112,6 @@ func (c EnvContext) EvalContext(cleanMode bool) eval.Context {
 			Verbose:     c.Verbosity() > 1,
 		},
 		Concurrency:      c.EvalConcurrency(),
-		PreProcessFiles:  c.App().PreProcessors(),
 		PostProcessFiles: c.App().PostProcessors(),
 	}
 }

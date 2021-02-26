@@ -156,7 +156,6 @@ func TestEvalComponents(t *testing.T) {
 				Verbose: true,
 			},
 			PostProcessFiles: []string{"testdata/components/pp/pp.jsonnet", "testdata/components/pp/pp2.jsonnet"},
-			PreProcessFiles:  []string{"testdata/components/pp/std-map.jsonnet", "testdata/components/pp/std-map2.jsonnet"},
 		}),
 		producer,
 	)
@@ -185,7 +184,7 @@ func TestEvalComponents(t *testing.T) {
 
 	obj = objs[2]
 	a.Equal("c", obj.Component())
-	a.Equal("pp-name.pp2-name", obj.GetName())
+	a.Equal("foobar", obj.GetName())
 	t.Log(obj)
 
 	obj = objs[3]
@@ -352,17 +351,6 @@ func TestEvalComponentsBadPostProcessor(t *testing.T) {
 	require.Contains(t, err.Error(), "run post-processor foo/bar.jsonnet:")
 }
 
-func TestEvalComponentsBadPreProcessor(t *testing.T) {
-	_, err := Components([]model.Component{
-		{
-			Name:  "bad",
-			Files: []string{"testdata/components/good.json"},
-		},
-	}, decorate(Context{PreProcessFiles: []string{"foo/bar.jsonnet"}}), producer)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "preprocessor eval foo/bar.jsonnet:")
-}
-
 func TestEvalComponentsBadYaml(t *testing.T) {
 	_, err := Components([]model.Component{
 		{
@@ -405,17 +393,6 @@ func TestEvalComponentsBadPostProc(t *testing.T) {
 	}, decorate(Context{PostProcessFiles: []string{"testdata/components/bad-pp.libsonnet"}}), producer)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), `post-eval did not return an object`)
-}
-
-func TestEvalComponentsBadPreProc(t *testing.T) {
-	_, err := Components([]model.Component{
-		{
-			Name:  "bad-preproc",
-			Files: []string{"testdata/components/b.yaml"},
-		},
-	}, decorate(Context{PreProcessFiles: []string{"testdata/components/bad-prep.xsonnet"}}), producer)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), `preprocessor eval testdata/components/bad-prep.xsonnet:`)
 }
 
 func TestEvalPostProcessor(t *testing.T) {
