@@ -178,6 +178,7 @@ var noQbecContext = map[string]bool{
 	"init":       true,
 	"completion": true,
 	"options":    true,
+	"fmt":        true,
 }
 
 func doSetup(root *cobra.Command, opts cmd.Options) {
@@ -209,6 +210,10 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 			if e == "" {
 				skipApp = true
 			}
+		}
+
+		if c.Name() == "fmt" && c.Parent().Name() == "alpha" {
+			skipApp = false
 		}
 
 		if skipApp { // do not change work dir, do not load app

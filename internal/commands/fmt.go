@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
@@ -75,11 +76,15 @@ var (
 	supportedTypes = []string{"json", "jsonnet", "yaml"}
 )
 
-func newFmtCommand(cp ctxProvider) *cobra.Command {
+func newFmtCommand(cp ctxProvider, deprecated bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:     "fmt",
 		Short:   "format files",
 		Example: fmtExamples(),
+	}
+	deprecationNotice := "qbec alpha fmt is deprecated. Use qbec fmt instead. qbec alpha fmt would be removed in the next release"
+	if deprecated {
+		sio.Warnln(deprecationNotice)
 	}
 
 	config := fmtCommandConfig{}
