@@ -147,6 +147,9 @@ func fileVisitor(config *fmtCommandConfig) filepath.WalkFunc {
 }
 
 func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io.Writer) error {
+	if out == nil {
+		out = os.Stdout
+	}
 	var perm os.FileMode = 0644
 	if in == nil {
 		f, err := os.Open(filename)
