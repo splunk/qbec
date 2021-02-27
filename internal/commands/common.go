@@ -51,8 +51,9 @@ func setupCommands(root *cobra.Command, cp ctxProvider) {
 	root.AddCommand(newEnvCommand(cp))
 	root.AddCommand(newInitCommand(cp))
 	root.AddCommand(newCompletionCommand(root))
+	root.AddCommand(newFmtCommand(cp, false))
 	alplhaCmd := newAlphaCommand()
-	alplhaCmd.AddCommand(newFmtCommand(cp))
+	alplhaCmd.AddCommand(newFmtCommand(cp, true))
 	root.AddCommand(alplhaCmd)
 }
 
