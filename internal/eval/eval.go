@@ -64,9 +64,8 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
 	}
-	procName := model.QBECPostprocessorNamespace + baseName(p.file)
 	baseVars := p.ctx.Vars.WithTopLevelVars(vm.NewCodeVar(postprocessTLAVar, string(b)))
-	evalCode, err := p.ctx.evalFile(p.file, p.ctx.componentVars(baseVars, procName, nil))
+	evalCode, err := p.ctx.evalFile(p.file, p.ctx.componentVars(baseVars, nil))
 	if err != nil {
 		return nil, errors.Wrap(err, "post-eval object")
 	}
@@ -142,11 +141,8 @@ func (c *Context) init() {
 	c.jvm = c.newVM()
 }
 
-func (c Context) componentVars(base vm.VariableSet, componentName string, tlas []string) vm.VariableSet {
+func (c Context) componentVars(base vm.VariableSet, tlas []string) vm.VariableSet {
 	vs := base
-	if componentName != "" {
-		vs = base.WithVars(vm.NewVar(model.QbecNames.ComponentName, componentName))
-	}
 	if len(tlas) == 0 {
 		return vs
 	}
@@ -204,7 +200,7 @@ func Components(components []model.Component, ctx Context, lop LocalObjectProduc
 // returns it as a JSON object.
 func Params(file string, ctx Context) (map[string]interface{}, error) {
 	ctx.init()
-	output, err := ctx.evalFile(file, ctx.componentVars(ctx.Vars, "", nil))
+	output, err := ctx.evalFile(file, ctx.componentVars(ctx.Vars, nil))
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +249,7 @@ func evaluationCode(c Context, file string) evalFn {
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {
-			evalCode, err := c.evalFile(file, c.componentVars(c.Vars, component, tlas))
+			evalCode, err := c.evalFile(file, c.componentVars(c.Vars, tlas))
 			if err != nil {
 				return nil, err
 			}

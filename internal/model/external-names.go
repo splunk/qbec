@@ -22,15 +22,6 @@ const QBECMetadataPrefix = "qbec.io/"
 // QBECDirectivesNamespace is the leading path for all directives set by the user for qbec use.
 const QBECDirectivesNamespace = "directives.qbec.io/"
 
-// QBECComputedNamespace is the leading paths for all preprocessing computations done.
-const QBECComputedNamespace = "computed.qbec.io/"
-
-// QBECPreprocessorNamespace is the namespace to be assigned to the pseudo preprocessor component
-const QBECPreprocessorNamespace = "preprocessor.qbec.io/"
-
-// QBECPostprocessorNamespace is the namespace to be assigned to the pseudo postprocessor component
-const QBECPostprocessorNamespace = "postprocessor.qbec.io/"
-
 // Directives is the list of directive names we support.
 type Directives struct {
 	ApplyOrder   string // numeric apply order for object
@@ -49,7 +40,6 @@ var QbecNames = struct {
 	PristineAnnotation  string // the annotation to use for storing the pristine object
 	EnvVarName          string // the name of the external variable that has the environment name
 	EnvPropsVarName     string // the name of the external variable that has the environment properties object
-	ComponentName       string // the name of the component that is being processed
 	TagVarName          string // the name of the external variable that has the tag name
 	DefaultNsVarName    string // the name of the external variable that has the default namespace
 	CleanModeVarName    string // name of external variable that has the indicator for clean mode
@@ -63,7 +53,6 @@ var QbecNames = struct {
 	PristineAnnotation:  QBECMetadataPrefix + "last-applied",
 	EnvVarName:          QBECMetadataPrefix + "env",
 	EnvPropsVarName:     QBECMetadataPrefix + "envProperties",
-	ComponentName:       QBECMetadataPrefix + "component",
 	TagVarName:          QBECMetadataPrefix + "tag",
 	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
 	CleanModeVarName:    QBECMetadataPrefix + "cleanMode",
