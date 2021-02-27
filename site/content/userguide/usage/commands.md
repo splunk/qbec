@@ -21,6 +21,7 @@ Available Commands:
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
   env         environment lists and details
+  fmt         format jsonnet, yaml or json files
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs
@@ -188,10 +189,3 @@ To see a list of experimental commands, run:
 qbec alpha --help
 ```
 
-For example, here's how you use the `fmt` command.
-
-```shell
-qbec alpha fmt -w
-```
-
-The `fmt` command would format all jsonnet and libsonnet files.
