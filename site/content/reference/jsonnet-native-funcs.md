@@ -7,6 +7,8 @@ A list of all native functions that qbec natively supports.
 
 ## expandHelmTemplate
 
+**this function is now deprecated. Integrate with helm using external data sources instead**
+
 The `expandHelmTemplate` function expands a helm chart and returns the resulting objects.
 This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release.
 It runs the `helm template` command, assuming that the `helm` binary is already installed and
