@@ -12,10 +12,10 @@ Changelog
   
 * A new command `qbec eval` can now evaluate a single jsonnet file similar to `jsonnet eval`. This can also
   be run in the context of a qbec environment to be able to access environment specific properties.
-  See `qbec val --help` for more details. This deprecates the `jsonnet-qbec` executable that is packaged in the
+  See `qbec eval --help` for more details. This deprecates the `jsonnet-qbec` executable that is packaged in the
   release. This executable may no longer be packaged in a future release.
 
-* qbec now allows computed variables to be defined in qbec.yaml. This work especially well with external 
+* qbec now allows computed variables to be defined in qbec.yaml. This works especially well with external 
   data sources and also allow you to cache complex calculations.
   The [reference page for qbec.yaml](https://qbec.io/reference/qbec-yaml/) has more details.
 
@@ -37,8 +37,8 @@ Changelog
 
 ## v0.13.4 (Jan 11, 2021)
 
-**Note:** some of the features in this release have been removed in `v0.14.0`. Please refer to those release
-notes as well.
+**Note: some of the features in this release have been removed in `v0.14.0`. Please refer to those release
+notes as well.**
 
 a.k.a the "scale" release. This release mainly contains enhancements that allow qbec to be used at scale on
 large monorepos and/ or when deploying to tens of clusters.
