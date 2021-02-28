@@ -55,5 +55,7 @@ are the objects as returned by the jsonnet `import` and `importstr` directives r
   import is done.
 * Library paths are not considered by this importer. That's because it is ambiguous as to what `*.libsonnet` means
   when there are libsonnet files in the current directory as well as in the library paths.
-* The objects that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
-  directory paths, removing extensions etc.). See the `globutil.libsonnet` file in the qbec source tree for ideas.
+* The object keys that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
+  directory paths, removing extensions etc.). 
+  See the [globutil.libsonnet](https://github.com/splunk/qbec/blob/master/examples/test-app/lib/globutil.libsonnet) 
+  file in the qbec source tree for ideas.

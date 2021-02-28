@@ -21,6 +21,7 @@ Available Commands:
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
   env         environment lists and details
+  eval        evaluate the supplied file optionally under a qbec environment
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs

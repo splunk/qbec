@@ -32,6 +32,14 @@ spec:
   # by default, this will use namespaced queries for each namespace.
   clusterScopedLists: true
 
+  # if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically
+  # change the default namespace for the environment in question by suffixing it with <hyphen><tag-value> (e.g. 'myns-tag')
+  namespaceTagSuffix: true
+
+  # an arbitrary object to define baseline properties that is merged with environment specific properties.
+  baseProperties:
+    foo: base
+
   # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
   vars:
     # external variables are accessed as std.extVar('var-name')
@@ -46,15 +54,38 @@ spec:
       - name: mySecret # the name of the top-level variable (i.e. the name of the function parameter of your component's function)
         components: [ 'service2' ] # the components that require this variable. Must be specified.
         secret: true
+  
+    # you can compute additional code variables on the fly. These computations happen before component evaluation
+    # and the variables can be referenced in component code. The `code` property is a string that is evaluated
+    # as jsonnet code.
+    computed:
+      - name: c1
+        code: |
+          {
+            myEnv: std.extVar('qbec.io/env'), // code can refer to std jsonnet variables
+            extImage: std.extVar('imageTag')  // and variables passed in from the command line or defaulted in qbec
+          }
+      - name: c2
+        code: |
+          base = import 'lib/calc.jsonnet'; // import is relative to qbec root or library paths in that order
+          base + c1                         // you can refer to previously computed variables
 
-  # if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically
-  # change the default namespace for the environment in question by suffixing it with <hyphen><tag-value> (e.g. 'myns-tag')
-  namespaceTagSuffix: true
+      # the code variable below creates an object that can be used as configuration to run a command
+      - name: helmConfig
+        code: |
+          {
+            command: 'expand-helm-template.sh',
+            args: [ '--init-dependencies' ], 
+            stdin: 'imageTag: %s' % std.extvar('imageTag'),
+          }
 
-  # an arbitrary object to define baseline properties
-  baseProperties:
-    foo: base
-
+    # you can define "data sources" initialized with a complex config object. The "exec" data source allows you
+    # to run programs whose standard output is consumed by your component code. The configVar query parameter
+    # refers to the computed variable above that provides the command name, arguments, environment variables and
+    # standard input. See the "Jsonnet data importer" reference section for more details.
+    dataSources:
+      - exec://helm-source?configVar=helmConfig
+       
   # map of environment names to environment objects. An environment is the combination of a server URL and default
   # namespace. The default namespace is used for objects that do not have an explicit namespace set.
   environments:

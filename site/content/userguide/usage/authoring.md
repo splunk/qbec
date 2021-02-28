@@ -26,11 +26,13 @@ A component is:
 It is valid for a component to return an empty set of objects if runtime parameters determine that
 nothing should be installed for a specific target environment.
 
-## Using helm charts
+## Using helm charts and external data sources
 
-You can use existing helm charts as a basis for loading a component. In this case, you would create a jsonnet file
-that uses the [expandHelmTemplate](../../../reference/jsonnet-native-funcs/#expandhelmtemplate) native function that qbec exposes. This function loads the objects returned by the
-helm chart and allows you to patch them with jsonnet before returning them for qbec processing.
+qbec provides integration to run external commands and consume their output in jsonnet code. 
+See the [Jsonnet data importer](../../../reference/jsonnet-external-data) for more information on how this works.
+
+Note that the [expandHelmTemplate](../../../reference/jsonnet-native-funcs/#expandhelmtemplate) native function
+is now deprecated in favor of the data importer mechanism.
 
 ## Using other jsonnet libraries
 
