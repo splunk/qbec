@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/images/favicon.png" type="image/x-icon" />
-    <title>Getting started :: Qbec</title>
+    <title>Jsonnet data importer :: Qbec</title>
 
     
     <link href="/css/nucleus.css" rel="stylesheet">
@@ -53,7 +53,7 @@
 </style>
 
   </head>
-  <body class="" data-url="/getting-started/">
+  <body class="" data-url="/reference/jsonnet-external-data/">
     <nav id="sidebar" class="">
 
 
@@ -82,8 +82,8 @@
   
     
     <li data-nav-id="/getting-started/" title="Getting started" class="dd-item 
-        parent
-        active
+        
+        
         
         ">
       <a href="/getting-started/">
@@ -362,7 +362,7 @@
   
     
     <li data-nav-id="/reference/" title="Reference" class="dd-item 
-        
+        parent
         
         
         ">
@@ -500,7 +500,7 @@
  
   
     
-      <li data-nav-id="/reference/jsonnet-external-data/" title="Jsonnet data importer" class="dd-item ">
+      <li data-nav-id="/reference/jsonnet-external-data/" title="Jsonnet data importer" class="dd-item active">
         <a href="/reference/jsonnet-external-data/">
         Jsonnet data importer
         
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/getting-started/_index.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-external-data.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -665,7 +665,13 @@
             
           
           
-            <a href='/'>Home</a> > Getting started
+            
+            
+          
+          
+            <a href='/'>Home</a> > <a href='/reference/'>Reference</a> > Jsonnet data importer
+          
+         
           
          
           
@@ -680,8 +686,13 @@
 <ul>
 <li>
 <ul>
-<li><a href="#install-manually">Install manually</a></li>
-<li><a href="#install-using-brew">Install using brew</a></li>
+<li>
+<ul>
+<li><a href="#step-1-specify-a-configuration-for-command-invocation">Step 1: Specify a configuration for command invocation</a></li>
+<li><a href="#step-2-create-a-data-source-that-refers-to-this-configuration">Step 2: Create a data source that refers to this configuration</a></li>
+<li><a href="#step-3-use-this-data-source-in-your-jsonnet-component-code">Step 3: use this data source in your jsonnet component code</a></li>
+</ul></li>
+<li><a href="#usage-notes">Usage notes</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -696,7 +707,7 @@
         
         <div id="body-inner">
           
-            <h1>Getting started</h1>
+            <h1>Jsonnet data importer</h1>
           
 
         
@@ -704,28 +715,120 @@
 
 
 
-<h2 id="install-manually">Install manually</h2>
+<p>Sometimes you need to generate data using external programs and be able to access it in your jsonnet components.
+This can be accomplished using the data source importer that ships with qbec.</p>
 
-<ul>
-<li>Download a release binary for your operating system from the <a href="https://github.com/splunk/qbec/releases">github release page</a>.</li>
-<li>unzip the archive. This should have 2 executables <code>qbec</code> and <code>jsonnet-qbec</code></li>
-<li>install the <code>qbec</code> executable somewhere under your <code>PATH</code>.</li>
-</ul>
+<p>While the design of the importer allows for tight, native integration with tools like <code>helm</code>, <code>istioctl</code>, <code>kustomize</code>,
+and secret engines like <code>vault</code>, the only integration that is currently implemented is <code>exec</code> that allows you to
+run external programs and use the standard output they produce as data in jsonnet code.</p>
 
-<h2 id="install-using-brew">Install using brew</h2>
+<p>The <a href="https://github.com/splunk/qbec/tree/master/examples/external-data-app">sample data app</a> provides a working
+implementation of such an importer and demonstrates everything that you need to do to set it up.</p>
 
-<p>If you have homebrew installed, you can install <code>qbec</code> with the following commands:</p>
+<p>The recipe for pulling in additional data from external command output consists of 3 parts:</p>
 
-<pre><code>$ brew tap splunk/tap
-$ brew install qbec
+<h3 id="step-1-specify-a-configuration-for-command-invocation">Step 1: Specify a configuration for command invocation</h3>
+
+<p>This includes program name, arguments, environment variables, and standard input. This is a JSON object with the following properties:</p>
+
+<pre><code class="language-json">{
+  &quot;command&quot;: &quot;/path/to/executable&quot;,
+  &quot;args&quot;: [ &quot;array&quot;, &quot;of&quot;, &quot;positional&quot;, &quot;arguments&quot;],
+  &quot;env&quot;: {
+    &quot;map&quot;: &quot;of&quot;,
+    &quot;environment&quot;: &quot;variables&quot;,
+  },
+  &quot;stdin&quot;: &quot;standard input to program as a string&quot;,
+  &quot;timeout&quot;: &quot;10s&quot;
+}
 </code></pre>
 
-<p>You are now ready to start <a href="../userguide/tour/">the tour</a>.</p>
+<p>You construct this object using an external code variable that can be defined in qbec.yaml.
+Now, some arguments can be different based on the qbec environment.
+This can be accomplished using computed variables that qbec supports. Computed variables are defined as follows:</p>
+
+<pre><code class="language-yaml">spec:
+    vars:
+      computed:
+        - name: cmdConfig
+          code: |
+            {
+              command: 'myCommand.sh',
+              args: [ '--env', std.extVar('qbec.io/env') ],
+            }
+</code></pre>
+
+<p>In the example above, the arguments to the command are constructed dynamically based on the qbec environment.</p>
+
+<h3 id="step-2-create-a-data-source-that-refers-to-this-configuration">Step 2: Create a data source that refers to this configuration</h3>
+
+<p>Add a &ldquo;data source&rdquo; to qbec.yaml as follows:</p>
+
+<pre><code class="language-yaml">spec:
+  dataSources:
+    - exec://my-data-source?configVar=cmdConfig
+</code></pre>
+
+<p>The above URL has 3 parts.</p>
+
+<ul>
+<li>The scheme of the URL is <code>exec</code> which is the kind of data source that is being created. Currently, only <code>exec</code> is
+allowed, but we could add more schemes in the future for native integrations with specific tools.</li>
+<li>The hostname in the URL is a name of your choosing. This is the data source name.</li>
+<li>The <code>configVar</code> query parameter is the reference to the configuration variable using which the data source is
+initialized.
+<br /></li>
+</ul>
+
+<h3 id="step-3-use-this-data-source-in-your-jsonnet-component-code">Step 3: use this data source in your jsonnet component code</h3>
+
+<pre><code class="language-jsonnet">import 'data://my-data-source/some/path'
+</code></pre>
+
+<ul>
+<li>The <code>data</code> scheme in the URI above allows qbec to determine that you want to import external data.</li>
+<li>The hostname in the URI is the name of the data source that you declared.</li>
+<li>The path in the URI is passed to the command as an environment variable called <code>__DS_PATH__</code>.</li>
+<li>The command also gets another environment variable called <code>__DS_NAME__</code> that is set to the data source name.</li>
+</ul>
+
+<p>A simple command may not respect the <code>__DS_PATH__</code> environment variable and always output the same data.
+On the other hand, you can write a more complex integration (say, with Vault) by having the command use the
+information in the <code>__DS_PATH__</code> variable and emit secrets specific to that path.</p>
+
+<h2 id="usage-notes">Usage notes</h2>
+
+<ul>
+<li><p>Commands should output valid JSON or jsonnet when using <code>import data://my-source</code> but they can output any string
+(e.g. YAML) when called as <code>importstr data://my-source</code>. It is up to you to post-process the output (e.g. by using
+<code>parseYaml</code>) in the latter case.</p></li>
+
+<li><p>Commands should behave like functions providing the same output for the same set of inputs. In particular,
+commands <strong>should not write files</strong> in the jsonnet source tree.</p></li>
+
+<li><p>Commands are run using Go&rsquo;s <code>os/exec</code> package which means that they do <strong>not</strong> run under a shell.
+You cannot use pipes and redirection.
+If you want this functionality you need to run the command as
+<code>[ 'sh', '-c', 'subcommand1 | subcommand2']</code>.
+Better yet, write a shell script that does all this.</p></li>
+
+<li><p>You are responsible for ensuring that the executable you are running comes from a trusted source. Do not pull
+down executables off the internet without checking their SHA sums.</p></li>
+
+<li><p>In like manner, you are responsible to ensure that everyone on the team is the using the same version of the
+command that is invoked. One strategy is to download the command you want into a <code>.bin</code> directory using a
+<code>Makefile</code> and run it from there. The Makefile downloads the same version of the command for different OS
+environments and checks their SHA sums.</p></li>
+
+<li><p>The command that is run does <strong>not</strong> inherit the OS environment from the qbec process.
+Only the environment variables explicitly defined in the config, as well as <code>__DS_NAME__</code> and <code>__DS_PATH__</code> are set.</p></li>
+</ul>
 
 
 <footer class=" footline" >
 	
 </footer>
+
 
         
         </div> 
@@ -758,40 +861,8 @@ $ brew install qbec
             
                 
                     
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
                         
                         
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
                     
                 
                 
@@ -814,21 +885,7 @@ $ brew install qbec
 
                     
                     
-                    
-
-                    
-            
-        
-                    
                         
-            
-            
-                
-                    
-                
-                
-
-                    
                     
                     
 
@@ -861,108 +918,6 @@ $ brew install qbec
                     
                     
 
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
                     
             
         
@@ -1096,6 +1051,161 @@ $ brew install qbec
             
             
                 
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
                     
                 
                 
@@ -1168,10 +1278,10 @@ $ brew install qbec
 	 
 	 
 		
-			<a class="nav nav-prev" href="/" title="Home"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/reference/jsonnet-glob-importer/" title="Jsonnet glob importer"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/userguide/" title="User guide" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/reference/component-evaluation/" title="Component evaluation" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -1202,3 +1312,4 @@ $ brew install qbec
 
   </body>
 </html>
+

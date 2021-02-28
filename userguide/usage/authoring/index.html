@@ -500,6 +500,25 @@
  
   
     
+      <li data-nav-id="/reference/jsonnet-external-data/" title="Jsonnet data importer" class="dd-item ">
+        <a href="/reference/jsonnet-external-data/">
+        Jsonnet data importer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
         <a href="/reference/component-evaluation/">
         Component evaluation
@@ -674,7 +693,7 @@
 <li>
 <ul>
 <li><a href="#component-structure">Component structure</a></li>
-<li><a href="#using-helm-charts">Using helm charts</a></li>
+<li><a href="#using-helm-charts-and-external-data-sources">Using helm charts and external data sources</a></li>
 <li><a href="#using-other-jsonnet-libraries">Using other jsonnet libraries</a></li>
 <li><a href="#creating-transient-objects">Creating transient objects</a></li>
 </ul></li>
@@ -724,11 +743,13 @@ json and yaml files under the directory are loaded by qbec.</li>
 <p>It is valid for a component to return an empty set of objects if runtime parameters determine that
 nothing should be installed for a specific target environment.</p>
 
-<h2 id="using-helm-charts">Using helm charts</h2>
+<h2 id="using-helm-charts-and-external-data-sources">Using helm charts and external data sources</h2>
 
-<p>You can use existing helm charts as a basis for loading a component. In this case, you would create a jsonnet file
-that uses the <a href="../../../reference/jsonnet-native-funcs/#expandhelmtemplate">expandHelmTemplate</a> native function that qbec exposes. This function loads the objects returned by the
-helm chart and allows you to patch them with jsonnet before returning them for qbec processing.</p>
+<p>qbec provides integration to run external commands and consume their output in jsonnet code.
+See the <a href="../../../reference/jsonnet-external-data">Jsonnet data importer</a> for more information on how this works.</p>
+
+<p>Note that the <a href="../../../reference/jsonnet-native-funcs/#expandhelmtemplate">expandHelmTemplate</a> native function
+is now deprecated in favor of the data importer mechanism.</p>
 
 <h2 id="using-other-jsonnet-libraries">Using other jsonnet libraries</h2>
 
@@ -1024,6 +1045,22 @@ When the <code>generateName</code> attribute is set, qbec will change its behavi
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             

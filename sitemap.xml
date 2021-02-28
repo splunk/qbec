@@ -83,6 +83,10 @@
   </url>
   
   <url>
+    <loc>http://qbec.io/reference/jsonnet-external-data/</loc>
+  </url>
+  
+  <url>
     <loc>http://qbec.io/reference/component-evaluation/</loc>
   </url>
   

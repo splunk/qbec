@@ -500,6 +500,25 @@
  
   
     
+      <li data-nav-id="/reference/jsonnet-external-data/" title="Jsonnet data importer" class="dd-item ">
+        <a href="/reference/jsonnet-external-data/">
+        Jsonnet data importer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
         <a href="/reference/component-evaluation/">
         Component evaluation
@@ -722,6 +741,14 @@ spec:
   # by default, this will use namespaced queries for each namespace.
   clusterScopedLists: true
 
+  # if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically
+  # change the default namespace for the environment in question by suffixing it with &lt;hyphen&gt;&lt;tag-value&gt; (e.g. 'myns-tag')
+  namespaceTagSuffix: true
+
+  # an arbitrary object to define baseline properties that is merged with environment specific properties.
+  baseProperties:
+    foo: base
+
   # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
   vars:
     # external variables are accessed as std.extVar('var-name')
@@ -736,15 +763,38 @@ spec:
       - name: mySecret # the name of the top-level variable (i.e. the name of the function parameter of your component's function)
         components: [ 'service2' ] # the components that require this variable. Must be specified.
         secret: true
+  
+    # you can compute additional code variables on the fly. These computations happen before component evaluation
+    # and the variables can be referenced in component code. The `code` property is a string that is evaluated
+    # as jsonnet code.
+    computed:
+      - name: c1
+        code: |
+          {
+            myEnv: std.extVar('qbec.io/env'), // code can refer to std jsonnet variables
+            extImage: std.extVar('imageTag')  // and variables passed in from the command line or defaulted in qbec
+          }
+      - name: c2
+        code: |
+          base = import 'lib/calc.jsonnet'; // import is relative to qbec root or library paths in that order
+          base + c1                         // you can refer to previously computed variables
 
-  # if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically
-  # change the default namespace for the environment in question by suffixing it with &lt;hyphen&gt;&lt;tag-value&gt; (e.g. 'myns-tag')
-  namespaceTagSuffix: true
+      # the code variable below creates an object that can be used as configuration to run a command
+      - name: helmConfig
+        code: |
+          {
+            command: 'expand-helm-template.sh',
+            args: [ '--init-dependencies' ], 
+            stdin: 'imageTag: %s' % std.extvar('imageTag'),
+          }
 
-  # an arbitrary object to define baseline properties
-  baseProperties:
-    foo: base
-
+    # you can define &quot;data sources&quot; initialized with a complex config object. The &quot;exec&quot; data source allows you
+    # to run programs whose standard output is consumed by your component code. The configVar query parameter
+    # refers to the computed variable above that provides the command name, arguments, environment variables and
+    # standard input. See the &quot;Jsonnet data importer&quot; reference section for more details.
+    dataSources:
+      - exec://helm-source?configVar=helmConfig
+       
   # map of environment names to environment objects. An environment is the combination of a server URL and default
   # namespace. The default namespace is used for objects that do not have an explicit namespace set.
   environments:
@@ -767,10 +817,11 @@ spec:
 
   # additional environments can be loaded from files. Files are loaded in the order specified.
   # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
-  # The file path is relative to the directory where qbec.yaml resides. http(s) URLs are also supported
+  # The file path is relative to the directory where qbec.yaml resides. http(s) URLs and glob patterns are also supported
   envFiles:
   - more-envs.yaml
   - https://my.server/envs.yaml
+  - envs/*.yaml
 
   # if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. 
   addComponentLabel: true
@@ -1084,6 +1135,22 @@ spec:
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 

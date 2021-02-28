@@ -500,6 +500,25 @@
  
   
     
+      <li data-nav-id="/reference/jsonnet-external-data/" title="Jsonnet data importer" class="dd-item ">
+        <a href="/reference/jsonnet-external-data/">
+        Jsonnet data importer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/reference/component-evaluation/" title="Component evaluation" class="dd-item ">
         <a href="/reference/component-evaluation/">
         Component evaluation
@@ -742,8 +761,10 @@ an empty object is returned. If you want to treat this case as an error, you can
 import is done.</li>
 <li>Library paths are not considered by this importer. That&rsquo;s because it is ambiguous as to what <code>*.libsonnet</code> means
 when there are libsonnet files in the current directory as well as in the library paths.</li>
-<li>The objects that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
-directory paths, removing extensions etc.). See the <code>globutil.libsonnet</code> file in the qbec source tree for ideas.</li>
+<li>The object keys that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
+directory paths, removing extensions etc.).
+See the <a href="https://github.com/splunk/qbec/blob/master/examples/test-app/lib/globutil.libsonnet">globutil.libsonnet</a>
+file in the qbec source tree for ideas.</li>
 </ul>
 
 
@@ -1156,6 +1177,22 @@ directory paths, removing extensions etc.). See the <code>globutil.libsonnet</co
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -1187,7 +1224,7 @@ directory paths, removing extensions etc.). See the <code>globutil.libsonnet</co
 			<a class="nav nav-prev" href="/reference/jsonnet-native-funcs/" title="Jsonnet native functions"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/reference/component-evaluation/" title="Component evaluation" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/reference/jsonnet-external-data/" title="Jsonnet data importer" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
