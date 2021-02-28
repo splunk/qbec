@@ -1,7 +1,44 @@
 Changelog
 ---
 
+## v0.14.0 (Feb 27, 2021)
+
+* qbec now allows data to be imported from external data sources. The current implementation allows you to run
+  a command whose standard output may be included in your jsonnet component code.
+  The [reference page](https://qbec.io/reference/jsonnet-external-data/) has more details.
+  At this point, the `expandHelmTemplate` native function should be considered deprecated and will be removed 
+  in a future release. There is nothing that this function could do that cannot be accomplished using an 
+  external data source.
+  
+* A new command `qbec eval` can now evaluate a single jsonnet file similar to `jsonnet eval`. This can also
+  be run in the context of a qbec environment to be able to access environment specific properties.
+  See `qbec val --help` for more details. This deprecates the `jsonnet-qbec` executable that is packaged in the
+  release. This executable may no longer be packaged in a future release.
+
+* qbec now allows computed variables to be defined in qbec.yaml. This work especially well with external 
+  data sources and also allow you to cache complex calculations.
+  The [reference page for qbec.yaml](https://qbec.io/reference/qbec-yaml/) has more details.
+
+* Environment files for a qbec environment may now be specified as a glob pattern. qbec will load all matching
+  files in sorted alphabetical order.
+  
+* Miscellaneous improvements and optimizations for jsonnet evaluation. Most users, unless they are generating
+  hundreds of objects or using complex jsonnet libraries will not see any significant performance improvements.
+  
+### Incompatibilities
+
+* Preprocessors introduced in `v0.13.4` have now been removed. These had awkward semantics and were honestly
+  not ready for prime-time. No one was probably using this. The replacement functionality is more general
+  and allows you to define computed vaiables in qbec.yaml. 
+ 
+* Qbec no longer sets the `qbec.io/component` variable when evaluating components. This was also introduced in
+  `v0.13.4` and had dodgy semantics. There is no replacement for this functionality. If you started using this
+  and are now stuck, please raise an issue where we can discuss this.
+
 ## v0.13.4 (Jan 11, 2021)
+
+**Note:** some of the features in this release have been removed in `v0.14.0`. Please refer to those release
+notes as well.
 
 a.k.a the "scale" release. This release mainly contains enhancements that allow qbec to be used at scale on
 large monorepos and/ or when deploying to tens of clusters.

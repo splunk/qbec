@@ -1,6 +1,6 @@
 include Makefile.tools
 
-VERSION         := 0.13.4
+VERSION         := 0.14.0
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
 
