@@ -72,10 +72,11 @@ The above URL has 3 parts.
 ```jsonnet
 import 'data://my-data-source/some/path'
 ```
-The `data` scheme in the URI above allows qbec to determine that you want to import external data.
-The hostname in the URI is the name of the data source that you declared.
-The path in the URI is passed to the command as an environment variable called `__DS_PATH__`. 
-In addition, the command also gets another environment variable called `__DS_NAME__` that is set to the data source name.
+
+* The `data` scheme in the URI above allows qbec to determine that you want to import external data.
+* The hostname in the URI is the name of the data source that you declared.
+* The path in the URI is passed to the command as an environment variable called `__DS_PATH__`. 
+* The command also gets another environment variable called `__DS_NAME__` that is set to the data source name.
 
 A simple command may not respect the `__DS_PATH__` environment variable and always output the same data.
 On the other hand, you can write a more complex integration (say, with Vault) by having the command use the 
