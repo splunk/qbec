@@ -76,22 +76,22 @@ var (
 	supportedTypes = []string{"json", "jsonnet", "yaml"}
 )
 
-func newFmtCommand(cp ctxProvider, deprecated bool) *cobra.Command {
+func newFmtCommand(cp ctxProvider) *cobra.Command {
 	c := &cobra.Command{
 		Use:     "fmt",
 		Short:   "format files",
 		Example: fmtExamples(),
 	}
 	deprecationNotice := "qbec alpha fmt is deprecated. Use qbec fmt instead. qbec alpha fmt would be removed in the next release"
-	if deprecated {
-		sio.Warnln(deprecationNotice)
-	}
 
 	config := fmtCommandConfig{}
 	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	c.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
 	c.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
 	c.RunE = func(c *cobra.Command, args []string) error {
+		if c.Parent().Name() == "alpha" {
+			sio.Warnln(deprecationNotice)
+		}
 		config.AppContext = cp()
 		return cmd.WrapError(doFmt(args, &config))
 	}
