@@ -1,7 +1,16 @@
 Changelog
 ---
 
+## v0.14.1 (Mar 2, 2021)
+
+There are no changes in this release. The previous release used a jsonnet version 
+[that had a regression](https://github.com/google/go-jsonnet/issues/515) in the `std.manifestJson[Ex]` functions.
+This version [uses a commit](https://github.com/google/go-jsonnet/commit/9b6cbef4caf7ceeff7ab2086d80df7dd63466556)
+that fixes this issue.
+
 ## v0.14.0 (Feb 27, 2021)
+
+**Note: there is a regression with the `std.manifestJson[Ex]` function in this release. Please use v0.14.1 instead.**
 
 * qbec now allows data to be imported from external data sources. The current implementation allows you to run
   a command whose standard output may be included in your jsonnet component code.
