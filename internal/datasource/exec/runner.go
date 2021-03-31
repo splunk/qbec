@@ -38,6 +38,9 @@ func (r *runner) runWithEnv(e map[string]string) (string, error) {
 
 	cmd := exec.CommandContext(ctx, r.c.Command, r.c.Args...)
 	var env []string
+	if r.c.InheritEnv {
+		env = os.Environ()
+	}
 	for k, v := range r.c.Env {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
