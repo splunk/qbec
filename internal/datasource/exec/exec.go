@@ -37,12 +37,14 @@ const (
 
 // Config is the configuration of the data source.
 type Config struct {
-	Command string            `json:"command"`           // the executable that is run
-	Args    []string          `json:"args,omitempty"`    // arguments to be passed to the command
-	Env     map[string]string `json:"env,omitempty"`     // environment for the command
-	Stdin   string            `json:"stdin,omitempty"`   // standard input to pass to the command
-	Timeout string            `json:"timeout,omitempty"` // command timeout as a duration string
-	timeout time.Duration     // internal representation
+	Command    string            `json:"command"`              // the executable that is run
+	Args       []string          `json:"args,omitempty"`       // arguments to be passed to the command
+	Env        map[string]string `json:"env,omitempty"`        // environment for the command
+	Stdin      string            `json:"stdin,omitempty"`      // standard input to pass to the command
+	Timeout    string            `json:"timeout,omitempty"`    // command timeout as a duration string
+	InheritEnv bool              `json:"inheritEnv,omitempty"` // Inherit env from the parent(qbec) process
+
+	timeout time.Duration // internal representation
 }
 
 func findExecutable(cmd string) (string, error) {

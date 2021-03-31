@@ -37,45 +37,62 @@ func TestExecBasic(t *testing.T) {
 	a := assert.New(t)
 	pwd, err := os.Getwd()
 	require.NoError(t, err)
-	ds := New("replay", "var1")
-	err = ds.Init(func(name string) (string, error) {
-		if name != "var1" {
-			return "", fmt.Errorf("invalid call to config provider, want %q got %q", "var1", name)
-		}
-		return `
+	var tests = []struct {
+		inherit bool
+	}{
+		{true}, {false},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("inhert_%t", test.inherit), func(t *testing.T) {
+			ds := New("replay", "var1")
+			os.Setenv("_akey_", "aval")
+			err = ds.Init(func(name string) (string, error) {
+				if name != "var1" {
+					return "", fmt.Errorf("invalid call to config provider, want %q got %q", "var1", name)
+				}
+				return fmt.Sprintf(`
 {
 	"command": "qbec-replay-exec",
 	"args": [ "one", "two" ],
 	"env": {
 		"foo": "bar"
 	},
-	"stdin": "input"
+	"stdin": "input",
+	"inheritEnv": %t
 }
-`, nil
-	})
-	require.NoError(t, err)
-	defer ds.Close()
-	a.Equal("replay", ds.Name())
-	str, err := ds.Resolve("/foo/bar")
-	require.NoError(t, err)
-	var data struct {
-		DSName  string   `json:"dsName"`
-		Command string   `json:"command"`
-		Args    []string `json:"args"`
-		Dir     string   `json:"dir"`
-		Env     []string `json:"env"`
-		Input   string   `json:"stdin"`
+`, test.inherit), nil
+			})
+			require.NoError(t, err)
+			defer ds.Close()
+			a.Equal("replay", ds.Name())
+			str, err := ds.Resolve("/foo/bar")
+			require.NoError(t, err)
+			var data struct {
+				DSName  string   `json:"dsName"`
+				Command string   `json:"command"`
+				Args    []string `json:"args"`
+				Dir     string   `json:"dir"`
+				Env     []string `json:"env"`
+				Input   string   `json:"stdin"`
+			}
+			err = json.Unmarshal([]byte(str), &data)
+			require.NoError(t, err)
+			a.Equal("replay", data.DSName)
+			a.Equal(exe, data.Command)
+			a.EqualValues([]string{"one", "two"}, data.Args)
+			a.Equal(pwd, data.Dir)
+			a.Contains(data.Env, "foo=bar")
+			if test.inherit {
+				a.Contains(data.Env, "_akey_=aval")
+			} else {
+				a.NotContains(data.Env, "_akey_=aval")
+			}
+			a.Contains(data.Env, "__DS_NAME__=replay")
+			a.Contains(data.Env, "__DS_PATH__=/foo/bar")
+			a.Equal("input", data.Input)
+		})
 	}
-	err = json.Unmarshal([]byte(str), &data)
-	require.NoError(t, err)
-	a.Equal("replay", data.DSName)
-	a.Equal(exe, data.Command)
-	a.EqualValues([]string{"one", "two"}, data.Args)
-	a.Equal(pwd, data.Dir)
-	a.Contains(data.Env, "foo=bar")
-	a.Contains(data.Env, "__DS_NAME__=replay")
-	a.Contains(data.Env, "__DS_PATH__=/foo/bar")
-	a.Equal("input", data.Input)
+
 }
 
 func TestExecRelativeFilePath(t *testing.T) {
