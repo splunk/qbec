@@ -38,15 +38,22 @@ func TestExecBasic(t *testing.T) {
 	pwd, err := os.Getwd()
 	require.NoError(t, err)
 	var tests = []struct {
-		inherit bool
+		inherit       bool
+		override      bool
+		expectedEnvKV string
 	}{
-		{true}, {false},
+		{true, true, "_akey_=baz"}, {false, true, "_akey_=baz"},
+		{true, false, "_akey_=aval"}, {false, false, "<none>"},
 	}
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("inhert_%t", test.inherit), func(t *testing.T) {
+		t.Run(fmt.Sprintf("inhert_%t_override_%t", test.inherit, test.override), func(t *testing.T) {
 			ds := New("replay", "var1")
 			os.Setenv("_akey_", "aval")
 			defer os.Unsetenv("_akey_")
+			env := ""
+			if test.override {
+				env = `"_akey_": "baz",`
+			}
 			err = ds.Init(func(name string) (string, error) {
 				if name != "var1" {
 					return "", fmt.Errorf("invalid call to config provider, want %q got %q", "var1", name)
@@ -56,12 +63,13 @@ func TestExecBasic(t *testing.T) {
 	"command": "qbec-replay-exec",
 	"args": [ "one", "two" ],
 	"env": {
+		%s
 		"foo": "bar"
 	},
 	"stdin": "input",
 	"inheritEnv": %t
 }
-`, test.inherit), nil
+`, env, test.inherit), nil
 			})
 			require.NoError(t, err)
 			defer ds.Close()
@@ -83,10 +91,10 @@ func TestExecBasic(t *testing.T) {
 			a.EqualValues([]string{"one", "two"}, data.Args)
 			a.Equal(pwd, data.Dir)
 			a.Contains(data.Env, "foo=bar")
-			if test.inherit {
-				a.Contains(data.Env, "_akey_=aval")
+			if test.expectedEnvKV != "<none>" {
+				a.Contains(data.Env, test.expectedEnvKV)
 			} else {
-				a.NotContains(data.Env, "_akey_=aval")
+				a.NotContains(data.Env, "_akey_=")
 			}
 			a.Contains(data.Env, "__DS_NAME__=replay")
 			a.Contains(data.Env, "__DS_PATH__=/foo/bar")
