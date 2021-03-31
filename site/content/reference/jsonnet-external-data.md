@@ -106,5 +106,5 @@ information in the `__DS_PATH__` variable and emit secrets specific to that path
   `Makefile` and run it from there. The Makefile downloads the same version of the command for different OS
   environments and checks their SHA sums.
 
-* The command that is run does **not** inherit the OS environment from the qbec process.
+* The command that is run does **not** inherit the OS environment from the qbec process unless `inheritEnv` is set to true.
   Only the environment variables explicitly defined in the config, as well as `__DS_NAME__` and `__DS_PATH__` are set.

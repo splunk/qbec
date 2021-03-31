@@ -46,6 +46,7 @@ func TestExecBasic(t *testing.T) {
 		t.Run(fmt.Sprintf("inhert_%t", test.inherit), func(t *testing.T) {
 			ds := New("replay", "var1")
 			os.Setenv("_akey_", "aval")
+			defer os.Unsetenv("_akey_")
 			err = ds.Init(func(name string) (string, error) {
 				if name != "var1" {
 					return "", fmt.Errorf("invalid call to config provider, want %q got %q", "var1", name)
