@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.14.2 (Mar 31, 2021)
+
+* Add ability to inherit the qbec shell environment when processing data sources.
+
 ## v0.14.1 (Mar 2, 2021)
 
 There are no changes in this release. The previous release used a jsonnet version 
