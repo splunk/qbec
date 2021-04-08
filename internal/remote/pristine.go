@@ -164,7 +164,7 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 }
 
 func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
-	pristineReaders := []pristineReader{qbecPristine{}, kubectlPristine{}}
+	pristineReaders := []pristineReader{kubectlPristine{}, qbecPristine{}}
 	if includeFallback {
 		pristineReaders = append(pristineReaders, fallbackPristine{})
 	}
