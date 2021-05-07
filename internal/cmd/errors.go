@@ -48,6 +48,11 @@ func NewRuntimeError(err error) error {
 	}
 }
 
+// Unwrap returns the underlying error
+func (e *runtimeError) Unwrap() error {
+	return e.error
+}
+
 // IsRuntimeError returns if the supplied error was a runtime error as opposed to an error arising out of user input.
 func IsRuntimeError(err error) bool {
 	_, ok := err.(*runtimeError)

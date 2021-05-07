@@ -188,7 +188,10 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 	root.AddCommand(newOptionsCommand(root))
 	root.AddCommand(newVersionCommand())
 
-	root.PersistentPreRunE = func(c *cobra.Command, args []string) error {
+	root.PersistentPreRunE = func(c *cobra.Command, args []string) (outErr error) {
+		defer func() {
+			outErr = cmd.WrapError(outErr)
+		}()
 		ctx, err := ccFn()
 		if err != nil {
 			return err
