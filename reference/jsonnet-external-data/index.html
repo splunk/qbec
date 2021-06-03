@@ -739,6 +739,7 @@ implementation of such an importer and demonstrates everything that you need to 
     &quot;environment&quot;: &quot;variables&quot;,
   },
   &quot;stdin&quot;: &quot;standard input to program as a string&quot;,
+  &quot;inheritEnv&quot;: false,
   &quot;timeout&quot;: &quot;10s&quot;
 }
 </code></pre>
@@ -776,8 +777,7 @@ This can be accomplished using computed variables that qbec supports. Computed v
 allowed, but we could add more schemes in the future for native integrations with specific tools.</li>
 <li>The hostname in the URL is a name of your choosing. This is the data source name.</li>
 <li>The <code>configVar</code> query parameter is the reference to the configuration variable using which the data source is
-initialized.
-<br /></li>
+initialized.</li>
 </ul>
 
 <h3 id="step-3-use-this-data-source-in-your-jsonnet-component-code">Step 3: use this data source in your jsonnet component code</h3>
@@ -820,7 +820,7 @@ command that is invoked. One strategy is to download the command you want into a
 <code>Makefile</code> and run it from there. The Makefile downloads the same version of the command for different OS
 environments and checks their SHA sums.</p></li>
 
-<li><p>The command that is run does <strong>not</strong> inherit the OS environment from the qbec process.
+<li><p>The command that is run does <strong>not</strong> inherit the OS environment from the qbec process unless <code>inheritEnv</code> is set to true.
 Only the environment variables explicitly defined in the config, as well as <code>__DS_NAME__</code> and <code>__DS_PATH__</code> are set.</p></li>
 </ul>
 
