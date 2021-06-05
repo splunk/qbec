@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet/formatter"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/tidwall/pretty"
@@ -52,23 +53,37 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		}
 		config.formatTypes[s] = true
 	}
+	var result error
 	for _, path := range config.files {
 		switch dir, err := os.Stat(path); {
 		case err != nil:
+			if config.check {
+				result = multierror.Append(result, err)
+				continue
+			}
 			return err
 		case dir.IsDir():
 			if err := walkDir(config, path); err != nil {
+				if config.check {
+					result = multierror.Append(result, err)
+					continue
+				}
 				return err
 			}
+
 		default:
 			if shouldFormat(config, path, dir) {
 				if err := processFile(config, path, nil, config.Stdout()); err != nil {
+					if config.check {
+						result = multierror.Append(result, err)
+						continue
+					}
 					return err
 				}
 			}
 		}
 	}
-	return nil
+	return result
 }
 
 var (
