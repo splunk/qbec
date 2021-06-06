@@ -94,8 +94,8 @@ func (v *vm) LintCode(diagnosticFile string, code Code) error {
 		return errors.Wrap(err, "convert code to AST")
 	}
 	var b bytes.Buffer
-	success := linter.LintSnippet(v.jvm, &b, diagnosticFile, code.code)
-	if !success {
+	failure := linter.LintSnippet(v.jvm, &b, diagnosticFile, code.code)
+	if failure {
 		return fmt.Errorf(b.String())
 	}
 	return nil
