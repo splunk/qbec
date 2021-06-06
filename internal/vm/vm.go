@@ -18,12 +18,15 @@
 package vm
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/linter"
+	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/splunk/qbec/internal/vm/natives"
 )
@@ -52,6 +55,8 @@ type VM interface {
 	// EvalCode evaluates the supplied code initializing the VM with the supplied variables
 	// and returns its output as a JSON string.
 	EvalCode(diagnosticFile string, code Code, v VariableSet) (string, error)
+	// LintCode uses the jsonnet linter to lint the code and returns any errors
+	LintCode(diagnosticFile string, code Code) error
 }
 
 // vm is an implementation of VM
@@ -82,6 +87,20 @@ func (v *vm) EvalCode(diagnosticFile string, code Code, vars VariableSet) (strin
 	return v.jvm.EvaluateAnonymousSnippet(diagnosticFile, code.code)
 }
 
+// LintCode implements the interface method.
+func (v *vm) LintCode(diagnosticFile string, code Code) error {
+	_, err := jsonnet.SnippetToAST(diagnosticFile, code.code)
+	if err != nil {
+		return errors.Wrap(err, "convert code to AST")
+	}
+	var b bytes.Buffer
+	success := linter.LintSnippet(v.jvm, &b, diagnosticFile, code.code)
+	if !success {
+		return fmt.Errorf(b.String())
+	}
+	return nil
+}
+
 type vmPool struct {
 	pool sync.Pool
 }
@@ -110,6 +129,14 @@ func (v *vmPool) EvalCode(diagnosticFile string, code Code, vars VariableSet) (s
 	out, err := vm.EvalCode(diagnosticFile, code, vars)
 	v.pool.Put(vm)
 	return out, err
+}
+
+// LintCode implements the interface method.
+func (v *vmPool) LintCode(diagnosticFile string, code Code) error {
+	vm := v.pool.Get().(*vm)
+	err := vm.LintCode(diagnosticFile, code)
+	v.pool.Put(vm)
+	return err
 }
 
 // defaultImporter returns the standard importer.
