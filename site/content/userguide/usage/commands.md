@@ -22,6 +22,7 @@ Available Commands:
   diff        diff one or more components against objects in a Kubernetes cluster
   env         environment lists and details
   eval        evaluate the supplied file optionally under a qbec environment
+  fmt         format jsonnet, yaml or json files
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs
@@ -189,10 +190,3 @@ To see a list of experimental commands, run:
 qbec alpha --help
 ```
 
-For example, here's how you use the `fmt` command.
-
-```shell
-qbec alpha fmt -w
-```
-
-The `fmt` command would format all jsonnet and libsonnet files.

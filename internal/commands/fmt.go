@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/sio"
 	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
@@ -96,12 +97,16 @@ func newFmtCommand(cp ctxProvider) *cobra.Command {
 		Short:   "format files",
 		Example: fmtExamples(),
 	}
+	deprecationNotice := "qbec alpha fmt is deprecated. Use qbec fmt instead. qbec alpha fmt would be removed in the next release"
 
 	config := fmtCommandConfig{}
 	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	c.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
 	c.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
 	c.RunE = func(c *cobra.Command, args []string) error {
+		if c.Parent().Name() == "alpha" {
+			sio.Warnln(deprecationNotice)
+		}
 		config.AppContext = cp()
 		return cmd.WrapError(doFmt(args, &config))
 	}
