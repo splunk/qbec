@@ -80,13 +80,21 @@ func TestShouldFormat(t *testing.T) {
 		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, false},
 		{"testdata/test.json/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
 	}
+	contains := func(files []string, file string) bool {
+		for _, a := range files {
+			if a == file {
+				return true
+			}
+		}
+		return false
+	}
 	for _, test := range tests {
 		t.Run(test.fileName, func(t *testing.T) {
 			f, err := os.Stat(test.fileName)
 			if err != nil {
 				t.Fatalf("Unexpected error'%v'", err)
 			}
-			var actual = shouldFormat(&test.config, test.fileName, f)
+			var actual = shouldFormat(&test.config, test.fileName, f, contains(test.config.files, test.fileName))
 			if test.expected != actual {
 				t.Errorf("Expected '%t', got '%t'", test.expected, actual)
 			}
@@ -130,8 +138,8 @@ func TestDoFmt(t *testing.T) {
 		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
 		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, ""},
 		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, ""},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, "testdata/qbec.yaml\n\t* testdata/test.json"},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, "testdata/test.json"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, "2 errors encountered"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, "stat nonexistentfile"},
 	}
 
 	for i, test := range tests {
