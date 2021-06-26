@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/sio"
 )
 
@@ -121,10 +120,13 @@ func processFile(path string, opts Options, p Processor, info fs.FileInfo, userS
 	if !shouldProcess {
 		return nil
 	}
+	if opts.VerboseWalk {
+		sio.Debugln(path)
+	}
 	err = counter.reportError(p.Process(path, info))
 	if err != nil {
 		if !opts.ContinueOnError {
-			return errors.Wrap(err, path)
+			return err
 		}
 	}
 	return nil
@@ -134,9 +136,6 @@ func walk(root string, opts Options, p Processor, counter *errorCount) error {
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil && !os.IsNotExist(err) {
 			return err
-		}
-		if opts.VerboseWalk {
-			sio.Debugln(path)
 		}
 		return processFile(path, opts, p, info, false, counter)
 	})

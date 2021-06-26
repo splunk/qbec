@@ -87,8 +87,9 @@ func fmtExamples() string {
 
 func lintExamples() string {
 	return exampleHelp(
-		newExample("lint", "run jsonnet-lint on all jsonnet and libsonnet files in the current directory tree"),
-		newExample("lint foo.jsonnet", "run jsonnet-lint on all jsonnet and libsonnet files in the current directory tree"),
+		newExample("lint", "run jsonnet-lint on all jsonnet and libsonnet files in the current directory tree, assumes qbec.yaml"),
+		newExample("lint foo.jsonnet", "run jsonnet-lint on the specified file"),
+		newExample("lint --app=false", "runs vanilla jsonnet-lint without assuming a qbec app"),
 	)
 }
 func deleteExamples() string {

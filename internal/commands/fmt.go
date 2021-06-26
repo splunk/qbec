@@ -122,8 +122,12 @@ func shouldFormat(config *fmtCommandConfig, _ string, f os.FileInfo, userSpecifi
 
 func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io.Writer) (outErr error) {
 	defer func() {
-		if config.check && outErr != nil {
-			fmt.Println(outErr)
+		if config.opts.ContinueOnError && outErr != nil {
+			if config.check {
+				fmt.Println(outErr)
+			} else {
+				_, _ = fmt.Fprintln(os.Stderr, sio.ErrorString(outErr.Error()))
+			}
 		}
 	}()
 	if out == nil {
