@@ -18,7 +18,6 @@ import (
 type lintCommandConfig struct {
 	vm    vm.VM
 	opts  bulkfiles.Options
-	check bool
 	files []string
 }
 
@@ -44,7 +43,7 @@ func doLint(args []string, config *lintCommandConfig) error {
 	} else {
 		config.files = []string{"."}
 	}
-	config.opts.ContinueOnError = config.check
+	config.opts.ContinueOnError = true
 	p := &linter{config: config}
 	return bulkfiles.Process(config.files, config.opts, p)
 }
@@ -80,7 +79,6 @@ func newLintCommand(cp ctxProvider) *cobra.Command {
 	}
 
 	config := lintCommandConfig{}
-	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for files that fail lint")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		ac := cp()
 		cfg := vm.Config{

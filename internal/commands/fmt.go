@@ -130,7 +130,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 
 	res, err := format(src, filename)
 	if err != nil {
-		return fmt.Errorf("%s: error formatting file %q", filename, err)
+		return fmt.Errorf("%s: error formatting file %w", filename, err)
 	}
 
 	if !bytes.Equal(src, res) {

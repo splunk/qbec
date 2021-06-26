@@ -1,3 +1,17 @@
+/*
+   Copyright 2021 Splunk Inc.
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
+// Package bulkfiles provides facilities to process files in bulk by walking down directory trees.
 package bulkfiles
 
 import (
@@ -17,16 +31,16 @@ type Processor interface {
 	// indicates that the file was explicitly passed in by the user.
 	Matches(path string, file fs.FileInfo, userSpecified bool) bool
 	// Process processes the specified file and returns an error in case of processing errors.
-	// Note that this error will not be reported to the user directly. It is up to the processor
-	// to indicate errors to the user by printing it.
 	Process(path string, file fs.FileInfo) error
 }
 
 // Options are options for processing.
 type Options struct {
-	ContinueOnError bool
+	ContinueOnError bool // continue processing other files in the face of errors returned by the processor
 }
 
+// shouldProcess returns true if the file should be processed. Currently always returns true but is pending
+// some exclusion options that will make it meaningful later on.
 func (o *Options) shouldProcess(path string, entry fs.FileInfo) (bool, error) {
 	return true, nil
 }
@@ -49,10 +63,14 @@ func (e *errorCount) reportError(err error) error {
 }
 
 func (e *errorCount) Error() error {
-	if e.numErrors == 0 {
+	switch e.numErrors {
+	case 0:
 		return nil
+	case 1:
+		return fmt.Errorf("1 error encountered")
+	default:
+		return fmt.Errorf("%d errors encountered", e.numErrors)
 	}
-	return fmt.Errorf("%d errors encountered", e.numErrors)
 }
 
 // Process processes the specified files using the specified options and processor.

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 
 	"github.com/splunk/qbec/internal/cmd"
@@ -128,6 +129,10 @@ func TestIsJsonnet(t *testing.T) {
 }
 
 func TestDoFmt(t *testing.T) {
+	notFoundMessage := "stat nonexistentfile"
+	if runtime.GOOS == "windows" {
+		notFoundMessage = "The system cannot find the file specified"
+	}
 	//var b bytes.Buffer
 	var tests = []struct {
 		args        []string
@@ -139,7 +144,7 @@ func TestDoFmt(t *testing.T) {
 		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, ""},
 		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, ""},
 		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, "2 errors encountered"},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, "stat nonexistentfile"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, notFoundMessage},
 	}
 
 	for i, test := range tests {
