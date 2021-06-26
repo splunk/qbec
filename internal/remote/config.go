@@ -53,6 +53,8 @@ type Config struct {
 	overrides    *clientcmd.ConfigOverrides
 	l            sync.Mutex
 	kubeconfig   clientcmd.ClientConfig
+	qps          int
+	burst        int
 }
 
 // NewConfig returns a new configuration, adding flags to the supplied command to set k8s access overrides, prefixed by
@@ -60,7 +62,13 @@ type Config struct {
 func NewConfig(cmd *cobra.Command, prefix string) *Config {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	overrides := &clientcmd.ConfigOverrides{}
+	cfg := &Config{
+		loadingRules: loadingRules,
+		overrides:    overrides,
+	}
 	cmd.PersistentFlags().StringVar(&loadingRules.ExplicitPath, prefix+"kubeconfig", "", "Path to a kubeconfig file. Alternative to env var $KUBECONFIG.")
+	cmd.PersistentFlags().IntVar(&cfg.qps, prefix+"client-qps", 0, "QPS to use for K8s client, 0 for default")
+	cmd.PersistentFlags().IntVar(&cfg.burst, prefix+"client-burst", 0, "Burst to use for K8s client, 0 for default")
 	clientcmd.BindOverrideFlags(overrides, cmd.PersistentFlags(), clientcmd.ConfigOverrideFlags{
 		AuthOverrideFlags: clientcmd.RecommendedAuthOverrideFlags(prefix),
 		Timeout: clientcmd.FlagInfo{
@@ -68,10 +76,7 @@ func NewConfig(cmd *cobra.Command, prefix string) *Config {
 			Default:     "0",
 			Description: "The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests."},
 	})
-	return &Config{
-		loadingRules: loadingRules,
-		overrides:    overrides,
-	}
+	return cfg
 }
 
 func (c *Config) setupOverrides(opts ConnectOpts) error {
@@ -124,6 +129,19 @@ func (c *Config) setupOverrides(opts ConnectOpts) error {
 	return nil
 }
 
+func (c *Config) withQPS(cfg *rest.Config) *rest.Config {
+	q := c.qps
+	b := c.burst
+	if b < q {
+		b = q
+	}
+	if q > 0 {
+		cfg.QPS = float32(q)
+		cfg.Burst = b
+	}
+	return cfg
+}
+
 func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
 	if opts.ForceContext == ForceInClusterContext {
 		sio.Warnln("force in-cluster config")
@@ -136,7 +154,7 @@ func (c *Config) getRESTConfig(opts ConnectOpts) (*rest.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return restConfig, nil
+	return c.withQPS(restConfig), nil
 }
 
 // KubeAttributes is a collection k8s attributes pertaining to an connection.
