@@ -11,8 +11,8 @@
    limitations under the License.
 */
 
-// Package bulkfiles provides facilities to process files in bulk by walking down directory trees.
-package bulkfiles
+// Package fswalk provides facilities to process files in bulk by walking down directory trees.
+package fswalk
 
 import (
 	"fmt"
@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/internal/sio"
 )
 
 // Processor indicates whether a file matches for processing, and allows some arbitrary processing on it
@@ -39,6 +40,7 @@ type Processor interface {
 // Options are options for processing.
 type Options struct {
 	ContinueOnError bool // continue processing other files in the face of errors returned by the processor
+	VerboseWalk     bool // print the dir/ file being walked to stderr
 }
 
 // shouldProcess returns true if the file should be processed. Currently always returns true but is pending
@@ -132,6 +134,9 @@ func walk(root string, opts Options, p Processor, counter *errorCount) error {
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil && !os.IsNotExist(err) {
 			return err
+		}
+		if opts.VerboseWalk {
+			sio.Debugln(path)
 		}
 		return processFile(path, opts, p, info, false, counter)
 	})

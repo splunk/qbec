@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/splunk/qbec/internal/bulkfiles"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/fswalk"
 	"github.com/splunk/qbec/internal/sio"
 )
 
@@ -20,7 +20,7 @@ var (
 
 type fmtCommandConfig struct {
 	cmd.AppContext
-	opts           bulkfiles.Options
+	opts           fswalk.Options
 	check          bool
 	write          bool
 	formatTypes    map[string]bool
@@ -40,7 +40,7 @@ func (p *processor) Process(path string, f fs.FileInfo) error {
 	return processFile(p.config, path, nil, p.config.Stdout())
 }
 
-func doFmt(args []string, config *fmtCommandConfig) error {
+func doFmt(args []string, config *fmtCommandConfig, failFast *bool) error {
 	if config.check && config.write {
 		return cmd.NewUsageError(fmt.Sprintf("check and write are not supported together"))
 	}
@@ -65,8 +65,11 @@ func doFmt(args []string, config *fmtCommandConfig) error {
 		config.formatTypes[s] = true
 	}
 	config.opts.ContinueOnError = config.check
+	if failFast != nil {
+		config.opts.ContinueOnError = !*failFast
+	}
 	p := &processor{config: config}
-	return bulkfiles.Process(config.files, config.opts, p)
+	return fswalk.Process(config.files, config.opts, p)
 }
 
 func newFmtCommand(cp ctxProvider) *cobra.Command {
@@ -81,12 +84,25 @@ func newFmtCommand(cp ctxProvider) *cobra.Command {
 	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	c.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
 	c.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
+
+	var failFast bool
+	c.Flags().BoolVar(&failFast, "fail-fast", false, "fail on first error, defaults to false for checks and true otherwise")
+
 	c.RunE = func(c *cobra.Command, args []string) error {
 		if c.Parent().Name() == "alpha" {
 			sio.Warnln(deprecationNotice)
 		}
 		config.AppContext = cp()
-		return cmd.WrapError(doFmt(args, &config))
+		config.opts.VerboseWalk = config.AppContext.Context.Verbosity() > 0
+		var ff *bool
+		if c.Flags().Changed("fail-fast") {
+			v, err := c.Flags().GetBool("fail-fast")
+			if err != nil {
+				return err
+			}
+			ff = &v
+		}
+		return cmd.WrapError(doFmt(args, &config, ff))
 	}
 	return c
 }

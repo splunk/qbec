@@ -85,6 +85,12 @@ func fmtExamples() string {
 	)
 }
 
+func lintExamples() string {
+	return exampleHelp(
+		newExample("lint", "run jsonnet-lint on all jsonnet and libsonnet files in the current directory tree"),
+		newExample("lint foo.jsonnet", "run jsonnet-lint on all jsonnet and libsonnet files in the current directory tree"),
+	)
+}
 func deleteExamples() string {
 	return exampleHelp(
 		newExample("delete dev", "delete all objects created for the dev environment"),

@@ -149,7 +149,7 @@ func TestDoFmt(t *testing.T) {
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test%d", i), func(t *testing.T) {
-			var err = doFmt(test.args, &test.config)
+			var err = doFmt(test.args, &test.config, nil)
 			if test.expectedErr == "" {
 				require.Nil(t, err)
 			} else {

@@ -232,5 +232,5 @@ func TestVMLint(t *testing.T) {
 	assert.Contains(t, err.Error(), "foo.jsonnet:1:7-13 Unused variable: foo")
 	err = vm.LintCode("foo.jsonnet", MakeCode("}"))
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "convert code to AST: foo.jsonnet")
+	assert.Contains(t, err.Error(), "foo.jsonnet:1:1-2")
 }

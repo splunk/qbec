@@ -26,7 +26,6 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/linter"
-	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/vm/importers"
 	"github.com/splunk/qbec/internal/vm/natives"
 )
@@ -88,11 +87,17 @@ func (v *vm) EvalCode(diagnosticFile string, code Code, vars VariableSet) (strin
 }
 
 // LintCode implements the interface method.
-func (v *vm) LintCode(diagnosticFile string, code Code) error {
+func (v *vm) LintCode(diagnosticFile string, code Code) (outErr error) {
 	_, err := jsonnet.SnippetToAST(diagnosticFile, code.code)
 	if err != nil {
-		return errors.Wrap(err, "convert code to AST")
+		return err
 	}
+	defer func() {
+		// see for example https://github.com/google/go-jsonnet/issues/544 where lint panics
+		if r := recover(); r != nil {
+			outErr = fmt.Errorf("%s: linter panic", diagnosticFile)
+		}
+	}()
 	var b bytes.Buffer
 	failure := linter.LintSnippet(v.jvm, &b, diagnosticFile, code.code)
 	if failure {
