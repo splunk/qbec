@@ -179,6 +179,7 @@ var noQbecContext = map[string]bool{
 	"completion": true,
 	"options":    true,
 	"fmt":        true,
+	"lint":       true,
 }
 
 func doSetup(root *cobra.Command, opts cmd.Options) {

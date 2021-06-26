@@ -104,7 +104,12 @@ func shouldFormat(config *fmtCommandConfig, _ string, f os.FileInfo, userSpecifi
 	return false
 }
 
-func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io.Writer) error {
+func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io.Writer) (outErr error) {
+	defer func() {
+		if config.check && outErr != nil {
+			fmt.Println(outErr)
+		}
+	}()
 	if out == nil {
 		out = os.Stdout
 	}
@@ -139,6 +144,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 			return fmt.Errorf(filename)
 		}
 		if config.write {
+			fmt.Println(filename)
 			// make a temporary backup before overwriting original
 			bakname, err := backupFile(filename+".", src, perm)
 			if err != nil {

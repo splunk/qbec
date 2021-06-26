@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/sio"
 )
 
 // Processor indicates whether a file matches for processing, and allows some arbitrary processing on it
@@ -31,6 +30,9 @@ type Processor interface {
 	// indicates that the file was explicitly passed in by the user.
 	Matches(path string, file fs.FileInfo, userSpecified bool) bool
 	// Process processes the specified file and returns an error in case of processing errors.
+	// When processing is set to continue on errors, it is the function's responsibility to print
+	// a detailed error. The bulk processor will only return an aggregate error containing stats about
+	// the number of errors.
 	Process(path string, file fs.FileInfo) error
 }
 
@@ -122,7 +124,6 @@ func processFile(path string, opts Options, p Processor, info fs.FileInfo, userS
 		if !opts.ContinueOnError {
 			return errors.Wrap(err, path)
 		}
-		sio.Println(err.Error())
 	}
 	return nil
 }
