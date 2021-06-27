@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,9 @@ func TestLintCompressLines(t *testing.T) {
 }
 
 func TestLintBasic(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("import of a file called _.libsonnet doesn't seem to work in the linter in windows")
+	}
 	s := newScaffold(t)
 	defer s.reset()
 	err := s.executeCommand("alpha", "lint")
