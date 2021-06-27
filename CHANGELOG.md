@@ -1,6 +1,25 @@
 Changelog
 ---
 
+## v0.14.3 (Jun 27, 2021)
+
+* `fmt` is now a top-level qbec command. The `alpha fmt` version is deprecated and will be removed in a later release.
+* `fmt` has the following enhancements:
+  * no longer requires a qbec.yaml to be present to function
+  * prints all errors in check mode as opposed to failing fast on the first error encountered
+  * prints the filenames of all files that were modified in write mode
+  * allows for explicit control on whether it should fail fast or not. The default behavior is to fail fast when
+    not in check mode and continue on errors otherwise.
+* a new `alpha lint` command can now be used to lint jsonnet and libsonnet files using jsonnet-lint. This command is alpha quality in
+  both interface and implementation although it should work just fine on most projects. Known issues are:
+  * data sources are not correctly supported
+  * the linter can [hang on complex jsonnet files](https://github.com/google/go-jsonnet/issues/541)
+  * the linter can [panic under certain conditions](https://github.com/google/go-jsonnet/issues/544)
+* Releases now contain ARM64 builds for Darwin and Linux
+* Allows the QPS and Burst for the kubernetes client to be configured on the command line via the `k8s:qps` and `k8s:burst`
+  flags. Setting these values can be beneficial to large projects producing thousands of objects to improve the
+  performance of `diff` and `apply`.
+
 ## v0.14.2 (Mar 31, 2021)
 
 * Add ability to inherit the qbec shell environment when processing data sources.
