@@ -91,3 +91,18 @@ func TestOutputWithColors(t *testing.T) {
 	a.Contains(s, colorMagenta+attrBold+"[warn] This is a warning\n"+codeReset)
 	a.Contains(s, colorRed+attrBold+unicodeX+" This is an error\n"+codeReset)
 }
+
+func TestErrorString(t *testing.T) {
+	origC := ColorsEnabled()
+	defer func() { EnableColors(origC) }()
+	EnableColors(true)
+	x := ErrorString("test")
+	a := assert.New(t)
+	a.Contains(x, attrBold)
+	a.Contains(x, colorRed)
+	a.Contains(x, codeReset)
+
+	EnableColors(false)
+	x = ErrorString("test")
+	a.NotContains(x, colorRed)
+}

@@ -222,3 +222,15 @@ func TestVMTwoDataSources(t *testing.T) {
 	assert.Equal(t, "replay2", data[1]["source"])
 	assert.Equal(t, "/bar/baz", data[1]["path"])
 }
+
+func TestVMLint(t *testing.T) {
+	vm := New(Config{})
+	err := vm.LintCode("foo.jsonnet", MakeCode("{}"))
+	require.NoError(t, err)
+	err = vm.LintCode("foo.jsonnet", MakeCode("local foo=10; {}"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "foo.jsonnet:1:7-13 Unused variable: foo")
+	err = vm.LintCode("foo.jsonnet", MakeCode("}"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "foo.jsonnet:1:1-2")
+}

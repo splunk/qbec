@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"testing"
 
 	"github.com/splunk/qbec/internal/cmd"
@@ -80,13 +81,21 @@ func TestShouldFormat(t *testing.T) {
 		{"testdata/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, false},
 		{"testdata/test.json/test.json", fmtCommandConfig{formatTypes: map[string]bool{"json": true}}, true},
 	}
+	contains := func(files []string, file string) bool {
+		for _, a := range files {
+			if a == file {
+				return true
+			}
+		}
+		return false
+	}
 	for _, test := range tests {
 		t.Run(test.fileName, func(t *testing.T) {
 			f, err := os.Stat(test.fileName)
 			if err != nil {
 				t.Fatalf("Unexpected error'%v'", err)
 			}
-			var actual = shouldFormat(&test.config, test.fileName, f)
+			var actual = shouldFormat(&test.config, test.fileName, f, contains(test.config.files, test.fileName))
 			if test.expected != actual {
 				t.Errorf("Expected '%t', got '%t'", test.expected, actual)
 			}
@@ -120,23 +129,30 @@ func TestIsJsonnet(t *testing.T) {
 }
 
 func TestDoFmt(t *testing.T) {
+	notFoundMessage := "stat nonexistentfile"
+	if runtime.GOOS == "windows" {
+		notFoundMessage = "The system cannot find the file specified"
+	}
 	//var b bytes.Buffer
+	yes := true
 	var tests = []struct {
 		args        []string
 		config      fmtCommandConfig
+		ff          *bool
 		expectedErr string
 	}{
-		{[]string{}, fmtCommandConfig{check: true, write: true}, `check and write are not supported together`},
-		{[]string{"nonexistentfile"}, fmtCommandConfig{}, testutil.FileNotFoundMessage},
-		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, ""},
-		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, ""},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, "testdata/qbec.yaml\n\t* testdata/test.json"},
-		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, "testdata/test.json"},
+		{[]string{}, fmtCommandConfig{check: true, write: true}, nil, `check and write are not supported together`},
+		{[]string{"nonexistentfile"}, fmtCommandConfig{}, nil, testutil.FileNotFoundMessage},
+		{[]string{"testdata/qbec.yaml"}, fmtCommandConfig{formatTypes: map[string]bool{"yaml": true}, AppContext: cmd.AppContext{}}, nil, ""},
+		{[]string{"testdata/components"}, fmtCommandConfig{formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, nil, ""},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, nil, "2 errors encountered"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true, "json": true}, AppContext: cmd.AppContext{}}, &yes, "testdata/qbec.yaml"},
+		{[]string{"testdata/components", "testdata/qbec.yaml", "testdata/test.json/test.json", "nonexistentfile"}, fmtCommandConfig{check: true, formatTypes: map[string]bool{"jsonnet": true}, AppContext: cmd.AppContext{}}, nil, notFoundMessage},
 	}
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test%d", i), func(t *testing.T) {
-			var err = doFmt(test.args, &test.config)
+			var err = doFmt(test.args, &test.config, test.ff)
 			if test.expectedErr == "" {
 				require.Nil(t, err)
 			} else {

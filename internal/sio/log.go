@@ -65,6 +65,14 @@ func ColorsEnabled() bool {
 	return ce.isEnabled()
 }
 
+// ErrorString returns a colorized string representing an error condition.
+func ErrorString(s string) string {
+	if ColorsEnabled() {
+		return fmt.Sprintf("%s%s%s%s", colorRed, attrBold, s, codeReset)
+	}
+	return s
+}
+
 func startColors(codes ...string) {
 	if ce.isEnabled() {
 		fmt.Fprint(Output, strings.Join(codes, ""))

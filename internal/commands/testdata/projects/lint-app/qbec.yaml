@@ -1,0 +1,22 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: lint-app
+spec:
+  libPaths:
+    - lib
+  environments:
+    local:
+      context: kind-kind
+      defaultNamespace: foobar
+  vars:
+    computed:
+      - name: get-date
+        code: |
+          {
+            command: 'date',
+            args: [ '-u', '+%Y-%m-%d' ],
+          }
+  dataSources:
+    - exec://today?configVar=get-date

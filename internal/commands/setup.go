@@ -212,6 +212,16 @@ func doSetup(root *cobra.Command, opts cmd.Options) {
 			}
 		}
 
+		// for the lint command require an app only when the flag is set
+		if c.Name() == "lint" {
+			e, err := c.Flags().GetBool("app")
+			if err != nil {
+				return err
+			}
+			skipApp = !e
+		}
+
+		// retain backwards compatibility for the alpha fmt command
 		if c.Name() == "fmt" && c.Parent().Name() == "alpha" {
 			skipApp = false
 		}
