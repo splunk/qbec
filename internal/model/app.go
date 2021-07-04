@@ -489,6 +489,15 @@ func (a *App) DataSources() []string {
 	return a.inner.Spec.DataSources
 }
 
+// DataSourceExamples returns example output for data sources keyed by name.
+func (a *App) DataSourceExamples() map[string]interface{} {
+	ret := a.inner.Spec.DataSourceExamples
+	if ret == nil {
+		return map[string]interface{}{}
+	}
+	return ret
+}
+
 // loadComponents loads metadata for all components for the app. It first expands the components directory
 // for glob patterns and loads components from all directories that match. It does _not_ recurse
 // into subdirectories. The data is returned as a map keyed by component name.
