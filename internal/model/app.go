@@ -493,7 +493,7 @@ func (a *App) DataSources() []string {
 func (a *App) DataSourceExamples() map[string]interface{} {
 	ret := a.inner.Spec.DataSourceExamples
 	if ret == nil {
-		return map[string]interface{}{}
+		ret = map[string]interface{}{}
 	}
 	return ret
 }

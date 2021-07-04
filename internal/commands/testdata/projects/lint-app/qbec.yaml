@@ -18,5 +18,34 @@ spec:
             command: 'date',
             args: [ '-u', '+%Y-%m-%d' ],
           }
+      - name: get-object
+        code: |
+          {
+            command: 'echo',
+            args: [ '{ "bar": "baz" }' ]
+          }
+      - name: get-array
+        code: |
+          {
+            command: 'echo',
+            args: [ '[ "foo", "bar" ]' ]
+          }
+      - name: get-jsonstr
+        code: |
+          {
+            command: 'echo',
+            args: [ '"foobar"' ]
+          }
   dataSources:
     - exec://today?configVar=get-date
+    - exec://object?configVar=get-object
+    - exec://array?configVar=get-array
+    - exec://jsonstr?configVar=get-jsonstr
+  dsExamples:
+    today: '2021-01-01'
+    object:
+      bar: 'baz'
+    array:
+      - foo
+      - bar
+    jsonstr: '"foobar"'

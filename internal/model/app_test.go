@@ -248,6 +248,7 @@ func TestAppSimple(t *testing.T) {
 	a.Equal(4, len(envs))
 	a.False(app.ClusterScopedLists())
 	a.Equal(0, len(app.DataSources()))
+	a.Equal(0, len(app.DataSourceExamples()))
 }
 
 func TestAppDataSources(t *testing.T) {
