@@ -14,6 +14,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -30,7 +31,8 @@ import (
 )
 
 type mockDs struct {
-	name string
+	name         string
+	exampleValue string
 }
 
 func (m mockDs) Name() string {
@@ -38,10 +40,10 @@ func (m mockDs) Name() string {
 }
 
 func (m mockDs) Resolve(_ string) (string, error) {
-	return "", nil
+	return m.exampleValue, nil
 }
 
-func createMockDatasource(u string) (importers.DataSource, error) {
+func createMockDatasource(u string, examples map[string]interface{}) (importers.DataSource, error) {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
@@ -49,7 +51,25 @@ func createMockDatasource(u string) (importers.DataSource, error) {
 	if parsed.Host == "" {
 		return nil, fmt.Errorf("unable to find data source name")
 	}
-	return mockDs{name: parsed.Host}, nil
+	dsName := parsed.Host
+	example, ok := examples[dsName]
+	val := ""
+	if ok {
+		switch e := example.(type) {
+		// strings are a special case because a data source could only support importstr and return
+		// non-JSON strings. Therefore if a data source returns a JSON string the example must be appropriately
+		// quoted and escaped by the user.
+		case string:
+			val = e
+		default:
+			b, err := json.Marshal(e)
+			if err != nil {
+				return nil, errors.Wrapf(err, "serialize datasource example for %s", dsName)
+			}
+			val = string(b)
+		}
+	}
+	return mockDs{name: parsed.Host, exampleValue: val}, nil
 }
 
 func compressLines(s string) []string {
@@ -126,8 +146,9 @@ func doLint(args []string, config *lintCommandConfig, ac cmd.AppContext) error {
 	var dataSources []importers.DataSource
 	if ac.App() != nil {
 		libPaths = ac.App().LibPaths()
+		examples := ac.App().DataSourceExamples()
 		for _, dsStr := range ac.App().DataSources() {
-			ds, err := createMockDatasource(dsStr)
+			ds, err := createMockDatasource(dsStr, examples)
 			if err != nil {
 				return errors.Wrapf(err, "create mock data source for %s", dsStr)
 			}

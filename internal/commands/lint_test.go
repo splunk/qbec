@@ -61,7 +61,7 @@ func TestLintWithApp(t *testing.T) {
 	defer s.reset()
 	err := s.executeCommand("alpha", "lint", "components", "lib")
 	require.Error(t, err)
-	assert.Equal(t, "3 errors encountered", err.Error())
+	assert.Equal(t, "2 errors encountered", err.Error())
 }
 
 func TestLintWithoutApp(t *testing.T) {

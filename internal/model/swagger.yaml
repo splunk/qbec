@@ -129,6 +129,9 @@ definitions:
         items:
           type: string
         type: array
+      dsExamples:
+        description: sample output for every datasource for use by the linter
+        type: object
 
     title: AppSpec is the user-supplied configuration of the qbec app.
     type: object

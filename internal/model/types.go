@@ -98,6 +98,8 @@ type AppSpec struct {
 	Vars Variables `json:"vars,omitempty"`
 	// data sources defined for the app.
 	DataSources []string `json:"dataSources,omitempty"`
+	// example outputs for data sources for linter use
+	DataSourceExamples map[string]interface{} `json:"dsExamples,omitempty"`
 	// set of environments for the app
 	Environments map[string]Environment `json:"environments"`
 	// additional environments pulled in from external files
