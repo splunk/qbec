@@ -19,9 +19,29 @@ jobs:
           version: "v3.3.1" # default is latest stable
         id: helm
 
+      - uses: azure/setup-kubectl@v1
+        id: install-kubectl
+
       - uses: actions/checkout@v2
         with:
           fetch-depth: "0"
+
+      - uses: actions/cache@v2
+        with:
+          # In order:
+          # * Module download cache
+          # * Build cache (Linux)
+          # * Build cache (Mac)
+          # * Build cache (Windows)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            %LocalAppData%\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+        id: cache
 
       - name: Install command dependencies
         run: |
@@ -30,7 +50,7 @@ jobs:
           echo "GOPATH=$GOPATH" >> $GITHUB_ENV
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           echo "$HOME/go/bin" >> $GITHUB_PATH
-          make install-ci create-cluster install
+          make install-ci install
 
       - name: Build
         run: make build
@@ -39,7 +59,8 @@ jobs:
         run: make lint
 
       - name: Test
-        run: make test TEST_FLAGS="-tags integration"
+        run: |
+          make test TEST_FLAGS="-timeout 3m"
 
       - uses: codecov/codecov-action@v1
 
@@ -65,6 +86,23 @@ jobs:
         id: helm
 
       - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          # In order:
+          # * Module download cache
+          # * Build cache (Linux)
+          # * Build cache (Mac)
+          # * Build cache (Windows)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            %LocalAppData%\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+        id: cache
 
       - name: Install command dependencies
         run: |
