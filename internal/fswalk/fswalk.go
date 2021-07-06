@@ -19,7 +19,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
+	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 	"github.com/splunk/qbec/internal/sio"
 )
 
@@ -38,14 +42,46 @@ type Processor interface {
 
 // Options are options for processing.
 type Options struct {
-	ContinueOnError bool // continue processing other files in the face of errors returned by the processor
-	VerboseWalk     bool // print the dir/ file being walked to stderr
+	Exclusions      []string        // list of excluded doublestar patterns for files
+	ContinueOnError bool            // continue processing other files in the face of errors returned by the processor
+	VerboseWalk     bool            // print the dir/ file being walked to stderr
+	exclusionMap    map[string]bool // capture files excluded
+}
+
+func (o *Options) init() error {
+	o.exclusionMap = map[string]bool{}
+	base := os.DirFS(".")
+	for _, e := range o.Exclusions {
+		pat := strings.TrimSuffix(filepath.ToSlash(e), "/")
+		files, err := doublestar.Glob(base, pat)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			o.exclusionMap[f] = true
+		}
+	}
+	return nil
+}
+
+// AddExclusions adds exclusion parameters to the supplied flag set and returns a function that returns the specified slice
+func AddExclusions(fs *pflag.FlagSet, envVarName string) func() []string {
+	val := os.Getenv(envVarName)
+	var defaults []string
+	if val != "" {
+		defaults = filepath.SplitList(val)
+	}
+	var exclusions []string
+	fs.StringArrayVarP(&exclusions, "exclude", "x", defaults, "exclude pattern for files or directories")
+	return func() []string {
+		return exclusions
+	}
 }
 
 // shouldProcess returns true if the file should be processed. Currently always returns true but is pending
 // some exclusion options that will make it meaningful later on.
-func (o *Options) shouldProcess(path string, entry fs.FileInfo) (bool, error) {
-	return true, nil
+func (o *Options) shouldProcess(path string, entry fs.FileInfo) (out bool) {
+	return !o.exclusionMap[path]
 }
 
 type entry struct {
@@ -81,6 +117,9 @@ func (e *errorCount) Error() error {
 // for one or more files passed to it. Specified files must be valid for processing
 // to start.
 func Process(specified []string, opts Options, processor Processor) error {
+	if err := opts.init(); err != nil {
+		return errors.Wrap(err, "init options")
+	}
 	var entries []entry
 	for _, file := range specified {
 		stat, err := os.Stat(file)
@@ -109,10 +148,7 @@ func Process(specified []string, opts Options, processor Processor) error {
 }
 
 func processFile(path string, opts Options, p Processor, info fs.FileInfo, userSpecified bool, counter *errorCount) error {
-	shouldProcess, err := opts.shouldProcess(path, info)
-	if err != nil {
-		return err
-	}
+	shouldProcess := opts.shouldProcess(path, info)
 	if !shouldProcess {
 		return nil
 	}
@@ -123,7 +159,7 @@ func processFile(path string, opts Options, p Processor, info fs.FileInfo, userS
 	if opts.VerboseWalk {
 		sio.Debugln(path)
 	}
-	err = counter.reportError(p.Process(path, info))
+	err := counter.reportError(p.Process(path, info))
 	if err != nil {
 		if !opts.ContinueOnError {
 			return err
@@ -136,6 +172,13 @@ func walk(root string, opts Options, p Processor, counter *errorCount) error {
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil && !os.IsNotExist(err) {
 			return err
+		}
+		if info.IsDir() {
+			shouldProcess := opts.shouldProcess(path, info)
+			if !shouldProcess {
+				return fs.SkipDir
+			}
+			return nil
 		}
 		return processFile(path, opts, p, info, false, counter)
 	})
