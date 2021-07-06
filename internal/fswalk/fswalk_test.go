@@ -17,10 +17,12 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,6 +63,7 @@ func TestProcess(t *testing.T) {
 		name            string
 		p               *proc
 		specified       []string
+		exclusions      []string
 		continueOnError bool
 		assertFn        func(t *testing.T, p *proc, err error)
 	}{
@@ -128,6 +131,30 @@ func TestProcess(t *testing.T) {
 			},
 		},
 		{
+			name: "exclude dir",
+			p: &proc{
+				extensions: []string{".libsonnet", ".jsonnet"},
+			},
+			specified:  []string{"testdata"},
+			exclusions: []string{filepath.Join("testdata", "dir2")},
+			assertFn: func(t *testing.T, p *proc, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, 2, len(p.seenFiles))
+			},
+		},
+		{
+			name: "exclude file",
+			p: &proc{
+				extensions: []string{".libsonnet", ".jsonnet"},
+			},
+			specified:  []string{"testdata"},
+			exclusions: []string{filepath.Join("**", "1a.libsonnet")},
+			assertFn: func(t *testing.T, p *proc, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, 2, len(p.seenFiles))
+			},
+		},
+		{
 			name: "bad args",
 			p: &proc{
 				extensions: []string{".libsonnet", ".jsonnet"},
@@ -140,12 +167,34 @@ func TestProcess(t *testing.T) {
 				assert.IsType(t, &os.PathError{}, err)
 			},
 		},
+		{
+			name: "bad pattern",
+			p: &proc{
+				extensions: []string{".libsonnet", ".jsonnet"},
+			},
+			specified:       []string{"testdata"},
+			exclusions:      []string{"[1-2.txt"},
+			continueOnError: true,
+			assertFn: func(t *testing.T, p *proc, err error) {
+				require.Error(t, err)
+				assert.Equal(t, 0, len(p.seenFiles))
+				assert.Equal(t, "init options: exclude [1-2.txt: syntax error in pattern", err.Error())
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := Process(test.specified, Options{ContinueOnError: test.continueOnError}, test.p)
+			err := Process(test.specified, Options{ContinueOnError: test.continueOnError, Exclusions: test.exclusions, VerboseWalk: true}, test.p)
 			test.assertFn(t, test.p, err)
 		})
 	}
+}
+
+func TestFlags(t *testing.T) {
+	fs := pflag.NewFlagSet("foo", pflag.ContinueOnError)
+	fn := AddExclusions(fs)
+	err := fs.Parse([]string{"--exclude", "foo", "-x", "bar"})
+	require.NoError(t, err)
+	assert.EqualValues(t, []string{"foo", "bar"}, fn())
 }

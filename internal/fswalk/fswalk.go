@@ -55,7 +55,7 @@ func (o *Options) init() error {
 		pat := strings.TrimSuffix(filepath.ToSlash(e), "/")
 		files, err := doublestar.Glob(base, pat)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "exclude %s", pat)
 		}
 		for _, f := range files {
 			o.exclusionMap[f] = true
@@ -65,14 +65,9 @@ func (o *Options) init() error {
 }
 
 // AddExclusions adds exclusion parameters to the supplied flag set and returns a function that returns the specified slice
-func AddExclusions(fs *pflag.FlagSet, envVarName string) func() []string {
-	val := os.Getenv(envVarName)
-	var defaults []string
-	if val != "" {
-		defaults = filepath.SplitList(val)
-	}
+func AddExclusions(fs *pflag.FlagSet) func() []string {
 	var exclusions []string
-	fs.StringArrayVarP(&exclusions, "exclude", "x", defaults, "exclude pattern for files or directories")
+	fs.StringArrayVarP(&exclusions, "exclude", "x", nil, "exclude pattern for files or directories")
 	return func() []string {
 		return exclusions
 	}
