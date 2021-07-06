@@ -64,6 +64,14 @@ func TestLintWithApp(t *testing.T) {
 	assert.Equal(t, "2 errors encountered", err.Error())
 }
 
+func TestLintWithAppAndExcludes(t *testing.T) {
+	s := newCustomScaffold(t, "testdata/projects/lint-app")
+	defer s.reset()
+	err := s.executeCommand("alpha", "lint", "components", "lib", "-x", "lib/foo.libsonnet")
+	require.Error(t, err)
+	assert.Equal(t, "1 error encountered", err.Error())
+}
+
 func TestLintWithoutApp(t *testing.T) {
 	s := newCustomScaffold(t, "testdata/projects/lint-app")
 	defer s.reset()
