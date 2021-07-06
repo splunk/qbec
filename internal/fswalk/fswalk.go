@@ -61,7 +61,6 @@ func (o *Options) init() error {
 			o.exclusionMap[f] = true
 		}
 	}
-	sio.Noticeln("EXCLUSION MAP", o.exclusionMap)
 	return nil
 }
 
@@ -77,8 +76,7 @@ func AddExclusions(fs *pflag.FlagSet) func() []string {
 // shouldProcess returns true if the file should be processed. Currently always returns true but is pending
 // some exclusion options that will make it meaningful later on.
 func (o *Options) shouldProcess(path string, entry fs.FileInfo) (out bool) {
-	sio.Noticeln("MATCH", path)
-	return !o.exclusionMap[path]
+	return !o.exclusionMap[filepath.ToSlash(path)]
 }
 
 type entry struct {
