@@ -84,7 +84,7 @@ func newFmtCommand(cp ctxProvider) *cobra.Command {
 	c.Flags().BoolVarP(&config.check, "check-errors", "e", false, "check for unformatted files")
 	c.Flags().BoolVarP(&config.write, "write", "w", false, "write result to (source) file instead of stdout")
 	c.Flags().StringSliceVarP(&config.specifiedTypes, "type", "t", []string{"jsonnet"}, "file types that should be formatted")
-
+	excludeFn := fswalk.AddExclusions(c.Flags())
 	var failFast bool
 	c.Flags().BoolVar(&failFast, "fail-fast", false, "fail on first error, defaults to false for checks and true otherwise")
 
@@ -94,6 +94,7 @@ func newFmtCommand(cp ctxProvider) *cobra.Command {
 		}
 		config.AppContext = cp()
 		config.opts.VerboseWalk = config.AppContext.Context.Verbosity() > 0
+		config.opts.Exclusions = excludeFn()
 		var ff *bool
 		if c.Flags().Changed("fail-fast") {
 			v, err := c.Flags().GetBool("fail-fast")

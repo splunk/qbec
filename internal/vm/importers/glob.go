@@ -21,12 +21,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/bmatcuk/doublestar/v2"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/google/go-jsonnet"
 )
 
@@ -161,7 +162,8 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		})
 	}()
 
-	matches, err := doublestar.Glob(globPath)
+	fsys := os.DirFS(".")
+	matches, err := doublestar.Glob(fsys, filepath.ToSlash(globPath))
 	if err != nil {
 		return contents, foundAt, fmt.Errorf("unable to expand glob %q, %v", globPath, err)
 	}

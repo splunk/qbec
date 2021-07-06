@@ -176,9 +176,11 @@ func newLintCommand(cp ctxProvider) *cobra.Command {
 	config := lintCommandConfig{}
 	c.Flags().BoolVar(&config.loadApp, "app", true, "assume a qbec root and load qbec.yaml for lib paths and data sources")
 	c.Flags().BoolVar(&config.failFast, "fail-fast", false, "fail on first error, stop processing other files")
+	excludeFn := fswalk.AddExclusions(c.Flags())
 
 	c.RunE = func(c *cobra.Command, args []string) error {
 		ac := cp()
+		config.opts.Exclusions = excludeFn()
 		return cmd.WrapError(doLint(args, &config, ac))
 	}
 	return c
