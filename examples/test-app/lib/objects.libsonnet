@@ -5,6 +5,7 @@
         metadata: {
             namespace: namespace,
             name: name,
+            labels: { app: name },
         },
         data: vars,
     },
@@ -14,6 +15,7 @@
         metadata: {
             namespace: namespace,
             name: name,
+            labels: { app: name },
         },
         data: vars,
     },
@@ -23,6 +25,7 @@
         metadata: {
             namespace: namespace,
             name: name,
+            labels: { app: name },
         },
         spec: {
             selector: {
