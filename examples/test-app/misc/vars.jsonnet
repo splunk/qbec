@@ -1,5 +1,4 @@
 {
-    foo: std.extVar('foo'),
-    bar: std.extVar('bar'),
+  foo: std.extVar('foo'),
+  bar: std.extVar('bar'),
 }
-

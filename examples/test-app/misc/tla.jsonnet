@@ -1,4 +1,4 @@
-function (foo, bar) {
-    foo: foo,
-    bar: bar,
+function(foo, bar) {
+  foo: foo,
+  bar: bar,
 }

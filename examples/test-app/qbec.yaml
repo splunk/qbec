@@ -1,4 +1,3 @@
----
 apiVersion: qbec.io/v1alpha1
 kind: App
 metadata:
@@ -8,9 +7,9 @@ spec:
   # paramsFile: params.libsonnet
   postProcessor: pp.jsonnet
   libPaths:
-  - lib
+    - lib
   excludes:
-  - service2
+    - service2
   baseProperties:
     core: no-override
     envType: unknown
@@ -20,7 +19,7 @@ spec:
   vars:
     topLevel:
       - name: tlaFoo
-        components: [ 'service2' ]
+        components: ['service2']
     external:
       - name: externalFoo
         default: 'bar'
@@ -46,13 +45,13 @@ spec:
     dev:
       server: https://dev-server
       includes:
-      - service2
+        - service2
       excludes:
-      - service1
+        - service1
       properties:
         envType: development
         extra:
           foo: baz
           bar: null
-  envFiles: 
-  - '*-env.yaml'
+  envFiles:
+    - '*-env.yaml'

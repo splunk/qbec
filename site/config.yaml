@@ -3,7 +3,7 @@ languageCode: en-us
 title: Qbec
 theme: learn
 params:
-  copyright: "\u00a9 2019 - the qbec authors"
+  copyright: "© 2019 - the qbec authors"
   description: a tool to configure and create Kubernetes objects on multiple environments
   disableAssetsBusting: true
   disableSearch: true

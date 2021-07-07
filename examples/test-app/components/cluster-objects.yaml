@@ -1,18 +1,16 @@
----
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: allow-root-psp-policy
 rules:
-- apiGroups:
-  - extensions
-  resourceNames:
-  - 200-allow-root
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
-
+  - apiGroups:
+      - extensions
+    resourceNames:
+      - 200-allow-root
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -23,10 +21,9 @@ roleRef:
   kind: ClusterRole
   name: allow-root-psp-policy
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:authenticated
-
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -37,10 +34,9 @@ roleRef:
   kind: ClusterRole
   name: default-psp-policy
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:authenticated
-
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
 ---
 apiVersion: v1
 kind: Namespace
@@ -51,7 +47,6 @@ metadata:
   annotations:
     name: foo-system
   name: foo-system
-
 ---
 apiVersion: v1
 kind: Namespace
@@ -60,7 +55,6 @@ metadata:
     name: bar-system
     system: "true"
   name: bar-system
-
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -71,8 +65,8 @@ spec:
   fsGroup:
     rule: RunAsAny
   hostPorts:
-  - max: 65535
-    min: 0
+    - max: 65535
+      min: 0
   runAsUser:
     rule: MustRunAsNonRoot
   seLinux:
@@ -80,13 +74,12 @@ spec:
   supplementalGroups:
     rule: RunAsAny
   volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - persistentVolumeClaim
-  - secret
-  - projected
-
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - secret
+    - projected
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -97,8 +90,8 @@ spec:
   fsGroup:
     rule: RunAsAny
   hostPorts:
-  - max: 65535
-    min: 0
+    - max: 65535
+      min: 0
   runAsUser:
     rule: RunAsAny
   seLinux:
@@ -106,9 +99,9 @@ spec:
   supplementalGroups:
     rule: RunAsAny
   volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - persistentVolumeClaim
-  - secret
-  - projected
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - secret
+    - projected

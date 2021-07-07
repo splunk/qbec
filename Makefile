@@ -3,6 +3,7 @@ include Makefile.tools
 VERSION         := 0.14.3
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
+FMT_OPTIONS     := -x '**/testdata' -x site/themes  -t jsonnet -t json -t yaml
 
 LEARN_THEME_TAG := 2.2.0
 # When modifying this, also modify the corresponding ldflags in .goreleaser.yaml
@@ -47,7 +48,9 @@ lint: check-format
 	golangci-lint run $(LINT_FLAGS) .
 
 .PHONY: check-format
-check-format:
+check-format: build
+	@echo "Running qbec fmt -e ..."
+	qbec fmt -e $(FMT_OPTIONS)
 	@echo "Running gofmt..."
 	$(eval unformatted=$(shell find . -name '*.go' | grep -v ./.git | grep -v vendor | xargs gofmt -s -l))
 	$(if $(strip $(unformatted)),\
@@ -56,6 +59,10 @@ check-format:
 		@echo All files are well formatted.\
 	)
 
+.PHONY: fmt
+fmt: build
+	@echo "Running qbec fmt -w ..."
+	qbec fmt -w $(FMT_OPTIONS)
 
 .PHONY: install-ci
 install-ci: HELM_VERSION := 3.3.1
