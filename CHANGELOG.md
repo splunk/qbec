@@ -1,6 +1,13 @@
 Changelog
 ---
 
+## v0.14.4 (Jul 7, 2021)
+
+* `fmt` and `alpha lint` commands now accept exclusion patterns using which vendored files, intentionally bad test
+   data etc. can be filtered out. Pattern matching of exlcudes is done using the [doublestar library](https://github.com/bmatcuk/doublestar).
+*  `qbec.yaml` can now contain examples of data source outputs. These are returned by the mock linter implementation 
+   when data source imports are found. This allows you to correctly lint files that use data source imports.
+
 ## v0.14.3 (Jun 27, 2021)
 
 * `fmt` is now a top-level qbec command. The `alpha fmt` version is deprecated and will be removed in a later release.
