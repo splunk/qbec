@@ -1,4 +1,4 @@
 {
-    foo: 'str',
-    bar: true,
+  foo: 'str',
+  bar: true,
 }

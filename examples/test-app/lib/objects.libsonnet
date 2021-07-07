@@ -1,50 +1,48 @@
 {
-    configmap(namespace, name, vars={}):: {
-        apiVersion: "v1",
-        kind: "ConfigMap",
-        metadata: {
-            namespace: namespace,
-            name: name,
-        },
-        data: vars,
+  configmap(namespace, name, vars={}):: {
+    apiVersion: 'v1',
+    kind: 'ConfigMap',
+    metadata: {
+      namespace: namespace,
+      name: name,
     },
-    secret(namespace,name,vars={}):: {
-        apiVersion: "v1",
-        kind: "Secret",
-        metadata: {
-            namespace: namespace,
-            name: name,
-        },
-        data: vars,
+    data: vars,
+  },
+  secret(namespace, name, vars={}):: {
+    apiVersion: 'v1',
+    kind: 'Secret',
+    metadata: {
+      namespace: namespace,
+      name: name,
     },
-    deployment(namespace, name, image):: {
-        apiVersion: 'apps/v1',
-        kind: 'Deployment',
+    data: vars,
+  },
+  deployment(namespace, name, image):: {
+    apiVersion: 'apps/v1',
+    kind: 'Deployment',
+    metadata: {
+      namespace: namespace,
+      name: name,
+    },
+    spec: {
+      selector: {
+        matchLabels: {
+          app: name,
+        },
+      },
+      template: {
         metadata: {
-            namespace: namespace,
-            name: name,
+          labels: { app: name },
         },
         spec: {
-            selector: {
-                matchLabels: {
-                    app: name
-                },
+          containers: [
+            {
+              name: 'main',
+              image: image,
             },
-            template: {
-                metadata: {
-                    labels: { app: name },
-                },
-                spec: {
-                    containers: [
-                    {
-                        name: 'main',
-                        image: image,
-                    },
-                    ],
-                },
-            },
+          ],
         },
+      },
     },
+  },
 }
-
-

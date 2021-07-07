@@ -13,19 +13,15 @@ jobs:
         with:
           go-version: 1.16
         id: go
-
       - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
-
       - uses: azure/setup-kubectl@v1
         id: install-kubectl
-
       - uses: actions/checkout@v2
         with:
           fetch-depth: "0"
-
       - uses: actions/cache@v2
         with:
           # In order:
@@ -42,7 +38,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
         id: cache
-
       - name: Install command dependencies
         run: |
           mkdir -p $HOME/go/bin
@@ -51,26 +46,20 @@ jobs:
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           echo "$HOME/go/bin" >> $GITHUB_PATH
           make install-ci install
-
       - name: Build
         run: make build
-
       - name: Lint
         run: make lint
-
       - name: Test
         run: |
           make test TEST_FLAGS="-timeout 3m"
-
       - uses: codecov/codecov-action@v1
-
       - name: goreleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-windows:
     name: Build(Windows)
     runs-on: windows-latest
@@ -79,14 +68,11 @@ jobs:
         with:
           go-version: 1.16
         id: go
-
       - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
-
       - uses: actions/checkout@v2
-
       - uses: actions/cache@v2
         with:
           # In order:
@@ -103,15 +89,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
         id: cache
-
       - name: Install command dependencies
         run: |
           echo "GOPATH=$HOME/go" >> $GITHUB_ENV
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
           echo "$HOME/go/bin" >> $GITHUB_PATH
-
       - name: Build
         run: make build
-
       - name: Test
         run: make test
