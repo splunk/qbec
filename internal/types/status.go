@@ -63,6 +63,8 @@ func StatusFuncFor(obj model.K8sMeta) RolloutStatusFunc {
 		return daemonsetStatus
 	case schema.GroupKind{Group: "apps", Kind: "StatefulSet"}:
 		return statefulsetStatus
+	case schema.GroupKind{Group: "batch", Kind: "Job"}:
+		return jobStatus
 	default:
 		return nil
 	}
@@ -237,6 +239,40 @@ func statefulsetStatus(base *unstructured.Unstructured, _ int64) (*RolloutStatus
 
 	if d.Status.UpdateRevision != d.Status.CurrentRevision {
 		return ret.withDesc(fmt.Sprintf("%d pods at revision %s", d.Status.UpdatedReplicas, d.Status.UpdateRevision)), nil
+	}
+	return ret.withDone(true).withDesc("successfully rolled out"), nil
+}
+
+func jobStatus(base *unstructured.Unstructured, _ int64) (*RolloutStatus, error) {
+	var d struct {
+		Metadata struct {
+			ResourceVersion string
+		}
+		Spec struct {
+			Completions int32
+		}
+		Status struct {
+			Succeeded  int32
+			Conditions []struct {
+				Type   string
+				Reason string
+			}
+		}
+	}
+	if err := reserialize(base, &d); err != nil {
+		return nil, err
+	}
+
+	var ret RolloutStatus
+
+	for _, c := range d.Status.Conditions {
+		if c.Type == "Failed" && c.Reason == "BackoffLimitExceeded" {
+			return nil, fmt.Errorf("job exceeded backoff limit")
+		}
+	}
+
+	if d.Status.Succeeded < d.Spec.Completions {
+		return ret.withDesc(fmt.Sprintf("%d out of %d tasks have been succeed", d.Status.Succeeded, d.Spec.Completions)), nil
 	}
 	return ret.withDone(true).withDesc("successfully rolled out"), nil
 }
