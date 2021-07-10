@@ -17,6 +17,7 @@
 package types
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -26,24 +27,22 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-var randomPrefix string
+var randomKey []byte
 
-func initRandomPrefix() {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		panic(fmt.Errorf("unable to initialize random prefix: %v", err))
+func initRandomKey() {
+	randomKey = make([]byte, sha256.New().BlockSize())
+	if _, err := rand.Read(randomKey); err != nil {
+		panic(fmt.Errorf("unable to initialize random key: %v", err))
 	}
-	randomPrefix = base64.RawURLEncoding.EncodeToString(b)
 }
 
 func init() {
-	initRandomPrefix()
+	initRandomKey()
 }
 
 func obfuscate(value string) string {
-	realValue := randomPrefix + ":" + value
-	h := sha256.New()
-	_, _ = h.Write([]byte(realValue)) // guaranteed to never fail per docs
+	h := hmac.New(sha256.New, randomKey)
+	_, _ = h.Write([]byte(value)) // guaranteed to never fail per docs
 	shasum := h.Sum(nil)
 	return fmt.Sprintf("redacted.%s", base64.RawURLEncoding.EncodeToString(shasum))
 }
