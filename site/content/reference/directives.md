@@ -26,10 +26,11 @@ object to remove this annotation will not work.
 #### `directives.qbec.io/update-policy` 
 
 * Annotation source: in-cluster object.
-* Allowed values: `"default"`, `"never"`
+* Allowed values: `"default"`, `"never"`, `"recreate"`
 * Default value: `"default"` 
 
 when set to `"never"`, indicates that the specific object should never be updated.
+when set to `"recreate"`, indicates that the specific object should be recreated instad of updating.
 If you want qbec to update this object, you need to remove the annotation from the in-cluster object. Changing the source
 object to remove this annotation will not work.
 

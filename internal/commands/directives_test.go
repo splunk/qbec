@@ -81,13 +81,24 @@ func TestDirectivesIsSet(t *testing.T) {
 	}
 }
 
-func TestDirectivesUpdatePolicy(t *testing.T) {
+func TestDirectivesUpdatePolicyNever(t *testing.T) {
 	up := newUpdatePolicy()
 	a := assert.New(t)
 	ret := up.disableUpdate(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", nil))
 	a.False(ret)
 	ret = up.disableUpdate(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", map[string]interface{}{
 		"directives.qbec.io/update-policy": "never",
+	}))
+	a.True(ret)
+}
+
+func TestDirectivesUpdatePolicyRecreate(t *testing.T) {
+	up := newUpdatePolicy()
+	a := assert.New(t)
+	ret := up.recreateUpdate(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", nil))
+	a.False(ret)
+	ret = up.recreateUpdate(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", map[string]interface{}{
+		"directives.qbec.io/update-policy": "recreate",
 	}))
 	a.True(ret)
 }
