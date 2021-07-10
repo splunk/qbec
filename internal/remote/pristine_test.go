@@ -139,6 +139,15 @@ func testPristineReader(t *testing.T, useFallback bool) {
 			},
 		},
 		{
+			file: "both-applied.yaml",
+			asserter: func(t *testing.T, obj *unstructured.Unstructured, source string) {
+				a := assert.New(t)
+				a.Equal("kubectl annotation", source)
+				a.NotNil(obj)
+				a.NotEqual("", obj.GetAnnotations()[kubectlLastConfig])
+			},
+		},
+		{
 			name: "qbec-bad.yaml",
 			file: "qbec-applied.yaml",
 			mod: func(obj *unstructured.Unstructured) {
