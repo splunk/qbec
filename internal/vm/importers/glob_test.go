@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-jsonnet"
@@ -106,6 +107,22 @@ func TestGlobDoublestar(t *testing.T) {
 	err := json.Unmarshal([]byte(expectedJSON), &expected)
 	require.Nil(t, err)
 	assert.EqualValues(t, expected, data)
+}
+
+func TestGlobOutsideRoot(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	dir := filepath.FromSlash("testdata/example1/caller2")
+	err = os.Chdir(dir)
+	require.NoError(t, err)
+	defer func() {
+		err := os.Chdir(wd)
+		require.NoError(t, err)
+	}()
+	vm, _ := makeVM()
+	data := evaluateVirtual(t, vm, "caller.jsonnet", `import 'glob-import:../*json'`)
+	_, ok := data["../a.json"]
+	require.True(t, ok)
 }
 
 func TestDuplicateFileName(t *testing.T) {
