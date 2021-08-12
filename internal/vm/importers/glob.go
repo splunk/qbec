@@ -162,8 +162,8 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		})
 	}()
 
-	fsys := os.DirFS(".")
-	matches, err := doublestar.Glob(fsys, filepath.ToSlash(globPath))
+	fsDir, pat := doublestar.SplitPattern(filepath.ToSlash(globPath))
+	matches, err := doublestar.Glob(os.DirFS(fsDir), pat)
 	if err != nil {
 		return contents, foundAt, fmt.Errorf("unable to expand glob %q, %v", globPath, err)
 	}
@@ -171,6 +171,7 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 	// convert matches to be relative to our baseDir
 	var relativeMatches []string
 	for _, m := range matches {
+		m = path.Join(fsDir, m)
 		rel, err := filepath.Rel(baseDir, m)
 		if err != nil {
 			return contents, globPath, fmt.Errorf("could not resolve %s from %s", m, importedFrom)
