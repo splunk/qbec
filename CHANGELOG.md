@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.14.5 (Aug 12, 2021)
+
+* Fix a bug where glob imports could not import relative files outside the qbec root/ current working dir
+
 ## v0.14.4 (Jul 7, 2021)
 
 * `fmt` and `alpha lint` commands now accept exclusion patterns using which vendored files, intentionally bad test
