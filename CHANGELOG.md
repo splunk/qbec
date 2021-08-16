@@ -1,6 +1,12 @@
 Changelog
 ---
 
+## v0.14.6 (Aug 16, 2021)
+
+* Add a `renderYaml` native function to the qbec VM to generate YAML output compatible with `qbec fmt`. If this native
+  function is passed an array, it will render multiple YAML docs with separators. Top-level nils are ignored for output.
+  If you want an array value to be serialized as a single document, wrap it in a single-element array.
+
 ## v0.14.5 (Aug 12, 2021)
 
 * Fix a bug where glob imports could not import relative files outside the qbec root/ current working dir
