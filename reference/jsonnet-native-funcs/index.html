@@ -699,6 +699,10 @@
 <ul>
 <li><a href="#usage-2">Usage</a></li>
 </ul></li>
+<li><a href="#renderyaml">renderYaml</a>
+<ul>
+<li><a href="#usage-3">Usage</a></li>
+</ul></li>
 </ul></li>
 </ul>
 </nav>
@@ -792,6 +796,26 @@ even if there is only one YAML document in the string.</p>
     local yamlString = importstr './path/to/yaml/file';
     
     parseYaml(yamlString) // returns all YAML docs as an array
+</code></pre>
+
+<h2 id="renderyaml">renderYaml</h2>
+
+<p>The <code>renderYaml</code> function takes a single input and returns the corresponding YAML as a string. This YAML is compatible
+with the output of <code>qbec fmt</code>. If the input is an array, it will create multiple YAML documents, one for each element.
+To render an array value as a single document wrap the value in a one-element array. Note that top-level nils do not
+produce any output.</p>
+
+<h3 id="usage-3">Usage</h3>
+
+<pre><code>   local renderYaml = std.native('renderYaml');
+   local oneDoc = renderYaml({ foo: 'bar', bar: 'baz' });
+   local twoDocs = renderYaml([{ foo: 'bar' }, null, { foo: 'baz' }]);
+   local arrayAsDoc = renderYaml([[{ foo: 'bar' }, { foo: 'baz' }]]);
+   {
+     one: oneDoc,
+     two: twoDocs,
+     aDoc: arrayAsDoc,
+   }
 </code></pre>
 
 
