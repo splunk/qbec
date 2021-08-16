@@ -16,6 +16,7 @@
 package natives
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"testing"
@@ -74,6 +75,77 @@ func TestParseYaml(t *testing.T) {
     local a = std.native("parseYaml")("---\nhello\n---\nworld");
     a[0] + a[1]`)
 	check(t, err, x, "\"helloworld\"\n")
+}
+
+func TestRenderYaml(t *testing.T) {
+	data := `{
+		"a": 1,
+		"b": true,
+		"c": "foo"
+	}`
+	vm := jsonnet.MakeVM()
+	Register(vm)
+	vm.ExtCode("data", data)
+	x, err := vm.EvaluateAnonymousSnippet("test", `
+		local renderYaml = std.native('renderYaml');
+		local parseYaml = std.native('parseYaml');
+		parseYaml(renderYaml(std.extVar('data')))[0]
+	`)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+	var expected, actual map[string]interface{}
+	err = json.Unmarshal([]byte(data), &expected)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+	err = json.Unmarshal([]byte(x), &actual)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+
+	for k, v := range expected {
+		if actual[k] != v {
+			t.Errorf("mismatch, want %v got %v", v, actual[k])
+		}
+	}
+}
+
+func TestRenderYamlArray(t *testing.T) {
+	data := `[
+		{ "foo": "bar" },
+		{ "foo": "baz" }
+	]`
+	vm := jsonnet.MakeVM()
+	Register(vm)
+	vm.ExtCode("data", data)
+	x, err := vm.EvaluateAnonymousSnippet("test", `
+		local renderYaml = std.native('renderYaml');
+		local parseYaml = std.native('parseYaml');
+		parseYaml(renderYaml(std.extVar('data')))
+	`)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+	var expected, actual []interface{}
+	err = json.Unmarshal([]byte(data), &expected)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+	err = json.Unmarshal([]byte(x), &actual)
+	if err != nil {
+		t.Fatalf("unexpected error: %q", err)
+	}
+
+	for k, v := range expected {
+		e := v.(map[string]interface{})
+		a := actual[k].(map[string]interface{})
+		for k2, v2 := range e {
+			if a[k2] != v2 {
+				t.Errorf("mismatch, want %v got %v", v2, a[k2])
+			}
+		}
+	}
 }
 
 func TestRegexMatch(t *testing.T) {
