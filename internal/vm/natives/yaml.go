@@ -17,8 +17,10 @@
 package natives
 
 import (
+	"bytes"
 	"io"
 
+	v3yaml "gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -40,4 +42,34 @@ func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 		}
 	}
 	return ret, nil
+}
+
+// RenderYAMLDocuments renders the supplied data as a series of YAML documents if the input is an array
+// or a single document when it is not. If the caller wants an array to be rendered as a single document,
+// they need to wrap it in an array first.
+func RenderYAMLDocuments(data interface{}) (_ string, retErr error) {
+	out, ok := data.([]interface{})
+	if !ok {
+		out = []interface{}{data}
+	}
+	var b bytes.Buffer
+	enc := v3yaml.NewEncoder(&b)
+	defer func() {
+		err := enc.Close()
+		if err == nil && retErr == nil {
+			retErr = err
+		}
+	}()
+	for i, doc := range out {
+		if i > 0 {
+			_, err := io.WriteString(&b, "---\n")
+			if err != nil {
+				return "", err
+			}
+		}
+		if err := enc.Encode(doc); err != nil {
+			return "", err
+		}
+	}
+	return b.String(), nil
 }

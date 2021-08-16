@@ -59,6 +59,14 @@ func Register(vm *jsonnet.VM) {
 	})
 
 	vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "renderYaml",
+		Params: []ast.Identifier{"data"},
+		Func: func(args []interface{}) (res interface{}, err error) {
+			return RenderYAMLDocuments(args[0])
+		},
+	})
+
+	vm.NativeFunction(&jsonnet.NativeFunction{
 		Name:   "escapeStringRegex",
 		Params: []ast.Identifier{"str"},
 		Func: func(args []interface{}) (res interface{}, err error) {
