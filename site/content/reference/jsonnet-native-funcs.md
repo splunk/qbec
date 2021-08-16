@@ -73,4 +73,22 @@ even if there is only one YAML document in the string.
     parseYaml(yamlString) // returns all YAML docs as an array
 ```
 
+## renderYaml
 
+The `renderYaml` function takes a single input and returns the corresponding YAML as a string. This YAML is compatible
+with the output of `qbec fmt`. If the input is an array, it will create multiple YAML documents, one for each element.
+To render an array value as a single document wrap the value in a one-element array. Note that top-level nils do not
+produce any output.
+
+### Usage
+```
+   local renderYaml = std.native('renderYaml');
+   local oneDoc = renderYaml({ foo: 'bar', bar: 'baz' });
+   local twoDocs = renderYaml([{ foo: 'bar' }, null, { foo: 'baz' }]);
+   local arrayAsDoc = renderYaml([[{ foo: 'bar' }, { foo: 'baz' }]]);
+   {
+     one: oneDoc,
+     two: twoDocs,
+     aDoc: arrayAsDoc,
+   }
+```
