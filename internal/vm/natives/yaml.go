@@ -17,7 +17,6 @@
 package natives
 
 import (
-	"bytes"
 	"io"
 
 	v3yaml "gopkg.in/yaml.v3"
@@ -27,7 +26,7 @@ import (
 // ParseYAMLDocuments parses the contents of the reader into an array of
 // objects, one for each non-null document in the input.
 func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
-	ret := []interface{}{}
+	ret := make([]interface{}, 0)
 	d := yaml.NewYAMLToJSONDecoder(reader)
 	for {
 		var doc interface{}
@@ -47,13 +46,12 @@ func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 // RenderYAMLDocuments renders the supplied data as a series of YAML documents if the input is an array
 // or a single document when it is not. If the caller wants an array to be rendered as a single document,
 // they need to wrap it in an array first.
-func RenderYAMLDocuments(data interface{}) (_ string, retErr error) {
+func RenderYAMLDocuments(data interface{}, writer io.Writer) (retErr error) {
 	out, ok := data.([]interface{})
 	if !ok {
 		out = []interface{}{data}
 	}
-	var b bytes.Buffer
-	enc := v3yaml.NewEncoder(&b)
+	enc := v3yaml.NewEncoder(writer)
 	defer func() {
 		err := enc.Close()
 		if err == nil && retErr == nil {
@@ -62,14 +60,14 @@ func RenderYAMLDocuments(data interface{}) (_ string, retErr error) {
 	}()
 	for i, doc := range out {
 		if i > 0 {
-			_, err := io.WriteString(&b, "---\n")
+			_, err := io.WriteString(writer, "---\n")
 			if err != nil {
-				return "", err
+				return err
 			}
 		}
 		if err := enc.Encode(doc); err != nil {
-			return "", err
+			return err
 		}
 	}
-	return b.String(), nil
+	return nil
 }

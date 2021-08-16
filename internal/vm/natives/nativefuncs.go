@@ -62,7 +62,12 @@ func Register(vm *jsonnet.VM) {
 		Name:   "renderYaml",
 		Params: []ast.Identifier{"data"},
 		Func: func(args []interface{}) (res interface{}, err error) {
-			return RenderYAMLDocuments(args[0])
+			var buf bytes.Buffer
+			err = RenderYAMLDocuments(args[0], &buf)
+			if err != nil {
+				return nil, err
+			}
+			return buf.String(), nil
 		},
 	})
 
