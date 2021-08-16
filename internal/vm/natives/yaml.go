@@ -24,7 +24,7 @@ import (
 )
 
 // ParseYAMLDocuments parses the contents of the reader into an array of
-// objects, one for each non-null document in the input.
+// objects, one for each non-nil document in the input.
 func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 	ret := make([]interface{}, 0)
 	d := yaml.NewYAMLToJSONDecoder(reader)
@@ -44,26 +44,26 @@ func ParseYAMLDocuments(reader io.Reader) ([]interface{}, error) {
 }
 
 // RenderYAMLDocuments renders the supplied data as a series of YAML documents if the input is an array
-// or a single document when it is not. If the caller wants an array to be rendered as a single document,
-// they need to wrap it in an array first.
+// or a single document when it is not. Nils are excluded from output.
+// If the caller wants an array to be rendered as a single document,
+// they need to wrap it in an array first. Note that this function is not a drop-in replacement for
+// data that requires ghodss/yaml to be rendered correctly.
 func RenderYAMLDocuments(data interface{}, writer io.Writer) (retErr error) {
 	out, ok := data.([]interface{})
 	if !ok {
 		out = []interface{}{data}
 	}
 	enc := v3yaml.NewEncoder(writer)
+	enc.SetIndent(2)
 	defer func() {
 		err := enc.Close()
 		if err == nil && retErr == nil {
 			retErr = err
 		}
 	}()
-	for i, doc := range out {
-		if i > 0 {
-			_, err := io.WriteString(writer, "---\n")
-			if err != nil {
-				return err
-			}
+	for _, doc := range out {
+		if doc == nil {
+			continue
 		}
 		if err := enc.Encode(doc); err != nil {
 			return err

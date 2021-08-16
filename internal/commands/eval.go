@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
+	"github.com/splunk/qbec/internal/vm/natives"
 )
 
 type evalCommandConfig struct {
@@ -60,14 +60,20 @@ func doEval(args []string, config evalCommandConfig) error {
 	var b []byte
 	switch config.format {
 	case "yaml":
-		b, err = yaml.Marshal(data)
+		err = natives.RenderYAMLDocuments([]interface{}{data}, config.Stdout())
+		if err != nil {
+			return err
+		}
 	default:
 		b, err = json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(config.Stdout(), "%s\n", b)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintf(config.Stdout(), "%s\n", b)
 	return nil
 }
 
