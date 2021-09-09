@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.14.7 (Sep 9, 2021)
+
+* Expose VM implementation as a publicly consumable library
+* Change `params.jsonnet` created by `qbec init` to automatically pull environment files using the glob importer (thanks to @kvaps)
+
 ## v0.14.6 (Aug 16, 2021)
 
 * Add a `renderYaml` native function to the qbec VM to generate YAML output compatible with `qbec fmt`. If this native
