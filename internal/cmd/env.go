@@ -26,8 +26,8 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
-	"github.com/splunk/qbec/internal/vm/importers"
+	"github.com/splunk/qbec/vm"
+	vmds "github.com/splunk/qbec/vm/datasource"
 )
 
 // EnvContext is the command context for the intersection of an app and environment
@@ -35,7 +35,7 @@ type EnvContext struct {
 	AppContext
 	env         string
 	props       map[string]interface{}
-	dataSources []importers.DataSource
+	dataSources []vmds.DataSource
 }
 
 func (c *EnvContext) configProvider(name string) (string, error) {
@@ -45,7 +45,7 @@ func (c *EnvContext) configProvider(name string) (string, error) {
 }
 
 func (c *EnvContext) createDataSources() error {
-	var sources []importers.DataSource
+	var sources []vmds.DataSource
 	for _, ds := range c.App().DataSources() {
 		src, err := datasource.Create(ds)
 		if err != nil {

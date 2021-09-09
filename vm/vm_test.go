@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/splunk/qbec/internal/vm/importers"
+	"github.com/splunk/qbec/vm/datasource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -192,7 +192,7 @@ func (d *replay) Resolve(path string) (string, error) {
 func TestVMDataSource(t *testing.T) {
 	jvm := New(Config{
 		LibPaths:    []string{},
-		DataSources: []importers.DataSource{&replay{name: "replay"}},
+		DataSources: []datasource.DataSource{&replay{name: "replay"}},
 	})
 	jsonCode, err := jvm.EvalFile("testdata/data-sources/replay.jsonnet", VariableSet{})
 	require.NoError(t, err)
@@ -206,7 +206,7 @@ func TestVMDataSource(t *testing.T) {
 func TestVMTwoDataSources(t *testing.T) {
 	jvm := New(Config{
 		LibPaths: []string{},
-		DataSources: []importers.DataSource{
+		DataSources: []datasource.DataSource{
 			&replay{name: "replay"},
 			&replay{name: "replay2"},
 		},

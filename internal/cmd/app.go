@@ -23,7 +23,7 @@ import (
 
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/vm"
 )
 
 // AppContext is a context that also has a validated app.
@@ -42,7 +42,7 @@ func (c AppContext) App() *model.App {
 func (c *AppContext) init() error {
 	var msgs []string
 	c.ext = c.ext.WithLibPaths(c.app.LibPaths())
-	vs := vm.VariablesFromConfig(c.ext)
+	vs := c.ext.ToVariableSet()
 	vars := vs.Vars()
 	tlaVars := vs.TopLevelVars()
 

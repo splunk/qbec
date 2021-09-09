@@ -27,9 +27,9 @@ import (
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/datasource"
 	"github.com/splunk/qbec/internal/datasource/api"
-	"github.com/splunk/qbec/internal/vm"
-	"github.com/splunk/qbec/internal/vm/externals"
-	"github.com/splunk/qbec/internal/vm/importers"
+	"github.com/splunk/qbec/internal/vmexternals"
+	"github.com/splunk/qbec/vm"
+	vmds "github.com/splunk/qbec/vm/datasource"
 )
 
 func getProvider(cfg vm.Config, vs vm.VariableSet) func(name string) (string, error) {
@@ -43,8 +43,8 @@ func getProvider(cfg vm.Config, vs vm.VariableSet) func(name string) (string, er
 	}
 }
 
-func run(file string, ext externals.Externals) (string, error) {
-	var dataSources []importers.DataSource
+func run(file string, ext vmexternals.Externals) (string, error) {
+	var dataSources []vmds.DataSource
 	for _, s := range ext.DataSources {
 		ds, err := datasource.Create(s)
 		if err != nil {
@@ -56,7 +56,7 @@ func run(file string, ext externals.Externals) (string, error) {
 		LibPaths:    ext.LibPaths,
 		DataSources: dataSources,
 	}
-	vs := vm.VariablesFromConfig(ext)
+	vs := ext.ToVariableSet()
 	provider := getProvider(cfg, vs)
 	for _, ds := range dataSources {
 		apiDs := ds.(api.DataSource)
@@ -70,7 +70,7 @@ func run(file string, ext externals.Externals) (string, error) {
 }
 
 func main() {
-	var configInit func() (externals.Externals, error)
+	var configInit func() (vmexternals.Externals, error)
 	exe := filepath.Base(os.Args[0])
 	root := &cobra.Command{
 		Use:   exe + " <sub-command>",
@@ -93,7 +93,7 @@ func main() {
 	}
 	cmd.RegisterSignalHandlers()
 	defer cmd.Close()
-	configInit = externals.FromCommandParams(root, "", true)
+	configInit = vmexternals.FromCommandParams(root, "", true)
 	if err := root.Execute(); err != nil {
 		log.Fatalln(err)
 	}

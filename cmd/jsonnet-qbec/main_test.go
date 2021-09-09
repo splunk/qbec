@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/splunk/qbec/internal/vm/externals"
+	"github.com/splunk/qbec/internal/vmexternals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,9 +56,9 @@ func TestExecDataSource(t *testing.T) {
 	p, _ := exec.LookPath("qbec-replay-exec")
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	ext := externals.Externals{
-		Variables: externals.UserVariables{
-			Vars: map[string]externals.UserVal{
+	ext := vmexternals.Externals{
+		Variables: vmexternals.UserVariables{
+			Vars: map[string]vmexternals.UserVal{
 				"runConfig": {
 					Value: runConfig(),
 					Code:  true,
@@ -92,9 +92,9 @@ func TestExecDataSourceFail(t *testing.T) {
 	if shouldSkip() {
 		t.Skipf("program 'qbec-replay-exec' not found on path, skipping test")
 	}
-	ext := externals.Externals{
-		Variables: externals.UserVariables{
-			Vars: map[string]externals.UserVal{
+	ext := vmexternals.Externals{
+		Variables: vmexternals.UserVariables{
+			Vars: map[string]vmexternals.UserVal{
 				"runConfig": {
 					Value: runConfig(),
 					Code:  true,
@@ -114,9 +114,9 @@ func TestExecDataSourceTimeout(t *testing.T) {
 	if shouldSkip() {
 		t.Skipf("program 'qbec-replay-exec' not found on path, skipping test")
 	}
-	ext := externals.Externals{
-		Variables: externals.UserVariables{
-			Vars: map[string]externals.UserVal{
+	ext := vmexternals.Externals{
+		Variables: vmexternals.UserVariables{
+			Vars: map[string]vmexternals.UserVal{
 				"runConfig": {
 					Value: runConfig(),
 					Code:  true,
