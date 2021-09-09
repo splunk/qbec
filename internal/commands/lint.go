@@ -26,8 +26,8 @@ import (
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/fswalk"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
-	"github.com/splunk/qbec/internal/vm/importers"
+	"github.com/splunk/qbec/vm"
+	"github.com/splunk/qbec/vm/datasource"
 )
 
 type mockDs struct {
@@ -43,7 +43,7 @@ func (m mockDs) Resolve(_ string) (string, error) {
 	return m.exampleValue, nil
 }
 
-func createMockDatasource(u string, examples map[string]interface{}) (importers.DataSource, error) {
+func createMockDatasource(u string, examples map[string]interface{}) (datasource.DataSource, error) {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func doLint(args []string, config *lintCommandConfig, ac cmd.AppContext) error {
 		config.files = []string{"."}
 	}
 	var libPaths []string
-	var dataSources []importers.DataSource
+	var dataSources []datasource.DataSource
 	if ac.App() != nil {
 		libPaths = ac.App().LibPaths()
 		examples := ac.App().DataSourceExamples()

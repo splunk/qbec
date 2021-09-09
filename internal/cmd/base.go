@@ -32,8 +32,7 @@ import (
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
-	"github.com/splunk/qbec/internal/vm"
-	"github.com/splunk/qbec/internal/vm/externals"
+	"github.com/splunk/qbec/internal/vmexternals"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -75,7 +74,7 @@ type Context struct {
 	envFile         string                       // additional environment file
 	remote          *remote.Config               // remote config
 	forceOptsFn     func() (ForceOptions, error) // options to force cluster/ namespace
-	ext             externals.Externals          // external config
+	ext             vmexternals.Externals        // external config
 	clp             ClientProvider               // the client provider
 	attrsp          KubeAttrsProvider            // the kubernetes attribute provider
 	colors          bool                         // colorize output
@@ -126,7 +125,7 @@ func memoizeForceFn(fn func() (ForceOptions, error)) func() (ForceOptions, error
 // NewContext sets up the supplied root command with common options and returns a function to
 // get the context after arguments have been parsed.
 func NewContext(root *cobra.Command, opts Options) func() (Context, error) {
-	extConfigFn := externals.FromCommandParams(root, "vm:", true)
+	extConfigFn := vmexternals.FromCommandParams(root, "vm:", true)
 	remoteConfig := remote.NewConfig(root, "k8s:")
 	forceOptsFn := addForceOptions(root, remoteConfig, "force:")
 	profilerFn := addProfilerOptions(root, "pprof:")
@@ -267,7 +266,7 @@ func (c Context) AppContext(app *model.App) (AppContext, error) {
 func (c Context) BasicEvalContext() eval.BaseContext {
 	return eval.BaseContext{
 		LibPaths: c.ext.LibPaths,
-		Vars:     vm.VariablesFromConfig(c.ext),
+		Vars:     c.ext.ToVariableSet(),
 		Verbose:  c.verbose > 1,
 	}
 }

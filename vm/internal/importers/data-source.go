@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/pkg/errors"
+	"github.com/splunk/qbec/vm/datasource"
 )
 
 const dsPrefix = "data"
@@ -32,21 +33,10 @@ type sourceEntry struct {
 	err      error
 }
 
-// DataSource is a named delegate that can resolve import paths. Multiple VMs may
-// access a single instance of a data source. Thus, data source implementations must
-// be safe for concurrent use.
-type DataSource interface {
-	// Name returns the name of this data source and is used to determine if
-	// an import path should be processed by the data source importer.
-	Name() string
-	// Resolve resolves the absolute path defined for the data source to a string.
-	Resolve(path string) (string, error)
-}
-
 // DataSourceImporter implements an importer that delegates to a data source
 // for resolution.
 type DataSourceImporter struct {
-	delegate DataSource
+	delegate datasource.DataSource
 	cache    map[string]*sourceEntry
 	exact    string
 	prefix   string
@@ -56,7 +46,7 @@ type DataSourceImporter struct {
 // It processes entries of the form
 //    data://{name}[/{path-to-be-resolved}]
 // If no path is provided, it is set to "/"
-func NewDataSourceImporter(source DataSource) *DataSourceImporter {
+func NewDataSourceImporter(source datasource.DataSource) *DataSourceImporter {
 	exact := fmt.Sprintf("%s://%s", dsPrefix, source.Name())
 	ret := &DataSourceImporter{
 		delegate: source,

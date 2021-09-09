@@ -14,7 +14,9 @@
    limitations under the License.
 */
 
-// Package vm allows flexible creation of a Jsonnet VM.
+// Package vm exposes the capabilities of a Jsonnet VM as a narrow interface.
+// The returned implementation is automatically set up with the native functions and importers that qbec
+// supports and is safe for concurrent use.
 package vm
 
 import (
@@ -26,8 +28,9 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/linter"
-	"github.com/splunk/qbec/internal/vm/importers"
-	"github.com/splunk/qbec/internal/vm/natives"
+	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/internal/importers"
+	"github.com/splunk/qbec/vm/internal/natives"
 )
 
 // Code wraps string to distinguish it from string file names
@@ -42,8 +45,8 @@ func MakeCode(s string) Code {
 
 // Config is the configuration of the VM
 type Config struct {
-	LibPaths    []string               // library paths
-	DataSources []importers.DataSource // data sources
+	LibPaths    []string                // library paths
+	DataSources []datasource.DataSource // data sources
 }
 
 // VM provides a narrow interface to the capabilities of a jsonnet VM.

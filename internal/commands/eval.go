@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
-	"github.com/splunk/qbec/internal/vm/natives"
+	"github.com/splunk/qbec/vm/vmutil"
 )
 
 type evalCommandConfig struct {
@@ -60,7 +60,7 @@ func doEval(args []string, config evalCommandConfig) error {
 	var b []byte
 	switch config.format {
 	case "yaml":
-		err = natives.RenderYAMLDocuments([]interface{}{data}, config.Stdout())
+		err = vmutil.RenderYAMLDocuments([]interface{}{data}, config.Stdout())
 		if err != nil {
 			return err
 		}

@@ -14,15 +14,17 @@
    limitations under the License.
 */
 
-package externals
+package vmexternals
 
 import (
+	"encoding/json"
 	"os"
 	"runtime"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/testutil"
+	"github.com/splunk/qbec/vm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -233,4 +235,96 @@ func TestConfigNegative(t *testing.T) {
 			test.asserter(a, err)
 		})
 	}
+}
+
+type code struct {
+	Foo string `json:"foo"`
+	Bar string `json:"bar"`
+}
+
+type result struct {
+	TLAStr     string `json:"tlaStr"`
+	TLACode    bool   `json:"tlaCode"`
+	ExtStr     string `json:"extStr"`
+	ExtCode    code   `json:"extCode"`
+	LibPath1   code   `json:"libpath1"`
+	LibPath2   code   `json:"libpath2"`
+	InlineStr  string `json:"inlineStr"`
+	InlineCode bool   `json:"inlineCode"`
+	ListVar1   string `json:"listVar1"`
+	ListVar2   string `json:"listVar2"`
+}
+
+var evalCode = `
+function (tlaStr,tlaCode) {
+	tlaStr: tlaStr,
+	tlaCode: tlaCode,
+	extStr: std.extVar('extStr'),
+	extCode: std.extVar('extCode'),
+	libPath1: import 'libcode1.libsonnet',
+	libPath2: import 'libcode2.libsonnet',
+	inlineStr: std.extVar('inlineStr'),
+	inlineCode: std.extVar('inlineCode'),
+	listVar1: std.extVar('listVar1'),
+	listVar2: std.extVar('listVar2'),
+}
+`
+
+func TestVariableSet(t *testing.T) {
+	var fn func() (Externals, error)
+	var cfg Externals
+	var output string
+	cmd := &cobra.Command{
+		Use: "show",
+		RunE: func(c *cobra.Command, args []string) error {
+			var err error
+			cfg, err = fn()
+			if err != nil {
+				return err
+			}
+			cfg := cfg.WithLibPaths([]string{"testdata/lib2"})
+			vars := cfg.ToVariableSet().WithVars(
+				vm.NewVar("inlineStr", "ifoo"),
+				vm.NewCodeVar("inlineCode", "true"),
+			)
+			jvm := vm.New(vm.Config{
+				LibPaths: cfg.LibPaths,
+			})
+			output, err = jvm.EvalCode("test.jsonnet", vm.MakeCode(evalCode), vars)
+			return err
+		},
+	}
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+	fn = FromCommandParams(cmd, "vm:", false)
+	cmd.SetArgs([]string{
+		"show",
+		"--vm:ext-str=extStr",
+		"--vm:ext-code-file=extCode=testdata/extCode.libsonnet",
+		"--vm:tla-str=tlaStr=tlafoo",
+		"--vm:tla-code=tlaCode=true",
+		"--vm:jpath=testdata/lib1",
+		"--vm:ext-str-list=testdata/vars.txt",
+	})
+	os.Setenv("extStr", "envFoo")
+	defer os.Unsetenv("extStr")
+	os.Setenv("listVar2", "l2")
+	defer os.Unsetenv("listVar2")
+	err := cmd.Execute()
+	require.Nil(t, err)
+	var r result
+	err = json.Unmarshal([]byte(output), &r)
+	require.Nil(t, err)
+	assert.EqualValues(t, result{
+		TLAStr:     "tlafoo",
+		TLACode:    true,
+		ExtStr:     "envFoo",
+		ExtCode:    code{Foo: "ec1foo", Bar: "ec1bar"},
+		LibPath1:   code{Foo: "lc1foo", Bar: "lc1bar"},
+		LibPath2:   code{Foo: "lc2foo", Bar: "lc2bar"},
+		InlineStr:  "ifoo",
+		InlineCode: true,
+		ListVar1:   "l1",
+		ListVar2:   "l2",
+	}, r)
 }

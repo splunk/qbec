@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package externals
+package vmexternals
 
 import (
 	"bufio"
@@ -26,6 +26,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/splunk/qbec/vm"
 )
 
 // UserVal is a user-supplied variable value to be initialized for the jsonnet VM
@@ -60,6 +61,28 @@ type Externals struct {
 // WithLibPaths returns a config with additional library paths.
 func (c Externals) WithLibPaths(paths []string) Externals {
 	return Externals{Variables: c.Variables, LibPaths: append(c.LibPaths, paths...)}
+}
+
+// ToVariableSet adapts the supplied set of user variables to a VM variable set.
+func (c Externals) ToVariableSet() vm.VariableSet {
+	ret := vm.VariableSet{}
+	var vars []vm.Var
+	for name, v := range c.Variables.Vars {
+		if v.Code {
+			vars = append(vars, vm.NewCodeVar(name, v.Value))
+		} else {
+			vars = append(vars, vm.NewVar(name, v.Value))
+		}
+	}
+	var tlaVars []vm.Var
+	for name, v := range c.Variables.TopLevelVars {
+		if v.Code {
+			tlaVars = append(tlaVars, vm.NewCodeVar(name, v.Value))
+		} else {
+			tlaVars = append(tlaVars, vm.NewVar(name, v.Value))
+		}
+	}
+	return ret.WithVars(vars...).WithTopLevelVars(tlaVars...)
 }
 
 type strFiles struct {

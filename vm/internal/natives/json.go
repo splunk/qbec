@@ -14,22 +14,19 @@
    limitations under the License.
 */
 
-// Package api defines the data source interface
-package api
+package natives
 
 import (
+	"encoding/json"
 	"io"
-
-	"github.com/splunk/qbec/vm/datasource"
 )
 
-// ConfigProvider returns the value of the supplied variable as a JSON string.
-type ConfigProvider func(varName string) (string, error)
-
-// DataSource represents an external data source that implements the methods needed by the data source importer
-// as well as lifecycle methods to handle clean up of temporary resources.
-type DataSource interface {
-	Init(c ConfigProvider) error
-	datasource.DataSource
-	io.Closer
+// ParseJSON parses the contents of the reader into a data object and returns it.
+func ParseJSON(reader io.Reader) (interface{}, error) {
+	dec := json.NewDecoder(reader)
+	var data interface{}
+	if err := dec.Decode(&data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }

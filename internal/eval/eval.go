@@ -30,9 +30,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
-	"github.com/splunk/qbec/internal/vm"
-	"github.com/splunk/qbec/internal/vm/importers"
-	"github.com/splunk/qbec/internal/vm/natives"
+	"github.com/splunk/qbec/vm"
+	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/vmutil"
 )
 
 const (
@@ -86,10 +86,10 @@ func (p postProc) run(obj map[string]interface{}) (map[string]interface{}, error
 
 // BaseContext is the context required to evaluate a single file
 type BaseContext struct {
-	LibPaths    []string               // library paths
-	DataSources []importers.DataSource // data sources
-	Vars        vm.VariableSet         // variables for the VM
-	Verbose     bool                   // show generated code
+	LibPaths    []string                // library paths
+	DataSources []datasource.DataSource // data sources
+	Vars        vm.VariableSet          // variables for the VM
+	Verbose     bool                    // show generated code
 	jvm         vm.VM
 }
 
@@ -236,7 +236,7 @@ func evaluationCode(c Context, file string) evalFn {
 				return nil, err
 			}
 			defer f.Close()
-			return natives.ParseYAMLDocuments(f)
+			return vmutil.ParseYAMLDocuments(f)
 		}
 	case strings.HasSuffix(file, ".json"):
 		return func(file string, component string, tlas []string) (interface{}, error) {
@@ -245,7 +245,7 @@ func evaluationCode(c Context, file string) evalFn {
 				return nil, err
 			}
 			defer f.Close()
-			return natives.ParseJSON(f)
+			return vmutil.ParseJSON(f)
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {

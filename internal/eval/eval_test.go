@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
-	"github.com/splunk/qbec/internal/vm"
+	"github.com/splunk/qbec/vm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

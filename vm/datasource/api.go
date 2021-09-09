@@ -14,19 +14,16 @@
    limitations under the License.
 */
 
-package natives
+// Package datasource declares the data source interface.
+package datasource
 
-import (
-	"encoding/json"
-	"io"
-)
-
-// ParseJSON parses the contents of the reader into an data object and returns it.
-func ParseJSON(reader io.Reader) (interface{}, error) {
-	dec := json.NewDecoder(reader)
-	var data interface{}
-	if err := dec.Decode(&data); err != nil {
-		return nil, err
-	}
-	return data, nil
+// DataSource is a named delegate that can resolve import paths. Multiple VMs may
+// access a single instance of a data source. Thus, data source implementations must
+// be safe for concurrent use.
+type DataSource interface {
+	// Name returns the name of this data source and is used to determine if
+	// an import path should be processed by the data source importer.
+	Name() string
+	// Resolve resolves the absolute path defined for the data source to a string.
+	Resolve(path string) (string, error)
 }
