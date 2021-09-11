@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package exec
+package dsexec
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/splunk/qbec/internal/datasource/api"
+	"github.com/splunk/qbec/vm/datasource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -129,7 +129,7 @@ func TestExecNegative(t *testing.T) {
 		name         string
 		config       Config
 		path         string
-		cp           api.ConfigProvider
+		cp           datasource.ConfigProvider
 		skipWindows  bool
 		initAsserter func(t *testing.T, err error)
 		asserter     func(t *testing.T, resolved string, err error)

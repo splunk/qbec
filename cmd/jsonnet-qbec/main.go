@@ -25,45 +25,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
-	"github.com/splunk/qbec/internal/datasource"
-	"github.com/splunk/qbec/internal/datasource/api"
 	"github.com/splunk/qbec/internal/vmexternals"
 	"github.com/splunk/qbec/vm"
-	vmds "github.com/splunk/qbec/vm/datasource"
 )
 
-func getProvider(cfg vm.Config, vs vm.VariableSet) func(name string) (string, error) {
-	return func(name string) (string, error) {
-		jvm := vm.New(cfg)
-		return jvm.EvalCode(
-			fmt.Sprintf("<%s>", name),
-			vm.MakeCode(fmt.Sprintf(`std.extVar('%s')`, name)),
-			vs,
-		)
-	}
-}
-
 func run(file string, ext vmexternals.Externals) (string, error) {
-	var dataSources []vmds.DataSource
-	for _, s := range ext.DataSources {
-		ds, err := datasource.Create(s)
-		if err != nil {
-			return "", errors.Wrapf(err, "create data source %s", s)
-		}
-		dataSources = append(dataSources, ds)
+	vs := ext.ToVariableSet()
+	dataSources, closer, err := vm.CreateDataSources(ext.DataSources, vm.ConfigProviderFromVariables(vs))
+	if closer != nil {
+		cmd.RegisterCleanupTask(closer)
+	}
+	if err != nil {
+		return "", err
 	}
 	cfg := vm.Config{
 		LibPaths:    ext.LibPaths,
 		DataSources: dataSources,
-	}
-	vs := ext.ToVariableSet()
-	provider := getProvider(cfg, vs)
-	for _, ds := range dataSources {
-		apiDs := ds.(api.DataSource)
-		if err := apiDs.Init(provider); err != nil {
-			return "", errors.Wrapf(err, "init data source %s", apiDs.Name())
-		}
-		cmd.RegisterCleanupTask(apiDs)
 	}
 	jvm := vm.New(cfg)
 	return jvm.EvalFile(file, vs)

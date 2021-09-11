@@ -17,6 +17,10 @@
 // Package datasource declares the data source interface.
 package datasource
 
+import (
+	"io"
+)
+
 // DataSource is a named delegate that can resolve import paths. Multiple VMs may
 // access a single instance of a data source. Thus, data source implementations must
 // be safe for concurrent use.
@@ -26,4 +30,15 @@ type DataSource interface {
 	Name() string
 	// Resolve resolves the absolute path defined for the data source to a string.
 	Resolve(path string) (string, error)
+}
+
+// ConfigProvider returns the value of the supplied variable as a JSON string.
+type ConfigProvider func(varName string) (string, error)
+
+// WithLifecycle represents an external data source that implements the methods needed by the data source importer
+// as well as lifecycle methods to handle initialization and clean up of temporary resources.
+type WithLifecycle interface {
+	DataSource
+	Init(c ConfigProvider) error
+	io.Closer
 }

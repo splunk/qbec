@@ -14,13 +14,13 @@
    limitations under the License.
 */
 
-package datasource
+package dsfactory
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/splunk/qbec/internal/datasource/api"
+	"github.com/splunk/qbec/vm/datasource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +31,7 @@ type delegate struct {
 	closeError   error
 }
 
-func (d *delegate) Init(_ api.ConfigProvider) error {
+func (d *delegate) Init(_ datasource.ConfigProvider) error {
 	return d.initErr
 }
 
@@ -47,7 +47,7 @@ func (d *delegate) Close() error {
 	return d.closeError
 }
 
-var _ api.DataSource = &delegate{}
+var _ datasource.WithLifecycle = &delegate{}
 
 var cp = func(name string) (string, error) {
 	return "", nil
