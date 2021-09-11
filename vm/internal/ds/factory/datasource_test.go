@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package datasource
+package factory
 
 import (
 	"testing"

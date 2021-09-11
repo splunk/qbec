@@ -27,3 +27,8 @@ type DataSource interface {
 	// Resolve resolves the absolute path defined for the data source to a string.
 	Resolve(path string) (string, error)
 }
+
+// ConfigProvider returns the value of the supplied variable as a JSON string.
+// A config provider is used at the time of data source creation to allow the data source to be
+// correctly configured.
+type ConfigProvider func(varName string) (string, error)

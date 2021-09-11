@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/datasource"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
@@ -45,16 +44,10 @@ func (c *EnvContext) configProvider(name string) (string, error) {
 }
 
 func (c *EnvContext) createDataSources() error {
-	var sources []vmds.DataSource
-	for _, ds := range c.App().DataSources() {
-		src, err := datasource.Create(ds)
-		if err != nil {
-			return errors.Wrapf(err, "create data source %s", ds)
-		}
-		if err := src.Init(c.configProvider); err != nil {
-			return errors.Wrapf(err, "init data source %s", src.Name())
-		}
-		sources = append(sources, src)
+	sources, closer, err := vm.CreateDataSources(c.App().DataSources(), c.configProvider)
+	RegisterCleanupTask(closer)
+	if err != nil {
+		return err
 	}
 	c.dataSources = sources
 	return nil

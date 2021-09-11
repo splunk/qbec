@@ -14,32 +14,33 @@
    limitations under the License.
 */
 
-package datasource
+package factory
 
 import (
 	"sync"
 
-	"github.com/splunk/qbec/internal/datasource/api"
+	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/internal/ds"
 )
 
 // lazySource wraps a data source and defers initialization of its delegate until the first call to Resolve.
 // This allows data sources to be initialized before computed variables are, such that code in computed
 // variables can also refer to data sources.
 type lazySource struct {
-	delegate api.DataSource
-	provider api.ConfigProvider
+	delegate ds.DataSourceWithLifecycle
+	provider datasource.ConfigProvider
 	l        sync.Mutex
 	once     sync.Once
 	initErr  error
 }
 
-func makeLazy(delegate api.DataSource) api.DataSource {
+func makeLazy(delegate ds.DataSourceWithLifecycle) ds.DataSourceWithLifecycle {
 	return &lazySource{
 		delegate: delegate,
 	}
 }
 
-func (l *lazySource) Init(c api.ConfigProvider) error {
+func (l *lazySource) Init(c datasource.ConfigProvider) error {
 	l.provider = c
 	return nil
 }
@@ -68,4 +69,4 @@ func (l *lazySource) Close() error {
 	return l.delegate.Close()
 }
 
-var _ api.DataSource = &lazySource{}
+var _ ds.DataSourceWithLifecycle = &lazySource{}

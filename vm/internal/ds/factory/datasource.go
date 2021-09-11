@@ -11,23 +11,23 @@
    limitations under the License.
 */
 
-// Package datasource provides a mechanism to create data sources from URLs with custom schemes.
-package datasource
+// Package factory provides a mechanism to create data sources from URLs with custom schemes.
+package factory
 
 import (
 	"fmt"
 	"net/url"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/datasource/api"
-	"github.com/splunk/qbec/internal/datasource/exec"
+	"github.com/splunk/qbec/vm/internal/ds"
+	"github.com/splunk/qbec/vm/internal/ds/exec"
 )
 
 // Create creates a new data source from the supplied URL.
 // Such a URL has a scheme that is the type of supported data source,
 // a hostname that is the name that it should be referred to in user code,
 // and a query param called configVar which supplies the data source config.
-func Create(u string) (api.DataSource, error) {
+func Create(u string) (ds.DataSourceWithLifecycle, error) {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse URL '%s'", u)

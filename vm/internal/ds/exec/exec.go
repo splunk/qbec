@@ -27,7 +27,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/internal/datasource/api"
+	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/internal/ds"
 )
 
 // Scheme is scheme supported by this data source
@@ -94,7 +95,7 @@ type execSource struct {
 }
 
 // New creates a new exec data source
-func New(name string, configVar string) api.DataSource {
+func New(name string, configVar string) ds.DataSourceWithLifecycle {
 	return &execSource{
 		name:      name,
 		configVar: configVar,
@@ -107,7 +108,7 @@ func (d *execSource) Name() string {
 }
 
 // Init implements the interface method.
-func (d *execSource) Init(p api.ConfigProvider) (fErr error) {
+func (d *execSource) Init(p datasource.ConfigProvider) (fErr error) {
 	defer func() {
 		fErr = errors.Wrapf(fErr, "init data source %s", d.name) // nil wraps as nil
 	}()
