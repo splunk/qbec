@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/vm/datasource"
-	"github.com/splunk/qbec/vm/internal/dsfactory"
+	"github.com/splunk/qbec/vm/internal/ds/factory"
 )
 
 type multiCloser struct {
@@ -34,10 +34,12 @@ func (m *multiCloser) Close() error {
 	}
 }
 
+// CreateDataSources returns the data source implementations for the supplied URIs. It also returns an io.Closer that should
+// be called at the point when the data sources are no longer in use.
 func CreateDataSources(input []string, cp datasource.ConfigProvider) (sources []datasource.DataSource, closer io.Closer, _ error) {
 	closer = &multiCloser{}
 	for _, uri := range input {
-		src, err := dsfactory.Create(uri)
+		src, err := factory.Create(uri)
 		if err != nil {
 			return nil, closer, errors.Wrapf(err, "create data source %s", uri)
 		}
@@ -50,6 +52,8 @@ func CreateDataSources(input []string, cp datasource.ConfigProvider) (sources []
 	return sources, closer, nil
 }
 
+// ConfigProviderFromVariables returns a simple config provider for data sources based on a static set of variables
+// that will be defined for the VM.
 func ConfigProviderFromVariables(vs VariableSet) datasource.ConfigProvider {
 	return func(name string) (string, error) {
 		jvm := New(Config{})

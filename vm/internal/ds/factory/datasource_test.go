@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package dsfactory
+package factory
 
 import (
 	"testing"

@@ -11,30 +11,30 @@
    limitations under the License.
 */
 
-// Package dsfactory provides a mechanism to create data sources from URLs with custom schemes.
-package dsfactory
+// Package factory provides a mechanism to create data sources from URLs with custom schemes.
+package factory
 
 import (
 	"fmt"
 	"net/url"
 
 	"github.com/pkg/errors"
-	"github.com/splunk/qbec/vm/datasource"
-	"github.com/splunk/qbec/vm/internal/dsexec"
+	"github.com/splunk/qbec/vm/internal/ds"
+	"github.com/splunk/qbec/vm/internal/ds/exec"
 )
 
 // Create creates a new data source from the supplied URL.
 // Such a URL has a scheme that is the type of supported data source,
 // a hostname that is the name that it should be referred to in user code,
 // and a query param called configVar which supplies the data source config.
-func Create(u string) (datasource.WithLifecycle, error) {
+func Create(u string) (ds.DataSourceWithLifecycle, error) {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse URL '%s'", u)
 	}
 	scheme := parsed.Scheme
 	switch scheme {
-	case dsexec.Scheme:
+	case exec.Scheme:
 	default:
 		return nil, fmt.Errorf("data source URL '%s', unsupported scheme '%s'", u, scheme)
 	}
@@ -50,8 +50,8 @@ func Create(u string) (datasource.WithLifecycle, error) {
 		return nil, fmt.Errorf("data source '%s' must have a configVar param", u)
 	}
 	switch scheme {
-	case dsexec.Scheme:
-		return makeLazy(dsexec.New(name, varName)), nil
+	case exec.Scheme:
+		return makeLazy(exec.New(name, varName)), nil
 	default:
 		return nil, fmt.Errorf("internal error: unable to create a data source for %s", u)
 	}

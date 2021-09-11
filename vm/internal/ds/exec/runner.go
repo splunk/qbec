@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package dsexec
+package exec
 
 import (
 	"bytes"

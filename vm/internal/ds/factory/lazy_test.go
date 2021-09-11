@@ -14,13 +14,14 @@
    limitations under the License.
 */
 
-package dsfactory
+package factory
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/internal/ds"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,7 @@ func (d *delegate) Close() error {
 	return d.closeError
 }
 
-var _ datasource.WithLifecycle = &delegate{}
+var _ ds.DataSourceWithLifecycle = &delegate{}
 
 var cp = func(name string) (string, error) {
 	return "", nil

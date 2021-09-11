@@ -14,9 +14,9 @@
    limitations under the License.
 */
 
-// Package dsexec provides a data source implementation that can execute external commands and return
+// Package exec provides a data source implementation that can execute external commands and return
 // its standard output for import or importstr use.
-package dsexec
+package exec
 
 import (
 	"encoding/json"
@@ -28,6 +28,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/vm/datasource"
+	"github.com/splunk/qbec/vm/internal/ds"
 )
 
 // Scheme is scheme supported by this data source
@@ -94,7 +95,7 @@ type execSource struct {
 }
 
 // New creates a new exec data source
-func New(name string, configVar string) datasource.WithLifecycle {
+func New(name string, configVar string) ds.DataSourceWithLifecycle {
 	return &execSource{
 		name:      name,
 		configVar: configVar,
