@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.14.8 (Sep 11, 2021)
+
+* Expose data source creation in the VM implementation for public use
+
 ## v0.14.7 (Sep 9, 2021)
 
 * Expose VM implementation as a publicly consumable library
