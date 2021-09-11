@@ -45,9 +45,7 @@ func (c *EnvContext) configProvider(name string) (string, error) {
 
 func (c *EnvContext) createDataSources() error {
 	sources, closer, err := vm.CreateDataSources(c.App().DataSources(), c.configProvider)
-	if closer != nil {
-		RegisterCleanupTask(closer)
-	}
+	RegisterCleanupTask(closer)
 	if err != nil {
 		return err
 	}

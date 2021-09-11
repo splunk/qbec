@@ -32,9 +32,7 @@ import (
 func run(file string, ext vmexternals.Externals) (string, error) {
 	vs := ext.ToVariableSet()
 	dataSources, closer, err := vm.CreateDataSources(ext.DataSources, vm.ConfigProviderFromVariables(vs))
-	if closer != nil {
-		cmd.RegisterCleanupTask(closer)
-	}
+	cmd.RegisterCleanupTask(closer)
 	if err != nil {
 		return "", err
 	}
