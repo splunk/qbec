@@ -37,6 +37,7 @@ type helmOptions struct {
 	Name         string   `json:"name"`         // --name option
 	NameTemplate string   `json:"nameTemplate"` // --name-template option
 	Namespace    string   `json:"namespace"`    // --namespace option
+	ApiVersions  []string `json:"apiVersions"`  // --api-versions options
 	ThisFile     string   `json:"thisFile"`     // use supplied file as current file to resolve relative refs, should be set to std.thisFile
 	Verbose      bool     `json:"verbose"`      // print helm template command before executing it
 	//IsUpgrade    bool     `json:"isUpgrade"` // --is-upgrade option, defer adding this until implications are known,
@@ -61,6 +62,11 @@ func (h helmOptions) toArgs() []string {
 	}
 	if h.Namespace != "" {
 		ret = append(ret, "--namespace", h.Namespace)
+	}
+	if len(h.ApiVersions) > 0 {
+		for _, e := range h.ApiVersions {
+			ret = append(ret, "--api-versions", e)
+		}
 	}
 	//if h.IsUpgrade {
 	//	ret = append(ret, "--is-upgrade")

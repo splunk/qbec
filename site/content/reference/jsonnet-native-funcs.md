@@ -46,6 +46,7 @@ This object supports the following keys:
 * `execute` (array of strings) - the `--execute` argument to the template command
 * `kubeVersion` (string) - the `--kube-version` argument to the template command
 * `verbose` (bool) - print `helm template` command invocation to standard error before executing it
+* `apiVersions` (array of strings) - the `--api-versions` argument to the template command
 
 
 ## parseJson
