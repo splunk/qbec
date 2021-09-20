@@ -8,7 +8,7 @@ params:
   disableAssetsBusting: true
   disableSearch: true
   disableInlineCopyToClipBoard: true
-  editURL: https://github.com/splunk/qbec/edit/master/site/content/
+  editURL: https://github.com/splunk/qbec/edit/main/site/content/
   themeVariant: blue
 menu:
   shortcuts:
