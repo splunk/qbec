@@ -55,6 +55,7 @@ jobs:
         with:
           version: v0.11.1
           wait: 90s
+          cluster_name: kind
       - name: Test
         run: |
           make test TEST_FLAGS="-timeout 3m -tags integration"
