@@ -18,6 +18,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -71,7 +72,7 @@ type componentListCommandConfig struct {
 	objects bool
 }
 
-func doComponentList(args []string, config componentListCommandConfig) error {
+func doComponentList(ctx context.Context, args []string, config componentListCommandConfig) error {
 	if len(args) != 1 {
 		return cmd.NewUsageError("exactly one environment required")
 	}
@@ -81,7 +82,7 @@ func doComponentList(args []string, config componentListCommandConfig) error {
 		if err != nil {
 			return err
 		}
-		objects, err := filteredObjects(envCtx, nil, filterParams{})
+		objects, err := filteredObjects(ctx, envCtx, nil, filterParams{})
 		if err != nil {
 			return err
 		}
@@ -107,7 +108,7 @@ func newComponentListCommand(cp ctxProvider) *cobra.Command {
 
 	c.RunE = func(c *cobra.Command, args []string) error {
 		config.AppContext = cp()
-		return cmd.WrapError(doComponentList(args, config))
+		return cmd.WrapError(doComponentList(c.Context(), args, config))
 	}
 	return c
 }
@@ -117,7 +118,7 @@ type componentDiffCommandConfig struct {
 	objects bool
 }
 
-func doComponentDiff(args []string, config componentDiffCommandConfig) error {
+func doComponentDiff(ctx context.Context, args []string, config componentDiffCommandConfig) error {
 	var leftEnv, rightEnv cmd.EnvContext
 	var err error
 	switch len(args) {
@@ -162,7 +163,7 @@ func doComponentDiff(args []string, config componentDiffCommandConfig) error {
 	}
 
 	getObjects := func(envCtx cmd.EnvContext) (str string, name string, err error) {
-		objs, err := filteredObjects(envCtx, nil, filterParams{})
+		objs, err := filteredObjects(ctx, envCtx, nil, filterParams{})
 		if err != nil {
 			return
 		}
@@ -220,7 +221,7 @@ func newComponentDiffCommand(cp ctxProvider) *cobra.Command {
 
 	c.RunE = func(c *cobra.Command, args []string) error {
 		config.AppContext = cp()
-		return cmd.WrapError(doComponentDiff(args, config))
+		return cmd.WrapError(doComponentDiff(c.Context(), args, config))
 	}
 	return c
 }

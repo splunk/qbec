@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"sort"
 	"time"
 
@@ -28,13 +29,13 @@ import (
 
 type listClient interface {
 	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
-	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
+	ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error)
 }
 
 // lister lists remote objects and returns a list of objects to be deleted.
 type lister interface {
 	// start starts listing objects based on the supplied query config in the background.
-	start(config remote.ListQueryConfig)
+	start(ctx context.Context, config remote.ListQueryConfig)
 	// deletions returns a list of objects to be deleted given a list of objects to be retained and
 	// a filter function that should return true for other objects if they can be deleted.
 	deletions(ignore []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error)
@@ -42,7 +43,7 @@ type lister interface {
 
 type stubLister struct{}
 
-func (s *stubLister) start(config remote.ListQueryConfig) {}
+func (s *stubLister) start(ctx context.Context, config remote.ListQueryConfig) {}
 func (s *stubLister) deletions(ignore []model.K8sLocalObject, filter func(obj model.K8sQbecMeta) bool) ([]model.K8sQbecMeta, error) {
 	return nil, nil
 }
@@ -106,7 +107,7 @@ func newRemoteLister(client listClient, allObjects []model.K8sLocalObject, defau
 		nil
 }
 
-func (r *remoteLister) start(config remote.ListQueryConfig) {
+func (r *remoteLister) start(ctx context.Context, config remote.ListQueryConfig) {
 	r.cfg = config
 	if config.KindFilter == nil {
 		config.KindFilter = func(_ schema.GroupVersionKind) bool { return true }
@@ -120,7 +121,7 @@ func (r *remoteLister) start(config remote.ListQueryConfig) {
 	}
 	go func() {
 		start := time.Now()
-		list, err := r.client.ListObjects(config)
+		list, err := r.client.ListObjects(ctx, config)
 		r.ch <- listResult{data: list, err: err, duration: time.Since(start).Round(time.Millisecond)}
 	}()
 }

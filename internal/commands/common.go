@@ -18,6 +18,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strconv"
@@ -58,9 +59,9 @@ func setupCommands(root *cobra.Command, cp ctxProvider) {
 	root.AddCommand(alplhaCmd)
 }
 
-type worker func(object model.K8sLocalObject) error
+type worker func(ctx context.Context, object model.K8sLocalObject) error
 
-func runInParallel(objs []model.K8sLocalObject, worker worker, parallel int) error {
+func runInParallel(ctx context.Context, objs []model.K8sLocalObject, worker worker, parallel int) error {
 	if parallel <= 0 {
 		parallel = 1
 	}
@@ -79,7 +80,7 @@ func runInParallel(objs []model.K8sLocalObject, worker worker, parallel int) err
 		go func() {
 			defer wg.Done()
 			for o := range ch {
-				err := worker(o)
+				err := worker(ctx, o)
 				if err != nil {
 					errs <- errors.Wrap(err, fmt.Sprint(o))
 					return
@@ -123,8 +124,8 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
-func startRemoteList(envCtx cmd.EnvContext, client cmd.KubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
-	all, err := filteredObjects(envCtx, nil, filterParams{})
+func startRemoteList(ctx context.Context, envCtx cmd.EnvContext, client cmd.KubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
+	all, err := filteredObjects(ctx, envCtx, nil, filterParams{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -142,7 +143,7 @@ func startRemoteList(envCtx cmd.EnvContext, client cmd.KubeClient, fp filterPara
 	if len(scope.Namespaces) > 1 && envCtx.App().ClusterScopedLists() {
 		clusterScopedLists = true
 	}
-	lister.start(remote.ListQueryConfig{
+	lister.start(ctx, remote.ListQueryConfig{
 		Application:        envCtx.App().Name(),
 		Tag:                envCtx.App().Tag(),
 		Environment:        envCtx.Env(),

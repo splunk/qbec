@@ -18,6 +18,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -109,11 +110,11 @@ func (c *coll) ToList() []model.K8sQbecMeta {
 
 type client struct {
 	nsFunc        func(kind schema.GroupVersionKind) (bool, error)
-	getFunc       func(obj model.K8sMeta) (*unstructured.Unstructured, error)
-	syncFunc      func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	validatorFunc func(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	listFunc      func(scope remote.ListQueryConfig) (remote.Collection, error)
-	deleteFunc    func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error)
+	getFunc       func(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error)
+	syncFunc      func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
+	validatorFunc func(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error)
+	listFunc      func(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error)
+	deleteFunc    func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error)
 	objectKeyFunc func(obj model.K8sMeta) string
 }
 
@@ -131,37 +132,37 @@ func (c *client) IsNamespaced(kind schema.GroupVersionKind) (bool, error) {
 	return true, nil
 }
 
-func (c *client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
+func (c *client) Get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error) {
 	if c.getFunc != nil {
-		return c.getFunc(obj)
+		return c.getFunc(ctx, obj)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+func (c *client) Sync(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 	if c.syncFunc != nil {
-		return c.syncFunc(obj, opts)
+		return c.syncFunc(ctx, obj, opts)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
+func (c *client) ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
 	if c.validatorFunc != nil {
-		return c.validatorFunc(gvk)
+		return c.validatorFunc(ctx, gvk)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) ListObjects(scope remote.ListQueryConfig) (remote.Collection, error) {
+func (c *client) ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error) {
 	if c.listFunc != nil {
-		return c.listFunc(scope)
+		return c.listFunc(ctx, scope)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (c *client) Delete(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+func (c *client) Delete(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 	if c.deleteFunc != nil {
-		return c.deleteFunc(obj, opts)
+		return c.deleteFunc(ctx, obj, opts)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -374,7 +375,7 @@ type dg struct {
 	secretValue string
 }
 
-func (d *dg) get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
+func (d *dg) get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error) {
 	switch {
 	case obj.GetName() == "svc2-cm":
 		return &unstructured.Unstructured{
@@ -431,7 +432,7 @@ func (d *dg) get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
 
 }
 
-func stdLister(_ remote.ListQueryConfig) (remote.Collection, error) {
+func stdLister(ctx context.Context, _ remote.ListQueryConfig) (remote.Collection, error) {
 	c := &coll{}
 	c.add(
 		&basicObject{

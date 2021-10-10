@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -126,7 +127,7 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 	return un
 }
 
-func doShow(args []string, config showCommandConfig) error {
+func doShow(ctx context.Context, args []string, config showCommandConfig) error {
 	if len(args) != 1 {
 		return cmd.NewUsageError("exactly one environment required")
 	}
@@ -152,7 +153,7 @@ func doShow(args []string, config showCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(envCtx, keyFunc, fp)
+	objects, err := filteredObjects(ctx, envCtx, keyFunc, fp)
 	if err != nil {
 		return err
 	}
@@ -230,7 +231,7 @@ func newShowCommand(cp ctxProvider) *cobra.Command {
 		config.AppContext = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		cleanEvalMode = clean
-		return cmd.WrapError(doShow(args, config))
+		return cmd.WrapError(doShow(c.Context(), args, config))
 	}
 	return c
 }

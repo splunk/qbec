@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"regexp"
 	"testing"
 
@@ -63,7 +64,7 @@ func TestApplyBasic(t *testing.T) {
 	defer func() { applyWaitFn = origWait }()
 	first := true
 	var captured remote.SyncOptions
-	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts
@@ -82,7 +83,7 @@ func TestApplyBasic(t *testing.T) {
 		}
 	}
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("apply", "dev", "--wait")
@@ -105,7 +106,7 @@ func TestApplyFlags(t *testing.T) {
 	defer s.reset()
 	first := true
 	var captured remote.SyncOptions
-	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts

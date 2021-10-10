@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -90,7 +91,7 @@ func displayName(obj model.K8sLocalObject) string {
 	return fmt.Sprintf("%s%s %s%s (component: %s)", group, obj.GetKind(), ns, obj.GetName(), obj.Component())
 }
 
-func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
+func checkDuplicates(ctx context.Context, objects []model.K8sLocalObject, kf keyFunc) error {
 	if kf == nil {
 		return nil
 	}
@@ -110,16 +111,16 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 
 var cleanEvalMode bool
 
-func filteredObjects(ctx cmd.EnvContext, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
-	components, err := ctx.App().ComponentsForEnvironment(ctx.Env(), fp.includes, fp.excludes)
+func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
+	components, err := envCtx.App().ComponentsForEnvironment(envCtx.Env(), fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err
 	}
-	output, err := eval.Components(components, ctx.EvalContext(cleanEvalMode), ctx.ObjectProducer())
+	output, err := eval.Components(components, envCtx.EvalContext(cleanEvalMode), envCtx.ObjectProducer())
 	if err != nil {
 		return nil, err
 	}
-	if err := checkDuplicates(output, kf); err != nil {
+	if err := checkDuplicates(ctx, output, kf); err != nil {
 		return nil, err
 	}
 	of := fp.kindFilter

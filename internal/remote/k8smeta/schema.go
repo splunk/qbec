@@ -17,10 +17,11 @@
 package k8smeta
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
-	openapi_v2 "github.com/googleapis/gnostic/OpenAPIv2"
+	openapi_v2 "github.com/googleapis/gnostic/openapiv2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -60,7 +61,7 @@ type validators struct {
 	cache map[schema.GroupVersionKind]*schemaResult
 }
 
-func (v *validators) validatorFor(gvk schema.GroupVersionKind) (Validator, error) {
+func (v *validators) validatorFor(ctx context.Context, gvk schema.GroupVersionKind) (Validator, error) {
 	v.l.Lock()
 	defer v.l.Unlock()
 	sr := v.cache[gvk]
@@ -107,12 +108,12 @@ func NewServerSchema(disco SchemaDiscovery) *ServerSchema {
 }
 
 // ValidatorFor returns a validator for the supplied GroupVersionKind.
-func (ss *ServerSchema) ValidatorFor(gvk schema.GroupVersionKind) (Validator, error) {
+func (ss *ServerSchema) ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (Validator, error) {
 	_, v, err := ss.openAPIResources()
 	if err != nil {
 		return nil, err
 	}
-	return v.validatorFor(gvk)
+	return v.validatorFor(ctx, gvk)
 }
 
 // OpenAPIResources returns the OpenAPI resources for the server.
