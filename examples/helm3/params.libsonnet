@@ -1,4 +1,3 @@
-
 // this file returns the params for the current qbec environment
 local env = std.extVar('qbec.io/env');
 local paramsMap = import 'glob-import:environments/*.libsonnet';
