@@ -1,16 +1,16 @@
 
 .tools/jb: JB_VERSION := v0.4.0
-.tools/jb: JB_PLATFORM := $(shell uname |  tr '[:upper:]' '[:lower:]')
+.tools/jb: JB_PLATFORM := $(shell uname |  tr '[:upper:]' '[:lower:]')-$(shell uname -m)
 .tools/jb:
 	mkdir -p .tools
-	curl -sSL -o .tools/jb https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/$(JB_VERSION)/jb-$(JB_PLATFORM)-amd64
+	curl -sSL -o .tools/jb https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/$(JB_VERSION)/jb-$(JB_PLATFORM)
 	chmod +x .tools/jb
 
-.tools/kind: KIND_VERSION := 0.7.0
-.tools/kind: KIND_PLATFORM := $(shell uname)
+.tools/kind: KIND_VERSION := v0.11.1
+.tools/kind: KIND_PLATFORM := $(shell uname)-$(shell uname -m)
 .tools/kind:
 	mkdir -p .tools
-	curl -o $@ -sSL https://kind.sigs.k8s.io/dl/v0.7.0/kind-$(KIND_PLATFORM)-amd64
+	curl -o $@ -sSL https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(KIND_PLATFORM)
 	chmod +x $@
 
 tools: .tools/jb .tools/kind
