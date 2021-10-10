@@ -12,6 +12,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-jsonnet v0.18.0
 	github.com/googleapis/gnostic v0.2.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/jonboulle/clockwork v0.1.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/pkg/errors v0.9.1
