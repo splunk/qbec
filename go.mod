@@ -1,12 +1,10 @@
 module github.com/splunk/qbec
 
-go 1.16
+go 1.17
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2
-	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
-	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.12
 	github.com/go-openapi/strfmt v0.19.8
@@ -29,4 +27,53 @@ require (
 	k8s.io/gengo v0.0.0-20201105220851-a92726d06152
 	k8s.io/kube-openapi v0.0.0-20200410145947-bcb3869e6f29
 	k8s.io/kubectl v0.17.13
+)
+
+require (
+	cloud.google.com/go v0.46.3 // indirect
+	github.com/Azure/go-autorest/autorest v0.9.0 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.5.0 // indirect
+	github.com/Azure/go-autorest/autorest/date v0.1.0 // indirect
+	github.com/Azure/go-autorest/logger v0.1.0 // indirect
+	github.com/Azure/go-autorest/tracing v0.5.0 // indirect
+	github.com/PuerkitoBio/purell v1.1.1 // indirect
+	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
+	github.com/chzyer/logex v1.1.10 // indirect
+	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
+	github.com/go-openapi/analysis v0.19.10 // indirect
+	github.com/go-openapi/errors v0.19.7 // indirect
+	github.com/go-openapi/jsonpointer v0.19.3 // indirect
+	github.com/go-openapi/jsonreference v0.19.4 // indirect
+	github.com/go-openapi/loads v0.19.5 // indirect
+	github.com/go-openapi/runtime v0.19.16 // indirect
+	github.com/go-openapi/swag v0.19.11 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d // indirect
+	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/gophercloud/gophercloud v0.1.0 // indirect
+	github.com/imdario/mergo v0.3.5 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/json-iterator/go v1.1.8 // indirect
+	github.com/mailru/easyjson v0.7.1 // indirect
+	github.com/mitchellh/mapstructure v1.3.2 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
+	go.mongodb.org/mongo-driver v1.4.2 // indirect
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
+	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
+	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd // indirect
+	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	google.golang.org/appengine v1.6.1 // indirect
+	google.golang.org/protobuf v1.23.0 // indirect
+	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
+	k8s.io/klog v1.0.0 // indirect
+	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )
