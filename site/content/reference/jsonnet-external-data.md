@@ -10,7 +10,7 @@ While the design of the importer allows for tight, native integration with tools
 and secret engines like `vault`, the only integration that is currently implemented is `exec` that allows you to
 run external programs and use the standard output they produce as data in jsonnet code.
 
-The [sample data app](https://github.com/splunk/qbec/tree/master/examples/external-data-app) provides a working
+The [sample data app](https://github.com/splunk/qbec/tree/main/examples/external-data-app) provides a working
 implementation of such an importer and demonstrates everything that you need to do to set it up.
 
 The recipe for pulling in additional data from external command output consists of 3 parts:

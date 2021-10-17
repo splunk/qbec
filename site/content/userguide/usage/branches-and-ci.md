@@ -4,14 +4,14 @@ weight: 25
 ---
 
 You have created jsonnet components, a `qbec.yaml` file and declared a dev environment. These are
-good enough for local development and/ or commits to a master branch. Now you are looking for a
+good enough for local development and/ or commits to a main branch. Now you are looking for a
 way to create objects with slightly different names as part of functional tests of your pull request builds.
 
-You want to ensure that each branch build runs in its own "scope" and does not interfere with your master builds.
+You want to ensure that each branch build runs in its own "scope" and does not interfere with your main builds.
 Specifically, you don't want GC to run amok and delete objects that it was never meant to delete.
 
 qbec provides a command-line argument called `--app-tag` that allows you to create a set of objects scoped
-for the application, environment, _and tag_. Leaving out the tag for the master deploy creates its own
+for the application, environment, _and tag_. Leaving out the tag for the main deploy creates its own
 "tagless" scope.
 
 The app-tag feature provides the following facilities:
@@ -55,7 +55,7 @@ You would do the following:
 }
 ```
 
-For your master deploy you would do a `qbec apply env` as usual.
+For your main deploy you would do a `qbec apply env` as usual.
 
 For a branch deploy for the `foo`  branch, you would run the command as `qbec apply --app-tag=foo env`
 
@@ -94,7 +94,7 @@ local makeName = function (baseName) (
 }
 ```
 
-For your master deploy you would do a `qbec apply env` as usual.
+For your main deploy you would do a `qbec apply env` as usual.
 
 For a branch deploy for the `foo`  branch, you would run the command as `qbec apply --app-tag=foo env`
 
