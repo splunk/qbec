@@ -33,6 +33,8 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 	"github.com/splunk/qbec/internal/vmexternals"
+	"github.com/splunk/qbec/vm"
+	"github.com/splunk/qbec/vm/datasource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -263,10 +265,29 @@ func (c Context) AppContext(app *model.App) (AppContext, error) {
 }
 
 // BasicEvalContext returns a basic evaluation context without any app-level machinery.
-func (c Context) BasicEvalContext() eval.BaseContext {
-	return eval.BaseContext{
+func (c Context) BasicEvalContext() (eval.BaseContext, error) {
+	sources, err := c.createDataSources()
+	if err != nil {
+		return eval.BaseContext{}, err
+	}
+	ctx := eval.BaseContext{
 		LibPaths: c.ext.LibPaths,
 		Vars:     c.ext.ToVariableSet(),
 		Verbose:  c.verbose > 1,
 	}
+	if len(sources) > 0 {
+		ctx.DataSources = sources
+	}
+	return ctx, nil
+}
+func (c *Context) createDataSources() ([]datasource.DataSource, error) {
+	if len(c.ext.DataSources) == 0 {
+		return nil, nil
+	}
+	sources, closer, err := vm.CreateDataSources(c.ext.DataSources, vm.ConfigProviderFromVariables(c.ext.ToVariableSet()))
+	RegisterCleanupTask(closer)
+	if err != nil {
+		return nil, err
+	}
+	return sources, nil
 }

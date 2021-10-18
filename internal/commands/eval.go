@@ -39,8 +39,13 @@ func doEval(args []string, config evalCommandConfig) error {
 	var output string
 	var err error
 	var envCtx cmd.EnvContext
+	var basicCtx eval.BaseContext
 	if config.env == "" {
-		output, err = eval.File(args[0], config.BasicEvalContext())
+		basicCtx, err = config.BasicEvalContext()
+		if err != nil {
+			return err
+		}
+		output, err = eval.File(args[0], basicCtx)
 	} else {
 		envCtx, err = config.EnvContext(config.env)
 		if err != nil {
