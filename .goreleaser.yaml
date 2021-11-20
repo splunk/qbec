@@ -16,6 +16,9 @@ builds:
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
   - id: jsonnet-qbec
     binary: jsonnet-qbec
     main: cmd/jsonnet-qbec/main.go
@@ -28,6 +31,9 @@ builds:
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
     format: tar.gz
