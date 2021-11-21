@@ -1,1 +1,1 @@
-{ foo: importstr 'data://simple-ds'}
+{ foo: importstr 'data://simple-ds' }

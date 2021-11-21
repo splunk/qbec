@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,11 @@ func TestEvalWithDataSources(t *testing.T) {
 	require.NoError(t, err)
 
 	a := assert.New(t)
-	a.Equal("bar", data["foo"])
+	if runtime.GOOS == "windows" {
+		a.Equal("-n bar\r\n", data["foo"])
+	} else {
+		a.Equal("bar", data["foo"])
+	}
 }
 
 func TestEvalVars(t *testing.T) {
