@@ -275,15 +275,11 @@ func (c Context) BasicEvalContext() (eval.BaseContext, error) {
 		Vars:     c.ext.ToVariableSet(),
 		Verbose:  c.verbose > 1,
 	}
-	if len(sources) > 0 {
-		ctx.DataSources = sources
-	}
+
+	ctx.DataSources = sources
 	return ctx, nil
 }
 func (c *Context) createDataSources() ([]datasource.DataSource, error) {
-	if len(c.ext.DataSources) == 0 {
-		return nil, nil
-	}
 	sources, closer, err := vm.CreateDataSources(c.ext.DataSources, vm.ConfigProviderFromVariables(c.ext.ToVariableSet()))
 	RegisterCleanupTask(closer)
 	if err != nil {
