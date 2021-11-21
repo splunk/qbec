@@ -41,7 +41,7 @@ func TestEvalBasic(t *testing.T) {
 func TestEvalWithDataSources(t *testing.T) {
 	s := newScaffold(t)
 	defer s.reset()
-	err := s.executeCommand("eval", "misc/simple-ds.jsonnet", "--vm:data-source", "exec://simple-ds?configVar=testKey", "--vm:ext-code",
+	err := s.executeCommand("eval", "misc/simple-ds.xsonnet", "--vm:data-source", "exec://simple-ds?configVar=testKey", "--vm:ext-code",
 		`testKey={ "command": "echo", "args": ["-n", "bar"] }`)
 	require.NoError(t, err)
 	var data map[string]interface{}
