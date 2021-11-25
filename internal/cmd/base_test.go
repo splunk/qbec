@@ -78,7 +78,9 @@ func TestContextCreate(t *testing.T) {
 	a.Equal("minikube", f.K8sContext)
 	a.Equal("ns1", f.K8sNamespace)
 
-	ec := ctx.BasicEvalContext()
+	ec, err := ctx.BasicEvalContext()
+	require.NoError(t, err)
+
 	a.EqualValues([]string{"lib"}, ec.LibPaths)
 	v := ec.Vars
 	a.True(v.HasVar("foo"))

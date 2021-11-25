@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,24 @@ func TestEvalBasic(t *testing.T) {
 	a := assert.New(t)
 	a.Equal("str", data["foo"])
 	a.Equal(true, data["bar"])
+}
+
+func TestEvalWithDataSources(t *testing.T) {
+	s := newScaffold(t)
+	defer s.reset()
+	err := s.executeCommand("eval", "misc/simple-ds.xsonnet", "--vm:data-source", "exec://simple-ds?configVar=testKey", "--vm:ext-code",
+		`testKey={ "command": "echo", "args": ["-n", "bar"] }`)
+	require.NoError(t, err)
+	var data map[string]interface{}
+	err = s.jsonOutput(&data)
+	require.NoError(t, err)
+
+	a := assert.New(t)
+	if runtime.GOOS == "windows" {
+		a.Equal("-n bar\r\n", data["foo"])
+	} else {
+		a.Equal("bar", data["foo"])
+	}
 }
 
 func TestEvalVars(t *testing.T) {
