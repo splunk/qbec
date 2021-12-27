@@ -133,7 +133,7 @@ func (p *linter) Process(path string, f fs.FileInfo) (outErr error) {
 }
 
 func (p *linter) doLint(file string, code []byte) (outErr error) {
-	return p.config.vm.LintCode(file, vm.MakeCode(string(code)))
+	return p.config.vm.LintCode(vm.MakeSnippet(file, string(code)))
 }
 
 func doLint(args []string, config *lintCommandConfig, ac cmd.AppContext) error {

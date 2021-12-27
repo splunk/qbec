@@ -43,6 +43,11 @@ func MakeCode(s string) Code {
 	return Code{code: s}
 }
 
+// MakeSnippet returns a linter Snippet from the supplied filename and the code string
+func MakeSnippet(filename, s string) linter.Snippet {
+	return linter.Snippet{FileName: filename, Code: s}
+}
+
 // Config is the configuration of the VM
 type Config struct {
 	LibPaths    []string                // library paths
@@ -58,7 +63,7 @@ type VM interface {
 	// and returns its output as a JSON string.
 	EvalCode(diagnosticFile string, code Code, v VariableSet) (string, error)
 	// LintCode uses the jsonnet linter to lint the code and returns any errors
-	LintCode(diagnosticFile string, code Code) error
+	LintCode(linter.Snippet) error
 }
 
 // vm is an implementation of VM
@@ -90,19 +95,19 @@ func (v *vm) EvalCode(diagnosticFile string, code Code, vars VariableSet) (strin
 }
 
 // LintCode implements the interface method.
-func (v *vm) LintCode(diagnosticFile string, code Code) (outErr error) {
-	_, err := jsonnet.SnippetToAST(diagnosticFile, code.code)
+func (v *vm) LintCode(snippet linter.Snippet) (outErr error) {
+	_, err := jsonnet.SnippetToAST(snippet.FileName, snippet.Code)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		// see for example https://github.com/google/go-jsonnet/issues/544 where lint panics
 		if r := recover(); r != nil {
-			outErr = fmt.Errorf("%s: linter panic", diagnosticFile)
+			outErr = fmt.Errorf("%s: linter panic", snippet.FileName)
 		}
 	}()
 	var b bytes.Buffer
-	failure := linter.LintSnippet(v.jvm, &b, diagnosticFile, code.code)
+	failure := linter.LintSnippet(v.jvm, &b, []linter.Snippet{snippet})
 	if failure {
 		return fmt.Errorf(b.String())
 	}
@@ -140,9 +145,9 @@ func (v *vmPool) EvalCode(diagnosticFile string, code Code, vars VariableSet) (s
 }
 
 // LintCode implements the interface method.
-func (v *vmPool) LintCode(diagnosticFile string, code Code) error {
+func (v *vmPool) LintCode(snippet linter.Snippet) error {
 	vm := v.pool.Get().(*vm)
-	err := vm.LintCode(diagnosticFile, code)
+	err := vm.LintCode(snippet)
 	v.pool.Put(vm)
 	return err
 }
