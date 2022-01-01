@@ -50,7 +50,7 @@ lint: check-format
 
 .PHONY: license
 license:
-	./licensefix.sh
+	addlicense -c "Splunk Inc." -l apache ./**/*.go
 .PHONY: check-format
 check-format: build
 	@echo "Running qbec fmt -e ..."
