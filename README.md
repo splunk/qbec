@@ -6,6 +6,9 @@
 [![GolangCI](https://golangci.com/badges/github.com/splunk/qbec.svg)](https://golangci.com/r/github.com/splunk/qbec)
 
 
+[![Build Stats](https://buildstats.info/github/chart/splunk/qbec?branch=main)](https://buildstats.info/github/chart/splunk/qbec?branch=main)
+
+
 Qbec (pronounced like the [Canadian province](https://en.wikipedia.org/wiki/Quebec)) is a CLI tool that 
 allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for 
 the target environment in question.
