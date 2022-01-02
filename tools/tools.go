@@ -12,43 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vm_test
+//go:build tools
+
+// tools import packages in order to version lock them in the go.mod
+// Them imports are not actually expected to work. In fact this file can be
+// in a broken state as it is not expected to be part of any builds.
+package tools
 
 import (
-	"fmt"
-
-	"github.com/splunk/qbec/vm"
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/google/addlicense"
 )
-
-func Example() {
-	jvm := vm.New(vm.Config{})
-
-	code := `
-function (str, num) {
-	foo: str,
-	bar: num,
-	baz: std.extVar('baz'),
-}
-`
-	vs := vm.VariableSet{}.
-		WithTopLevelVars(
-			vm.NewVar("str", "hello"),
-			vm.NewCodeVar("num", "10"),
-		).
-		WithVars(
-			vm.NewVar("baz", "world"),
-		)
-
-	out, err := jvm.EvalCode("inline-code.jsonnet", vm.MakeCode(code), vs)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(out)
-	// Output:
-	// {
-	//    "bar": 10,
-	//    "baz": "world",
-	//    "foo": "hello"
-	// }
-}
