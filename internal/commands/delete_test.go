@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"testing"
 
 	"github.com/splunk/qbec/internal/cmd"
@@ -32,7 +33,7 @@ func TestDeleteRemote(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev")
@@ -48,7 +49,7 @@ func TestDeleteRemoteComponentFilter(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "-c", "service2")
@@ -63,7 +64,7 @@ func TestDeleteLocal(t *testing.T) {
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "--local", "-C", "cluster-objects")

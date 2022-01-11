@@ -17,6 +17,7 @@
 package remote
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -46,7 +47,7 @@ type objectLister struct {
 	queryConfig
 }
 
-func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace string) ([]*basicObject, error) {
+func (o *objectLister) listObjectsOfType(ctx context.Context, gvk schema.GroupVersionKind, namespace string) ([]*basicObject, error) {
 	startTime := time.Now()
 	defer func() {
 		if o.verbosity > 0 {
@@ -63,7 +64,7 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 	} else {
 		ls = fmt.Sprintf("%s,%s=%s", ls, model.QbecNames.TagLabel, o.scope.Tag)
 	}
-	list, err := xface.List(metav1.ListOptions{
+	list, err := xface.List(ctx, metav1.ListOptions{
 		LabelSelector: ls,
 	})
 	if err != nil {
@@ -143,7 +144,7 @@ func (e *errorCollection) Error() string {
 	return "list errors:" + strings.Join(lines, "\n\t")
 }
 
-func (o *objectLister) serverObjects(coll *collection) error {
+func (o *objectLister) serverObjects(ctx context.Context, coll *collection) error {
 	var l sync.Mutex
 	var errs errorCollection
 	add := func(gvk schema.GroupVersionKind, ns string, objects []*basicObject, err error) {
@@ -165,7 +166,7 @@ func (o *objectLister) serverObjects(coll *collection) error {
 			}
 			localType := gvk
 			workers = append(workers, func() {
-				ret, err := o.listObjectsOfType(localType, ns)
+				ret, err := o.listObjectsOfType(ctx, localType, ns)
 				add(localType, ns, ret, err)
 			})
 		}

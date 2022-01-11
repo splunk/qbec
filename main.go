@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -45,7 +46,7 @@ func main() {
 	root.SilenceUsage = true
 	root.SilenceErrors = true
 	commands.Setup(root)
-	c, err := root.ExecuteC()
+	c, err := root.ExecuteContextC(context.TODO())
 
 	exit := func(code int) {
 		duration := time.Since(start).Round(time.Second / 100)

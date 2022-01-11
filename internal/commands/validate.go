@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -79,9 +80,9 @@ type validator struct {
 	silent                 bool
 }
 
-func (v *validator) validate(obj model.K8sLocalObject) error {
+func (v *validator) validate(ctx context.Context, obj model.K8sLocalObject) error {
 	name := v.client.DisplayName(obj)
-	schema, err := v.client.ValidatorFor(obj.GroupVersionKind())
+	schema, err := v.client.ValidatorFor(ctx, obj.GroupVersionKind())
 	if err != nil {
 		if err == k8smeta.ErrSchemaNotFound {
 			if !v.silent {
@@ -111,7 +112,7 @@ func (v *validator) validate(obj model.K8sLocalObject) error {
 	return nil
 }
 
-func validateObjects(objs []model.K8sLocalObject, client cmd.KubeClient, parallel int, colors bool, out io.Writer, silent bool) error {
+func validateObjects(ctx context.Context, objs []model.K8sLocalObject, client cmd.KubeClient, parallel int, colors bool, out io.Writer, silent bool) error {
 	v := &validator{
 		w:      &lockWriter{Writer: out},
 		client: client,
@@ -124,7 +125,7 @@ func validateObjects(objs []model.K8sLocalObject, client cmd.KubeClient, paralle
 		v.reset = escReset
 	}
 
-	vErr := runInParallel(objs, v.validate, parallel)
+	vErr := runInParallel(ctx, objs, v.validate, parallel)
 	printStats(v.w, &v.stats)
 
 	switch {
@@ -144,7 +145,7 @@ type validateCommandConfig struct {
 	filterFunc func() (filterParams, error)
 }
 
-func doValidate(args []string, config validateCommandConfig) error {
+func doValidate(ctx context.Context, args []string, config validateCommandConfig) error {
 	if len(args) != 1 {
 		return cmd.NewUsageError("exactly one environment required")
 	}
@@ -164,11 +165,11 @@ func doValidate(args []string, config validateCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
+	objects, err := filteredObjects(ctx, envCtx, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
-	return validateObjects(objects, client, config.parallel, config.Colorize(), config.Stdout(), config.silent)
+	return validateObjects(ctx, objects, client, config.parallel, config.Colorize(), config.Stdout(), config.silent)
 
 }
 
@@ -187,7 +188,7 @@ func newValidateCommand(cp ctxProvider) *cobra.Command {
 	c.Flags().BoolVar(&config.silent, "silent", false, "do not print success messages for every object")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		config.AppContext = cp()
-		return cmd.WrapError(doValidate(args, config))
+		return cmd.WrapError(doValidate(c.Context(), args, config))
 	}
 	return c
 }

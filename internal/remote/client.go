@@ -17,6 +17,7 @@
 package remote
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -123,8 +124,8 @@ func newClient(pool resourceClient, disco discovery.DiscoveryInterface, ns strin
 }
 
 // ValidatorFor returns a validator for the supplied group version kind.
-func (c *Client) ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
-	return c.schema.ValidatorFor(gvk)
+func (c *Client) ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
+	return c.schema.ValidatorFor(ctx, gvk)
 }
 
 // objectNamespace returns the namespace for the specified object. It returns a blank
@@ -199,12 +200,12 @@ func (c *Client) canonicalGroupVersionKind(in schema.GroupVersionKind) (schema.G
 }
 
 // Get returns the remote object matching the supplied metadata as an unstructured bag of attributes.
-func (c *Client) Get(obj model.K8sMeta) (*unstructured.Unstructured, error) {
+func (c *Client) Get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error) {
 	rc, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
 		return nil, err
 	}
-	u, err := rc.Get(obj.GetName(), metav1.GetOptions{})
+	u, err := rc.Get(ctx, obj.GetName(), metav1.GetOptions{})
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			return nil, ErrNotFound
@@ -257,7 +258,7 @@ type Collection interface {
 
 // ListObjects returns all objects for the application and environment for the namespace /cluster scopes
 // and kind filtering indicated by the query configuration.
-func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
+func (c *Client) ListObjects(ctx context.Context, scope ListQueryConfig) (Collection, error) {
 	if scope.KindFilter == nil {
 		scope.KindFilter = func(_ schema.GroupVersionKind) bool { return true }
 	}
@@ -299,7 +300,7 @@ func (c *Client) ListObjects(scope ListQueryConfig) (Collection, error) {
 	}
 	ol := objectLister{qc}
 	coll := newCollection(c.defaultNs, c)
-	if err := ol.serverObjects(coll); err != nil {
+	if err := ol.serverObjects(ctx, coll); err != nil {
 		return nil, err
 	}
 	return coll, nil
@@ -405,7 +406,7 @@ func (c *Client) ensureType(gvk schema.GroupVersionKind, opts SyncOptions) error
 
 // Sync syncs the local object by either creating a new one or patching an existing one.
 // It does not do anything in dry-run mode. It also does not create new objects if the caller has disabled the feature.
-func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
+func (c *Client) Sync(ctx context.Context, original model.K8sLocalObject, opts SyncOptions) (_ *SyncResult, finalError error) {
 	// set up the pristine strategy.
 	var prw pristineReadWriter = qbecPristine{}
 	sensitive := types.HasSensitiveInfo(original.ToUnstructured())
@@ -432,7 +433,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 		}
 	}
 
-	result, err := c.doSync(original, opts, internal)
+	result, err := c.doSync(ctx, original, opts, internal)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +443,7 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 		return result.toSyncResult(), nil
 	}
 	internal.secretDryRun = false
-	_, err = c.doSync(original, opts, internal) // do the real sync
+	_, err = c.doSync(ctx, original, opts, internal) // do the real sync
 	if err != nil {
 		return nil, err
 	}
@@ -450,11 +451,11 @@ func (c *Client) Sync(original model.K8sLocalObject, opts SyncOptions) (_ *SyncR
 	return result.toSyncResult(), err
 }
 
-func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
+func (c *Client) doSync(ctx context.Context, original model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
 	var remObj *unstructured.Unstructured
 	var objErr error
 	if original.GetName() != "" {
-		remObj, objErr = c.Get(original)
+		remObj, objErr = c.Get(ctx, original)
 	}
 	switch {
 	// empty name, always create
@@ -487,7 +488,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 	var result *updateResult
 	var err error
 	if remObj == nil {
-		result, err = c.maybeCreate(obj, opts)
+		result, err = c.maybeCreate(ctx, obj, opts)
 	} else {
 		if internal.secretDryRun {
 			ann := remObj.GetAnnotations()
@@ -499,7 +500,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 			c, _ := types.HideSensitiveInfo(remObj)
 			remObj = c
 		}
-		result, err = c.maybeUpdate(obj, remObj, opts)
+		result, err = c.maybeUpdate(ctx, obj, remObj, opts)
 	}
 	if err != nil {
 		return nil, err
@@ -520,7 +521,7 @@ func (c *Client) doSync(original model.K8sLocalObject, opts SyncOptions, interna
 }
 
 // Delete delete the supplied object if it exists. It does not do anything in dry-run mode.
-func (c *Client) Delete(obj model.K8sMeta, opts DeleteOptions) (_ *SyncResult, finalError error) {
+func (c *Client) Delete(ctx context.Context, obj model.K8sMeta, opts DeleteOptions) (_ *SyncResult, finalError error) {
 	if opts.DisableDeleteFn(obj) {
 		upr := &updateResult{
 			SkipReason: "deletion disabled due to user request",
@@ -545,7 +546,7 @@ func (c *Client) Delete(obj model.K8sMeta, opts DeleteOptions) (_ *SyncResult, f
 	}
 
 	pp := metav1.DeletePropagationForeground
-	err = ri.Delete(obj.GetName(), &metav1.DeleteOptions{PropagationPolicy: &pp})
+	err = ri.Delete(ctx, obj.GetName(), metav1.DeleteOptions{PropagationPolicy: &pp})
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			ret.Type = SyncSkip
@@ -615,7 +616,7 @@ func (c *Client) resourceInterfaceWithDefaultNs(gvk schema.GroupVersionKind, nam
 	return c.ResourceInterface(gvk, namespace)
 }
 
-func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updateResult, error) {
+func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts SyncOptions) (*updateResult, error) {
 	if opts.DisableCreate {
 		return &updateResult{
 			SkipReason: "creation disabled due to user request",
@@ -637,7 +638,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource interface")
 	}
-	out, err := ri.Create(obj.ToUnstructured(), metav1.CreateOptions{})
+	out, err := ri.Create(ctx, obj.ToUnstructured(), metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "create object")
 	}
@@ -647,7 +648,7 @@ func (c *Client) maybeCreate(obj model.K8sLocalObject, opts SyncOptions) (*updat
 	return result, nil
 }
 
-func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
+func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
 	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
 		return &updateResult{
 			SkipReason: "update disabled due to user request",
@@ -689,7 +690,7 @@ func (c *Client) maybeUpdate(obj model.K8sLocalObject, remObj *unstructured.Unst
 	if opts.DryRun {
 		result, err = p.getPatchContents(remObj, obj)
 	} else {
-		result, err = p.patch(remObj, obj)
+		result, err = p.patch(ctx, remObj, obj)
 	}
 	return result, err
 }

@@ -18,6 +18,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -60,16 +61,16 @@ type integrationScaffold struct {
 
 func newNamespace(t *testing.T) (name string, reset func()) {
 	once.Do(func() { initialize(t) })
-	ns, err := coreClient.Namespaces().Create(&v1.Namespace{
+	ns, err := coreClient.Namespaces().Create(context.TODO(), &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "qbec-test-",
 		},
 		Spec: v1.NamespaceSpec{},
-	})
+	}, metav1.CreateOptions{})
 	require.NoError(t, err)
 	return ns.GetName(), func() {
 		pp := metav1.DeletePropagationForeground
-		err := coreClient.Namespaces().Delete(ns.GetName(), &metav1.DeleteOptions{PropagationPolicy: &pp})
+		err := coreClient.Namespaces().Delete(context.TODO(), ns.GetName(), metav1.DeleteOptions{PropagationPolicy: &pp})
 		if err != nil {
 			fmt.Println("Error deleting namespace", ns.GetName(), err)
 		}

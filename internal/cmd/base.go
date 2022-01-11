@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -44,11 +45,11 @@ import (
 type KubeClient interface {
 	DisplayName(o model.K8sMeta) string
 	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
-	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
-	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
-	Delete(model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
+	Get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error)
+	Sync(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
+	ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error)
+	ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error)
+	Delete(context.Context, model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
 	ObjectKey(obj model.K8sMeta) string
 	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 }

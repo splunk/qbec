@@ -17,6 +17,7 @@
 package remote
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -206,7 +207,7 @@ func (p *patcher) getPatchContents(serverObj *unstructured.Unstructured, desired
 	return newPatchResult("struct definition", types.StrategicMergePatchType, patch), nil
 }
 
-func (p *patcher) patchSimple(serverObj *unstructured.Unstructured, desired model.K8sObject) (result *updateResult, err error) {
+func (p *patcher) patchSimple(ctx context.Context, serverObj *unstructured.Unstructured, desired model.K8sObject) (result *updateResult, err error) {
 	result, err = p.getPatchContents(serverObj, desired)
 	if err != nil {
 		return
@@ -219,16 +220,16 @@ func (p *patcher) patchSimple(serverObj *unstructured.Unstructured, desired mode
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error getting update interface for %v", gvk))
 	}
-	_, err = ri.Patch(serverObj.GetName(), result.Kind, result.patch, metav1.PatchOptions{})
+	_, err = ri.Patch(ctx, serverObj.GetName(), result.Kind, result.patch, metav1.PatchOptions{})
 	return result, err
 }
 
-func (p *patcher) patch(serverObj *unstructured.Unstructured, desired model.K8sObject) (*updateResult, error) {
+func (p *patcher) patch(ctx context.Context, serverObj *unstructured.Unstructured, desired model.K8sObject) (*updateResult, error) {
 	gvk := serverObj.GroupVersionKind()
 	namespace := serverObj.GetNamespace()
 	name := serverObj.GetName()
 	var getErr error
-	result, err := p.patchSimple(serverObj, desired)
+	result, err := p.patchSimple(ctx, serverObj, desired)
 	for i := 1; i <= maxPatchRetry && apiErrors.IsConflict(err); i++ {
 		if i > triesBeforeBackOff {
 			p.backOff.Sleep(backOffPeriod)
@@ -238,11 +239,11 @@ func (p *patcher) patch(serverObj *unstructured.Unstructured, desired model.K8sO
 		if err != nil {
 			return nil, err
 		}
-		serverObj, getErr = ri.Get(name, metav1.GetOptions{})
+		serverObj, getErr = ri.Get(ctx, name, metav1.GetOptions{})
 		if getErr != nil {
 			return nil, getErr
 		}
-		result, err = p.patchSimple(serverObj, desired)
+		result, err = p.patchSimple(ctx, serverObj, desired)
 	}
 	return result, err
 }

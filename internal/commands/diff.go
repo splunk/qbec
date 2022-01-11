@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sort"
@@ -255,14 +256,14 @@ func (d *differ) writeDiff(name string, left, right namedUn) (finalErr error) {
 // diff diffs the supplied object with its remote version and writes output to its writer.
 // The local version is found by downcasting the supplied metadata to a local object.
 // This cast should succeed for all but the deletion use case.
-func (d *differ) diff(ob model.K8sMeta) error {
+func (d *differ) diff(ctx context.Context, ob model.K8sMeta) error {
 	name, leftName, rightName := d.names(ob)
 
 	var remoteObject *unstructured.Unstructured
 	var err error
 
 	if ob.GetName() != "" {
-		remoteObject, err = d.client.Get(ob)
+		remoteObject, err = d.client.Get(ctx, ob)
 		if err != nil && err != remote.ErrNotFound && err.Error() != "server type not found" { // *sigh*
 			d.stats.errors(name)
 			sio.Errorf("error fetching %s, %v\n", name, err)
@@ -296,8 +297,8 @@ func (d *differ) diff(ob model.K8sMeta) error {
 }
 
 // diffLocal adapts the diff method to run as a parallel worker.
-func (d *differ) diffLocal(ob model.K8sLocalObject) error {
-	return d.diff(ob)
+func (d *differ) diffLocal(ctx context.Context, ob model.K8sLocalObject) error {
+	return d.diff(ctx, ob)
 }
 
 type diffCommandConfig struct {
@@ -311,7 +312,7 @@ type diffCommandConfig struct {
 	exitNonZero   bool
 }
 
-func doDiff(args []string, config diffCommandConfig) error {
+func doDiff(ctx context.Context, args []string, config diffCommandConfig) error {
 	if len(args) != 1 {
 		return cmd.NewUsageError("exactly one environment required")
 	}
@@ -335,7 +336,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
+	objects, err := filteredObjects(ctx, envCtx, client.ObjectKey, fp)
 	if err != nil {
 		return err
 	}
@@ -343,7 +344,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 	var lister lister = &stubLister{}
 	var retainObjects []model.K8sLocalObject
 	if config.showDeletions {
-		lister, retainObjects, err = startRemoteList(envCtx, client, fp)
+		lister, retainObjects, err = startRemoteList(ctx, envCtx, client, fp)
 		if err != nil {
 			return err
 		}
@@ -369,7 +370,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 		upPolicy:    newUpdatePolicy(),
 		delPolicy:   newDeletePolicy(client.IsNamespaced, config.App().DefaultNamespace(env)),
 	}
-	dErr := runInParallel(objects, d.diffLocal, config.parallel)
+	dErr := runInParallel(ctx, objects, d.diffLocal, config.parallel)
 
 	var listErr error
 	if dErr == nil {
@@ -378,7 +379,7 @@ func doDiff(args []string, config diffCommandConfig) error {
 			listErr = err
 		} else {
 			for _, ob := range extra {
-				if err := d.diff(ob); err != nil {
+				if err := d.diff(ctx, ob); err != nil {
 					return err
 				}
 			}
@@ -428,7 +429,7 @@ func newDiffCommand(cp ctxProvider) *cobra.Command {
 
 	c.RunE = func(c *cobra.Command, args []string) error {
 		config.AppContext = cp()
-		return cmd.WrapError(doDiff(args, config))
+		return cmd.WrapError(doDiff(c.Context(), args, config))
 	}
 	return c
 }
