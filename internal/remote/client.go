@@ -248,6 +248,7 @@ type ListQueryConfig struct {
 	KindFilter         GVKFilter // filters for group version kind
 	Concurrency        int       // concurrent queries to execute
 	ClusterScopedLists bool      // perform list queries across namespaces when multiple namespaces in picture
+	Limit              int64     // chunk limit for query
 }
 
 // Collection represents a set of k8s objects with the ability to remove a subset of objects from it.

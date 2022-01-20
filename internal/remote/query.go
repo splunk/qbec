@@ -31,7 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -64,8 +66,20 @@ func (o *objectLister) listObjectsOfType(ctx context.Context, gvk schema.GroupVe
 	} else {
 		ls = fmt.Sprintf("%s,%s=%s", ls, model.QbecNames.TagLabel, o.scope.Tag)
 	}
-	list, err := xface.List(ctx, metav1.ListOptions{
+	initialOpts := &metav1.ListOptions{
 		LabelSelector: ls,
+		Limit:         o.scope.Limit,
+	}
+	var list = &unstructured.UnstructuredList{}
+	i := int64(0)
+	err = resource.FollowContinue(initialOpts, func(options metav1.ListOptions) (runtime.Object, error) {
+		l, err := xface.List(ctx, options)
+		if err != nil {
+			return nil, err
+		}
+		i++
+		list.Items = append(list.Items, l.Items...)
+		return l, nil
 	})
 	if err != nil {
 		if apiErrors.IsForbidden(err) {
@@ -74,6 +88,7 @@ func (o *objectLister) listObjectsOfType(ctx context.Context, gvk schema.GroupVe
 		}
 		return nil, err
 	}
+
 	objs, err := meta.ExtractList(list)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("extract items for %s", gvk))

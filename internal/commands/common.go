@@ -150,6 +150,7 @@ func startRemoteList(ctx context.Context, envCtx cmd.EnvContext, client cmd.Kube
 		KindFilter:         fp.GVKFilter,
 		ListQueryScope:     scope,
 		ClusterScopedLists: clusterScopedLists,
+		Limit:              envCtx.ListPageSize(),
 	})
 	return lister, retainObjects, nil
 }

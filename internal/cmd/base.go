@@ -89,6 +89,7 @@ type Context struct {
 	stderr          io.Writer                    // standard error
 	strictVars      bool                         // strict vars
 	profiler        *profiler                    // profiler
+	listPageSize    int                          // page size for list operations
 	app             *model.App                   // app loaded from file
 }
 
@@ -184,6 +185,9 @@ func (c Context) RootDir() string { return c.root }
 
 // AppTag returns the app tag specified
 func (c Context) AppTag() string { return c.appTag }
+
+// ListPageSize returns the page size for kubernetes list operations
+func (c Context) ListPageSize() int64 { return c.remote.ListPageSize }
 
 // EnvFiles returns additional environment files and URLs
 func (c Context) EnvFiles() []string {
