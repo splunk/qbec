@@ -186,7 +186,7 @@ func (c Context) RootDir() string { return c.root }
 // AppTag returns the app tag specified
 func (c Context) AppTag() string { return c.appTag }
 
-// ListPageSize returns the app tag specified
+// ListPageSize returns the page size for kubernetes list operations
 func (c Context) ListPageSize() int64 { return c.remote.ListPageSize }
 
 // EnvFiles returns additional environment files and URLs
