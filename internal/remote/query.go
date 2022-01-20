@@ -73,7 +73,6 @@ func (o *objectLister) listObjectsOfType(ctx context.Context, gvk schema.GroupVe
 	var list = &unstructured.UnstructuredList{}
 	i := int64(0)
 	err = resource.FollowContinue(initialOpts, func(options metav1.ListOptions) (runtime.Object, error) {
-		sio.Debugf("fetching list chunk %d-%d for %s", i*options.Limit+1, i*options.Limit+options.Limit, gvk)
 		l, err := xface.List(ctx, options)
 		if err != nil {
 			return nil, err
