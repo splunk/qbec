@@ -147,7 +147,7 @@ type validateCommandConfig struct {
 
 func doValidate(ctx context.Context, args []string, config validateCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %v", args))
 	}
 	env := args[0]
 	if env == model.Baseline {

@@ -129,7 +129,7 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 
 func doShow(ctx context.Context, args []string, config showCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %v", args))
 	}
 	env := args[0]
 	format := config.format

@@ -314,7 +314,7 @@ type diffCommandConfig struct {
 
 func doDiff(ctx context.Context, args []string, config diffCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %v", args))
 	}
 
 	env := args[0]
