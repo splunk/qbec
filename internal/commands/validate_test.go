@@ -93,9 +93,18 @@ func TestValidateNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required, but provided: [dev prod]", err.Error())
+				a.Equal("exactly one environment required, but provided: [\"dev\" \"prod\"]", err.Error())
 			},
 		},
+		{
+      name: "empty string env",
+      args: []string{"apply", ""},
+      asserter: func(s *scaffold, err error) {
+        a := assert.New(s.t)
+        a.False(cmd.IsUsageError(err))
+        a.Equal("invalid environment \"\"", err.Error())
+      },
+    },
 		{
 			name: "bad env",
 			args: []string{"validate", "foo"},

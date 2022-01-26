@@ -129,7 +129,7 @@ type paramListCommandConfig struct {
 
 func doParamList(args []string, config paramListCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %v", args))
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	env := args[0]
 	if env != model.Baseline {
