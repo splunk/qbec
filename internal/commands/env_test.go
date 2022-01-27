@@ -164,6 +164,15 @@ func TestEnvNegative(t *testing.T) {
 			},
 		},
 		{
+      name: "empty string env",
+      args: []string{"apply", ""},
+      asserter: func(s *scaffold, err error) {
+        a := assert.New(s.t)
+        a.False(cmd.IsUsageError(err))
+        a.Equal("invalid environment \"\"", err.Error())
+      },
+    },
+		{
 			name: "vars bad format",
 			args: []string{"env", "vars", "-o", "table", "dev", "--k8s:kubeconfig=kubeconfig.yaml"},
 			asserter: func(s *scaffold, err error) {
