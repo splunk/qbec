@@ -138,7 +138,7 @@ type envVarsCommandConfig struct {
 
 func doEnvVars(args []string, config envVarsCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required: %v", args))
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	if _, ok := config.App().Environments()[args[0]]; !ok {
 		return fmt.Errorf("invalid environment: %q", args[0])
