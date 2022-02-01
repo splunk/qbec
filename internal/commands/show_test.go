@@ -266,14 +266,14 @@ func TestShowNegative(t *testing.T) {
 			},
 		},
 		{
-      name: "empty string env",
-      args: []string{"apply", ""},
-      asserter: func(s *scaffold, err error) {
-        a := assert.New(s.t)
-        a.False(cmd.IsUsageError(err))
-        a.Equal("invalid environment \"\"", err.Error())
-      },
-    },
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
+			},
+		},
 		{
 			name: "bad env",
 			args: []string{"show", "foo"},

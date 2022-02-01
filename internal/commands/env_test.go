@@ -164,14 +164,14 @@ func TestEnvNegative(t *testing.T) {
 			},
 		},
 		{
-      name: "empty string env",
-      args: []string{"apply", ""},
-      asserter: func(s *scaffold, err error) {
-        a := assert.New(s.t)
-        a.False(cmd.IsUsageError(err))
-        a.Equal("invalid environment \"\"", err.Error())
-      },
-    },
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
+			},
+		},
 		{
 			name: "vars bad format",
 			args: []string{"env", "vars", "-o", "table", "dev", "--k8s:kubeconfig=kubeconfig.yaml"},
@@ -209,14 +209,14 @@ func TestEnvNegative(t *testing.T) {
 			},
 		},
 		{
-      name: "empty string env",
-      args: []string{"apply", ""},
-      asserter: func(s *scaffold, err error) {
-        a := assert.New(s.t)
-        a.False(cmd.IsUsageError(err))
-        a.Equal("invalid environment \"\"", err.Error())
-      },
-    },
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
+			},
+		},
 		{
 			name: "props bad format",
 			args: []string{"env", "props", "-o", "table", "dev"},
