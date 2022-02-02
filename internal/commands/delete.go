@@ -37,7 +37,7 @@ type deleteCommandConfig struct {
 
 func doDelete(ctx context.Context, args []string, config deleteCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	env := args[0]
 	if env == model.Baseline { // cannot apply for the baseline environment
