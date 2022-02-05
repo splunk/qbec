@@ -1,6 +1,23 @@
 Changelog
 ---
 
+## v0.15.0 (Feb 4, 2022)
+
+* `apply` now waits for `batch/job` objects (thanks @kvaps)
+* Improved error message includes helpful hints on operations requiring exactly one qbec environment as input (thanks @kalhanreddy)
+* `eval` now supports inline datasources without the need to specify a qbec environment
+* Kubernetes list operations now use a page size of `1000` by default. `--k8s:list-page-size` can be used to adjust the size
+  Setting this value too low can impact performance when dealing with large lists
+* Update jsonnet library to `v0.18.0`, k8s client libs to `v1.23.1` and golang version to `1.17`
+* Misc. housekeeping improvements
+
+Backward incompatibilities:
+* `apply` now waits for `batch/job` objects. To disable waiting for all objects `--wait-all=false`
+  can be used.
+* Adjustments to the internal behaviour around listing Kubernetes objects. Use `--k8s:list-page-size`
+  with appropriate values.
+* Any corner-case behavior from updating k8s client, jsonnet libraries or golang version
+
 ## v0.14.8 (Sep 11, 2021)
 
 * Expose data source creation in the VM implementation for public use
@@ -24,7 +41,7 @@ Changelog
 
 * `fmt` and `alpha lint` commands now accept exclusion patterns using which vendored files, intentionally bad test
    data etc. can be filtered out. Pattern matching of exlcudes is done using the [doublestar library](https://github.com/bmatcuk/doublestar).
-*  `qbec.yaml` can now contain examples of data source outputs. These are returned by the mock linter implementation 
+*  `qbec.yaml` can now contain examples of data source outputs. These are returned by the mock linter implementation
    when data source imports are found. This allows you to correctly lint files that use data source imports.
 
 ## v0.14.3 (Jun 27, 2021)
@@ -52,7 +69,7 @@ Changelog
 
 ## v0.14.1 (Mar 2, 2021)
 
-There are no changes in this release. The previous release used a jsonnet version 
+There are no changes in this release. The previous release used a jsonnet version
 [that had a regression](https://github.com/google/go-jsonnet/issues/515) in the `std.manifestJson[Ex]` functions.
 This version [uses a commit](https://github.com/google/go-jsonnet/commit/9b6cbef4caf7ceeff7ab2086d80df7dd63466556)
 that fixes this issue.
@@ -64,31 +81,31 @@ that fixes this issue.
 * qbec now allows data to be imported from external data sources. The current implementation allows you to run
   a command whose standard output may be included in your jsonnet component code.
   The [reference page](https://qbec.io/reference/jsonnet-external-data/) has more details.
-  At this point, the `expandHelmTemplate` native function should be considered deprecated and will be removed 
-  in a future release. There is nothing that this function could do that cannot be accomplished using an 
+  At this point, the `expandHelmTemplate` native function should be considered deprecated and will be removed
+  in a future release. There is nothing that this function could do that cannot be accomplished using an
   external data source.
-  
+
 * A new command `qbec eval` can now evaluate a single jsonnet file similar to `jsonnet eval`. This can also
   be run in the context of a qbec environment to be able to access environment specific properties.
   See `qbec eval --help` for more details. This deprecates the `jsonnet-qbec` executable that is packaged in the
   release. This executable may no longer be packaged in a future release.
 
-* qbec now allows computed variables to be defined in qbec.yaml. This works especially well with external 
+* qbec now allows computed variables to be defined in qbec.yaml. This works especially well with external
   data sources and also allow you to cache complex calculations.
   The [reference page for qbec.yaml](https://qbec.io/reference/qbec-yaml/) has more details.
 
 * Environment files for a qbec environment may now be specified as a glob pattern. qbec will load all matching
   files in sorted alphabetical order.
-  
+
 * Miscellaneous improvements and optimizations for jsonnet evaluation. Most users, unless they are generating
   hundreds of objects or using complex jsonnet libraries will not see any significant performance improvements.
-  
+
 ### Incompatibilities
 
 * Preprocessors introduced in `v0.13.4` have now been removed. These had awkward semantics and were honestly
   not ready for prime-time. No one was probably using this. The replacement functionality is more general
-  and allows you to define computed vaiables in qbec.yaml. 
- 
+  and allows you to define computed vaiables in qbec.yaml.
+
 * Qbec no longer sets the `qbec.io/component` variable when evaluating components. This was also introduced in
   `v0.13.4` and had dodgy semantics. There is no replacement for this functionality. If you started using this
   and are now stuck, please raise an issue where we can discuss this.
@@ -141,7 +158,7 @@ This release has no backwards-incompatible changes.
 * Update jsonnet library to `v0.17.0` and k8s client libs to `v1.17.13`
 * Add json formatter to the `qbec alpha fmt` command
 * Fix diff commands to show skipped updates and deletes based on qbec directives specified for existing objects.
-  This will no longer show spurious diffs for deletes and updates if those have been turned off. 
+  This will no longer show spurious diffs for deletes and updates if those have been turned off.
 * Use per-namespace queries by default when multiple namespaces are present, allow using cluster-scoped queries
   using an opt-in flag.
 * The `--env-file` option now allows http(s) URLs in addition to local files. In addition, the `envFiles` attribute
@@ -161,7 +178,7 @@ This release is incompatible from previous minor versions in the following ways:
 * The command line syntax of the `qbec alpha fmt` command has changed in incompatible ways. Instead of options like
  `--jsonnet`, `--yaml` etc. you need to specify options as `--type=jsonnet`, `--type=yaml` and so on.
 * YAML formatter now follows `prettier` conventions requiring arrays to be indented under the parent key.
-* Any corner-case behavior from updating k8s client and jsonnet libraries.  
+* Any corner-case behavior from updating k8s client and jsonnet libraries.
 
 ## v0.12.5 (Oct 2, 2020)
 
@@ -203,7 +220,7 @@ inadvertent incompatibilities introduced by the jsonnet library upgrade.
 
 * Add `alpha fmt` command to format jsonnet/ libsonnet files and, optionally, yaml files (thanks to @harsimranmaan).
   This also has facilities to only check if all files are well-formatted. Type `qbec alpha fmt --help` for details.
-  
+
 ## v0.11.2 (May 27, 2020)
 
 * Fix regression in previous release where `LD_FLAGS` were not set correctly causing qbec to report a wrong version.
@@ -221,7 +238,7 @@ Please avoid using `v0.11.1` as a result.
 * Add ability to force namespace to the current value in the kubeconfig using the keywork `__current__`. This can
   only be done only if the context is also similarly forced.
 * Reduce verbosity of `apply` output. By default, dry-run works as before and actual apply only shows a single
-  line per object added/ updated/ deleted. This behavior can be explicitly controlled by the `--show-details` flag 
+  line per object added/ updated/ deleted. This behavior can be explicitly controlled by the `--show-details` flag
   for the apply command.
 
 ## v0.11.0 (Mar 26, 2020)
@@ -236,23 +253,23 @@ inadvertent incompatibilities introduced by the jsonnet library upgrade.
 ## v0.10.5 (Feb 1, 2020)
 
 * change alogirthm of merging environment properties with base properties to not use a merge patch. This means that
-  `null`s in property values will be retained. 
+  `null`s in property values will be retained.
 
 ## v0.10.4 (Jan 21, 2020)
 
-* no code changes in this release. This version will be the first to be published as a brew tap thanks to 
+* no code changes in this release. This version will be the first to be published as a brew tap thanks to
   @harsimranmaan and @aaqel-s
 
 ## v0.10.3 (Dec 19, 2019)
 
 * when returning environment properties introduced in the previous release, first
-  apply a JSON merge-patch on to base properties before returning it. 
+  apply a JSON merge-patch on to base properties before returning it.
 
 ## v0.10.2 (Dec 11, 2019)
 
 * Provide the ability to load environment definitions from external files in addition to defining them inline.
 * Add the ability to associate a properties object with every environment and also define baseline properties.
-  These are exposed as the `qbec.io/envProperties` external variable. 
+  These are exposed as the `qbec.io/envProperties` external variable.
 
 The test app under `examples` demonstrates both of these features.
 
@@ -267,8 +284,8 @@ and labels were being reported as an error, when they shouldn't have.
 
 * better support for custom types that are created lazily, for example, by an operator.
   * qbec now waits for custom types to be available in discovery for up to 2 minutes before applying their instances.
-* [support for annotations](https://qbec.io/userguide/usage/directives/) to control qbec processing. This includes the 
-  ability to lock objects for updates and deletes, and to specify a custom apply order for objects. This includes 
+* [support for annotations](https://qbec.io/userguide/usage/directives/) to control qbec processing. This includes the
+  ability to lock objects for updates and deletes, and to specify a custom apply order for objects. This includes
   standard rules to ensure that the default and system namespaces are never deleted.
 * various internal CI and release process fixes (thanks @harsimranmaan)
 
@@ -285,7 +302,7 @@ Previously metadata having non-string values were dropped in their entirety.
 * add `--force:*` options to be able to override K8s context and namespace from command line (thanks @abhide).
   This allows for new use-cases like in-cluster applies. `qbec options` shows the available options and special values.
   Note that using these options suppresses qbec safety checks. Use with care.
-* add `QBEC_YES` environment variable as default for the `--yes` option. 
+* add `QBEC_YES` environment variable as default for the `--yes` option.
   Provide better messages when a non-interactive build needs confirmation (thanks @harsimranmaan)
 * update `client-go` version to `kubernetes-1.15.5`. Add client-go version to the list of versions displayed by the
   `qbec version` command.
@@ -326,14 +343,14 @@ library upgrade.
   from evaliating jsonnet components and has the ability to decorate it, typically with additional annotations
   and labels. This allows common metadata to be set in one place.
 * add a `--clean` option to the `show` command that strips qbec metadata from the output. This reduces the noise
-  when inspecting objects for debugging. Introduce a standard external variable called `qbec.io/cleanMode` that is 
+  when inspecting objects for debugging. Introduce a standard external variable called `qbec.io/cleanMode` that is
   `off` by default for all commands and only turned `on` for the `show --clean` command.
 * the above means that the post processor can use the value of the external variable to add annotations or not.
   This provides for a "real clean" experience.
 
 ## v0.7.2 (Jul 19, 2019)
 
-* add a `--wait` option to the `apply` command to automatically wait for deployments, daemonsets and 
+* add a `--wait` option to the `apply` command to automatically wait for deployments, daemonsets and
   statefulsets to be rolled out before the command exits.
 
 ## v0.7.1 (Jul 7, 2019)
@@ -341,8 +358,8 @@ library upgrade.
 * update `jsonnet` version to `v0.13`
 * add `env list` and `env vars` command to enable arbitrary scripts to iterate over and get cluster information
   from qbec environments.
-* add [support for transient objects](https://github.com/splunk/qbec/commit/78e778b19e5761c2a530917bd5bba9b7abb6fabf) 
-  that do not have a name but have `generateName` set. Always create such objects and garbage collect the versions of 
+* add [support for transient objects](https://github.com/splunk/qbec/commit/78e778b19e5761c2a530917bd5bba9b7abb6fabf)
+  that do not have a name but have `generateName` set. Always create such objects and garbage collect the versions of
   the object created in previous runs.
 
 ## v0.7.0 (Jun 20, 2019)
