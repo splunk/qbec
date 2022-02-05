@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.15.1 (Feb 4, 2022)
+
+* Fix info in `qbec version`
+
 ## v0.15.0 (Feb 4, 2022)
 
 * `apply` now waits for `batch/job` objects (thanks @kvaps)
