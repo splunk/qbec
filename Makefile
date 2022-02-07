@@ -76,8 +76,7 @@ install-ci:
 	# curl -sSL -o helm.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-${HELM_PLATFORM}-amd64.tar.gz
 	# tar -xvzf helm.tar.gz
 	# mv ${HELM_PLATFORM}-amd64/helm $(GOPATH)/bin/
-	go install github.com/google/addlicense
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.44.0
 
 .PHONY: create-cluster
 create-cluster:	.tools/kind
@@ -85,7 +84,8 @@ create-cluster:	.tools/kind
 
 .PHONY: install
 install:
-	go get golang.org/x/lint/golint
+	go install golang.org/x/lint/golint@v0.0.0-20210508222113-6edffad5e616
+	go install github.com/google/addlicense@v1.0.0
 	@echo for building docs, manually install hugo for your OS from: https://github.com/gohugoio/hugo/releases
 
 .PHONY: site
