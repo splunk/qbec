@@ -214,3 +214,40 @@ func TestIntegrationDiffPolicies(t *testing.T) {
 		a.EqualValues(1, len(skipped["deletions"].([]interface{})))
 	})
 }
+
+func TestIntegrationNamespaceFilters(t *testing.T) {
+	dir := "testdata/projects/multi-ns"
+
+	t.Run("show-first", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "-p", "first", "local")
+		require.NoError(t, err)
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+ConfigMap\s+first-cm`))
+		s.assertOutputLineNoMatch(regexp.MustCompile(`second`))
+	})
+
+	t.Run("show-second-and-cluster", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "-p", "second", "--include-cluster-objects", "local")
+		require.NoError(t, err)
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+Namespace\s+first`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Namespace\s+second`))
+		s.assertOutputLineNoMatch(regexp.MustCompile(`^first\s+ConfigMap`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+ConfigMap\s+second-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Secret\s+second-secret`))
+	})
+
+	t.Run("only-cluster-filter", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "--include-cluster-objects=false", "local")
+		require.NoError(t, err)
+		s.assertOutputLineNoMatch(regexp.MustCompile(`Namespace`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+ConfigMap\s+first-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+ConfigMap\s+second-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Secret\s+second-secret`))
+	})
+
+}

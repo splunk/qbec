@@ -1,0 +1,12 @@
+---
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: multi-ns
+spec:
+  libPaths:
+    - lib
+  environments:
+    local:
+      context: kind-kind
+      defaultNamespace: second
