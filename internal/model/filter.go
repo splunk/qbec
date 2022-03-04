@@ -85,6 +85,15 @@ func NewComponentFilter(includes, excludes []string) (Filter, error) {
 	return bf, nil
 }
 
+// NewNamespaceFilter returns a filter for namespace names.
+func NewNamespaceFilter(includes, excludes []string) (Filter, error) {
+	nf, err := newBaseFilter("namespaces", includes, excludes, nil)
+	if err != nil {
+		return nil, err
+	}
+	return nf, nil
+}
+
 // NewKindFilter returns a filter for object kinds that ignores case and takes
 // pluralization into account.
 func NewKindFilter(includes, excludes []string) (Filter, error) {

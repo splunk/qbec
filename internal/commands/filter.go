@@ -29,10 +29,12 @@ import (
 )
 
 type filterParams struct {
-	includes        []string
-	excludes        []string
-	kindFilter      model.Filter
-	componentFilter model.Filter
+	includes              []string
+	excludes              []string
+	includeClusterObjects bool
+	kindFilter            model.Filter
+	componentFilter       model.Filter
+	namespaceFilter       model.Filter
 }
 
 func (f filterParams) GVKFilter(gvk schema.GroupVersionKind) bool {
@@ -49,14 +51,18 @@ func (f filterParams) Includes(o model.K8sQbecMeta) bool {
 	return true
 }
 
-func addFilterParams(c *cobra.Command, includeKindFilters bool) func() (filterParams, error) {
-	var includes, excludes, kindIncludes, kindExcludes []string
+func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (filterParams, error) {
+	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes []string
+	var includeClusterScopedObjects bool
 
 	c.Flags().StringArrayVarP(&includes, "component", "c", nil, "include just this component")
 	c.Flags().StringArrayVarP(&excludes, "exclude-component", "C", nil, "exclude this component")
-	if includeKindFilters {
+	if includeAllFilters {
 		c.Flags().StringArrayVarP(&kindIncludes, "kind", "k", nil, "include objects with this kind")
 		c.Flags().StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
+		c.Flags().StringArrayVarP(&nsIncludes, "include-namespace", "p", nil, "include objects with this namespace")
+		c.Flags().StringArrayVarP(&nsExcludes, "exclude-namespace", "P", nil, "exclude objects with this namespace")
+		c.Flags().BoolVar(&includeClusterScopedObjects, "include-cluster-objects", true, "include cluster scoped objects, false by default when namespace filters present")
 	}
 	return func() (filterParams, error) {
 		of, err := model.NewKindFilter(kindIncludes, kindExcludes)
@@ -67,11 +73,22 @@ func addFilterParams(c *cobra.Command, includeKindFilters bool) func() (filterPa
 		if err != nil {
 			return filterParams{}, cmd.NewUsageError(err.Error())
 		}
+		nf, err := model.NewNamespaceFilter(nsIncludes, nsExcludes)
+		if err != nil {
+			return filterParams{}, cmd.NewUsageError(err.Error())
+		}
+		if nf.HasFilters() {
+			if !c.Flags().Changed("include-cluster-objects") {
+				includeClusterScopedObjects = false
+			}
+		}
 		return filterParams{
-			includes:        includes,
-			excludes:        excludes,
-			kindFilter:      of,
-			componentFilter: cf,
+			includes:              includes,
+			excludes:              excludes,
+			kindFilter:            of,
+			componentFilter:       cf,
+			namespaceFilter:       nf,
+			includeClusterObjects: includeClusterScopedObjects,
 		}, nil
 	}
 }
@@ -111,6 +128,11 @@ func checkDuplicates(ctx context.Context, objects []model.K8sLocalObject, kf key
 
 var cleanEvalMode bool
 
+type filterElement struct {
+	fn     func(object model.K8sLocalObject) (bool, error)
+	warnFn func(orignalCount int)
+}
+
 func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
 	components, err := envCtx.App().ComponentsForEnvironment(envCtx.Env(), fp.includes, fp.excludes)
 	if err != nil {
@@ -123,18 +145,70 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 	if err := checkDuplicates(ctx, output, kf); err != nil {
 		return nil, err
 	}
+
+	var filters []filterElement
 	of := fp.kindFilter
-	if of == nil || !of.HasFilters() {
-		return output, nil
+	if of != nil && of.HasFilters() {
+		filters = append(filters, filterElement{
+			fn: func(o model.K8sLocalObject) (bool, error) {
+				return of.ShouldInclude(o.GetKind()), nil
+			},
+			warnFn: func(count int) {
+				sio.Warnf("0 of %d matches for kind filter, check for typos and abbreviations\n", count)
+			},
+		})
 	}
-	var ret []model.K8sLocalObject
-	for _, o := range output {
-		if of.ShouldInclude(o.GetKind()) {
-			ret = append(ret, o)
+	nf := fp.namespaceFilter
+	hasNSFilters := nf != nil && nf.HasFilters()
+
+	if hasNSFilters || !fp.includeClusterObjects {
+		client, err := envCtx.Client()
+		if err != nil {
+			return nil, err
+		}
+		defaultNs := envCtx.App().DefaultNamespace(envCtx.Env())
+		filters = append(filters, filterElement{
+			fn: func(o model.K8sLocalObject) (bool, error) {
+				isNamespaced, err := client.IsNamespaced(o.GroupVersionKind())
+				if err != nil {
+					return false, err
+				}
+				if !isNamespaced {
+					return fp.includeClusterObjects, nil
+				}
+				if !hasNSFilters {
+					return true, nil
+				}
+				ns := o.GetNamespace()
+				if ns == "" {
+					ns = defaultNs
+				}
+				return nf.ShouldInclude(ns), nil
+			},
+			warnFn: func(count int) {
+				sio.Warnf("0 of %d matches for namespace filter, check for typos\n", count)
+			},
+		})
+	}
+
+	ret := output
+	for _, filter := range filters {
+		prev := ret
+		ret = nil
+		for _, o := range prev {
+			b, err := filter.fn(o)
+			if err != nil {
+				return nil, err
+			}
+			if b {
+				ret = append(ret, o)
+			}
+		}
+		if len(prev) > 0 && len(ret) == 0 {
+			filter.warnFn(len(prev))
+			return ret, nil
 		}
 	}
-	if len(output) > 0 && len(ret) == 0 {
-		sio.Warnf("0 of %d matches for kind filter, check for typos and abbreviations\n", len(output))
-	}
+
 	return ret, nil
 }
