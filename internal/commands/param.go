@@ -28,6 +28,7 @@ import (
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/eval"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 )
@@ -98,8 +99,8 @@ type param struct {
 	Value     interface{} `json:"value"`
 }
 
-func extractComponentParams(paramsObject map[string]interface{}, fp filterParams) (map[string]interface{}, error) {
-	cf, err := model.NewComponentFilter(fp.includes, fp.excludes)
+func extractComponentParams(paramsObject map[string]interface{}, fp filter.Params) (map[string]interface{}, error) {
+	cf, err := model.NewComponentFilter(fp.ComponentIncludes(), fp.ComponentExcludes())
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +125,7 @@ func extractComponentParams(paramsObject map[string]interface{}, fp filterParams
 type paramListCommandConfig struct {
 	cmd.AppContext
 	format     string
-	filterFunc func() (filterParams, error)
+	filterFunc func() (filter.Params, error)
 }
 
 func doParamList(args []string, config paramListCommandConfig) error {
@@ -177,7 +178,7 @@ func newParamListCommand(cp ctxProvider) *cobra.Command {
 
 type paramDiffCommandConfig struct {
 	cmd.AppContext
-	filterFunc func() (filterParams, error)
+	filterFunc func() (filter.Params, error)
 }
 
 func doParamDiff(args []string, config paramDiffCommandConfig) error {

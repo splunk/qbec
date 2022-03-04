@@ -23,6 +23,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -62,7 +63,7 @@ type applyCommandConfig struct {
 	wait        bool
 	waitAll     bool
 	waitTimeout time.Duration
-	filterFunc  func() (filterParams, error)
+	filterFunc  func() (filter.Params, error)
 }
 
 type nameWrap struct {
@@ -203,7 +204,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 	}
 
 	// process deletions
-	deletions, err := lister.deletions(retainObjects, fp.Includes)
+	deletions, err := lister.deletions(retainObjects, fp.Match)
 	if err != nil {
 		return err
 	}

@@ -26,6 +26,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/sio"
@@ -91,7 +92,7 @@ type showCommandConfig struct {
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
-	filterFunc      func() (filterParams, error)
+	filterFunc      func() (filter.Params, error)
 }
 
 func removeMetadataKey(un *unstructured.Unstructured, name string) {

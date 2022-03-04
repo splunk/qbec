@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
 )
@@ -142,7 +143,7 @@ type validateCommandConfig struct {
 	cmd.AppContext
 	parallel   int
 	silent     bool
-	filterFunc func() (filterParams, error)
+	filterFunc func() (filter.Params, error)
 }
 
 func doValidate(ctx context.Context, args []string, config validateCommandConfig) error {

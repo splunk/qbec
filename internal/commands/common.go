@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -124,7 +125,7 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
-func startRemoteList(ctx context.Context, envCtx cmd.EnvContext, client cmd.KubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
+func startRemoteList(ctx context.Context, envCtx cmd.EnvContext, client cmd.KubeClient, fp filter.Params) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
 	all, err := filteredObjects(ctx, envCtx, filterOpts{})
 	if err != nil {
 		return nil, nil, err

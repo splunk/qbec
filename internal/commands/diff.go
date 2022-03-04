@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
+	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -308,7 +309,7 @@ type diffCommandConfig struct {
 	parallel      int
 	contextLines  int
 	di            diffIgnores
-	filterFunc    func() (filterParams, error)
+	filterFunc    func() (filter.Params, error)
 	exitNonZero   bool
 }
 
@@ -374,7 +375,7 @@ func doDiff(ctx context.Context, args []string, config diffCommandConfig) error 
 
 	var listErr error
 	if dErr == nil {
-		extra, err := lister.deletions(retainObjects, fp.Includes)
+		extra, err := lister.deletions(retainObjects, fp.Match)
 		if err != nil {
 			listErr = err
 		} else {
