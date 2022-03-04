@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
@@ -171,7 +172,7 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 			fn: func(o model.K8sLocalObject) (bool, error) {
 				isNamespaced, err := client.IsNamespaced(o.GroupVersionKind())
 				if err != nil {
-					return false, err
+					return false, errors.Wrap(err, "namespace filter")
 				}
 				if !isNamespaced {
 					return !fp.excludeClusterObjects, nil
