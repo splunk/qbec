@@ -78,16 +78,12 @@ func newBaseFilter(pluralKind string, includes, excludes []string, fn aliasFn) (
 
 // NewComponentFilter returns a filter for component names.
 func NewComponentFilter(includes, excludes []string) (Filter, error) {
-	bf, err := newBaseFilter("components", includes, excludes, nil)
-	if err != nil {
-		return nil, err
-	}
-	return bf, nil
+	return NewStringFilter("components", includes, excludes)
 }
 
-// NewNamespaceFilter returns a filter for namespace names.
-func NewNamespaceFilter(includes, excludes []string) (Filter, error) {
-	nf, err := newBaseFilter("namespaces", includes, excludes, nil)
+// NewStringFilter returns a filter for exact string matches.
+func NewStringFilter(kind string, includes, excludes []string) (Filter, error) {
+	nf, err := newBaseFilter(kind, includes, excludes, nil)
 	if err != nil {
 		return nil, err
 	}

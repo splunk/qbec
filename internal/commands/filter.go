@@ -73,7 +73,7 @@ func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (filterPar
 		if err != nil {
 			return filterParams{}, cmd.NewUsageError(err.Error())
 		}
-		nf, err := model.NewNamespaceFilter(nsIncludes, nsExcludes)
+		nf, err := model.NewStringFilter("namespaces", nsIncludes, nsExcludes)
 		if err != nil {
 			return filterParams{}, cmd.NewUsageError(err.Error())
 		}
