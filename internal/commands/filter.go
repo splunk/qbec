@@ -31,7 +31,7 @@ import (
 type filterParams struct {
 	includes              []string
 	excludes              []string
-	includeClusterObjects bool
+	excludeClusterObjects bool
 	kindFilter            model.Filter
 	componentFilter       model.Filter
 	namespaceFilter       model.Filter
@@ -88,7 +88,7 @@ func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (filterPar
 			kindFilter:            of,
 			componentFilter:       cf,
 			namespaceFilter:       nf,
-			includeClusterObjects: includeClusterScopedObjects,
+			excludeClusterObjects: !includeClusterScopedObjects,
 		}, nil
 	}
 }
@@ -161,7 +161,7 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 	nf := fp.namespaceFilter
 	hasNSFilters := nf != nil && nf.HasFilters()
 
-	if hasNSFilters || !fp.includeClusterObjects {
+	if hasNSFilters || fp.excludeClusterObjects {
 		client, err := envCtx.Client()
 		if err != nil {
 			return nil, err
@@ -174,7 +174,7 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 					return false, err
 				}
 				if !isNamespaced {
-					return fp.includeClusterObjects, nil
+					return !fp.excludeClusterObjects, nil
 				}
 				if !hasNSFilters {
 					return true, nil
