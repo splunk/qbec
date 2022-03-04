@@ -165,7 +165,7 @@ func doValidate(ctx context.Context, args []string, config validateCommandConfig
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(ctx, envCtx, client.ObjectKey, fp)
+	objects, err := filteredObjects(ctx, envCtx, filterOpts{kf: client.ObjectKey, fp: fp, client: client})
 	if err != nil {
 		return err
 	}

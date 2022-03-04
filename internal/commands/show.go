@@ -153,7 +153,7 @@ func doShow(ctx context.Context, args []string, config showCommandConfig) error 
 		return err
 	}
 
-	objects, err := filteredObjects(ctx, envCtx, keyFunc, fp)
+	objects, err := filteredObjects(ctx, envCtx, filterOpts{kf: keyFunc, fp: fp})
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ metadata:
 spec:
   libPaths:
     - lib
+  clusterScopedLists: true
   environments:
     local:
       context: kind-kind

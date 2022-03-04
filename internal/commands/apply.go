@@ -113,7 +113,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(ctx, envCtx, client.ObjectKey, fp)
+	objects, err := filteredObjects(ctx, envCtx, filterOpts{fp: fp, kf: client.ObjectKey, client: client})
 	if err != nil {
 		return err
 	}

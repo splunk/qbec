@@ -29,6 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+type nsClient interface {
+	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
+}
+
 type filterParams struct {
 	includes              []string
 	excludes              []string
@@ -42,14 +46,41 @@ func (f filterParams) GVKFilter(gvk schema.GroupVersionKind) bool {
 	return f.kindFilter == nil || f.kindFilter.ShouldInclude(gvk.Kind)
 }
 
-func (f filterParams) Includes(o model.K8sQbecMeta) bool {
+func (f filterParams) hasNamespaceFilters() bool {
+	nf := f.namespaceFilter
+	hasNSFilters := nf != nil && nf.HasFilters()
+	return hasNSFilters || f.excludeClusterObjects
+}
+
+func (f filterParams) Includes(o model.K8sQbecMeta, client nsClient, defaultNS string) (bool, error) {
 	if !(f.kindFilter == nil || f.kindFilter.ShouldInclude(o.GetKind())) {
-		return false
+		return false, nil
 	}
 	if !(f.componentFilter == nil || f.componentFilter.ShouldInclude(o.Component())) {
-		return false
+		return false, nil
 	}
-	return true
+	return f.applyNamespaceFilters(o, client, defaultNS)
+}
+
+func (f filterParams) applyNamespaceFilters(o model.K8sQbecMeta, client nsClient, defaultNs string) (bool, error) {
+	if !f.hasNamespaceFilters() {
+		return true, nil
+	}
+	isNamespaced, err := client.IsNamespaced(o.GroupVersionKind())
+	if err != nil {
+		return false, errors.Wrap(err, "namespace filter")
+	}
+	if !isNamespaced {
+		return !f.excludeClusterObjects, nil
+	}
+	if f.namespaceFilter == nil {
+		return true, nil
+	}
+	ns := o.GetNamespace()
+	if ns == "" {
+		ns = defaultNs
+	}
+	return f.namespaceFilter.ShouldInclude(ns), nil
 }
 
 func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (filterParams, error) {
@@ -134,7 +165,15 @@ type filterElement struct {
 	warnFn func(orignalCount int)
 }
 
-func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp filterParams) ([]model.K8sLocalObject, error) {
+type filterOpts struct {
+	fp     filterParams
+	kf     keyFunc
+	client nsClient
+}
+
+func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, opts filterOpts) ([]model.K8sLocalObject, error) {
+	fp := opts.fp
+	client := opts.client
 	components, err := envCtx.App().ComponentsForEnvironment(envCtx.Env(), fp.includes, fp.excludes)
 	if err != nil {
 		return nil, err
@@ -143,7 +182,7 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 	if err != nil {
 		return nil, err
 	}
-	if err := checkDuplicates(ctx, output, kf); err != nil {
+	if err := checkDuplicates(ctx, output, opts.kf); err != nil {
 		return nil, err
 	}
 
@@ -159,32 +198,21 @@ func filteredObjects(ctx context.Context, envCtx cmd.EnvContext, kf keyFunc, fp 
 			},
 		})
 	}
+
 	nf := fp.namespaceFilter
 	hasNSFilters := nf != nil && nf.HasFilters()
 
 	if hasNSFilters || fp.excludeClusterObjects {
-		client, err := envCtx.Client()
-		if err != nil {
-			return nil, err
+		if client == nil {
+			client, err = envCtx.Client()
+			if err != nil {
+				return nil, err
+			}
 		}
 		defaultNs := envCtx.App().DefaultNamespace(envCtx.Env())
 		filters = append(filters, filterElement{
 			fn: func(o model.K8sLocalObject) (bool, error) {
-				isNamespaced, err := client.IsNamespaced(o.GroupVersionKind())
-				if err != nil {
-					return false, errors.Wrap(err, "namespace filter")
-				}
-				if !isNamespaced {
-					return !fp.excludeClusterObjects, nil
-				}
-				if !hasNSFilters {
-					return true, nil
-				}
-				ns := o.GetNamespace()
-				if ns == "" {
-					ns = defaultNs
-				}
-				return nf.ShouldInclude(ns), nil
+				return fp.applyNamespaceFilters(o, client, defaultNs)
 			},
 			warnFn: func(count int) {
 				sio.Warnf("0 of %d matches for namespace filter, check for typos\n", count)

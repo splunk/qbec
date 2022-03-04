@@ -125,7 +125,7 @@ func (lw *lockWriter) Write(buf []byte) (int, error) {
 }
 
 func startRemoteList(ctx context.Context, envCtx cmd.EnvContext, client cmd.KubeClient, fp filterParams) (_ lister, retainObjects []model.K8sLocalObject, _ error) {
-	all, err := filteredObjects(ctx, envCtx, nil, filterParams{})
+	all, err := filteredObjects(ctx, envCtx, filterOpts{})
 	if err != nil {
 		return nil, nil, err
 	}
