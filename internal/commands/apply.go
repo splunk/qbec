@@ -62,7 +62,7 @@ type applyCommandConfig struct {
 	wait        bool
 	waitAll     bool
 	waitTimeout time.Duration
-	filterFunc  func() (filterParams, error)
+	filterFunc  func() (model.Filters, error)
 }
 
 type nameWrap struct {
@@ -113,7 +113,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(ctx, envCtx, client.ObjectKey, fp)
+	objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 	}
 
 	// process deletions
-	deletions, err := lister.deletions(retainObjects, fp.Includes)
+	deletions, err := lister.deletions(retainObjects, fp.Match)
 	if err != nil {
 		return err
 	}

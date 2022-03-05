@@ -87,10 +87,10 @@ func newIntegrationScaffold(t *testing.T, ns string, dir string) *integrationSca
 }
 
 func (s *integrationScaffold) executeCommand(testArgs ...string) error {
-	args := append(testArgs,
-		"--force:k8s-context="+contextName,
-		"--force:k8s-namespace="+s.ns,
-	)
+	args := append(testArgs, "--force:k8s-context="+contextName)
+	if s.ns != "" {
+		args = append(testArgs, "--force:k8s-namespace="+s.ns)
+	}
 	return s.baseScaffold.executeCommand(args...)
 }
 

@@ -78,16 +78,21 @@ func newBaseFilter(pluralKind string, includes, excludes []string, fn aliasFn) (
 
 // NewComponentFilter returns a filter for component names.
 func NewComponentFilter(includes, excludes []string) (Filter, error) {
-	bf, err := newBaseFilter("components", includes, excludes, nil)
+	return newStringFilter("components", includes, excludes)
+}
+
+// newStringFilter returns a filter for exact string matches.
+func newStringFilter(kind string, includes, excludes []string) (Filter, error) {
+	nf, err := newBaseFilter(kind, includes, excludes, nil)
 	if err != nil {
 		return nil, err
 	}
-	return bf, nil
+	return nf, nil
 }
 
-// NewKindFilter returns a filter for object kinds that ignores case and takes
+// newKindFilter returns a filter for object kinds that ignores case and takes
 // pluralization into account.
-func NewKindFilter(includes, excludes []string) (Filter, error) {
+func newKindFilter(includes, excludes []string) (Filter, error) {
 	aliases := func(s string) []string {
 		n := namer.NewAllLowercasePluralNamer(nil)
 		kind := strings.ToLower(s)

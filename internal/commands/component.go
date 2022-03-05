@@ -82,7 +82,7 @@ func doComponentList(ctx context.Context, args []string, config componentListCom
 		if err != nil {
 			return err
 		}
-		objects, err := filteredObjects(ctx, envCtx, nil, filterParams{})
+		objects, err := generateObjects(ctx, envCtx, emptyFilterOpts())
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func doComponentDiff(ctx context.Context, args []string, config componentDiffCom
 	}
 
 	getObjects := func(envCtx cmd.EnvContext) (str string, name string, err error) {
-		objs, err := filteredObjects(ctx, envCtx, nil, filterParams{})
+		objs, err := generateObjects(ctx, envCtx, emptyFilterOpts())
 		if err != nil {
 			return
 		}

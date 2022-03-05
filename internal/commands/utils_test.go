@@ -136,35 +136,35 @@ func (c *client) Get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unst
 	if c.getFunc != nil {
 		return c.getFunc(ctx, obj)
 	}
-	return nil, errors.New("not implemented")
+	return nil, errors.New("get: not implemented")
 }
 
 func (c *client) Sync(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 	if c.syncFunc != nil {
 		return c.syncFunc(ctx, obj, opts)
 	}
-	return nil, errors.New("not implemented")
+	return nil, errors.New("sync: not implemented")
 }
 
 func (c *client) ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
 	if c.validatorFunc != nil {
 		return c.validatorFunc(ctx, gvk)
 	}
-	return nil, errors.New("not implemented")
+	return nil, errors.New("validator: not implemented")
 }
 
 func (c *client) ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error) {
 	if c.listFunc != nil {
 		return c.listFunc(ctx, scope)
 	}
-	return nil, errors.New("not implemented")
+	return nil, errors.New("list: not implemented")
 }
 
 func (c *client) Delete(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 	if c.deleteFunc != nil {
 		return c.deleteFunc(ctx, obj, opts)
 	}
-	return nil, errors.New("not implemented")
+	return nil, errors.New("del: not implemented")
 }
 
 func (c *client) ObjectKey(obj model.K8sMeta) string {
@@ -175,7 +175,7 @@ func (c *client) ObjectKey(obj model.K8sMeta) string {
 }
 
 func (c *client) ResourceInterface(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, fmt.Errorf("resource-interface: not implemented")
 }
 
 func setPwd(t *testing.T, dir string) func() {

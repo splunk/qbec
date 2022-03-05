@@ -93,6 +93,22 @@ For instance, `-k secret` and `-k secrets` will both extract just the objects wi
 the _illusion_ of working like `kubectl` does, kind filters do not account for abbreviations. You cannot say `deploy`
 to mean `deployment`.
 
+### Namespace and cluster scope filters
+
+For projects that create objects in multiple namespaces, you can use namespace filters to filter objects for specific
+namespaces. As with the other filters, you can provide an inclusion or exclusion list.
+
+To include specific namespaces, use `-p namespace1 -p namespace1 ...`
+
+To exclude specific namespaces, use `-P namespace1 -P namespace2 ...`
+
+Normally cluster scoped objects are not filtered. However, when a namespace filter is applied, cluster scoped objects
+are automatically filtered out. You can control this behavior explicitly for any command using
+`--include-cluster-objects=true|false`. This flag can also be used independent of namespace filters to hide all
+cluster scoped objects.
+
+*Note:* specifying namespace / cluster-scope filters requires qbec to access the cluster in order to retrieve metadata
+on object kinds. This means that a `qbec show` command that normally does not need cluster access will now require it.
 
 ## Command help
 

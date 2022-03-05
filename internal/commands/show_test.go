@@ -193,7 +193,7 @@ func TestShowObjectsKindFilter3(t *testing.T) {
 	out, err := s.yamlOutput()
 	require.NoError(t, err)
 	assert.True(t, len(out) == 0)
-	assert.Contains(t, s.stderr(), "matches for kind filter, check for typos and abbreviations")
+	assert.Contains(t, s.stderr(), "check for typos and kind abbreviations")
 }
 
 func TestShowHiddenSecrets(t *testing.T) {
