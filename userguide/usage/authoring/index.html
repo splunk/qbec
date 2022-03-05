@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/authoring.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/authoring.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,15 +689,12 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#component-structure">Component structure</a></li>
-<li><a href="#using-helm-charts-and-external-data-sources">Using helm charts and external data sources</a></li>
-<li><a href="#using-other-jsonnet-libraries">Using other jsonnet libraries</a></li>
-<li><a href="#creating-transient-objects">Creating transient objects</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#component-structure">Component structure</a></li>
+    <li><a href="#using-helm-charts-and-external-data-sources">Using helm charts and external data sources</a></li>
+    <li><a href="#using-other-jsonnet-libraries">Using other jsonnet libraries</a></li>
+    <li><a href="#creating-transient-objects">Creating transient objects</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -716,21 +713,15 @@
         
 
 
-
-
 <p>qbec supports components written as YAML, JSON or jsonnet files. YAML and JSON documents are static
 and unable to support parameterization per environment. These formats are good enough for Kubernetes
 objects like roles, role bindings, service accounts etc. where the content doesn&rsquo;t usually vary
 per environment. In order to create components that need to be different per environment, you are
 pretty much required to use jsonnet.</p>
-
 <h2 id="component-structure">Component structure</h2>
-
 <p>Components are loaded from the components directory defined for your app.
 This defaults to <code>components/</code> under the source tree but you can change this path in <code>qbec.yaml</code>.</p>
-
 <p>A component is:</p>
-
 <ul>
 <li>a single jsonnet, json or yaml source file directly under the components directory. In this case the component name
 is the name of the file without the extension and qbec will process this file.</li>
@@ -739,37 +730,26 @@ name is the subdirectory name and the <code>index.jsonnet</code> is processed by
 <li>a sudirectory containing an <code>index.yaml</code> file. In this case the component name is the subdirectory name and all
 json and yaml files under the directory are loaded by qbec.</li>
 </ul>
-
 <p>It is valid for a component to return an empty set of objects if runtime parameters determine that
 nothing should be installed for a specific target environment.</p>
-
 <h2 id="using-helm-charts-and-external-data-sources">Using helm charts and external data sources</h2>
-
 <p>qbec provides integration to run external commands and consume their output in jsonnet code.
 See the <a href="../../../reference/jsonnet-external-data">Jsonnet data importer</a> for more information on how this works.</p>
-
 <p>Note that the <a href="../../../reference/jsonnet-native-funcs/#expandhelmtemplate">expandHelmTemplate</a> native function
 is now deprecated in favor of the data importer mechanism.</p>
-
 <h2 id="using-other-jsonnet-libraries">Using other jsonnet libraries</h2>
-
 <p><a href="https://github.com/splunk/k8s-yaml-patch">k8s-yaml-patch</a>,
 for example, is a jsonnet library that allows you to load YAML documents, patch runtime values and
 return them for qbec use.</p>
-
 <p>If you use the above or any other library, the correct way to integrate it with qbec is to use
 the <a href="https://github.com/jsonnet-bundler/jsonnet-bundler">jsonnet bundler</a>. download the dependencies
 locally to a <code>vendor</code> directory, and add this directory to the <code>libPaths</code> array in <code>qbec.yaml</code>.
 You will then be able to use these dependencies in your jsonnet code.</p>
-
 <h2 id="creating-transient-objects">Creating transient objects</h2>
-
 <p>Most objects that you create using qbec are objects with fixed names (e.g. deployments, services etc.). Occasionally
 you may need to create transient objects like jobs and one-off pods.</p>
-
 <p>qbec, like kubectl, allows you to set the <code>generateName</code> instead of the <code>name</code> metadata attribute for an object.
 When the <code>generateName</code> attribute is set, qbec will change its behavior such that:</p>
-
 <ul>
 <li>two objects with the same <code>generateName</code> attribute are not considered duplicates.</li>
 <li>qbec tracks the actual name with which the object was created</li>

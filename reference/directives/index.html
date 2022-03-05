@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/directives.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/directives.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,21 +683,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#directives-qbec-io-apply-order"><code>directives.qbec.io/apply-order</code></a></li>
-<li><a href="#directives-qbec-io-delete-policy"><code>directives.qbec.io/delete-policy</code></a></li>
-<li><a href="#directives-qbec-io-update-policy"><code>directives.qbec.io/update-policy</code></a></li>
-<li><a href="#directives-qbec-io-wait-policy"><code>directives.qbec.io/wait-policy</code></a></li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -716,53 +708,39 @@
         
 
 
-
-
 <p>Annotations that you can use for your objects to control qbec behavior.</p>
-
-<h4 id="directives-qbec-io-apply-order"><code>directives.qbec.io/apply-order</code></h4>
-
+<h4 id="directivesqbecioapply-order"><code>directives.qbec.io/apply-order</code></h4>
 <ul>
 <li>Annotation source: local object</li>
 <li>Allowed values: Any positive integer as a string (i.e. ensure that the value is quoted in YAML)</li>
 <li>Default value: <code>&quot;0&quot;</code> (use qbec defaults)</li>
 </ul>
-
 <p>controls the order in which objects are applied. This allows you, for example, to move updates of a custom
 resource to after all other objects have been processed.</p>
-
-<h4 id="directives-qbec-io-delete-policy"><code>directives.qbec.io/delete-policy</code></h4>
-
+<h4 id="directivesqbeciodelete-policy"><code>directives.qbec.io/delete-policy</code></h4>
 <ul>
 <li>Annotation source: in-cluster object</li>
 <li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
 <li>Default value: <code>&quot;default&quot;</code></li>
 </ul>
-
 <p>when set to <code>&quot;never&quot;</code>, indicates that the specific object should never be deleted. This applies to both explicit deletes as well as garbage collection.
 If you want qbec to delete this object, you need to remove the annotation from the in-cluster object. Changing the source
 object to remove this annotation will not work.</p>
-
-<h4 id="directives-qbec-io-update-policy"><code>directives.qbec.io/update-policy</code></h4>
-
+<h4 id="directivesqbecioupdate-policy"><code>directives.qbec.io/update-policy</code></h4>
 <ul>
 <li>Annotation source: in-cluster object.</li>
 <li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
 <li>Default value: <code>&quot;default&quot;</code></li>
 </ul>
-
 <p>when set to <code>&quot;never&quot;</code>, indicates that the specific object should never be updated.
 If you want qbec to update this object, you need to remove the annotation from the in-cluster object. Changing the source
 object to remove this annotation will not work.</p>
-
-<h4 id="directives-qbec-io-wait-policy"><code>directives.qbec.io/wait-policy</code></h4>
-
+<h4 id="directivesqbeciowait-policy"><code>directives.qbec.io/wait-policy</code></h4>
 <ul>
 <li>Annotation source: local object</li>
 <li>Allowed values: <code>&quot;default&quot;</code>, <code>&quot;never&quot;</code></li>
 <li>Default value: <code>&quot;default&quot;</code></li>
 </ul>
-
 <p>when set to <code>&quot;never&quot;</code> for deployments or daemonsets, indicates that qbec should not wait for that object even when
 the <code>--wait</code> or <code>--wait-all</code> flags are set for the <code>apply</code> command.</p>
 

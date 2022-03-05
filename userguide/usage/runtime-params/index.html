@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/runtime-params.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/runtime-params.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,19 +689,17 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#using-qbec-io-env">Using qbec.io/env</a></li>
-<li><a href="#using-jsonnet-external-variables">Using jsonnet external variables</a></li>
-<li><a href="#using-top-level-jsonnet-variables">Using top-level jsonnet variables</a>
-<ul>
-<li><a href="#notes-on-usage">Notes on usage</a></li>
-<li><a href="#setting-variables-in-bulk">Setting variables in bulk</a></li>
-</ul></li>
-<li><a href="#strict-mode">Strict mode</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#using-qbecioenv">Using qbec.io/env</a></li>
+    <li><a href="#using-jsonnet-external-variables">Using jsonnet external variables</a></li>
+    <li><a href="#using-top-level-jsonnet-variables">Using top-level jsonnet variables</a>
+      <ul>
+        <li><a href="#notes-on-usage">Notes on usage</a></li>
+        <li><a href="#setting-variables-in-bulk">Setting variables in bulk</a></li>
+      </ul>
+    </li>
+    <li><a href="#strict-mode">Strict mode</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -720,19 +718,13 @@
         
 
 
-
-
 <p>Runtime parameters are values that differ across environments, change over time, or are secrets that should not
 be casually revealed.</p>
-
 <p>Properties like replicas of a deployment per environment, cluster level endpoints etc. are usually known in advance and
 should be checked into source code.</p>
-
 <p>Some parameters cannot be checked into source code. These include tags for images produced by a CI build whose value
 should be subsequently used in the same build for a deployment, environment-specific secrets, etc.</p>
-
 <p>qbec provides the following facilities for runtime parameters.</p>
-
 <ul>
 <li>it exposes the external variable <code>qbec.io/env</code> that contains the name of the environment used for the command.
 This allows you to parameterize values based on the name of the environment. For instance, you could use the name
@@ -747,18 +739,13 @@ for every invocation and still set them explicitly when you actually apply the o
 <li>it allows you to declare jsonnet <em>top-level variables</em> in <code>qbec.yaml</code> and associate them with components to which
 they should be passed. In this case, you set defaults for these variables in the jsonnet code itself.</li>
 </ul>
-
 <p>The <a href="https://jsonnet.org/learning/tutorial.html#parameterize-entire-config">jsonnet tutorial</a> explains external
 and top-level variables in detail along with the pros and cons of each.</p>
-
 <p>Let&rsquo;s examine each of these in turn.</p>
-
-<h2 id="using-qbec-io-env">Using qbec.io/env</h2>
-
+<h2 id="using-qbecioenv">Using qbec.io/env</h2>
 <p>You can access this variable using the <code>std.extVar</code> function of the jsonnet standard library and customize parameters.
 This allows you to create a parameters object that can be imported by your components.</p>
-
-<pre><code class="language-jsonnet">local env = std.extVar('qbec.io/env'); // get the value of the environment
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">local env = std.extVar('qbec.io/env'); // get the value of the environment
 
 // define baseline parameters
 local baseParams = {
@@ -794,62 +781,42 @@ local paramsByEnv = {
 // return value for correct environment
 if std.objectHas(paramsByEnv, env) then paramsByEnv[env] else error 'environment ' + env ' not defined in ' + std.thisFile
  
-</code></pre>
-
-<p>When there are many components and values, the above code can be split up into multiple files with each file
+</code></pre><p>When there are many components and values, the above code can be split up into multiple files with each file
 returning the object for a specific environment and the top-level file then <code>import</code>s the other files.</p>
-
 <p>Since variables and values are checked into source code when using this method, this is the most explicit way to
 set parameters and should be used as much as possible.</p>
-
 <h2 id="using-jsonnet-external-variables">Using jsonnet external variables</h2>
-
 <p>You declare the external variable(s) that you expect in <code>qbec.yaml</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+    <span style="color:#f92672">vars</span>:
+      <span style="color:#f92672">external</span>:
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">service1_image_tag</span>
+          <span style="color:#f92672">default</span>: <span style="color:#ae81ff">latest</span>
 
-<pre><code class="language-yaml">spec:
-    vars:
-      external:
-        - name: service1_image_tag
-          default: latest
-
-        - name: service1_secret
-          default: changeme # fake value
-          secret: true # qbec debug logs will not print this value in cleartext
-</code></pre>
-
-<p>then you can use them in your components or runtime parameter config object, like so:</p>
-
-<pre><code class="language-jsonnet">    local imageTag = std.extVar('service1_image_tag');
-</code></pre>
-
-<p>and specify real values on the qbec command-line:</p>
-
-<pre><code class="language-bash">export service1_secret=XXX
-qbec apply dev --vm:ext-str service1_image_tag=1.0.3 --vm:ext-str service1_secret
-</code></pre>
-
-<p>Note that we are explicitly setting the image tag to 1.0.3 but not providing the value for the secret on the command
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">service1_secret</span>
+          <span style="color:#f92672">default</span>: <span style="color:#ae81ff">changeme</span> <span style="color:#75715e"># fake value</span>
+          <span style="color:#f92672">secret</span>: <span style="color:#66d9ef">true</span> <span style="color:#75715e"># qbec debug logs will not print this value in cleartext</span>
+</code></pre></div><p>then you can use them in your components or runtime parameter config object, like so:</p>
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">    local imageTag = std.extVar('service1_image_tag');
+</code></pre><p>and specify real values on the qbec command-line:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export service1_secret<span style="color:#f92672">=</span>XXX
+qbec apply dev --vm:ext-str service1_image_tag<span style="color:#f92672">=</span>1.0.3 --vm:ext-str service1_secret
+</code></pre></div><p>Note that we are explicitly setting the image tag to 1.0.3 but not providing the value for the secret on the command
 line. This causes qbec to set the secret value from the environment variable with the same name. This is the preferred
 method for passing in secrets.</p>
-
 <h2 id="using-top-level-jsonnet-variables">Using top-level jsonnet variables</h2>
-
 <p>You declare the top-level variable(s) used in your code associating them with the components that need them.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+    <span style="color:#f92672">vars</span>:
+      <span style="color:#f92672">topLevel</span>:
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">service1Tag</span>
+          <span style="color:#f92672">components</span>: [ <span style="color:#e6db74">&#39;service1&#39;</span> ]
 
-<pre><code class="language-yaml">spec:
-    vars:
-      topLevel:
-        - name: service1Tag
-          components: [ 'service1' ]
-
-        - name: service1Secret
-          components: [ 'service1' ]
-          secret: true # qbec debug logs will not print this value in cleartext
-</code></pre>
-
-<p>In this case you would code your <code>service1.jsonnet</code> component as follows:</p>
-
-<pre><code class="language-jsonnet">function (service1Tag='latest', service1Secret='changeme') (
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">service1Secret</span>
+          <span style="color:#f92672">components</span>: [ <span style="color:#e6db74">&#39;service1&#39;</span> ]
+          <span style="color:#f92672">secret</span>: <span style="color:#66d9ef">true</span> <span style="color:#75715e"># qbec debug logs will not print this value in cleartext</span>
+</code></pre></div><p>In this case you would code your <code>service1.jsonnet</code> component as follows:</p>
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">function (service1Tag='latest', service1Secret='changeme') (
     // for example: return an array containing a secret and a deployment
     [
         {
@@ -865,16 +832,10 @@ method for passing in secrets.</p>
         // ... etc
     ]
 )
-</code></pre>
-
-<p>and specify real values on the qbec command-line:</p>
-
-<pre><code class="language-bash">export service1Secret=XXX
-qbec apply dev --vm:tla-str service1Tag=1.0.3 --vm:tla-str service1Secret
-</code></pre>
-
-<h3 id="notes-on-usage">Notes on usage</h3>
-
+</code></pre><p>and specify real values on the qbec command-line:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export service1Secret<span style="color:#f92672">=</span>XXX
+qbec apply dev --vm:tla-str service1Tag<span style="color:#f92672">=</span>1.0.3 --vm:tla-str service1Secret
+</code></pre></div><h3 id="notes-on-usage">Notes on usage</h3>
 <ul>
 <li>Values (and defaults) need not be strings. They can be numbers, booleans or objects. In this case, you need to use the
 <code>--vm:ext-code foo=true</code> or <code>--vm:tla-code foo=true</code> syntax. In the preceding examples, this will pass in a
@@ -889,29 +850,21 @@ you cannot have a top-level argument called <code>imageTag</code> for 2 differen
 <li>Defaults for external variables cannot be <code>null</code>. This is because qbec cannot tell the difference between a
 default that was not specified versus one that was explicitly set to <code>null</code>.</li>
 </ul>
-
 <h3 id="setting-variables-in-bulk">Setting variables in bulk</h3>
-
 <p>qbec provides a <code>--vm:ext-str-list</code> (and <code>--vm:tla-str-list</code>) option that allows you to set a bunch of variables using a
 single file. For example, if you have to set 3 variables, say, <code>commit</code>, <code>ci_job</code>, <code>image_tag</code> for
 every apply command, you can just set these environment variables and create a file like so:</p>
-
-<pre><code>commit
+<pre tabindex="0"><code>commit
 ci_job=1234
 image_tag
-</code></pre>
-
-<p>You can set the values for each line if you so prefer. In the above example, the <code>ci_job</code>
+</code></pre><p>You can set the values for each line if you so prefer. In the above example, the <code>ci_job</code>
 variable is given an explicit value while the others are loaded from the environment.</p>
-
 <p>Then <code>--vm:ex-str-list=list-file</code> would automatically pull in the remaining values from the environment.
 This file can be checked into source control and the variables can be provided with default values in
 <code>qbec.yaml</code> as usual.</p>
-
 <p>To reduce duplication, you can even have your params generation code read this file and set
 parameters from external variables. For example:</p>
-
-<pre><code>local varList = std.split(importstr './list-vars.txt', '\n');
+<pre tabindex="0"><code>local varList = std.split(importstr './list-vars.txt', '\n');
 // remove blank lines
 local lines = std.filter(function(x) x != '', varList);
 // extract names
@@ -922,18 +875,13 @@ local externals = std.foldl(foldFunc, names, {});
 
 // now externals is an object that can be used by the rest of the code
 // it looks like: { commit: 'commit-id', ci_job: '1234', image_tag: '1.4-abc' }
-</code></pre>
-
-<h2 id="strict-mode">Strict mode</h2>
-
+</code></pre><h2 id="strict-mode">Strict mode</h2>
 <p>The <code>--strict-vars</code> flag for qbec commands can help you ensure correctness of your qbec command line invocation.
 When this option is set, qbec:</p>
-
 <ul>
 <li>requires <em>all</em> declared values to be set on the command line</li>
 <li>disallows undeclared variables to be set</li>
 </ul>
-
 <p>This is a good option to set for CI builds to ensure that the build breaks if someone introduces a new variable
 but fails to set a value for it for the <code>apply</code> command, or if the variable name has a typo.</p>
 

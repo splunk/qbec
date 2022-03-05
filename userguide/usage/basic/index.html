@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/basic.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/basic.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,15 +689,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#more-on-runtime-configuration">More on runtime configuration</a>
-<ul>
-<li><a href="#the-basic-parameters-object">The basic parameters object</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#more-on-runtime-configuration">More on runtime configuration</a>
+      <ul>
+        <li><a href="#the-basic-parameters-object">The basic parameters object</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -716,61 +714,47 @@
         
 
 
-
-
 <p>At the very least, you need to have the following files and folders for a qbec app:</p>
-
 <ul>
 <li><code>qbec.yaml</code> - this needs to be at the root of the source directory and defines your application
 in terms of:
-
 <ul>
 <li>supported environments</li>
 <li>components that should be excluded by default for all environments</li>
 <li>specific components excluded and included in specific environments.</li>
 <li>See the <a href="../../../reference/qbec-yaml/">reference document</a> for more details.</li>
-</ul></li>
+</ul>
+</li>
 <li>a folder for components. By default, this is a folder called <code>components/</code> under the source root.
 You can change what this folder is called in <code>qbec.yaml</code></li>
 <li>a runtime configuration file that can return runtime parameters based on the value of the
 <code>qbec.io/env</code> jsonnet variable. By convention, this is a file called <code>params.libsonnet</code> under
-the source root. You can change this name in <code>qbec.yaml</code>.
-<br /></li>
+the source root. You can change this name in <code>qbec.yaml</code>.</li>
 </ul>
-
 <h2 id="more-on-runtime-configuration">More on runtime configuration</h2>
-
 <p>The runtime configuration file is only strictly used by qbec for the <code>param</code> sub-commands. The remaining
 commands do not make assumptions about how runtime parameters are returned. All they do is set the
 <code>qbec.io/env</code> external variable to the environment name and expect your code to correctly configure
 your components based on its value.</p>
-
 <p>That said, if you follow expected conventions you can use qbec to its fullest.</p>
-
 <h3 id="the-basic-parameters-object">The basic parameters object</h3>
-
 <p>The parameters object is expected to be of the following form:</p>
-
-<pre><code class="language-json">{
-  &quot;components&quot;: {
-    &quot;component1&quot;: {
-      &quot;param1&quot;: &quot;value1&quot;,
-      &quot;param2&quot;: &quot;value2&quot;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;components&#34;</span>: {
+    <span style="color:#f92672">&#34;component1&#34;</span>: {
+      <span style="color:#f92672">&#34;param1&#34;</span>: <span style="color:#e6db74">&#34;value1&#34;</span>,
+      <span style="color:#f92672">&#34;param2&#34;</span>: <span style="color:#e6db74">&#34;value2&#34;</span>
     },
-    &quot;component2&quot;: {
-      &quot;param1&quot;: &quot;value1&quot;    
+    <span style="color:#f92672">&#34;component2&#34;</span>: {
+      <span style="color:#f92672">&#34;param1&#34;</span>: <span style="color:#e6db74">&#34;value1&#34;</span>    
     }
   }
 }
-</code></pre>
-
-<p>That is, it has a top-level <code>components</code> key and the configuration values for each component under
+</code></pre></div><p>That is, it has a top-level <code>components</code> key and the configuration values for each component under
 a key that is the component name.</p>
-
 <p>The top-level parameters file (typically, <code>params.libsonnet</code>) returns an instance of the above object
 that is different for every environment. Note that it needs to be able to handle the baseline
 environment (_) as well.</p>
-
 <p>The <code>qbec init</code> command shows you one way to organize your files such that all the above conditions are
 met and every environment produces a parameters object that is a specialization of the baseline
 configuration.</p>

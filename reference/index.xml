@@ -1,15 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Reference on Qbec</title>
     <link>http://qbec.io/reference/</link>
     <description>Recent content in Reference on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="http://qbec.io/reference/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="http://qbec.io/reference/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Application YAML</title>
       <link>http://qbec.io/reference/qbec-yaml/</link>
@@ -17,7 +13,7 @@
       
       <guid>http://qbec.io/reference/qbec-yaml/</guid>
       <description>The app configuration is a file called qbec.yaml and needs to be at the root of the directory tree.
-apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;quot;App&amp;quot; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
+apiVersion: qbec.io/v1alpha1 # only supported version currently kind: App # must always be &amp;#34;App&amp;#34; metadata: name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions spec: componentsDir: components # directory where component files can be found. Not recursive. default: components paramsFile: params.</description>
     </item>
     
     <item>

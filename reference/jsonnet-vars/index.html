@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-vars.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/jsonnet-vars.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -682,7 +682,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents"></nav>
     </div>
 </div>
 
@@ -701,7 +701,6 @@
 
 
 <p>qbec exposes the following standard jsonnet variables whenever it evaluates components.</p>
-
 <ul>
 <li><code>qbec.io/env</code> - the name of the environment for which processing occurs.</li>
 <li><code>qbec.io/envProperties</code> - the properties associated with the environment if present or an empty object. For the
@@ -711,10 +710,8 @@ baseline environment (<code>_</code>), this is set to the <code>baseProperties</
 possibly changed for app tags, or the value forced from the command line using the <code>--force:k8s-namespace</code> option.</li>
 <li><code>qbec.io/cleanMode</code> - has the <code>off</code> or <code>on</code>. The <code>on</code> value is only set for the <code>show --clean</code> command.</li>
 </ul>
-
 <p>In addition to the above, qbec will also set the default values for declared external variables and
 override them from command line arguments.</p>
-
 <p>See the <a href="../component-evaluation">component evaluation page</a> for the gory details.</p>
 
 

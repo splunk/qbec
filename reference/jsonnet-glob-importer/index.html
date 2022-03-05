@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-glob-importer.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/jsonnet-glob-importer.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,15 +683,13 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#notes">Notes</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#notes">Notes</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -710,51 +708,33 @@
         
 
 
-
-
 <p>In many situations it is useful to be able to import a bag of files as an object. For instance, it is convenient to
 load all environment configuration files present with a single invocation to <code>import</code> to pick up all files found without
 having to name them individually.</p>
-
 <p>For this purpose, qbec supplies a glob importer for importing a bag of  files using a glob pattern.
 It supports two variants, one for importing the files that match the glob as code
 and another for importing the files as a string (suitable, for example, for YAML files).</p>
-
 <p>The basic syntax is:</p>
-
-<pre><code>import 'glob-import:subdir/*.libsonnet' // imports all libsonnet files from the subdirectory
-</code></pre>
-
-<p>and</p>
-
-<pre><code>import 'glob-importstr:*.yaml' // imports all YAML files in the current directory as strings
-</code></pre>
-
-<p>Let&rsquo;s say that in the first example you had files <code>a.libsonnet</code>, <code>b.libsonnet</code> and <code>c.libsonnet</code> in <code>subdir/</code>.
+<pre tabindex="0"><code>import 'glob-import:subdir/*.libsonnet' // imports all libsonnet files from the subdirectory
+</code></pre><p>and</p>
+<pre tabindex="0"><code>import 'glob-importstr:*.yaml' // imports all YAML files in the current directory as strings
+</code></pre><p>Let&rsquo;s say that in the first example you had files <code>a.libsonnet</code>, <code>b.libsonnet</code> and <code>c.libsonnet</code> in <code>subdir/</code>.
 This would result in the following code being evaluated by jsonnet.</p>
-
-<pre><code>{
+<pre tabindex="0"><code>{
    'subdir/a.libsonnet': import 'subdir/a.libsonnet',
    'subdir/b.libsonnet': import 'subdir/b.libsonnet',
    'subdir/c.libsonnet': import 'subdir/c.libsonnet',
 }
-</code></pre>
-
-<p>In the second example if you had <code>a.yaml</code>, <code>b.yaml</code> and <code>c.yaml</code> in the current directory, the following code
+</code></pre><p>In the second example if you had <code>a.yaml</code>, <code>b.yaml</code> and <code>c.yaml</code> in the current directory, the following code
 would be evaluated:</p>
-
-<pre><code>{
+<pre tabindex="0"><code>{
    'a.yaml': importstr 'a.yaml',
    'b.yaml': importstr 'b.yaml',
    'c.yaml': importstr 'c.yaml',
 }
-</code></pre>
-
-<p>In both cases, the keys are paths to files relative to the directory where the <code>import</code> was invoked, and the objects
+</code></pre><p>In both cases, the keys are paths to files relative to the directory where the <code>import</code> was invoked, and the objects
 are the objects as returned by the jsonnet <code>import</code> and <code>importstr</code> directives respectively.</p>
-
 <h3 id="notes">Notes</h3>
-
 <ul>
 <li>Globs are resolved using Go semantics. It is <strong>not</strong> an error for the pattern to not match any files. In that case,
 an empty object is returned. If you want to treat this case as an error, you can do so in the jsonnet code after the
@@ -763,7 +743,7 @@ import is done.</li>
 when there are libsonnet files in the current directory as well as in the library paths.</li>
 <li>The object keys that are returned typically have to be post-processed in jsonnet to make them usable (e.g. stripping
 directory paths, removing extensions etc.).
-See the <a href="https://github.com/splunk/qbec/blob/master/examples/test-app/lib/globutil.libsonnet">globutil.libsonnet</a>
+See the <a href="https://github.com/splunk/qbec/blob/main/examples/test-app/lib/globutil.libsonnet">globutil.libsonnet</a>
 file in the qbec source tree for ideas.</li>
 </ul>
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/commands.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/commands.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,20 +689,19 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#command-lifecycle">Command lifecycle</a></li>
-<li><a href="#filters">Filters</a>
-<ul>
-<li><a href="#component-filters">Component filters</a></li>
-<li><a href="#kind-filters">Kind filters</a></li>
-</ul></li>
-<li><a href="#command-help">Command help</a></li>
-<li><a href="#running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</a></li>
-<li><a href="#experimental-commands">Experimental commands</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#command-lifecycle">Command lifecycle</a></li>
+    <li><a href="#filters">Filters</a>
+      <ul>
+        <li><a href="#component-filters">Component filters</a></li>
+        <li><a href="#kind-filters">Kind filters</a></li>
+        <li><a href="#namespace-and-cluster-scope-filters">Namespace and cluster scope filters</a></li>
+      </ul>
+    </li>
+    <li><a href="#command-help">Command help</a></li>
+    <li><a href="#running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</a></li>
+    <li><a href="#experimental-commands">Experimental commands</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -721,21 +720,18 @@
         
 
 
-
-
 <p>The qbec CLI provides usage help for all commands. The commands that qbec supports are:</p>
-
-<pre><code class="language-shell">$ qbec --help
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ qbec --help
 
 qbec provides a set of commands to manage kubernetes objects on multiple clusters.
 
 Usage:
-  qbec [command]
+  qbec <span style="color:#f92672">[</span>command<span style="color:#f92672">]</span>
 
 Available Commands:
   alpha       experimental qbec commands
   apply       apply one or more components to a Kubernetes cluster
-  completion  Output shell completion for bash
+  completion  Output shell completion <span style="color:#66d9ef">for</span> bash
   component   component lists and diffs
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
@@ -745,171 +741,138 @@ Available Commands:
   help        Help about any command
   init        initialize a qbec app
   param       parameter lists and diffs
-  show        show output in YAML or JSON format for one or more components
+  show        show output in YAML or JSON format <span style="color:#66d9ef">for</span> one or more components
   validate    validate one or more components against the spec of a kubernetes cluster
   version     print program version
 
 ...
-</code></pre>
-
-<h2 id="command-lifecycle">Command lifecycle</h2>
-
+</code></pre></div><h2 id="command-lifecycle">Command lifecycle</h2>
 <p>You would typically use commands in the following order for a new application:</p>
-
 <ul>
 <li><code>qbec init</code> - to initialize the app</li>
 <li><code>qbec show</code> -  to display/ debug the output of your components</li>
 <li><code>qbec validate</code> - to ensure that all Kubernetes objects are valid</li>
 <li><code>qbec apply</code> - to apply the objects to the remote server</li>
 </ul>
-
 <p>Once the above is working, you will typically add new environments. The following commands are then
 useful.</p>
-
 <ul>
 <li><code>qbec component list|diff</code> - to list components and diff component lists across environments</li>
 <li><code>qbec param list|diff</code> - to list/ diff parameters for an environment</li>
 </ul>
-
 <p>If you mistakenly apply components prematurely, you can delete them using <code>qbec delete</code></p>
-
 <h2 id="filters">Filters</h2>
-
 <p>Most commands accept filtering options. Filters allow you to restrict the scope at which commands execute.</p>
-
 <h3 id="component-filters">Component filters</h3>
-
 <p>Component filters allow you to specify components on which the command operates. You can do this by providing an
 inclusion list or an exclusion list.</p>
-
 <p>To include specific components, use <code>-c component1 -c component2 ...</code></p>
-
 <p>To exclude specific components, use <code>-C component1 -C component2 ...</code></p>
-
 <p>The behavior of component filters is as follows:</p>
-
 <ul>
 <li>all components specified on the command line must be valid. That is, a component with that name must actually exist
 in the components directory.</li>
 <li>specifying a component that is excluded for the environment is a noop. That is, if component <code>foo</code> was part of the
 exclusion list for an environment, specifying <code>-c foo</code> has no effect. Instead, a warning is printed to the terminal.</li>
 </ul>
-
 <p>The above rules do not apply to the <code>param</code> subcommands, since we expect you may create component sections in parameters
 for components that don&rsquo;t exist (e.g. a <code>shared</code> section for settings common to multiple components).</p>
-
 <h3 id="kind-filters">Kind filters</h3>
-
 <p>Kind filters allow you to specify the &ldquo;kind&rdquo; of object that should be in scope for the command. The kind is the &ldquo;kind&rdquo;
 attribute for a Kubernetes object.</p>
-
 <p>To include specific kinds, use <code>-k kind1 -k kind2 ...</code></p>
-
 <p>To exclude specific kinds, use <code>-K kind1 -K kind2 ...</code></p>
-
 <p>Unlike components that are known in advance, qbec has no way of knowing what kinds are acceptable values. In addition,
 qbec doesn&rsquo;t try to determine the list by interrogating server metadata since this filter is allowed even for commands
 that normally do not need cluster access (e.g. <code>qbec show</code>).</p>
-
 <p>In order to implement kind filters, qbec makes case-insensitive comparisons of the object kind with the supplied value(s)
 accounting for simple pluralization.</p>
-
 <p>For instance, <code>-k secret</code> and <code>-k secrets</code> will both extract just the objects with the kind <code>Secret</code>. While this provides
 the <em>illusion</em> of working like <code>kubectl</code> does, kind filters do not account for abbreviations. You cannot say <code>deploy</code>
 to mean <code>deployment</code>.</p>
-
+<h3 id="namespace-and-cluster-scope-filters">Namespace and cluster scope filters</h3>
+<p>For projects that create objects in multiple namespaces, you can use namespace filters to filter objects for specific
+namespaces. As with the other filters, you can provide an inclusion or exclusion list.</p>
+<p>To include specific namespaces, use <code>-p namespace1 -p namespace1 ...</code></p>
+<p>To exclude specific namespaces, use <code>-P namespace1 -P namespace2 ...</code></p>
+<p>Normally cluster scoped objects are not filtered. However, when a namespace filter is applied, cluster scoped objects
+are automatically filtered out. You can control this behavior explicitly for any command using
+<code>--include-cluster-objects=true|false</code>. This flag can also be used independent of namespace filters to hide all
+cluster scoped objects.</p>
+<p><em>Note:</em> specifying namespace / cluster-scope filters requires qbec to access the cluster in order to retrieve metadata
+on object kinds. This means that a <code>qbec show</code> command that normally does not need cluster access will now require it.</p>
 <h2 id="command-help">Command help</h2>
-
 <p>Help and examples for every sub-command can be displayed with a <code>--help</code> flag.
 For example, here&rsquo;s help on the <code>show</code> sub-command.</p>
-
-<pre><code class="language-shell">$ qbec show --help
-show output in YAML or JSON format for one or more components
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ qbec show --help
+show output in YAML or JSON format <span style="color:#66d9ef">for</span> one or more components
 
 Usage:
-  qbec show &lt;environment&gt; [flags]
+  qbec show &lt;environment&gt; <span style="color:#f92672">[</span>flags<span style="color:#f92672">]</span>
 
 Examples:
 
-# show all components for the 'dev' environment in YAML
+<span style="color:#75715e"># show all components for the &#39;dev&#39; environment in YAML</span>
 qbec show dev
 
-# expand just 2 components and output JSON
+<span style="color:#75715e"># expand just 2 components and output JSON</span>
 qbec show dev -c postgres -c redis -o json
 
-# expand all but 2 components
+<span style="color:#75715e"># expand all but 2 components</span>
 qbec show dev -C postgres -C redis
 
-# show only deployments and config maps
+<span style="color:#75715e"># show only deployments and config maps</span>
 qbec show dev -k deployment -k configmap
 
-# show all objects except secrets
+<span style="color:#75715e"># show all objects except secrets</span>
 qbec show dev -K secret
 
-# list all objects for the dev environment
+<span style="color:#75715e"># list all objects for the dev environment</span>
 qbec show dev -O
 
 Flags:
   -c, --component stringArray           include just this component
   -C, --exclude-component stringArray   exclude this component
   -K, --exclude-kind stringArray        exclude objects with this kind
-  -o, --format string                   Output format. Supported values are: json, yaml (default &quot;yaml&quot;)
-  -h, --help                            help for show
+  -o, --format string                   Output format. Supported values are: json, yaml <span style="color:#f92672">(</span>default <span style="color:#e6db74">&#34;yaml&#34;</span><span style="color:#f92672">)</span>
+  -h, --help                            help <span style="color:#66d9ef">for</span> show
   -k, --kind stringArray                include objects with this kind
   -O, --objects                         Only print names of objects instead of their contents
-  -S, --show-secrets                    do not obfuscate secret values in the output
-      --sort-apply                      sort output in apply order (requires cluster access)
+  -S, --show-secrets                    <span style="color:#66d9ef">do</span> not obfuscate secret values in the output
+      --sort-apply                      sort output in apply order <span style="color:#f92672">(</span>requires cluster access<span style="color:#f92672">)</span>
 
-Use &quot;qbec options&quot; for a list of global options available to all commands.
-</code></pre>
-
-<h2 id="running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</h2>
-
+Use <span style="color:#e6db74">&#34;qbec options&#34;</span> <span style="color:#66d9ef">for</span> a list of global options available to all commands.
+</code></pre></div><h2 id="running-other-scripts-for-qbec-environments">Running other scripts for qbec environments</h2>
 <p>Sometimes you need to run other commands and scripts in addition to <code>qbec apply</code> that operate on
 the same cluster/ namespace as a qbec environment. qbec provides the <code>env list</code> and <code>env vars</code>
 command to enumerate its environments and set <code>kubectl</code> args to point to the same context
 as qbec would use for an environment.</p>
-
 <p>The output of the <code>env vars</code> command can be <code>eval</code>-ed in the shell and used to run other commands.</p>
-
 <p>Example:</p>
-
-<pre><code>$ qbec env vars dev
+<pre tabindex="0"><code>$ qbec env vars dev
 KUBECONFIG='/path/to/kube/config';
 KUBE_CLUSTER='dev-cluster-name';
 KUBE_CONTEXT='dev';
 KUBE_NAMESPACE='dev-ns';
 KUBECTL_ARGS='--context=dev--cluster=dev.example.com --namespace=default';
 export KUBECONFIG KUBE_CLUSTER KUBE_CONTEXT KUBE_NAMESPACE KUBECTL_ARGS
-</code></pre>
-
-<p>The basic output can be eval-ed like so and used in <code>kubectl</code> or other commands:</p>
-
-<pre><code>$ eval $(qbec env vars dev) # this sets the environment variables printed above
+</code></pre><p>The basic output can be eval-ed like so and used in <code>kubectl</code> or other commands:</p>
+<pre tabindex="0"><code>$ eval $(qbec env vars dev) # this sets the environment variables printed above
 $ kubectl ${KUBECTL_ARGS} apply -f somefile.yaml
-</code></pre>
-
-<p>If you want the cluster, context, namespace etc. as structured output you can use the <code>-o json</code>
+</code></pre><p>If you want the cluster, context, namespace etc. as structured output you can use the <code>-o json</code>
 option.</p>
-
-<pre><code>$ qbec env vars dev -o json
+<pre tabindex="0"><code>$ qbec env vars dev -o json
 {
   &quot;configFile&quot;: &quot;/path/to/kube/config&quot;,
   &quot;context&quot;: &quot;dev&quot;,
   &quot;cluster&quot;: &quot;dev1-cluster-name&quot;,
   &quot;namespace&quot;: &quot;dev-ns&quot;
 }
-</code></pre>
-
-<h2 id="experimental-commands">Experimental commands</h2>
-
+</code></pre><h2 id="experimental-commands">Experimental commands</h2>
 <p><code>qbec</code> includes some experimental commands that are not ready for primetime. These commands are not guaranteed to be backwards compatible between releases. They might also be removed in a future release. Use with caution.</p>
-
 <p>To see a list of experimental commands, run:</p>
-
-<pre><code class="language-shell">qbec alpha --help
-</code></pre>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec alpha --help
+</code></pre></div>
 
 <footer class=" footline" >
 	

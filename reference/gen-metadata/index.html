@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/gen-metadata.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/gen-metadata.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,13 +683,10 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#labels">Labels</a></li>
-<li><a href="#annotations">Annotations</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#labels">Labels</a></li>
+    <li><a href="#annotations">Annotations</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -708,46 +705,27 @@
         
 
 
-
-
 <h2 id="labels">Labels</h2>
-
 <p>All Kubernetes objects produced by qbec have the following labels associated with them:</p>
-
 <ul>
 <li><code>qbec.io/application</code> - the app name from <code>qbec.yaml</code>.</li>
 <li><code>qbec.io/environment</code> - the environment name in <code>qbec.yaml</code> for which the object was created.</li>
 <li><code>qbec.io/tag</code> - the <code>--app-tag</code> parameter passed in on the command line. This label is only set when non-blank.</li>
 </ul>
-
 <p>The labels are used to efficiently find all cluster objects for a specific app and environment
 (and tag, if specified) for garbage collection.</p>
-
-<div class="notices note" ><p>If you rename an app, environment, or component, garbage collection for the next immediate run of <code>qbec apply</code> may
-not work correctly. Subsequent apply operations will then work as usual since the object labels will be updated with
-the new values.</p>
-</div>
-
-
+<!-- raw HTML omitted -->
 <h2 id="annotations">Annotations</h2>
-
 <p>All Kubernetes objects produced by qbec have the following annotation associated with them:</p>
-
 <ul>
 <li><code>qbec.io/last-applied</code> - this is the pristine version of the object stored for the purposes of diff and 3-way merge
 patches and plays the same role as the <code>kubectl.kubernetes.io/last-applied-configuration</code> annotation set by <code>kubectl apply</code>.</li>
 <li><code>qbec.io/component</code> - the component that created the object. This is derived from the file name of the component.</li>
 </ul>
-
 <p>The component annotation is used to respect component filters for <code>apply</code> and  <code>delete</code> operations.
 Specifically, if <code>apply</code> is being run with component filters, only the extra remote objects matching the filter are
 garbage-collected.</p>
-
-<div class="notices note" ><p>If you are using qbec to update an object that was created by another tool, you may see strange diffs for the very first time when
-this annotation is missing. Once applied, the annotation will now be in place and subsequent updates will show cleaner
-diffs.</p>
-</div>
-
+<!-- raw HTML omitted -->
 
 
 <footer class=" footline" >

@@ -1,15 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>User guide on Qbec</title>
     <link>http://qbec.io/userguide/</link>
     <description>Recent content in User guide on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="http://qbec.io/userguide/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="http://qbec.io/userguide/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>A quick tour of qbec</title>
       <link>http://qbec.io/userguide/tour/</link>
@@ -17,7 +13,7 @@
       
       <guid>http://qbec.io/userguide/tour/</guid>
       <description>Initialize a new qbec app qbec provides an init command to set up a new application. Let&amp;rsquo;s run this and see what happens.
-qbec init demo --with-example # --with-example creates a sample &amp;quot;hello&amp;quot; component  When the above command runs successfully, it creates a subdirectory called demo that has a single component and environment. The default environment is inferred from the current context in your kube config.
+qbec init demo --with-example # --with-example creates a sample &amp;#34;hello&amp;#34; component When the above command runs successfully, it creates a subdirectory called demo that has a single component and environment. The default environment is inferred from the current context in your kube config.
 The following files are created in the demo directory:</description>
     </item>
     

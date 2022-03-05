@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/qbec-yaml.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/qbec-yaml.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,16 +683,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#environment-files">Environment files</a></li>
-<li><a href="#notes">Notes</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#environment-files">Environment files</a></li>
+        <li><a href="#notes">Notes</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -711,141 +709,131 @@
         
 
 
-
-
 <p>The app configuration is a file called <code>qbec.yaml</code> and needs to be at the root of the directory tree.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">qbec.io/v1alpha1</span> <span style="color:#75715e"># only supported version currently</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">App</span> <span style="color:#75715e"># must always be &#34;App&#34;</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">my-app</span> <span style="color:#75715e"># app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">componentsDir: components    # directory where component files can be found. Not recursive. default</span>: <span style="color:#ae81ff">components</span>
+  <span style="color:#f92672">paramsFile</span>: <span style="color:#ae81ff">params.libsonnet</span> <span style="color:#75715e"># file to load for `param list` and `param diff` commands. Not otherwise used.</span>
+  <span style="color:#f92672">postProcessor</span>: <span style="color:#ae81ff">pp.jsonnet   </span> <span style="color:#75715e"># post processor file for injecting common metadata</span>
 
-<pre><code class="language-yaml">apiVersion: qbec.io/v1alpha1 # only supported version currently
-kind: App # must always be &quot;App&quot;
-metadata:
-  name: my-app # app name. Allows multiple qbec apps to deploy different objects to the same namespace without GC collisions
-spec:
-  componentsDir: components    # directory where component files can be found. Not recursive. default: components
-  paramsFile: params.libsonnet # file to load for `param list` and `param diff` commands. Not otherwise used.
-  postProcessor: pp.jsonnet    # post processor file for injecting common metadata
+  <span style="color:#75715e"># additional library paths when executing jsonnet, no support currently for `http` URLs.</span>
+  <span style="color:#f92672">libPaths</span>:
+  - <span style="color:#ae81ff">additional</span>
+  - <span style="color:#ae81ff">local</span>
+  - <span style="color:#ae81ff">library</span>
+  - <span style="color:#ae81ff">paths</span>
 
-  # additional library paths when executing jsonnet, no support currently for `http` URLs.
-  libPaths:
-  - additional
-  - local
-  - library
-  - paths
-
-  # list of components to exclude by default
-  excludes:
-  - default
-  - excluded
-  - components
+  <span style="color:#75715e"># list of components to exclude by default</span>
+  <span style="color:#f92672">excludes</span>:
+  - <span style="color:#ae81ff">default</span>
+  - <span style="color:#ae81ff">excluded</span>
+  - <span style="color:#ae81ff">components</span>
  
-  # when dealing with apps that deploy to multiple namespaces, use object lists at cluster scope for GC purposes.
-  # by default, this will use namespaced queries for each namespace.
-  clusterScopedLists: true
+  <span style="color:#75715e"># when dealing with apps that deploy to multiple namespaces, use object lists at cluster scope for GC purposes.</span>
+  <span style="color:#75715e"># by default, this will use namespaced queries for each namespace.</span>
+  <span style="color:#f92672">clusterScopedLists</span>: <span style="color:#66d9ef">true</span>
 
-  # if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically
-  # change the default namespace for the environment in question by suffixing it with &lt;hyphen&gt;&lt;tag-value&gt; (e.g. 'myns-tag')
-  namespaceTagSuffix: true
+  <span style="color:#75715e"># if the following attribute is set to true and the --app-tag argument is set on the command line, qbec will automatically</span>
+  <span style="color:#75715e"># change the default namespace for the environment in question by suffixing it with &lt;hyphen&gt;&lt;tag-value&gt; (e.g. &#39;myns-tag&#39;)</span>
+  <span style="color:#f92672">namespaceTagSuffix</span>: <span style="color:#66d9ef">true</span>
 
-  # an arbitrary object to define baseline properties that is merged with environment specific properties.
-  baseProperties:
-    foo: base
+  <span style="color:#75715e"># an arbitrary object to define baseline properties that is merged with environment specific properties.</span>
+  <span style="color:#f92672">baseProperties</span>:
+    <span style="color:#f92672">foo</span>: <span style="color:#ae81ff">base</span>
 
-  # declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. 
-  vars:
-    # external variables are accessed as std.extVar('var-name')
-    external:
-      - name: imageTag # the name of the external variable passed in using --vm:ext-str and related options
-        default: 'latest' # the default value to use if this variable is not specified on the command line. Can be an arbitrary object.
-        secret: false # when true qbec will not print the plain text value in any debug message
+  <span style="color:#75715e"># declaration of late-bound variable definitions that can be passed in on the command line using the --vm:* options. </span>
+  <span style="color:#f92672">vars</span>:
+    <span style="color:#75715e"># external variables are accessed as std.extVar(&#39;var-name&#39;)</span>
+    <span style="color:#f92672">external</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">imageTag</span> <span style="color:#75715e"># the name of the external variable passed in using --vm:ext-str and related options</span>
+        <span style="color:#f92672">default</span>: <span style="color:#e6db74">&#39;latest&#39;</span> <span style="color:#75715e"># the default value to use if this variable is not specified on the command line. Can be an arbitrary object.</span>
+        <span style="color:#f92672">secret</span>: <span style="color:#66d9ef">false</span> <span style="color:#75715e"># when true qbec will not print the plain text value in any debug message</span>
 
-    # for top-level variables, your component's main &quot;object&quot; is a function that accepts a value, typically 
-    # initialized with a default in the code.
-    topLevel:
-      - name: mySecret # the name of the top-level variable (i.e. the name of the function parameter of your component's function)
-        components: [ 'service2' ] # the components that require this variable. Must be specified.
-        secret: true
+    <span style="color:#75715e"># for top-level variables, your component&#39;s main &#34;object&#34; is a function that accepts a value, typically </span>
+    <span style="color:#75715e"># initialized with a default in the code.</span>
+    <span style="color:#f92672">topLevel</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mySecret</span> <span style="color:#75715e"># the name of the top-level variable (i.e. the name of the function parameter of your component&#39;s function)</span>
+        <span style="color:#f92672">components</span>: [ <span style="color:#e6db74">&#39;service2&#39;</span> ] <span style="color:#75715e"># the components that require this variable. Must be specified.</span>
+        <span style="color:#f92672">secret</span>: <span style="color:#66d9ef">true</span>
   
-    # you can compute additional code variables on the fly. These computations happen before component evaluation
-    # and the variables can be referenced in component code. The `code` property is a string that is evaluated
-    # as jsonnet code.
-    computed:
-      - name: c1
-        code: |
-          {
-            myEnv: std.extVar('qbec.io/env'), // code can refer to std jsonnet variables
-            extImage: std.extVar('imageTag')  // and variables passed in from the command line or defaulted in qbec
-          }
-      - name: c2
-        code: |
-          base = import 'lib/calc.jsonnet'; // import is relative to qbec root or library paths in that order
-          base + c1                         // you can refer to previously computed variables
+    <span style="color:#75715e"># you can compute additional code variables on the fly. These computations happen before component evaluation</span>
+    <span style="color:#75715e"># and the variables can be referenced in component code. The `code` property is a string that is evaluated</span>
+    <span style="color:#75715e"># as jsonnet code.</span>
+    <span style="color:#f92672">computed</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">c1</span>
+        <span style="color:#f92672">code</span>: |<span style="color:#e6db74">
+</span><span style="color:#e6db74">          {
+</span><span style="color:#e6db74">            myEnv: std.extVar(&#39;qbec.io/env&#39;), // code can refer to std jsonnet variables
+</span><span style="color:#e6db74">            extImage: std.extVar(&#39;imageTag&#39;)  // and variables passed in from the command line or defaulted in qbec
+</span><span style="color:#e6db74">          }</span>          
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">c2</span>
+        <span style="color:#f92672">code</span>: |<span style="color:#e6db74">
+</span><span style="color:#e6db74">          base = import &#39;lib/calc.jsonnet&#39;; // import is relative to qbec root or library paths in that order
+</span><span style="color:#e6db74">          base + c1                         // you can refer to previously computed variables</span>          
 
-      # the code variable below creates an object that can be used as configuration to run a command
-      - name: helmConfig
-        code: |
-          {
-            command: 'expand-helm-template.sh',
-            args: [ '--init-dependencies' ], 
-            stdin: 'imageTag: %s' % std.extvar('imageTag'),
-          }
+      <span style="color:#75715e"># the code variable below creates an object that can be used as configuration to run a command</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">helmConfig</span>
+        <span style="color:#f92672">code</span>: |<span style="color:#e6db74">
+</span><span style="color:#e6db74">          {
+</span><span style="color:#e6db74">            command: &#39;expand-helm-template.sh&#39;,
+</span><span style="color:#e6db74">            args: [ &#39;--init-dependencies&#39; ], 
+</span><span style="color:#e6db74">            stdin: &#39;imageTag: %s&#39; % std.extvar(&#39;imageTag&#39;),
+</span><span style="color:#e6db74">          }</span>          
 
-    # you can define &quot;data sources&quot; initialized with a complex config object. The &quot;exec&quot; data source allows you
-    # to run programs whose standard output is consumed by your component code. The configVar query parameter
-    # refers to the computed variable above that provides the command name, arguments, environment variables and
-    # standard input. See the &quot;Jsonnet data importer&quot; reference section for more details.
-    dataSources:
-      - exec://helm-source?configVar=helmConfig
+    <span style="color:#75715e"># you can define &#34;data sources&#34; initialized with a complex config object. The &#34;exec&#34; data source allows you</span>
+    <span style="color:#75715e"># to run programs whose standard output is consumed by your component code. The configVar query parameter</span>
+    <span style="color:#75715e"># refers to the computed variable above that provides the command name, arguments, environment variables and</span>
+    <span style="color:#75715e"># standard input. See the &#34;Jsonnet data importer&#34; reference section for more details.</span>
+    <span style="color:#f92672">dataSources</span>:
+      - <span style="color:#ae81ff">exec://helm-source?configVar=helmConfig</span>
        
-  # map of environment names to environment objects. An environment is the combination of a server URL and default
-  # namespace. The default namespace is used for objects that do not have an explicit namespace set.
-  environments:
-    # for enviromnents such as minikube that do not always have a stable server URL you can use a context name instead.
-    minikube:
-      context: minikube # named context, prefer server URLs for non-local clusters.
-      defaultNamespace: my-ns # the namespace to use when namespaced object does not define it.
-      includes: # components to include, subset of global exclusion list
-      - components
-      - to
-      - include
-      excludes: # additional components to exclude
-      - more
-      - exclusions
+  <span style="color:#75715e"># map of environment names to environment objects. An environment is the combination of a server URL and default</span>
+  <span style="color:#75715e"># namespace. The default namespace is used for objects that do not have an explicit namespace set.</span>
+  <span style="color:#f92672">environments</span>:
+    <span style="color:#75715e"># for enviromnents such as minikube that do not always have a stable server URL you can use a context name instead.</span>
+    <span style="color:#f92672">minikube</span>:
+      <span style="color:#f92672">context</span>: <span style="color:#ae81ff">minikube</span> <span style="color:#75715e"># named context, prefer server URLs for non-local clusters.</span>
+      <span style="color:#f92672">defaultNamespace</span>: <span style="color:#ae81ff">my-ns</span> <span style="color:#75715e"># the namespace to use when namespaced object does not define it.</span>
+      <span style="color:#f92672">includes</span>: <span style="color:#75715e"># components to include, subset of global exclusion list</span>
+      - <span style="color:#ae81ff">components</span>
+      - <span style="color:#ae81ff">to</span>
+      - <span style="color:#ae81ff">include</span>
+      <span style="color:#f92672">excludes</span>: <span style="color:#75715e"># additional components to exclude</span>
+      - <span style="color:#ae81ff">more</span>
+      - <span style="color:#ae81ff">exclusions</span>
 
-    dev:
-      server: https://dev-server # server URL
-      properties: # arbitrary properties can be attached to environments
-        foo: bar
+    <span style="color:#f92672">dev</span>:
+      <span style="color:#f92672">server</span>: <span style="color:#ae81ff">https://dev-server</span> <span style="color:#75715e"># server URL</span>
+      <span style="color:#f92672">properties</span>: <span style="color:#75715e"># arbitrary properties can be attached to environments</span>
+        <span style="color:#f92672">foo</span>: <span style="color:#ae81ff">bar</span>
 
-  # additional environments can be loaded from files. Files are loaded in the order specified.
-  # It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.
-  # The file path is relative to the directory where qbec.yaml resides. http(s) URLs and glob patterns are also supported
-  envFiles:
-  - more-envs.yaml
-  - https://my.server/envs.yaml
-  - envs/*.yaml
+  <span style="color:#75715e"># additional environments can be loaded from files. Files are loaded in the order specified.</span>
+  <span style="color:#75715e"># It is explicitly allowed for a later file to replace an inline environment or one loaded from an earlier file.</span>
+  <span style="color:#75715e"># The file path is relative to the directory where qbec.yaml resides. http(s) URLs and glob patterns are also supported</span>
+  <span style="color:#f92672">envFiles</span>:
+  - <span style="color:#ae81ff">more-envs.yaml</span>
+  - <span style="color:#ae81ff">https://my.server/envs.yaml</span>
+  - <span style="color:#ae81ff">envs/*.yaml</span>
 
-  # if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. 
-  addComponentLabel: true
-</code></pre>
-
-<h3 id="environment-files">Environment files</h3>
-
+  <span style="color:#75715e"># if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. </span>
+  <span style="color:#f92672">addComponentLabel</span>: <span style="color:#66d9ef">true</span>
+</code></pre></div><h3 id="environment-files">Environment files</h3>
 <p>Environments can be defined in external files that are then loaded and merged into the main environments object.</p>
-
-<pre><code class="language-yaml">apiVersion: qbec.io/v1alpha1
-kind: EnvironmentMap
-spec:
-  # the environments key is exactly the same as the environments key in qbec.yaml
-  environments:
-    prod:
-      server: https://prod-server
-      includes:
-      - service2
-      properties:
-        foo: bar
-</code></pre>
-
-<h3 id="notes">Notes</h3>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">qbec.io/v1alpha1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">EnvironmentMap</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#75715e"># the environments key is exactly the same as the environments key in qbec.yaml</span>
+  <span style="color:#f92672">environments</span>:
+    <span style="color:#f92672">prod</span>:
+      <span style="color:#f92672">server</span>: <span style="color:#ae81ff">https://prod-server</span>
+      <span style="color:#f92672">includes</span>:
+      - <span style="color:#ae81ff">service2</span>
+      <span style="color:#f92672">properties</span>:
+        <span style="color:#f92672">foo</span>: <span style="color:#ae81ff">bar</span>
+</code></pre></div><h3 id="notes">Notes</h3>
 <ul>
 <li>The list of components is loaded from the <code>componentsDir</code> directory.</li>
 <li>Once the list is loaded, all exclusion and inclusion lists are checked to ensure that they refer to valid components.</li>

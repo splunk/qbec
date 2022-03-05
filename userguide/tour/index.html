@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/tour.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/tour.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,17 +683,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#initialize-a-new-qbec-app">Initialize a new qbec app</a></li>
-<li><a href="#run-local-commands">Run local commands</a></li>
-<li><a href="#filtering">Filtering</a></li>
-<li><a href="#validate-diff-and-apply">Validate, diff, and apply</a></li>
-<li><a href="#making-changes">Making changes</a></li>
-<li><a href="#clean-up">Clean up</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#initialize-a-new-qbec-app">Initialize a new qbec app</a></li>
+    <li><a href="#run-local-commands">Run local commands</a></li>
+    <li><a href="#filtering">Filtering</a></li>
+    <li><a href="#validate-diff-and-apply">Validate, diff, and apply</a></li>
+    <li><a href="#making-changes">Making changes</a></li>
+    <li><a href="#clean-up">Clean up</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -712,21 +709,13 @@
         
 
 
-
-
 <h2 id="initialize-a-new-qbec-app">Initialize a new qbec app</h2>
-
 <p>qbec provides an <code>init</code> command to set up a new application. Let&rsquo;s run this and see what happens.</p>
-
-<pre><code class="language-shell">qbec init demo --with-example # --with-example creates a sample &quot;hello&quot; component
-</code></pre>
-
-<p>When the above command runs successfully, it creates a subdirectory called <code>demo</code> that has a single
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec init demo --with-example <span style="color:#75715e"># --with-example creates a sample &#34;hello&#34; component</span>
+</code></pre></div><p>When the above command runs successfully, it creates a subdirectory called <code>demo</code> that has a single
 component and environment. The default environment is inferred from the current context in your
 kube config.</p>
-
 <p>The following files are created in the <code>demo</code> directory:</p>
-
 <ul>
 <li><code>qbec.yaml</code>: this is a minimal qbec manifest that defines a single environment</li>
 <li><code>components/hello.jsonnet</code>: produces a config map and deployment object</li>
@@ -735,73 +724,50 @@ correct set of runtime parameters based on environment.</li>
 <li><code>environments/base.libsonnet</code> - the baseline runtime parameters with default values</li>
 <li><code>environments/default.libsonnet</code> - the runtime parameters for the default environment</li>
 </ul>
-
 <h2 id="run-local-commands">Run local commands</h2>
-
 <p>The following commands run locally and do not communicate with any Kubernetes server</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec show default <span style="color:#75715e"># show the YAML that would be applied to the server</span>
 
-<pre><code class="language-shell">qbec show default # show the YAML that would be applied to the server
+qbec component list default <span style="color:#75715e"># list all components</span>
 
-qbec component list default # list all components
+qbec param list default  <span style="color:#75715e"># list all parameters</span>
 
-qbec param list default  # list all parameters
-
-qbec show -O default # show all object names instead of contents
-</code></pre>
-
-<h2 id="filtering">Filtering</h2>
-
+qbec show -O default <span style="color:#75715e"># show all object names instead of contents</span>
+</code></pre></div><h2 id="filtering">Filtering</h2>
 <p>Most qbec commands can be applied to a subset of components or objects. Components can be included
 or excluded using the <code>-c</code> and the <code>-C</code> filters. Specific object kinds can be included and excluded
 using the <code>-k</code> and <code>-K</code> filters.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec show -k deployment default <span style="color:#75715e"># only shows the deployment but not configmap</span>
 
-<pre><code class="language-shell">qbec show -k deployment default # only shows the deployment but not configmap
+qbec show -K deployment default <span style="color:#75715e"># only shows the configmap and excludes the deployment</span>
 
-qbec show -K deployment default # only shows the configmap and excludes the deployment
+qbec show -C hello default <span style="color:#75715e"># no output since the only component has been excluded</span>
+</code></pre></div><h2 id="validate-diff-and-apply">Validate, diff, and apply</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec validate default <span style="color:#75715e"># validates local objects against server metadata</span>
 
-qbec show -C hello default # no output since the only component has been excluded
-</code></pre>
+qbec diff default <span style="color:#75715e"># shows a diff between remote and local objects</span>
 
-<h2 id="validate-diff-and-apply">Validate, diff, and apply</h2>
-
-<pre><code class="language-shell">qbec validate default # validates local objects against server metadata
-
-qbec diff default # shows a diff between remote and local objects
-
-qbec apply default  # applies the components to an environment similar to kubectl apply
-</code></pre>
-
-<p>Once objects have been applied to the remote cluster, subsequent <code>diff</code> and <code>apply</code> commands should
+qbec apply default  <span style="color:#75715e"># applies the components to an environment similar to kubectl apply</span>
+</code></pre></div><p>Once objects have been applied to the remote cluster, subsequent <code>diff</code> and <code>apply</code> commands should
 show no changes. Re-run these commands to verify that this is indeed the case.</p>
-
 <h2 id="making-changes">Making changes</h2>
-
 <p>Let&rsquo;s make some changes to the parameters.</p>
-
 <p>Edit the <code>environments/default.libsonnet</code> file and change the replica count and/ or the config string.
 Re-run the <code>diff</code> and <code>apply</code> commands. They should show, respectively, what is different and display
 the patch sent to the server for applying it.</p>
-
 <h2 id="clean-up">Clean up</h2>
-
 <p>There are two ways to clean up the objects that <code>qbec</code> created. In either case, only components
 created by qbec will be deleted.</p>
-
 <ul>
 <li>you can explicitly delete them.</li>
 </ul>
-
-<pre><code class="language-shell">qbec delete default
-</code></pre>
-
-<ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">qbec delete default
+</code></pre></div><ul>
 <li>you can delete the local component and let garbage collection take care of it.</li>
 </ul>
-
-<pre><code class="language-shell">rm components/hello.jsonnet
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">rm components/hello.jsonnet
 qbec apply default
-</code></pre>
-
+</code></pre></div>
 
 <footer class=" footline" >
 	

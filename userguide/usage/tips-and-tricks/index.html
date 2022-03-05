@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/tips-and-tricks.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/tips-and-tricks.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,14 +689,11 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#runtime">Runtime</a></li>
-<li><a href="#development">Development</a></li>
-<li><a href="#continuous-integration">Continuous Integration</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#runtime">Runtime</a></li>
+    <li><a href="#development">Development</a></li>
+    <li><a href="#continuous-integration">Continuous Integration</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -715,51 +712,56 @@
         
 
 
-
-
 <h2 id="runtime">Runtime</h2>
-
 <ul>
-<li><p>qbec is written to have good performance even when dealing with hundreds of objects. That said,
+<li>
+<p>qbec is written to have good performance even when dealing with hundreds of objects. That said,
 this is wholly dependent on how long a basic command like <code>qbec show</code> takes to execute. Most of the
 time taken by <code>qbec show</code> is in component evaluation, which in turn is dependent on the performance
 of jsonnet libraries that your components use. A good rule of thumb is that you will have an
 enjoyable experience with qbec if <code>qbec show</code> executes in less than a second or two and a poorer
-experience otherwise.</p></li>
-
-<li><p>Organizing runtime parameters in the recommended manner will let you use the <code>param</code> subcommands
+experience otherwise.</p>
+</li>
+<li>
+<p>Organizing runtime parameters in the recommended manner will let you use the <code>param</code> subcommands
 effectively. In addition, restricting parameter values to simple scalar values, short arrays
-of scalar values or small, shallow objects will provide better listing and diffs.</p></li>
+of scalar values or small, shallow objects will provide better listing and diffs.</p>
+</li>
 </ul>
-
 <h2 id="development">Development</h2>
-
 <ul>
-<li><p>If you typically work with just one qbec app, set the <code>QBEC_ROOT</code> environment variable to the app
-directory so that qbec works from any working directory.</p></li>
-
-<li><p>Use the component and kind filters to restrict the scope of objects that are acted upon so that you
-see just the information you care about at any time.</p></li>
-
-<li><p>Set up your development environment (e.g. the VSCode IDE) with a jsonnet executable that can
+<li>
+<p>If you typically work with just one qbec app, set the <code>QBEC_ROOT</code> environment variable to the app
+directory so that qbec works from any working directory.</p>
+</li>
+<li>
+<p>Use the component and kind filters to restrict the scope of objects that are acted upon so that you
+see just the information you care about at any time.</p>
+</li>
+<li>
+<p>Set up your development environment (e.g. the VSCode IDE) with a jsonnet executable that can
 parse YAML (qbec ships with the <code>jsonnet-qbec</code> command that provides all the native extensions it
 installs). Configure the <code>qbec.io/env</code> extension variable to a valid environment. With this in place,
 the IDE will be able to show you errors early during development, without even having to run any
-of the qbec commands.</p></li>
-
-<li><p>Use the <code>--clean</code> option of the <code>show</code> command so you can see object contents without the additional qbec metadata.</p></li>
-
-<li><p>Declare a post-processor to add common metadata to all objects.</p></li>
+of the qbec commands.</p>
+</li>
+<li>
+<p>Use the <code>--clean</code> option of the <code>show</code> command so you can see object contents without the additional qbec metadata.</p>
+</li>
+<li>
+<p>Declare a post-processor to add common metadata to all objects.</p>
+</li>
 </ul>
-
 <h2 id="continuous-integration">Continuous Integration</h2>
-
 <ul>
-<li><p>Set the <code>QBEC_YES</code> environment variable to <code>true</code> so that all qbec prompts are disabled.</p></li>
-
-<li><p>Use the <code>--wait</code> option of the <code>apply</code> command so that qbec waits for deployments to fully roll out. Your subsequent
+<li>
+<p>Set the <code>QBEC_YES</code> environment variable to <code>true</code> so that all qbec prompts are disabled.</p>
+</li>
+<li>
+<p>Use the <code>--wait</code> option of the <code>apply</code> command so that qbec waits for deployments to fully roll out. Your subsequent
 functional tests can then rely on the rollout to be complete before they start executing. This ensures that your
-pods under test are ready and are of the desired version.</p></li>
+pods under test are ready and are of the desired version.</p>
+</li>
 </ul>
 
 

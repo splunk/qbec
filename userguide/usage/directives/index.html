@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/userguide/usage/directives.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/userguide/usage/directives.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -689,16 +689,14 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#updating-and-deleting-objects">Updating and deleting objects</a></li>
-<li><a href="#controlling-apply-order">Controlling apply order</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#updating-and-deleting-objects">Updating and deleting objects</a></li>
+        <li><a href="#controlling-apply-order">Controlling apply order</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -717,47 +715,34 @@
         
 
 
-
-
 <p>qbec usually does the right thing when applying objects. Sometimes this behavior needs tweaking. Qbec allows you to
 annotate objects with specific directives to control its behavior. All annotations are in the <code>directives.qbec.io/</code>
 namespace.</p>
-
 <h3 id="updating-and-deleting-objects">Updating and deleting objects</h3>
-
 <p>Usually qbec will update and delete objects as required. You can &ldquo;lock&rdquo; objects from being updated or deleted using the
 following annotations:</p>
-
 <ul>
 <li><code>directives.qbec.io/update-policy: never</code></li>
 <li><code>directives.qbec.io/delete-policy: never</code></li>
 </ul>
-
 <p>The first is useful when dealing with jobs that typically should not be updated. The second is useful for preventing
 storage objects like persistent volume claims from ever being deleted.</p>
-
 <p>Note that <code>qbec</code> will look for these annotations on the object that is already present on the cluster and will ignore
 the annotations from source code when implementing these policies. This ensures, for example, that you do not
 accidentally start updating and deleting objects by removing these annotations from source code.</p>
-
 <p>In addition if you lock a namespaced object from being deleted, qbec will automatically ensure that the
 corresponding namespace, if it exists, is also never deleted.</p>
-
 <h3 id="controlling-apply-order">Controlling apply order</h3>
-
 <p><code>qbec apply</code> evaluates all components in source code and internally assigns an &ldquo;apply order&rdquo; to every object. It then
 sorts this list and applies objects in order, one at a time. The default ordering applies cluster objects before
 namespaced objects, config maps and secrets before deployments etc.</p>
-
 <p>For specific objects, you can control the apply order by setting the annotation <code>directives.qbec.io/apply-order</code> to a
 numeric value as a string (e.g. <code>&quot;1000&quot;</code>).</p>
-
 <p>This feature should be used with care since it is possible to get nonsensical ordering (e.g. trying
 to apply a namespaced object before the namespace is created). The most common use of this feature is to provide a
 high number to delay processing of a specific object (typically a custom resource) until the end. Even in this case,
 qbec default processing may be enough since it automatically delays the apply of resources having unknown types to the
 end.</p>
-
 <p>If you have many instances of a resource that needs a custom apply order, <a href="../common-metadata/">consider using a post-processor</a>
 to set the annotation for all instances of the type instead of annotating each instance.</p>
 

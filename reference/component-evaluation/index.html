@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/component-evaluation.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/component-evaluation.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,14 +683,11 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#component-loading">Component loading</a></li>
-<li><a href="#jsonnet-evaluation">Jsonnet evaluation</a></li>
-<li><a href="#converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#component-loading">Component loading</a></li>
+    <li><a href="#jsonnet-evaluation">Jsonnet evaluation</a></li>
+    <li><a href="#converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</a></li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -709,40 +706,29 @@
         
 
 
-
-
 <p>How qbec evaluates component code using jsonnet and what it expects the output to look like.</p>
-
 <h2 id="component-loading">Component loading</h2>
-
 <ul>
 <li>Consider every <code>.jsonnet</code>, <code>.json</code>, and <code>.yaml</code> file directly under the component directory as a component to be loaded.
 In this case, the component name is the file name without the extension.</li>
 <li>Check immediate subdirectories of the component directory to see if they contain an <code>index.jsonnet</code> or <code>index.yaml</code> file.
 If so, create a component with the sub-directory name.
-
 <ul>
 <li>If an <code>index.jsonnet</code> file exists load it for component processing</li>
 <li>If an <code>index.yaml</code> file exists load all <code>.json</code> and <code>.yaml</code> files in the subdirectory.</li>
-</ul></li>
 </ul>
-
+</li>
+</ul>
 <h2 id="jsonnet-evaluation">Jsonnet evaluation</h2>
-
 <p>This works as follows:</p>
-
 <ul>
 <li>Collect the list of files to be loaded as described in the previous section.</li>
 <li>Assuming this leads to 3 files, say, <code>c1.jsonnet</code>, <code>c2.json</code>, and <code>c3.yaml</code> evaluate each file in its own VM in parallel
 upto a specific concurrency.</li>
 </ul>
-
 <p>The YAML file is parsed as: <code>std.native('parseYaml')(importstr '&lt;file&gt;')</code></p>
-
 <p>The JSON file is parsed as: <code>std.native('parseJson')(importstr '&lt;file&gt;')</code></p>
-
 <p>The JSONNET is evaluated in a VM instance as-is. In this case:</p>
-
 <ul>
 <li>the <code>qbec.io/env</code> extension variable is set to the environment name in question.</li>
 <li>the <code>qbec.io/envProperties</code> extension variable is set to the properties defined for the environment.</li>
@@ -756,13 +742,9 @@ is suffixed with the tag with a hyphen in between.</li>
 <li>default values for external variables declared in <code>qbec.yaml</code> but not specified on the command line are set.</li>
 <li>all top level variables associated with the component are set, if specified.</li>
 </ul>
-
 <h2 id="converting-component-output-to-kubernetes-objects">Converting component output to Kubernetes objects</h2>
-
 <p>The evaluation above creates a map of component names to outputs returned by the jsonnet, json and yaml files.</p>
-
 <p>The output is allowed to be:</p>
-
 <ul>
 <li>A single Kubernetes object (identified as such by virtue of having a <code>kind</code> and <code>apiVersion</code>
 fields, where <code>kind</code> is not <code>List</code>).</li>
@@ -771,7 +753,6 @@ containing an array of outputs.</li>
 <li>A map of string keys to outputs</li>
 <li>An array of outputs</li>
 </ul>
-
 <p>In the latter 3 cases, the output is processed recursively to get to the leaf k8s objects.</p>
 
 

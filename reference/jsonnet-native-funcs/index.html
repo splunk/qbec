@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -638,7 +638,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/master/site/content/reference/jsonnet-native-funcs.md" target="blank">
+                    <a class="github-link" title='Edit this page' href="https://github.com/splunk/qbec/edit/main/site/content/reference/jsonnet-native-funcs.md" target="blank">
                       <i class="fas fa-code-branch"></i>
                       <span id="top-github-link-text">Edit this page</span>
                     </a>
@@ -683,28 +683,29 @@
                     <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#expandhelmtemplate">expandHelmTemplate</a>
-<ul>
-<li><a href="#usage">Usage</a></li>
-<li><a href="#the-options-object">The options object</a></li>
-</ul></li>
-<li><a href="#parsejson">parseJson</a>
-<ul>
-<li><a href="#usage-1">Usage</a></li>
-</ul></li>
-<li><a href="#parseyaml">parseYaml</a>
-<ul>
-<li><a href="#usage-2">Usage</a></li>
-</ul></li>
-<li><a href="#renderyaml">renderYaml</a>
-<ul>
-<li><a href="#usage-3">Usage</a></li>
-</ul></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#expandhelmtemplate">expandHelmTemplate</a>
+      <ul>
+        <li><a href="#usage">Usage</a></li>
+        <li><a href="#the-options-object">The options object</a></li>
+      </ul>
+    </li>
+    <li><a href="#parsejson">parseJson</a>
+      <ul>
+        <li><a href="#usage-1">Usage</a></li>
+      </ul>
+    </li>
+    <li><a href="#parseyaml">parseYaml</a>
+      <ul>
+        <li><a href="#usage-2">Usage</a></li>
+      </ul>
+    </li>
+    <li><a href="#renderyaml">renderYaml</a>
+      <ul>
+        <li><a href="#usage-3">Usage</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
     </div>
 </div>
@@ -723,22 +724,15 @@
         
 
 
-
-
 <p>A list of all native functions that qbec natively supports.</p>
-
 <h2 id="expandhelmtemplate">expandHelmTemplate</h2>
-
 <p><strong>this function is now deprecated. Integrate with helm using external data sources instead</strong></p>
-
 <p>The <code>expandHelmTemplate</code> function expands a helm chart and returns the resulting objects.
 This is EXPERIMENTAL in nature - the API is subject to change in a subsequent release.
 It runs the <code>helm template</code> command, assuming that the <code>helm</code> binary is already installed and
 available in the PATH.</p>
-
 <h3 id="usage">Usage</h3>
-
-<pre><code>    local expandHelmTemplate = std.native('expandHelmTemplate');
+<pre tabindex="0"><code>    local expandHelmTemplate = std.native('expandHelmTemplate');
     expandHelmTemplate(&quot;path/to/chart&quot;, 
         { 
             chartProperty: 'chart-value'
@@ -749,18 +743,13 @@ available in the PATH.</p>
             thisFile: std.thisFile, // important
         },
     )
-</code></pre>
-
-<ul>
+</code></pre><ul>
 <li>The first argument is a path to a helm chart (which is usually a folder or a <code>.tar.gz</code> file).</li>
 <li>The second argument is an object containing the values for the chart. This is turned into a <code>--values</code> argument to the template command.</li>
 <li>The last argument is an object representing a set of options, including options to the helm command.</li>
 </ul>
-
 <h3 id="the-options-object">The options object</h3>
-
 <p>This object supports the following keys:</p>
-
 <ul>
 <li><code>thisFile</code> (string) - the current file from which the function is called. Should be set to <a href="https://jsonnet.org/ref/stdlib.html#thisFile">std.thisFile</a>. Relative references
 are resolved with respect to the supplied file path.</li>
@@ -772,42 +761,28 @@ are resolved with respect to the supplied file path.</li>
 <li><code>kubeVersion</code> (string) - the <code>--kube-version</code> argument to the template command</li>
 <li><code>verbose</code> (bool) - print <code>helm template</code> command invocation to standard error before executing it</li>
 </ul>
-
 <h2 id="parsejson">parseJson</h2>
-
 <p>The <code>parseJson</code> function parses a JSON-encoded string and returns the corresponding object.</p>
-
 <h3 id="usage-1">Usage</h3>
-
-<pre><code>    local parseJson = std.native('parseJson');
+<pre tabindex="0"><code>    local parseJson = std.native('parseJson');
     local jsonString = '{ &quot;hello&quot; : &quot;world&quot; }';
     
     parseJson(jsonString) // returns the _object_ { hello: 'world' }
-</code></pre>
-
-<h2 id="parseyaml">parseYaml</h2>
-
+</code></pre><h2 id="parseyaml">parseYaml</h2>
 <p>The <code>parseYaml</code> function parses an input string into an array of YAML documents. It <em>always</em> returns an array
 even if there is only one YAML document in the string.</p>
-
 <h3 id="usage-2">Usage</h3>
-
-<pre><code>    local parseYaml = std.native('parseYaml');
+<pre tabindex="0"><code>    local parseYaml = std.native('parseYaml');
     local yamlString = importstr './path/to/yaml/file';
     
     parseYaml(yamlString) // returns all YAML docs as an array
-</code></pre>
-
-<h2 id="renderyaml">renderYaml</h2>
-
+</code></pre><h2 id="renderyaml">renderYaml</h2>
 <p>The <code>renderYaml</code> function takes a single input and returns the corresponding YAML as a string. This YAML is compatible
 with the output of <code>qbec fmt</code>. If the input is an array, it will create multiple YAML documents, one for each element.
 To render an array value as a single document wrap the value in a one-element array. Note that top-level nils do not
 produce any output.</p>
-
 <h3 id="usage-3">Usage</h3>
-
-<pre><code>   local renderYaml = std.native('renderYaml');
+<pre tabindex="0"><code>   local renderYaml = std.native('renderYaml');
    local oneDoc = renderYaml({ foo: 'bar', bar: 'baz' });
    local twoDocs = renderYaml([{ foo: 'bar' }, null, { foo: 'baz' }]);
    local arrayAsDoc = renderYaml([[{ foo: 'bar' }, { foo: 'baz' }]]);
@@ -817,7 +792,6 @@ produce any output.</p>
      aDoc: arrayAsDoc,
    }
 </code></pre>
-
 
 <footer class=" footline" >
 	

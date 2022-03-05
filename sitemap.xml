@@ -1,119 +1,61 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>http://qbec.io/userguide/tour/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/basic/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/getting-started/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/authoring/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/common-metadata/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/comparison-with-other-tools/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/model/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/runtime-params/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/branches-and-ci/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/directives/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/commands/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/tips-and-tricks/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/qbec-yaml/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/directives/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/jsonnet-vars/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/gen-metadata/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/jsonnet-native-funcs/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/jsonnet-glob-importer/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/jsonnet-external-data/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/component-evaluation/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/diffs-and-patches/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/reference/garbage-collection/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/categories/</loc>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/tags/</loc>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>http://qbec.io/userguide/usage/</loc>
   </url>
-  
 </urlset>

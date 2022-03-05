@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.54.0" />
+    <meta name="generator" content="Hugo 0.88.1" />
     <meta name="description" content="a tool to configure and create Kubernetes objects on multiple environments">
 
 
@@ -645,23 +645,16 @@
 </span>
 
  
-
-
-<h1 id="qbec-images-qbec-logo-black-svg"><img src="/images/qbec-logo-black.svg" alt="qbec" /></h1>
-
+<h1 id="qbecimagesqbec-logo-blacksvg"><img src="/images/qbec-logo-black.svg" alt="qbec"></h1>
 <p><em>a tool to configure and create Kubernetes objects on multiple environments</em></p>
-
 <p>qbec (pronounced like the <a href="https://en.wikipedia.org/wiki/Quebec">Canadian province</a>) is a command line tool that
 allows you to create Kubernetes objects on multiple Kubernetes clusters and/ or namespaces configured for
 the target environment in question.</p>
-
 <p>It is based on <a href="https://jsonnet.org">jsonnet</a> and is similar to other tools in the same space like
 <a href="https://github.com/ksonnet/kubecfg">kubecfg</a> and <a href="https://ksonnet.io/">ksonnet</a>.
 If you already know what the other tools do, read <a href="comparison-with-other-tools/">the comparison document</a> to understand
 how qbec is different from them. Otherwise read the <a href="userguide/">user guide</a>.</p>
-
 <h2 id="features">Features</h2>
-
 <ul>
 <li>Deploy Kubernetes objects across multiple clusters and/ or namespaces.</li>
 <li>Create transient objects like one-off <code>jobs</code> and <code>pods</code> with generated names.</li>
@@ -675,17 +668,16 @@ how qbec is different from them. Otherwise read the <a href="userguide/">user gu
 <li>Create differently named objects for branch builds and garbage collect in that limited scope.</li>
 <li>Customize update and delete behavior using directives.</li>
 <li>Usable, safe and secure by default.
-
 <ul>
 <li>Duplicate objects having the same kind, namespace, and name are detected and disallowed.</li>
 <li>Remote commands that change cluster state require confirmation.</li>
 <li>Secrets are automatically hidden and never appear in any output.</li>
 <li>Performant (limited by the speed of the jsonnet libraries you use)</li>
-</ul></li>
+</ul>
+</li>
 <li>Ability to use qbec environment definitions in other unrelated commands and scripts so that the
 safety properties of qbec are carried over to those commands.</li>
 </ul>
-
 <p><a href="getting-started/">Get started</a>.</p>
 	
   

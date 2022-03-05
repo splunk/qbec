@@ -1,15 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Using qbec on Qbec</title>
     <link>http://qbec.io/userguide/usage/</link>
     <description>Recent content in Using qbec on Qbec</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="http://qbec.io/userguide/usage/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="http://qbec.io/userguide/usage/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Folders, files, parameters</title>
       <link>http://qbec.io/userguide/usage/basic/</link>
@@ -17,7 +13,7 @@
       
       <guid>http://qbec.io/userguide/usage/basic/</guid>
       <description>At the very least, you need to have the following files and folders for a qbec app:
- qbec.yaml - this needs to be at the root of the source directory and defines your application in terms of:  supported environments components that should be excluded by default for all environments specific components excluded and included in specific environments. See the reference document for more details.  a folder for components.</description>
+ qbec.yaml - this needs to be at the root of the source directory and defines your application in terms of:  supported environments components that should be excluded by default for all environments specific components excluded and included in specific environments. See the reference document for more details.   a folder for components.</description>
     </item>
     
     <item>
@@ -58,8 +54,8 @@ Some parameters cannot be checked into source code. These include tags for image
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://qbec.io/userguide/usage/branches-and-ci/</guid>
-      <description>You have created jsonnet components, a qbec.yaml file and declared a dev environment. These are good enough for local development and/ or commits to a master branch. Now you are looking for a way to create objects with slightly different names as part of functional tests of your pull request builds.
-You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;rdquo; and does not interfere with your master builds.</description>
+      <description>You have created jsonnet components, a qbec.yaml file and declared a dev environment. These are good enough for local development and/ or commits to a main branch. Now you are looking for a way to create objects with slightly different names as part of functional tests of your pull request builds.
+You want to ensure that each branch build runs in its own &amp;ldquo;scope&amp;rdquo; and does not interfere with your main builds.</description>
     </item>
     
     <item>
@@ -89,7 +85,7 @@ $ qbec --help qbec provides a set of commands to manage kubernetes objects on mu
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://qbec.io/userguide/usage/tips-and-tricks/</guid>
-      <description>Runtime  qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
+      <description>Runtime   qbec is written to have good performance even when dealing with hundreds of objects. That said, this is wholly dependent on how long a basic command like qbec show takes to execute. Most of the time taken by qbec show is in component evaluation, which in turn is dependent on the performance of jsonnet libraries that your components use. A good rule of thumb is that you will have an enjoyable experience with qbec if qbec show executes in less than a second or two and a poorer experience otherwise.</description>
     </item>
     
   </channel>
