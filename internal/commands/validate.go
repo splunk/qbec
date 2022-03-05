@@ -142,7 +142,7 @@ type validateCommandConfig struct {
 	cmd.AppContext
 	parallel   int
 	silent     bool
-	filterFunc func() (model.FilterParams, error)
+	filterFunc func() (model.Filters, error)
 }
 
 func doValidate(ctx context.Context, args []string, config validateCommandConfig) error {
@@ -165,7 +165,7 @@ func doValidate(ctx context.Context, args []string, config validateCommandConfig
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(ctx, envCtx, filterOpts{kf: client.ObjectKey, fp: fp, client: client})
+	objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 	if err != nil {
 		return err
 	}

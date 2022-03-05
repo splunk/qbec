@@ -32,7 +32,7 @@ type deleteCommandConfig struct {
 	cmd.AppContext
 	dryRun     bool
 	useLocal   bool
-	filterFunc func() (model.FilterParams, error)
+	filterFunc func() (model.Filters, error)
 }
 
 func doDelete(ctx context.Context, args []string, config deleteCommandConfig) error {
@@ -59,7 +59,7 @@ func doDelete(ctx context.Context, args []string, config deleteCommandConfig) er
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(ctx, envCtx, filterOpts{fp: fp, kf: client.ObjectKey, client: client})
+		objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 		if err != nil {
 			return err
 		}

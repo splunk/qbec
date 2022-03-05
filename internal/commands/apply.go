@@ -62,7 +62,7 @@ type applyCommandConfig struct {
 	wait        bool
 	waitAll     bool
 	waitTimeout time.Duration
-	filterFunc  func() (model.FilterParams, error)
+	filterFunc  func() (model.Filters, error)
 }
 
 type nameWrap struct {
@@ -113,7 +113,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(ctx, envCtx, filterOpts{fp: fp, kf: client.ObjectKey, client: client})
+	objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 	if err != nil {
 		return err
 	}

@@ -27,9 +27,15 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 )
 
-func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (model.FilterParams, error) {
-	fn := model.NewFilterParams(c.Flags(), includeAllFilters)
-	return func() (model.FilterParams, error) {
+// cleanEvalMode is set to true by the show command when clean mode is in effect and drives a qbec external variable
+var cleanEvalMode bool
+
+// keyFunc is a function that provides a string key for an object
+type keyFunc func(object model.K8sMeta) string
+
+func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (model.Filters, error) {
+	fn := model.NewFilters(c.Flags(), includeAllFilters)
+	return func() (model.Filters, error) {
 		p, err := fn()
 		if err != nil {
 			return p, cmd.NewUsageError(err.Error())
@@ -37,9 +43,6 @@ func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (model.Fil
 		return p, nil
 	}
 }
-
-// keyFunc is a function that provides a string key for an object
-type keyFunc func(object model.K8sMeta) string
 
 func displayName(obj model.K8sLocalObject) string {
 	group := obj.GroupVersionKind().Group
@@ -71,16 +74,22 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 	return nil
 }
 
-var cleanEvalMode bool
-
 type filterOpts struct {
-	fp     model.FilterParams
-	client model.Namespaced
-	kf     keyFunc
+	filters model.Filters
+	client  model.Namespaced
+	keyFunc keyFunc
 }
 
-func filteredObjects(_ context.Context, envCtx cmd.EnvContext, opts filterOpts) ([]model.K8sLocalObject, error) {
-	fp := opts.fp
+func emptyFilterOpts() filterOpts {
+	return filterOpts{}
+}
+
+func makeFilterOpts(filters model.Filters, client cmd.KubeClient) filterOpts {
+	return filterOpts{filters: filters, client: client, keyFunc: client.ObjectKey}
+}
+
+func generateObjects(_ context.Context, envCtx cmd.EnvContext, opts filterOpts) ([]model.K8sLocalObject, error) {
+	fp := opts.filters
 	client := opts.client
 	components, err := envCtx.App().ComponentsForEnvironment(envCtx.Env(), fp.ComponentIncludes(), fp.ComponentExcludes())
 	if err != nil {
@@ -90,7 +99,7 @@ func filteredObjects(_ context.Context, envCtx cmd.EnvContext, opts filterOpts) 
 	if err != nil {
 		return nil, err
 	}
-	if err := checkDuplicates(output, opts.kf); err != nil {
+	if err := checkDuplicates(output, opts.keyFunc); err != nil {
 		return nil, err
 	}
 	if len(output) == 0 {

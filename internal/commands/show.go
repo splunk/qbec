@@ -91,7 +91,7 @@ type showCommandConfig struct {
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
-	filterFunc      func() (model.FilterParams, error)
+	filterFunc      func() (model.Filters, error)
 }
 
 func removeMetadataKey(un *unstructured.Unstructured, name string) {
@@ -153,7 +153,7 @@ func doShow(ctx context.Context, args []string, config showCommandConfig) error 
 		return err
 	}
 
-	objects, err := filteredObjects(ctx, envCtx, filterOpts{kf: keyFunc, fp: fp})
+	objects, err := generateObjects(ctx, envCtx, filterOpts{keyFunc: keyFunc, filters: fp})
 	if err != nil {
 		return err
 	}

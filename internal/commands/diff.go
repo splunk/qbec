@@ -308,7 +308,7 @@ type diffCommandConfig struct {
 	parallel      int
 	contextLines  int
 	di            diffIgnores
-	filterFunc    func() (model.FilterParams, error)
+	filterFunc    func() (model.Filters, error)
 	exitNonZero   bool
 }
 
@@ -336,7 +336,7 @@ func doDiff(ctx context.Context, args []string, config diffCommandConfig) error 
 		return err
 	}
 
-	objects, err := filteredObjects(ctx, envCtx, filterOpts{fp: fp, kf: client.ObjectKey, client: client})
+	objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 	if err != nil {
 		return err
 	}

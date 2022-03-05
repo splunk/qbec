@@ -98,7 +98,7 @@ type param struct {
 	Value     interface{} `json:"value"`
 }
 
-func extractComponentParams(paramsObject map[string]interface{}, fp model.FilterParams) (map[string]interface{}, error) {
+func extractComponentParams(paramsObject map[string]interface{}, fp model.Filters) (map[string]interface{}, error) {
 	cf, err := model.NewComponentFilter(fp.ComponentIncludes(), fp.ComponentExcludes())
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func extractComponentParams(paramsObject map[string]interface{}, fp model.Filter
 type paramListCommandConfig struct {
 	cmd.AppContext
 	format     string
-	filterFunc func() (model.FilterParams, error)
+	filterFunc func() (model.Filters, error)
 }
 
 func doParamList(args []string, config paramListCommandConfig) error {
@@ -177,7 +177,7 @@ func newParamListCommand(cp ctxProvider) *cobra.Command {
 
 type paramDiffCommandConfig struct {
 	cmd.AppContext
-	filterFunc func() (model.FilterParams, error)
+	filterFunc func() (model.Filters, error)
 }
 
 func doParamDiff(args []string, config paramDiffCommandConfig) error {
