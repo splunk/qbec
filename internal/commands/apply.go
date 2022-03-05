@@ -23,7 +23,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
-	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -63,7 +62,7 @@ type applyCommandConfig struct {
 	wait        bool
 	waitAll     bool
 	waitTimeout time.Duration
-	filterFunc  func() (filter.Params, error)
+	filterFunc  func() (model.FilterParams, error)
 }
 
 type nameWrap struct {

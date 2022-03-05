@@ -14,15 +14,13 @@
    limitations under the License.
 */
 
-// Package filter provides filtering operations for various object types.
-package filter
+package model
 
 import (
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"github.com/splunk/qbec/internal/model"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -31,18 +29,18 @@ type Namespaced interface {
 	IsNamespaced(gvk schema.GroupVersionKind) (bool, error)
 }
 
-// Params are filter parameters
-type Params struct {
+// FilterParams are filter parameters
+type FilterParams struct {
 	includes              []string
 	excludes              []string
 	excludeClusterObjects bool
-	kindFilter            model.Filter
-	componentFilter       model.Filter
-	namespaceFilter       model.Filter
+	kindFilter            Filter
+	componentFilter       Filter
+	namespaceFilter       Filter
 }
 
-// NewParams sets up options in the supplied flags and returns a function to return a Params.
-func NewParams(flags *pflag.FlagSet, includeAllFilters bool) func() (Params, error) {
+// NewFilterParams sets up options in the supplied flags and returns a function to return a FilterParams.
+func NewFilterParams(flags *pflag.FlagSet, includeAllFilters bool) func() (FilterParams, error) {
 	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes []string
 	var includeClusterScopedObjects bool
 
@@ -55,25 +53,25 @@ func NewParams(flags *pflag.FlagSet, includeAllFilters bool) func() (Params, err
 		flags.StringArrayVarP(&nsExcludes, "exclude-namespace", "P", nil, "exclude objects with this namespace")
 		flags.BoolVar(&includeClusterScopedObjects, "include-cluster-objects", true, "include cluster scoped objects, false by default when namespace filters present")
 	}
-	return func() (Params, error) {
-		of, err := model.NewKindFilter(kindIncludes, kindExcludes)
+	return func() (FilterParams, error) {
+		of, err := newKindFilter(kindIncludes, kindExcludes)
 		if err != nil {
-			return Params{}, err
+			return FilterParams{}, err
 		}
-		cf, err := model.NewComponentFilter(includes, excludes)
+		cf, err := NewComponentFilter(includes, excludes)
 		if err != nil {
-			return Params{}, err
+			return FilterParams{}, err
 		}
-		nf, err := model.NewStringFilter("namespaces", nsIncludes, nsExcludes)
+		nf, err := newStringFilter("namespaces", nsIncludes, nsExcludes)
 		if err != nil {
-			return Params{}, err
+			return FilterParams{}, err
 		}
 		if nf.HasFilters() {
 			if !flags.Changed("include-cluster-objects") {
 				includeClusterScopedObjects = false
 			}
 		}
-		return Params{
+		return FilterParams{
 			includes:              includes,
 			excludes:              excludes,
 			kindFilter:            of,
@@ -85,28 +83,28 @@ func NewParams(flags *pflag.FlagSet, includeAllFilters bool) func() (Params, err
 }
 
 // ComponentIncludes returns the components reauested to be included
-func (f Params) ComponentIncludes() []string {
+func (f FilterParams) ComponentIncludes() []string {
 	return f.includes
 }
 
 // ComponentExcludes returns the components reauested to be excluded
-func (f Params) ComponentExcludes() []string {
+func (f FilterParams) ComponentExcludes() []string {
 	return f.excludes
 }
 
 // GVKFilter returns true if the supplied GVK should be included.
-func (f Params) GVKFilter(gvk schema.GroupVersionKind) bool {
+func (f FilterParams) GVKFilter(gvk schema.GroupVersionKind) bool {
 	return f.kindFilter != nil && f.kindFilter.ShouldInclude(gvk.Kind)
 }
 
 // HasNamespaceFilters returns true if filters based on namespace scope are in effect.
-func (f Params) HasNamespaceFilters() bool {
+func (f FilterParams) HasNamespaceFilters() bool {
 	return (f.namespaceFilter != nil && f.namespaceFilter.HasFilters()) || f.excludeClusterObjects
 }
 
 // Match returns true if the current filters match the supplied object. The client can be nil
 // if namespace scope filters are not in effect.
-func (f Params) Match(o model.K8sQbecMeta, client Namespaced, defaultNS string) (bool, error) {
+func (f FilterParams) Match(o K8sQbecMeta, client Namespaced, defaultNS string) (bool, error) {
 	if f.HasNamespaceFilters() && client == nil {
 		return false, fmt.Errorf("no namespace metadata when namespace filters present")
 	}
@@ -122,7 +120,7 @@ func (f Params) Match(o model.K8sQbecMeta, client Namespaced, defaultNS string) 
 	return f.applyNamespaceFilters(o, client, defaultNS)
 }
 
-func (f Params) applyNamespaceFilters(o model.K8sQbecMeta, client Namespaced, defaultNs string) (bool, error) {
+func (f FilterParams) applyNamespaceFilters(o K8sQbecMeta, client Namespaced, defaultNs string) (bool, error) {
 	isNamespaced, err := client.IsNamespaced(o.GroupVersionKind())
 	if err != nil {
 		return false, errors.Wrap(err, "namespace filter")

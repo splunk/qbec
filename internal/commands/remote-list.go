@@ -21,7 +21,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
@@ -33,7 +32,7 @@ type listClient interface {
 	ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error)
 }
 
-type listFilterFunc func(obj model.K8sQbecMeta, client filter.Namespaced, defaultNS string) (bool, error)
+type listFilterFunc func(obj model.K8sQbecMeta, client model.Namespaced, defaultNS string) (bool, error)
 
 // lister lists remote objects and returns a list of objects to be deleted.
 type lister interface {

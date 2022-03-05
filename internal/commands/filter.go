@@ -23,14 +23,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/eval"
-	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
 )
 
-func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (filter.Params, error) {
-	fn := filter.NewParams(c.Flags(), includeAllFilters)
-	return func() (filter.Params, error) {
+func addFilterParams(c *cobra.Command, includeAllFilters bool) func() (model.FilterParams, error) {
+	fn := model.NewFilterParams(c.Flags(), includeAllFilters)
+	return func() (model.FilterParams, error) {
 		p, err := fn()
 		if err != nil {
 			return p, cmd.NewUsageError(err.Error())
@@ -75,8 +74,8 @@ func checkDuplicates(objects []model.K8sLocalObject, kf keyFunc) error {
 var cleanEvalMode bool
 
 type filterOpts struct {
-	fp     filter.Params
-	client filter.Namespaced
+	fp     model.FilterParams
+	client model.Namespaced
 	kf     keyFunc
 }
 

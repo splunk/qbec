@@ -22,7 +22,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
-	"github.com/splunk/qbec/internal/filter"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/objsort"
 	"github.com/splunk/qbec/internal/remote"
@@ -33,7 +32,7 @@ type deleteCommandConfig struct {
 	cmd.AppContext
 	dryRun     bool
 	useLocal   bool
-	filterFunc func() (filter.Params, error)
+	filterFunc func() (model.FilterParams, error)
 }
 
 func doDelete(ctx context.Context, args []string, config deleteCommandConfig) error {
