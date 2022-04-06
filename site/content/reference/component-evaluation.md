@@ -7,11 +7,12 @@ How qbec evaluates component code using jsonnet and what it expects the output t
 
 ## Component loading
 
-* Consider every `.jsonnet`, `.json`, and `.yaml` file directly under the component directory as a component to be loaded.
+* Consider every `.jsonnet`, `.cue`, `.json`, and `.yaml` file directly under the component directory as a component to be loaded.
   In this case, the component name is the file name without the extension.
-* Check immediate subdirectories of the component directory to see if they contain an `index.jsonnet` or `index.yaml` file.
+* Check immediate subdirectories of the component directory to see if they contain an `index.jsonnet`, `index.cue` or `index.yaml` file.
   If so, create a component with the sub-directory name.
-    * If an `index.jsonnet` file exists load it for component processing
+    * If an `index.jsonnet` file exists load it for component processing.
+    * If an `index.cue` file exists  load it for component processing.
     * If an `index.yaml` file exists load all `.json` and `.yaml` files in the subdirectory.
 
 ## Jsonnet evaluation

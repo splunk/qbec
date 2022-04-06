@@ -521,6 +521,7 @@ func (a *App) loadComponents() (map[string]Component, error) {
 				var staticFiles []string
 				hasIndexJsonnet := false
 				hasIndexYAML := false
+				hasIndexCue := false
 				for _, f := range files {
 					stat, err := os.Stat(f)
 					if err != nil {
@@ -532,6 +533,8 @@ func (a *App) loadComponents() (map[string]Component, error) {
 					switch filepath.Base(f) {
 					case "index.jsonnet":
 						hasIndexJsonnet = true
+					case "index.cue":
+						hasIndexCue = true
 					case "index.yaml":
 						hasIndexYAML = true
 					}
@@ -549,6 +552,11 @@ func (a *App) loadComponents() (map[string]Component, error) {
 					list = append(list, Component{
 						Name:  filepath.Base(path),
 						Files: staticFiles,
+					})
+				case hasIndexCue:
+					list = append(list, Component{
+						Name:  filepath.Base(path),
+						Files: []string{filepath.Join(path, "index.cue")},
 					})
 				}
 				return filepath.SkipDir

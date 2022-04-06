@@ -18,6 +18,8 @@ A component is:
 
 * a single jsonnet, json or yaml source file directly under the components directory. In this case the component name
   is the name of the file without the extension and qbec will process this file.
+* a subdirectory directly under the components directory that has an `index.cue` file. In this case the component
+  name is the subdirectory name and the `index.cue` is processed by qbec (experimental).
 * a subdirectory directly under the components directory that has an `index.jsonnet` file. In this case the component
   name is the subdirectory name and the `index.jsonnet` is processed by qbec.
 * a sudirectory containing an `index.yaml` file. In this case the component name is the subdirectory name and all
