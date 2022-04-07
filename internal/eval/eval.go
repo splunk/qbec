@@ -264,6 +264,10 @@ func evaluationCode(c Context, file string) evalFn {
 			instances := load.Instances([]string{}, &load.Config{
 				Package: "_", // file that don't belong to a package
 				Dir:     filepath.Dir(file),
+				// Requires string array with values of form k=v
+				Tags: tlas,
+				// Add builtin tags
+				TagVars: load.DefaultTagVars(),
 				// Maybe we'll want to process only select files like index.cue instead of all cue files
 				//Overlay: map[string]load.Source{file: load.FromBytes(f)},
 			})
