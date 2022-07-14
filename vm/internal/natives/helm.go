@@ -40,6 +40,7 @@ type helmOptions struct {
 	ThisFile     string   `json:"thisFile"`     // use supplied file as current file to resolve relative refs, should be set to std.thisFile
 	Verbose      bool     `json:"verbose"`      // print helm template command before executing it
 	//IsUpgrade    bool     `json:"isUpgrade"` // --is-upgrade option, defer adding this until implications are known,
+	ExtraArgs []string `json:"extraArgs"`
 }
 
 // toArgs converts options to a slice of command-line args.
@@ -65,6 +66,11 @@ func (h helmOptions) toArgs() []string {
 	//if h.IsUpgrade {
 	//	ret = append(ret, "--is-upgrade")
 	//}
+	if len(h.ExtraArgs) > 0 {
+		for _, a := range h.ExtraArgs {
+			ret = append(ret, a)
+		}
+	}
 	return ret
 }
 
