@@ -35,7 +35,7 @@ builds:
       - goos: windows
         goarch: arm64
 archives:
-  - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
+  - name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
     format: tar.gz
     format_overrides:
       - goos: windows
@@ -46,7 +46,7 @@ brews:
     tap:
       owner: splunk
       name: homebrew-tap
-    url_template: https://github.com/splunk/qbec/releases/download/{{.Tag}}/{{.ArtifactName}}
+    url_template: https://rogii-sre-dist-pub.s3.amazonaws.com/qbec/{{.ArtifactName}}
     homepage: "https://qbec.io/"
     description: Qbec (pronounced like the Canadian province) is a CLI tool that allows you to create Kubernetes objects on multiple Kubernetes clusters or namespaces configured correctly for the target environment in question.
 
@@ -54,12 +54,12 @@ brews:
       system "#{bin}/qbec version"
 
     install: |
-      bin.install "qbec"
+      bin.install ["qbec", "jsonnet-qbec"]
 
 checksum:
   name_template: "sha256-checksums.txt"
 snapshot:
-  name_template: "{{.Version}}-next"
+  name_template: "{{.Version}}-rogii"
 changelog:
   sort: asc
   filters:
