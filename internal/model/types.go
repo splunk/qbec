@@ -117,6 +117,8 @@ type AppSpec struct {
 	ClusterScopedLists bool `json:"clusterScopedLists,omitempty"`
 	// add component name as label to Kubernetes objects, default to false
 	AddComponentLabel bool `json:"addComponentLabel,omitempty"`
+	// Merge imported files into current environments. Default false (replace environment)
+	MergeImportedEnvs bool `json:"mergeImportedEnvs,omitempty"`
 }
 
 // QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.

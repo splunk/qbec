@@ -121,6 +121,9 @@ definitions:
       addComponentLabel:
         description: add component name as label to Kubernetes objects
         type: boolean
+      mergeImportedEnvs:
+        description: Merge imported files into current environments
+        type: boolean
       dataSources:
         description: a list of data sources to be defined for the qbec app.
         items:

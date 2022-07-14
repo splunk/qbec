@@ -78,6 +78,34 @@ func makeValError(file string, errs []error) error {
 
 }
 
+func mergeEnvironments(eDst Environment, eSrc Environment) Environment {
+	if eDst.DefaultNamespace == "" {
+		eDst.DefaultNamespace = eSrc.DefaultNamespace
+	}
+	if eDst.Server == "" {
+		eDst.Server = eSrc.Server
+	}
+	if eDst.Context == "" {
+		eDst.Context = eSrc.Context
+	}
+	if len(eDst.Includes) == 0 {
+		eDst.Includes = eSrc.Includes
+	}
+	if len(eDst.Excludes) == 0 {
+		eDst.Excludes = eSrc.Excludes
+	}
+	if len(eDst.Properties) == 0 {
+		eDst.Properties = eSrc.Properties
+	} else {
+		for propertyName := range eSrc.Properties {
+			if _, found := eDst.Properties[propertyName]; !found {
+				eDst.Properties[propertyName] = eSrc.Properties[propertyName]
+			}
+		}
+	}
+	return eDst
+}
+
 func downloadEnvFile(url string) ([]byte, error) {
 	res, err := httpClient.Get(url)
 	if err != nil {
@@ -139,13 +167,22 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 		if len(errs) > 0 {
 			return makeValError(file, errs)
 		}
-		for k, v := range qEnvs.Spec.Environments {
-			old, ok := sources[k]
+		for envName, env := range qEnvs.Spec.Environments {
+			old, ok := sources[envName]
 			if ok {
-				sio.Warnf("override env definition '%s' from file %s (previous: %s)\n", k, file, old)
+				if app.Spec.MergeImportedEnvs {
+					sio.Warnf("merge env definition '%s' with file %s (previous: %s)\n", envName, file, old)
+					sources[envName] = "Merge from: " + file
+					app.Spec.Environments[envName] = mergeEnvironments(app.Spec.Environments[envName], env)
+				} else {
+					sio.Warnf("override env definition '%s' from file %s (previous: %s)\n", envName, file, old)
+					sources[envName] = file
+					app.Spec.Environments[envName] = env
+				}
+			} else {
+				sources[envName] = file
+				app.Spec.Environments[envName] = env
 			}
-			sources[k] = file
-			app.Spec.Environments[k] = v
 		}
 	}
 	return nil
