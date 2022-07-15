@@ -78,7 +78,7 @@ func makeValError(file string, errs []error) error {
 
 }
 
-func mergeEnvironments(eDst Environment, eSrc Environment) Environment {
+func mergeEnvironments(eDst, eSrc Environment) Environment {
 	if eDst.DefaultNamespace == "" {
 		eDst.DefaultNamespace = eSrc.DefaultNamespace
 	}
@@ -94,15 +94,7 @@ func mergeEnvironments(eDst Environment, eSrc Environment) Environment {
 	if len(eDst.Excludes) == 0 {
 		eDst.Excludes = eSrc.Excludes
 	}
-	if len(eDst.Properties) == 0 {
-		eDst.Properties = eSrc.Properties
-	} else {
-		for propertyName := range eSrc.Properties {
-			if _, found := eDst.Properties[propertyName]; !found {
-				eDst.Properties[propertyName] = eSrc.Properties[propertyName]
-			}
-		}
-	}
+	eDst.Properties = deepMerge(eSrc.Properties, eDst.Properties)
 	return eDst
 }
 
@@ -411,7 +403,11 @@ func (a *App) DefaultNamespace(env string) string {
 			ns = envObj.DefaultNamespace
 		}
 		if ns == "" {
-			ns = "default"
+			if a.inner.Spec.BaseNamespace == "" {
+				ns = "default"
+			} else {
+				ns = a.inner.Spec.BaseNamespace
+			}
 		}
 	}
 	if a.tag != "" && a.inner.Spec.NamespaceTagSuffix {

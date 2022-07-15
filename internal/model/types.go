@@ -112,6 +112,8 @@ type AppSpec struct {
 	NamespaceTagSuffix bool `json:"namespaceTagSuffix,omitempty"`
 	// properties for the baseline environment, can be used to define what env properties should look like
 	BaseProperties map[string]interface{} `json:"baseProperties,omitempty"`
+	// base Namespace for all environments. Could be overridden in Namespace
+	BaseNamespace string `json:"baseNamespace,omitempty"`
 	// whether remote lists for GC purposes should use cluster scoped queries
 	// when multiple namespaces are present. Not used when only one namespace is present.
 	ClusterScopedLists bool `json:"clusterScopedLists,omitempty"`
