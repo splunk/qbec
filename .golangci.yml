@@ -11,7 +11,6 @@ linters-settings:
 linters:
     disable-all: true
     enable:
-    - deadcode
     - depguard
     - dogsled
     - errcheck
@@ -24,8 +23,7 @@ linters:
     - govet
     - ineffassign
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
-    - varcheck
+    - unused
