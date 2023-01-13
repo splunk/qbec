@@ -16,7 +16,7 @@ Components are loaded from jsonnet, json, or yaml files. Only jsonnet files prov
 to customize object definitions for different environments. In addition, qbec support loading
 objects from helm charts, and using jsonnet libraries to produce them.
 
-More details can be found in the [authoring components](userguide/authoring/) page.
+More details can be found in the [authoring components](usage/authoring/) page.
 
 ## Environments
 
