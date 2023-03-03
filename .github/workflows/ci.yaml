@@ -9,9 +9,9 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: stable
         id: go
       - uses: azure/setup-helm@v1
         with:
@@ -19,7 +19,7 @@ jobs:
         id: helm
       - uses: azure/setup-kubectl@v1
         id: install-kubectl
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "0"
       - uses: actions/cache@v2
@@ -59,9 +59,9 @@ jobs:
       - name: Test
         run: |
           make test TEST_FLAGS="-timeout 3m -tags integration"
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
       - name: goreleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
         env:
@@ -70,15 +70,15 @@ jobs:
     name: Build(Windows)
     runs-on: windows-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: stable
         id: go
       - uses: azure/setup-helm@v1
         with:
           version: "v3.3.1" # default is latest stable
         id: helm
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/cache@v2
         with:
           # In order:
