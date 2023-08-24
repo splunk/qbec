@@ -18,6 +18,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -30,7 +31,7 @@ import (
 )
 
 func TestRunInParallelNoObjects(t *testing.T) {
-	err := runInParallel([]model.K8sLocalObject{}, func(o model.K8sLocalObject) error { return nil }, 5)
+	err := runInParallel(context.TODO(), []model.K8sLocalObject{}, func(ctx context.Context, o model.K8sLocalObject) error { return nil }, 5)
 	require.NoError(t, err)
 }
 
@@ -68,7 +69,7 @@ func TestRunInParallel(t *testing.T) {
 		defer l.Unlock()
 		seen[s] = true
 	}
-	worker := func(o model.K8sLocalObject) error {
+	worker := func(ctx context.Context, o model.K8sLocalObject) error {
 		str := fmt.Sprintf("%s:%s:%s:%s", o.Component(), o.Environment(), o.GetNamespace(), o.GetName())
 		setSeen(str)
 		return nil
@@ -89,8 +90,8 @@ func TestRunInParallel(t *testing.T) {
 	for _, in := range inputs {
 		objs = append(objs, in.makeObject())
 	}
-
-	err := runInParallel(objs, worker, 5)
+	ctx := context.TODO()
+	err := runInParallel(ctx, objs, worker, 5)
 	require.NoError(t, err)
 	a := assert.New(t)
 	for _, in := range inputs {
@@ -98,7 +99,7 @@ func TestRunInParallel(t *testing.T) {
 	}
 
 	seen = map[string]bool{}
-	worker = func(o model.K8sLocalObject) error {
+	worker = func(ctx context.Context, o model.K8sLocalObject) error {
 		str := fmt.Sprintf("%s:%s:%s:%s", o.Component(), o.Environment(), o.GetNamespace(), o.GetName())
 		setSeen(str)
 		if o.GetNamespace() == "kube-system" {
@@ -107,7 +108,7 @@ func TestRunInParallel(t *testing.T) {
 		return nil
 	}
 
-	err = runInParallel(objs, worker, 0)
+	err = runInParallel(ctx, objs, worker, 0)
 	require.NotNil(t, err)
 	a.True(len(seen) < len(inputs))
 	a.Contains(err.Error(), "/v1, Kind=ConfigMap:kube-system:k1: kserr")

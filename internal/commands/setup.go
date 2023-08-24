@@ -36,8 +36,8 @@ var (
 	version         = "dev"
 	commit          = "dev"
 	goVersion       = "unknown"
-	jsonnetVersion  = "v0.17.1-0.20210215134408-9b6cbef4caf7" // update this when library dependency is upgraded
-	clientGoVersion = "kubernetes-1.17.13"                    // ditto when client go dep is upgraded
+	jsonnetVersion  = "v0.18.0"           // update this when library dependency is upgraded
+	clientGoVersion = "kubernetes-1.23.1" // ditto when client go dep is upgraded
 )
 
 // Executable is the name of the qbec executable.

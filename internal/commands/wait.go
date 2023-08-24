@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -96,16 +97,16 @@ func (w *waitListener) OnEnd(err error) {
 
 type resourceInterfaceProvider func(gvk schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 
-func waitWatcher(ri resourceInterfaceProvider, obj model.K8sMeta) (watch.Interface, error) {
+func waitWatcher(ctx context.Context, ri resourceInterfaceProvider, obj model.K8sMeta) (watch.Interface, error) {
 	in, err := ri(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
 		return nil, errors.Wrap(err, "get resource provider")
 	}
-	_, err = in.Get(obj.GetName(), metav1.GetOptions{})
+	_, err = in.Get(ctx, obj.GetName(), metav1.GetOptions{})
 	if err != nil { // object must exist
 		return nil, errors.Wrap(err, "get object")
 	}
-	watchXface, err := in.Watch(metav1.ListOptions{
+	watchXface, err := in.Watch(ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf(`metadata.name=%s`, obj.GetName()), // XXX: escaping
 	})
 	if err != nil { // XXX: implement fallback to poll with get if watch has permissions issues

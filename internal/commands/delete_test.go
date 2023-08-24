@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"testing"
 
 	"github.com/splunk/qbec/internal/cmd"
@@ -32,7 +33,7 @@ func TestDeleteRemote(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev")
@@ -48,7 +49,7 @@ func TestDeleteRemoteComponentFilter(t *testing.T) {
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "-c", "service2")
@@ -63,7 +64,7 @@ func TestDeleteLocal(t *testing.T) {
 	defer s.reset()
 	d := &dg{cmValue: "baz", secretValue: "baz"}
 	s.client.getFunc = d.get
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("delete", "dev", "--local", "-C", "cluster-objects")
@@ -85,7 +86,7 @@ func TestDeleteNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: []", err.Error())
 			},
 		},
 		{
@@ -94,7 +95,7 @@ func TestDeleteNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: [\"dev\" \"prod\"]", err.Error())
 			},
 		},
 		{
@@ -104,6 +105,15 @@ func TestDeleteNegative(t *testing.T) {
 				a := assert.New(s.t)
 				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
+			},
+		},
+		{
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
 			},
 		},
 		{

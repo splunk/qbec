@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -61,7 +62,7 @@ type applyCommandConfig struct {
 	wait        bool
 	waitAll     bool
 	waitTimeout time.Duration
-	filterFunc  func() (filterParams, error)
+	filterFunc  func() (model.Filters, error)
 }
 
 type nameWrap struct {
@@ -92,9 +93,9 @@ func (n nsWrap) GetNamespace() string {
 
 var applyWaitFn = rollout.WaitUntilComplete // allow override in tests
 
-func doApply(args []string, config applyCommandConfig) error {
+func doApply(ctx context.Context, args []string, config applyCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	env := args[0]
 	if env == model.Baseline { // cannot apply for the baseline environment
@@ -112,7 +113,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	if err != nil {
 		return err
 	}
-	objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
+	objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 	if err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	var lister lister = &stubLister{}
 	var retainObjects []model.K8sLocalObject
 	if config.gc {
-		lister, retainObjects, err = startRemoteList(envCtx, client, fp)
+		lister, retainObjects, err = startRemoteList(ctx, envCtx, client, fp)
 		if err != nil {
 			return err
 		}
@@ -180,7 +181,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	waitPolicy := newWaitPolicy()
 	for _, ob := range objects {
 		name := client.DisplayName(ob)
-		res, err := client.Sync(ob, opts)
+		res, err := client.Sync(ctx, ob, opts)
 		if res != nil && res.GeneratedName != "" {
 			ob = nameWrap{name: res.GeneratedName, K8sLocalObject: ob}
 			name = client.DisplayName(ob)
@@ -202,7 +203,7 @@ func doApply(args []string, config applyCommandConfig) error {
 	}
 
 	// process deletions
-	deletions, err := lister.deletions(retainObjects, fp.Includes)
+	deletions, err := lister.deletions(retainObjects, fp.Match)
 	if err != nil {
 		return err
 	}
@@ -239,7 +240,8 @@ func doApply(args []string, config applyCommandConfig) error {
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
-		res, err := client.Delete(ob, deleteOpts)
+
+		res, err := client.Delete(ctx, ob, deleteOpts)
 		printDelStatus(name, res, err)
 		if err != nil {
 			return err
@@ -259,7 +261,7 @@ func doApply(args []string, config applyCommandConfig) error {
 		}
 		return applyWaitFn(waitObjects,
 			func(obj model.K8sMeta) (watch.Interface, error) {
-				return waitWatcher(client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
+				return waitWatcher(ctx, client.ResourceInterface, nsWrap{K8sMeta: obj, ns: defaultNs})
 			},
 			rollout.WaitOptions{
 				Listener: wl,
@@ -306,7 +308,7 @@ func newApplyCommand(cp ctxProvider) *cobra.Command {
 		if !c.Flag("show-details").Changed {
 			config.showDetails = config.syncOptions.DryRun
 		}
-		return cmd.WrapError(doApply(args, config))
+		return cmd.WrapError(doApply(c.Context(), args, config))
 	}
 	return c
 }

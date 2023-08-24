@@ -55,6 +55,7 @@ type Config struct {
 	kubeconfig   clientcmd.ClientConfig
 	qps          int
 	burst        int
+	ListPageSize int64
 }
 
 // NewConfig returns a new configuration, adding flags to the supplied command to set k8s access overrides, prefixed by
@@ -69,6 +70,7 @@ func NewConfig(cmd *cobra.Command, prefix string) *Config {
 	cmd.PersistentFlags().StringVar(&loadingRules.ExplicitPath, prefix+"kubeconfig", "", "Path to a kubeconfig file. Alternative to env var $KUBECONFIG.")
 	cmd.PersistentFlags().IntVar(&cfg.qps, prefix+"client-qps", 0, "QPS to use for K8s client, 0 for default")
 	cmd.PersistentFlags().IntVar(&cfg.burst, prefix+"client-burst", 0, "Burst to use for K8s client, 0 for default")
+	cmd.PersistentFlags().Int64Var(&cfg.ListPageSize, prefix+"list-page-size", 1000, "Maximum number of responses per page to return for a list call. 0 for no limit")
 	clientcmd.BindOverrideFlags(overrides, cmd.PersistentFlags(), clientcmd.ConfigOverrideFlags{
 		AuthOverrideFlags: clientcmd.RecommendedAuthOverrideFlags(prefix),
 		Timeout: clientcmd.FlagInfo{

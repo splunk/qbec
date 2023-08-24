@@ -60,7 +60,7 @@ func TestComponentFilterBad(t *testing.T) {
 }
 
 func TestKindFilterIncludes(t *testing.T) {
-	filter, err := NewKindFilter([]string{"foo", "icy"}, []string{})
+	filter, err := newKindFilter([]string{"foo", "icy"}, []string{})
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.True(filter.HasFilters())
@@ -71,7 +71,7 @@ func TestKindFilterIncludes(t *testing.T) {
 }
 
 func TestKindFilterIncludesPlural(t *testing.T) {
-	filter, err := NewKindFilter([]string{"foos", "icies", "classes"}, []string{})
+	filter, err := newKindFilter([]string{"foos", "icies", "classes"}, []string{})
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.True(filter.HasFilters())
@@ -84,7 +84,7 @@ func TestKindFilterIncludesPlural(t *testing.T) {
 }
 
 func TestKindFilterExcludes(t *testing.T) {
-	filter, err := NewKindFilter(nil, []string{"foo", "bar"})
+	filter, err := newKindFilter(nil, []string{"foo", "bar"})
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.True(filter.HasFilters())
@@ -94,7 +94,7 @@ func TestKindFilterExcludes(t *testing.T) {
 }
 
 func TestKindFilterExcludesPlural(t *testing.T) {
-	filter, err := NewKindFilter(nil, []string{"foos", "bars"})
+	filter, err := newKindFilter(nil, []string{"foos", "bars"})
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.True(filter.HasFilters())
@@ -106,7 +106,7 @@ func TestKindFilterExcludesPlural(t *testing.T) {
 }
 
 func TestKindFilterOpen(t *testing.T) {
-	filter, err := NewKindFilter(nil, nil)
+	filter, err := newKindFilter(nil, nil)
 	require.Nil(t, err)
 	a := assert.New(t)
 	a.False(filter.HasFilters())
@@ -116,7 +116,7 @@ func TestKindFilterOpen(t *testing.T) {
 }
 
 func TestKindFilterBad(t *testing.T) {
-	_, err := NewKindFilter([]string{"foo", "bar"}, []string{"baz"})
+	_, err := newKindFilter([]string{"foo", "bar"}, []string{"baz"})
 	require.NotNil(t, err)
 	require.Equal(t, "cannot include as well as exclude kinds, specify one or the other", err.Error())
 }

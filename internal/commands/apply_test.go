@@ -17,6 +17,8 @@
 package commands
 
 import (
+	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -26,6 +28,8 @@ import (
 	"github.com/splunk/qbec/internal/rollout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func TestNsWrap(t *testing.T) {
@@ -63,7 +67,7 @@ func TestApplyBasic(t *testing.T) {
 	defer func() { applyWaitFn = origWait }()
 	first := true
 	var captured remote.SyncOptions
-	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts
@@ -82,7 +86,7 @@ func TestApplyBasic(t *testing.T) {
 		}
 	}
 	s.client.listFunc = stdLister
-	s.client.deleteFunc = func(obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
+	s.client.deleteFunc = func(ctx context.Context, obj model.K8sMeta, opts remote.DeleteOptions) (*remote.SyncResult, error) {
 		return &remote.SyncResult{Type: remote.SyncDeleted}, nil
 	}
 	err := s.executeCommand("apply", "dev", "--wait")
@@ -105,7 +109,7 @@ func TestApplyFlags(t *testing.T) {
 	defer s.reset()
 	first := true
 	var captured remote.SyncOptions
-	s.client.syncFunc = func(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+	s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
 		if first {
 			first = false
 			captured = opts
@@ -133,6 +137,79 @@ func TestApplyFlags(t *testing.T) {
 	s.assertErrorLineMatch(regexp.MustCompile(`\*\* dry-run mode, nothing was actually changed \*\*`))
 }
 
+func TestApplyNamespaceClusterFilters(t *testing.T) {
+	tests := []struct {
+		name       string
+		filterArgs []string
+		assertFn   func(t *testing.T, s *scaffold, err error)
+	}{
+		{
+			name:       "first-only",
+			filterArgs: []string{"-p", "first"},
+			assertFn: func(t *testing.T, s *scaffold, err error) {
+				require.NoError(t, err)
+				stats := s.outputStats()
+				assert.EqualValues(t, []interface{}{"ConfigMap:first:first-cm"}, stats["created"])
+			},
+		},
+		{
+			name:       "second-only",
+			filterArgs: []string{"-p", "second"},
+			assertFn: func(t *testing.T, s *scaffold, err error) {
+				require.NoError(t, err)
+				stats := s.outputStats()
+				assert.EqualValues(t, []interface{}{"ConfigMap::second-cm", "Secret:second:second-secret"}, stats["created"])
+			},
+		},
+		{
+			name:       "exclude-second-add-cluster",
+			filterArgs: []string{"-P", "second", "--include-cluster-objects"},
+			assertFn: func(t *testing.T, s *scaffold, err error) {
+				require.NoError(t, err)
+				stats := s.outputStats()
+				assert.EqualValues(t, []interface{}{"Namespace::first", "Namespace::second", "ConfigMap:first:first-cm"}, stats["created"])
+			},
+		},
+		{
+			name:       "turn-off-cluster",
+			filterArgs: []string{"--include-cluster-objects=false"},
+			assertFn: func(t *testing.T, s *scaffold, err error) {
+				require.NoError(t, err)
+				stats := s.outputStats()
+				assert.EqualValues(t, []interface{}{"ConfigMap:first:first-cm", "ConfigMap::second-cm", "Secret:second:second-secret"}, stats["created"])
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := newCustomScaffold(t, "testdata/projects/multi-ns")
+			defer s.reset()
+			s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
+				return &remote.SyncResult{
+					Type: remote.SyncCreated,
+				}, nil
+			}
+			s.client.getFunc = func(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error) {
+				return nil, nil
+			}
+			args := append([]string{"apply", "local", "-n", "--gc=false"}, test.filterArgs...)
+			err := s.executeCommand(args...)
+			test.assertFn(t, s, err)
+		})
+	}
+}
+
+func TestApplyNamespaceFilterMetadataError(t *testing.T) {
+	s := newCustomScaffold(t, "testdata/projects/multi-ns")
+	defer s.reset()
+	s.client.nsFunc = func(kind schema.GroupVersionKind) (bool, error) {
+		return false, fmt.Errorf("no metadata found")
+	}
+	err := s.executeCommand("apply", "local", "-n", "--gc=false", "-p", "first")
+	require.Error(t, err)
+	assert.Equal(t, "namespace filter: no metadata found", err.Error())
+}
+
 func TestApplyNegative(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -145,7 +222,7 @@ func TestApplyNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: []", err.Error())
 			},
 		},
 		{
@@ -154,7 +231,7 @@ func TestApplyNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: [\"dev\" \"prod\"]", err.Error())
 			},
 		},
 		{
@@ -164,6 +241,15 @@ func TestApplyNegative(t *testing.T) {
 				a := assert.New(s.t)
 				a.False(cmd.IsUsageError(err))
 				a.Equal("invalid environment \"foo\"", err.Error())
+			},
+		},
+		{
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
 			},
 		},
 		{
@@ -191,6 +277,15 @@ func TestApplyNegative(t *testing.T) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
 				a.Equal(`cannot include as well as exclude kinds, specify one or the other`, err.Error())
+			},
+		},
+		{
+			name: "p and P",
+			args: []string{"apply", "dev", "-p", "first", "-P", "second"},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.True(cmd.IsUsageError(err))
+				a.Equal(`cannot include as well as exclude namespaces, specify one or the other`, err.Error())
 			},
 		},
 	}

@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -31,12 +32,12 @@ type deleteCommandConfig struct {
 	cmd.AppContext
 	dryRun     bool
 	useLocal   bool
-	filterFunc func() (filterParams, error)
+	filterFunc func() (model.Filters, error)
 }
 
-func doDelete(args []string, config deleteCommandConfig) error {
+func doDelete(ctx context.Context, args []string, config deleteCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	env := args[0]
 	if env == model.Baseline { // cannot apply for the baseline environment
@@ -58,7 +59,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 
 	var deletions []model.K8sQbecMeta
 	if config.useLocal {
-		objects, err := filteredObjects(envCtx, client.ObjectKey, fp)
+		objects, err := generateObjects(ctx, envCtx, makeFilterOpts(fp, client))
 		if err != nil {
 			return err
 		}
@@ -68,11 +69,11 @@ func doDelete(args []string, config deleteCommandConfig) error {
 			}
 		}
 	} else {
-		lister, _, err := startRemoteList(envCtx, client, fp)
+		lister, _, err := startRemoteList(ctx, envCtx, client, fp)
 		if err != nil {
 			return err
 		}
-		deletions, err = lister.deletions(nil, fp.Includes)
+		deletions, err = lister.deletions(nil, fp.Match)
 		if err != nil {
 			return err
 		}
@@ -117,7 +118,7 @@ func doDelete(args []string, config deleteCommandConfig) error {
 	for i := len(deletions) - 1; i >= 0; i-- {
 		ob := deletions[i]
 		name := client.DisplayName(ob)
-		res, err := client.Delete(ob, delOpts)
+		res, err := client.Delete(ctx, ob, delOpts)
 		printDelStatus(name, res, err)
 		if err != nil {
 			return err
@@ -148,7 +149,7 @@ func newDeleteCommand(cp ctxProvider) *cobra.Command {
 
 	c.RunE = func(c *cobra.Command, args []string) error {
 		config.AppContext = cp()
-		return cmd.WrapError(doDelete(args, config))
+		return cmd.WrapError(doDelete(c.Context(), args, config))
 	}
 	return c
 }

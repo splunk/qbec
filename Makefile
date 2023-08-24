@@ -1,9 +1,9 @@
 include Makefile.tools
 
-VERSION         := 0.14.8
+VERSION         := 0.15.2
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
-FMT_OPTIONS     := -x '**/testdata' -x site/themes  -t jsonnet -t json -t yaml
+FMT_OPTIONS     := -x '**/testdata' -x site/themes -x '.vscode/*' -x dist -t jsonnet -t json -t yaml
 
 LEARN_THEME_TAG := 2.2.0
 # When modifying this, also modify the corresponding ldflags in .goreleaser.yaml
@@ -46,7 +46,11 @@ lint: check-format
 	go vet ./...
 	golint ./...
 	golangci-lint run $(LINT_FLAGS) .
+	./licenselint.sh
 
+.PHONY: license
+license:
+	addlicense -c "Splunk Inc." -l apache ./**/*.go
 .PHONY: check-format
 check-format: build
 	@echo "Running qbec fmt -e ..."
@@ -72,7 +76,7 @@ install-ci:
 	# curl -sSL -o helm.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-${HELM_PLATFORM}-amd64.tar.gz
 	# tar -xvzf helm.tar.gz
 	# mv ${HELM_PLATFORM}-amd64/helm $(GOPATH)/bin/
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.44.0
 
 .PHONY: create-cluster
 create-cluster:	.tools/kind
@@ -80,7 +84,8 @@ create-cluster:	.tools/kind
 
 .PHONY: install
 install:
-	go get golang.org/x/lint/golint
+	go install golang.org/x/lint/golint@v0.0.0-20210508222113-6edffad5e616
+	go install github.com/google/addlicense@v1.0.0
 	@echo for building docs, manually install hugo for your OS from: https://github.com/gohugoio/hugo/releases
 
 .PHONY: site

@@ -17,6 +17,7 @@
 package remote
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -30,7 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -46,7 +49,7 @@ type objectLister struct {
 	queryConfig
 }
 
-func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace string) ([]*basicObject, error) {
+func (o *objectLister) listObjectsOfType(ctx context.Context, gvk schema.GroupVersionKind, namespace string) ([]*basicObject, error) {
 	startTime := time.Now()
 	defer func() {
 		if o.verbosity > 0 {
@@ -63,8 +66,20 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 	} else {
 		ls = fmt.Sprintf("%s,%s=%s", ls, model.QbecNames.TagLabel, o.scope.Tag)
 	}
-	list, err := xface.List(metav1.ListOptions{
+	initialOpts := &metav1.ListOptions{
 		LabelSelector: ls,
+		Limit:         o.scope.Limit,
+	}
+	var list = &unstructured.UnstructuredList{}
+	i := int64(0)
+	err = resource.FollowContinue(initialOpts, func(options metav1.ListOptions) (runtime.Object, error) {
+		l, err := xface.List(ctx, options)
+		if err != nil {
+			return nil, err
+		}
+		i++
+		list.Items = append(list.Items, l.Items...)
+		return l, nil
 	})
 	if err != nil {
 		if apiErrors.IsForbidden(err) {
@@ -73,6 +88,7 @@ func (o *objectLister) listObjectsOfType(gvk schema.GroupVersionKind, namespace 
 		}
 		return nil, err
 	}
+
 	objs, err := meta.ExtractList(list)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("extract items for %s", gvk))
@@ -143,7 +159,7 @@ func (e *errorCollection) Error() string {
 	return "list errors:" + strings.Join(lines, "\n\t")
 }
 
-func (o *objectLister) serverObjects(coll *collection) error {
+func (o *objectLister) serverObjects(ctx context.Context, coll *collection) error {
 	var l sync.Mutex
 	var errs errorCollection
 	add := func(gvk schema.GroupVersionKind, ns string, objects []*basicObject, err error) {
@@ -165,7 +181,7 @@ func (o *objectLister) serverObjects(coll *collection) error {
 			}
 			localType := gvk
 			workers = append(workers, func() {
-				ret, err := o.listObjectsOfType(localType, ns)
+				ret, err := o.listObjectsOfType(ctx, localType, ns)
 				add(localType, ns, ret, err)
 			})
 		}

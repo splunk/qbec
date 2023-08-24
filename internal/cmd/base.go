@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -44,11 +45,11 @@ import (
 type KubeClient interface {
 	DisplayName(o model.K8sMeta) string
 	IsNamespaced(kind schema.GroupVersionKind) (bool, error)
-	Get(obj model.K8sMeta) (*unstructured.Unstructured, error)
-	Sync(obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
-	ValidatorFor(gvk schema.GroupVersionKind) (k8smeta.Validator, error)
-	ListObjects(scope remote.ListQueryConfig) (remote.Collection, error)
-	Delete(model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
+	Get(ctx context.Context, obj model.K8sMeta) (*unstructured.Unstructured, error)
+	Sync(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error)
+	ValidatorFor(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error)
+	ListObjects(ctx context.Context, scope remote.ListQueryConfig) (remote.Collection, error)
+	Delete(context.Context, model.K8sMeta, remote.DeleteOptions) (*remote.SyncResult, error)
 	ObjectKey(obj model.K8sMeta) string
 	ResourceInterface(obj schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error)
 }
@@ -88,6 +89,7 @@ type Context struct {
 	stderr          io.Writer                    // standard error
 	strictVars      bool                         // strict vars
 	profiler        *profiler                    // profiler
+	listPageSize    int                          // page size for list operations
 	app             *model.App                   // app loaded from file
 }
 
@@ -183,6 +185,9 @@ func (c Context) RootDir() string { return c.root }
 
 // AppTag returns the app tag specified
 func (c Context) AppTag() string { return c.appTag }
+
+// ListPageSize returns the page size for kubernetes list operations
+func (c Context) ListPageSize() int64 { return c.remote.ListPageSize }
 
 // EnvFiles returns additional environment files and URLs
 func (c Context) EnvFiles() []string {

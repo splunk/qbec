@@ -1,3 +1,17 @@
+// Copyright 2021 Splunk Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //go:build integration
 // +build integration
 
@@ -199,4 +213,41 @@ func TestIntegrationDiffPolicies(t *testing.T) {
 		a.EqualValues(1, len(skipped["updates"].([]interface{})))
 		a.EqualValues(1, len(skipped["deletions"].([]interface{})))
 	})
+}
+
+func TestIntegrationNamespaceFilters(t *testing.T) {
+	dir := "testdata/projects/multi-ns"
+
+	t.Run("show-first", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "-p", "first", "local")
+		require.NoError(t, err)
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+ConfigMap\s+first-cm`))
+		s.assertOutputLineNoMatch(regexp.MustCompile(`second`))
+	})
+
+	t.Run("show-second-and-cluster", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "-p", "second", "--include-cluster-objects", "local")
+		require.NoError(t, err)
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+Namespace\s+first`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Namespace\s+second`))
+		s.assertOutputLineNoMatch(regexp.MustCompile(`^first\s+ConfigMap`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+ConfigMap\s+second-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Secret\s+second-secret`))
+	})
+
+	t.Run("only-cluster-filter", func(t *testing.T) {
+		s := newIntegrationScaffold(t, "", dir)
+		defer s.reset()
+		err := s.executeCommand("show", "-O", "--include-cluster-objects=false", "local")
+		require.NoError(t, err)
+		s.assertOutputLineNoMatch(regexp.MustCompile(`Namespace`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^first\s+ConfigMap\s+first-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+ConfigMap\s+second-cm`))
+		s.assertOutputLineMatch(regexp.MustCompile(`^second\s+Secret\s+second-secret`))
+	})
+
 }

@@ -17,12 +17,13 @@
 package k8smeta
 
 import (
+	"context"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	openapi_v2 "github.com/googleapis/gnostic/OpenAPIv2"
+	openapi_v2 "github.com/googleapis/gnostic/openapiv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -45,7 +46,8 @@ func (d sd) OpenAPISchema() (*openapi_v2.Document, error) {
 func TestMetadataValidator(t *testing.T) {
 	a := assert.New(t)
 	ss := NewServerSchema(sd{})
-	v, err := ss.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
+	ctx := context.TODO()
+	v, err := ss.ValidatorFor(ctx, schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"})
 	require.Nil(t, err)
 	errs := v.Validate(loadObject(t, "ns-good.json").ToUnstructured())
 	require.Nil(t, errs)
@@ -55,7 +57,7 @@ func TestMetadataValidator(t *testing.T) {
 	a.Equal(1, len(errs))
 	a.Contains(errs[0].Error(), `unknown field "foo"`)
 
-	_, err = ss.ValidatorFor(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
+	_, err = ss.ValidatorFor(ctx, schema.GroupVersionKind{Group: "", Version: "v1", Kind: "FooBar"})
 	require.NotNil(t, err)
 	a.Equal(ErrSchemaNotFound, err)
 

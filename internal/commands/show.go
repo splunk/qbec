@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -90,7 +91,7 @@ type showCommandConfig struct {
 	formatSpecified bool
 	sortAsApply     bool
 	namesOnly       bool
-	filterFunc      func() (filterParams, error)
+	filterFunc      func() (model.Filters, error)
 }
 
 func removeMetadataKey(un *unstructured.Unstructured, name string) {
@@ -126,9 +127,9 @@ func cleanMeta(obj model.K8sLocalObject) *unstructured.Unstructured {
 	return un
 }
 
-func doShow(args []string, config showCommandConfig) error {
+func doShow(ctx context.Context, args []string, config showCommandConfig) error {
 	if len(args) != 1 {
-		return cmd.NewUsageError("exactly one environment required")
+		return cmd.NewUsageError(fmt.Sprintf("exactly one environment required, but provided: %q", args))
 	}
 	env := args[0]
 	format := config.format
@@ -152,7 +153,7 @@ func doShow(args []string, config showCommandConfig) error {
 		return err
 	}
 
-	objects, err := filteredObjects(envCtx, keyFunc, fp)
+	objects, err := generateObjects(ctx, envCtx, filterOpts{keyFunc: keyFunc, filters: fp})
 	if err != nil {
 		return err
 	}
@@ -230,7 +231,7 @@ func newShowCommand(cp ctxProvider) *cobra.Command {
 		config.AppContext = cp()
 		config.formatSpecified = c.Flags().Changed("format")
 		cleanEvalMode = clean
-		return cmd.WrapError(doShow(args, config))
+		return cmd.WrapError(doShow(c.Context(), args, config))
 	}
 	return c
 }

@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -38,7 +39,7 @@ func (v *v) Validate(obj *unstructured.Unstructured) []error {
 	return nil
 }
 
-func factory(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
+func factory(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
 	if gvk.Kind == "PodSecurityPolicy" {
 		return nil, k8smeta.ErrSchemaNotFound
 	}
@@ -83,7 +84,7 @@ func TestValidateNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: []", err.Error())
 			},
 		},
 		{
@@ -92,7 +93,16 @@ func TestValidateNegative(t *testing.T) {
 			asserter: func(s *scaffold, err error) {
 				a := assert.New(s.t)
 				a.True(cmd.IsUsageError(err))
-				a.Equal("exactly one environment required", err.Error())
+				a.Equal("exactly one environment required, but provided: [\"dev\" \"prod\"]", err.Error())
+			},
+		},
+		{
+			name: "empty string env",
+			args: []string{"apply", ""},
+			asserter: func(s *scaffold, err error) {
+				a := assert.New(s.t)
+				a.False(cmd.IsUsageError(err))
+				a.Equal("invalid environment \"\"", err.Error())
 			},
 		},
 		{
@@ -155,7 +165,7 @@ func TestValidateNegative(t *testing.T) {
 			name: "errors",
 			args: []string{"validate", "dev"},
 			init: func(s *scaffold) {
-				s.client.validatorFunc = func(gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
+				s.client.validatorFunc = func(ctx context.Context, gvk schema.GroupVersionKind) (k8smeta.Validator, error) {
 					return nil, fmt.Errorf("no validator for you")
 				}
 			},
