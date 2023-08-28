@@ -1,7 +1,12 @@
 package helm3
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/url"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -108,4 +113,76 @@ func TestTemplateOptionsFull(t *testing.T) {
 	} {
 		a.Contains(str, "--"+s)
 	}
+}
+
+func TestRunTemplate(t *testing.T) {
+
+	mockConfigProvider := func(varName string) (string, error) {
+		if varName == "config-var-name" {
+			return `{"command": "helm", "timeout": "5s"}`, nil
+		}
+		return "", nil
+	}
+
+	mockTemplateConfig := TemplateConfig{
+		Name: "mock-release",
+		Options: TemplateOptions{
+			Repo:      "https://charts.bitnami.com/bitnami",
+			Namespace: "foobar",
+			Version:   "10.1.0",
+		},
+		Values: map[string]interface{}{
+			"key": "value",
+		},
+	}
+
+	helm3Src := &helm3Source{configVar: "config-var-name"}
+	err := helm3Src.Init(mockConfigProvider)
+	require.NoError(t, err)
+	mockURL := &url.URL{
+		Scheme: "http",
+		Host:   "",
+		Path:   "apache",
+	}
+	templated, err := helm3Src.runTemplate(mockURL, mockTemplateConfig)
+	b, err := json.MarshalIndent(templated, "", "  ")
+	require.NoError(t, err)
+	filePath := filepath.Join("testdata", "apache.json")
+	fileContent, err := ioutil.ReadFile(filePath)
+	require.NoError(t, err)
+	require.Equal(t, fileContent, b)
+}
+
+func TestInitDefaults(t *testing.T) {
+	cfg := Config{}
+	cfg.initDefaults()
+	require.Equal(t, cfg.Command, "helm")
+	require.Equal(t, cfg.Timeout, "")
+	require.Equal(t, cfg.timeout, time.Minute)
+}
+
+func TestFindExecutable(t *testing.T) {
+	cmd, err := findExecutable("helm")
+	require.NoError(t, err)
+	require.FileExists(t, cmd)
+}
+
+func TestClose(t *testing.T) {
+	helm3Src := &helm3Source{configVar: "config-var-name"}
+	err := helm3Src.Close()
+	require.NoError(t, err)
+}
+
+func TestName(t *testing.T) {
+	mockConfigProvider := func(varName string) (string, error) {
+		if varName == "config-var-name" {
+			return `{"command": "helm", "timeout": "5s"}`, nil
+		}
+		return "", nil
+	}
+	helm3Src := &helm3Source{name: "baz", configVar: "config-var-name"}
+	err := helm3Src.Init(mockConfigProvider)
+	require.NoError(t, err)
+	name := helm3Src.Name()
+	require.Equal(t, name, "baz")
 }
