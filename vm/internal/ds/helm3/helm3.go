@@ -329,6 +329,7 @@ func (d *helm3Source) runTemplate(u *url.URL, tc TemplateConfig) (interface{}, e
 		args = append(args, tc.Name)
 	}
 	args = append(args, chart)
+	args = append(args, "--values", "-")
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.config.timeout)
 	defer cancel()
