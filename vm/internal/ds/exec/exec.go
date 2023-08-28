@@ -121,11 +121,11 @@ func (d *execSource) Init(p datasource.ConfigProvider) (fErr error) {
 	if err != nil {
 		return err
 	}
+	c.initDefaults()
 	err = c.assertValid()
 	if err != nil {
 		return err
 	}
-	c.initDefaults()
 	d.runner = newRunner(&c)
 	return nil
 }

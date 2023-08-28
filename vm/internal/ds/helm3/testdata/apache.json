@@ -1,0 +1,173 @@
+[
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "mock-release",
+        "app.kubernetes.io/managed-by": "Helm",
+        "app.kubernetes.io/name": "apache",
+        "helm.sh/chart": "apache-10.1.0"
+      },
+      "name": "mock-release-apache",
+      "namespace": "foobar"
+    },
+    "spec": {
+      "externalTrafficPolicy": "Cluster",
+      "loadBalancerSourceRanges": [],
+      "ports": [
+        {
+          "name": "http",
+          "port": 80,
+          "targetPort": "http"
+        },
+        {
+          "name": "https",
+          "port": 443,
+          "targetPort": "https"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "mock-release",
+        "app.kubernetes.io/name": "apache"
+      },
+      "sessionAffinity": "None",
+      "type": "LoadBalancer"
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "mock-release",
+        "app.kubernetes.io/managed-by": "Helm",
+        "app.kubernetes.io/name": "apache",
+        "helm.sh/chart": "apache-10.1.0"
+      },
+      "name": "mock-release-apache",
+      "namespace": "foobar"
+    },
+    "spec": {
+      "replicas": 1,
+      "revisionHistoryLimit": 10,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "mock-release",
+          "app.kubernetes.io/name": "apache"
+        }
+      },
+      "strategy": {
+        "type": "RollingUpdate"
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "mock-release",
+            "app.kubernetes.io/managed-by": "Helm",
+            "app.kubernetes.io/name": "apache",
+            "helm.sh/chart": "apache-10.1.0"
+          }
+        },
+        "spec": {
+          "affinity": {
+            "nodeAffinity": null,
+            "podAffinity": null,
+            "podAntiAffinity": {
+              "preferredDuringSchedulingIgnoredDuringExecution": [
+                {
+                  "podAffinityTerm": {
+                    "labelSelector": {
+                      "matchLabels": {
+                        "app.kubernetes.io/instance": "mock-release",
+                        "app.kubernetes.io/name": "apache"
+                      }
+                    },
+                    "topologyKey": "kubernetes.io/hostname"
+                  },
+                  "weight": 1
+                }
+              ]
+            }
+          },
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "BITNAMI_DEBUG",
+                  "value": "false"
+                },
+                {
+                  "name": "APACHE_HTTP_PORT_NUMBER",
+                  "value": "8080"
+                },
+                {
+                  "name": "APACHE_HTTPS_PORT_NUMBER",
+                  "value": "8443"
+                }
+              ],
+              "envFrom": null,
+              "image": "docker.io/bitnami/apache:2.4.57-debian-11-r134",
+              "imagePullPolicy": "IfNotPresent",
+              "livenessProbe": {
+                "failureThreshold": 6,
+                "httpGet": {
+                  "path": "/",
+                  "port": "http"
+                },
+                "initialDelaySeconds": 180,
+                "periodSeconds": 20,
+                "successThreshold": 1,
+                "timeoutSeconds": 5
+              },
+              "name": "apache",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http"
+                },
+                {
+                  "containerPort": 8443,
+                  "name": "https"
+                }
+              ],
+              "readinessProbe": {
+                "failureThreshold": 6,
+                "httpGet": {
+                  "path": "/",
+                  "port": "http"
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 5
+              },
+              "resources": {
+                "limits": {},
+                "requests": {}
+              },
+              "securityContext": {
+                "runAsNonRoot": true,
+                "runAsUser": 1001
+              },
+              "volumeMounts": null
+            }
+          ],
+          "hostAliases": [
+            {
+              "hostnames": [
+                "status.localhost"
+              ],
+              "ip": "127.0.0.1"
+            }
+          ],
+          "priorityClassName": "",
+          "securityContext": {
+            "fsGroup": 1001
+          },
+          "volumes": null
+        }
+      }
+    }
+  }
+]
