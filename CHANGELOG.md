@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.15.2 (Mar 5, 2022)
+
+* Add ability to filter by namespaces using `-p` and `-P` and the ability to filter out cluster-scoped-objects
+  via `--include-cluster-objects=false`
+
 ## v0.15.1 (Feb 4, 2022)
 
 * Fix info in `qbec version`
