@@ -17,12 +17,17 @@ import (
 )
 
 func newUnstructuredList(apiVersion, kind string, continueVal int64, items ...*unstructured.Unstructured) *unstructured.UnstructuredList {
+	continueValueToSet := ""
+	// Set continue if there's more items to come
+	if continueVal > 0 {
+		continueValueToSet = fmt.Sprint(continueVal)
+	}
 	list := &unstructured.UnstructuredList{
 		Object: map[string]interface{}{
 			"apiVersion": apiVersion,
 			"kind":       kind,
 			"metadata": map[string]interface{}{
-				"continue": continueVal,
+				"continue": continueValueToSet,
 			},
 		},
 	}
@@ -97,7 +102,7 @@ func TestListPagination(t *testing.T) {
 	}
 	actual := len(objs)
 	if int(totalItemsInList) != actual {
-		t.Logf("expected items to be %d but found %d. Change this to Fatal when https://github.com/kubernetes/kubernetes/issues/107277 is fixed", totalItemsInList, actual)
-		//	t.Fatalf("expected items to be %d but found %d", totalItemsInList, actual)
+		// t.Logf("expected items to be %d but found %d. Change this to Fatal when https://github.com/kubernetes/kubernetes/issues/107277 is fixed", totalItemsInList, actual)
+		t.Fatalf("expected items to be %d but found %d", totalItemsInList, actual)
 	}
 }
