@@ -43,7 +43,7 @@ archives:
 
 brews:
   - name: qbec
-    tap:
+    repository:
       owner: splunk
       name: homebrew-tap
     url_template: https://rogii-sre-dist-pub.s3.amazonaws.com/qbec/{{.ArtifactName}}
