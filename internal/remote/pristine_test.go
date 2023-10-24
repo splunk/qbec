@@ -16,7 +16,7 @@ package remote
 
 import (
 	"encoding/base64"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -67,7 +67,7 @@ func TestUnzipNegative(t *testing.T) {
 }
 
 func loadFile(t *testing.T, file string) *unstructured.Unstructured {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "pristine", file))
+	b, err := os.ReadFile(filepath.Join("testdata", "pristine", file))
 	require.Nil(t, err)
 	var data map[string]interface{}
 	err = yaml.Unmarshal(b, &data)

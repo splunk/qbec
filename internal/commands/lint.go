@@ -17,8 +17,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -125,7 +125,7 @@ func (p *linter) Process(path string, f fs.FileInfo) (outErr error) {
 	defer func() {
 		p.printError(outErr)
 	}()
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

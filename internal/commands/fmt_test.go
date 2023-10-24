@@ -17,7 +17,6 @@ package commands
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -181,11 +180,11 @@ func TestDoFmt(t *testing.T) {
 }
 
 func TestFormatYaml(t *testing.T) {
-	var testfile, err = ioutil.ReadFile("testdata/test.yml")
+	var testfile, err = os.ReadFile("testdata/test.yml")
 	require.Nil(t, err)
 	o, err := formatYaml(testfile)
 	require.Nil(t, err)
-	e, err := ioutil.ReadFile("testdata/test.yml.formatted")
+	e, err := os.ReadFile("testdata/test.yml.formatted")
 	require.Nil(t, err)
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
@@ -214,11 +213,11 @@ func TestFormatYaml(t *testing.T) {
 }
 
 func TestFormatJsonnet(t *testing.T) {
-	var testfile, err = ioutil.ReadFile("testdata/test.libsonnet")
+	var testfile, err = os.ReadFile("testdata/test.libsonnet")
 	require.Nil(t, err)
 	o, err := formatJsonnet(testfile)
 	require.Nil(t, err)
-	e, err := ioutil.ReadFile("testdata/test.libsonnet.formatted")
+	e, err := os.ReadFile("testdata/test.libsonnet.formatted")
 	require.Nil(t, err)
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
@@ -228,11 +227,11 @@ func TestFormatJsonnet(t *testing.T) {
 }
 
 func TestFormatJSON(t *testing.T) {
-	var testfile, err = ioutil.ReadFile("testdata/test.json/test.json")
+	var testfile, err = os.ReadFile("testdata/test.json/test.json")
 	require.Nil(t, err)
 	o, err := formatJSON(testfile)
 	require.Nil(t, err)
-	e, err := ioutil.ReadFile("testdata/test.json/test.json.formatted")
+	e, err := os.ReadFile("testdata/test.json/test.json.formatted")
 	require.Nil(t, err)
 	if !bytes.Equal(o, e) {
 		t.Errorf("Expected %q, got %q", string(e), string(o))
@@ -273,7 +272,7 @@ func TestProcessFile(t *testing.T) {
 			var config = fmtCommandConfig{}
 			var err = processFile(&config, test.input, nil, &b)
 			require.Nil(t, err)
-			e, err := ioutil.ReadFile(test.output)
+			e, err := os.ReadFile(test.output)
 			require.Nil(t, err)
 			var o = b.Bytes()
 			if !bytes.Equal(e, o) {
@@ -285,7 +284,7 @@ func TestProcessFile(t *testing.T) {
 
 // Adapted from https://golang.org/src/cmd/gofmt/gofmt_test.go
 func TestBackupFile(t *testing.T) {
-	dir, err := ioutil.TempDir("", "qbecfmt_test")
+	dir, err := os.MkdirTemp("", "qbecfmt_test")
 	if err != nil {
 		t.Fatal(err)
 	}

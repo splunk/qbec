@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,7 +28,7 @@ import (
 
 func TestProfileSuccess(t *testing.T) {
 	defer func() { cleanup = &closers{} }()
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	cpuFile := filepath.Join(tmpDir, "cpu.prof")

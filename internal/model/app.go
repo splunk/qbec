@@ -19,7 +19,7 @@ package model
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -88,7 +88,7 @@ func downloadEnvFile(url string) ([]byte, error) {
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status : %s", res.Status)
 	}
-	payload, err := ioutil.ReadAll(res.Body)
+	payload, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func readEnvFile(file string) ([]byte, error) {
 		}
 		return b, nil
 	}
-	return ioutil.ReadFile(file)
+	return os.ReadFile(file)
 }
 
 func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
@@ -153,7 +153,7 @@ func loadEnvFiles(app *QbecApp, additionalFiles []string, v *validator) error {
 
 // NewApp returns an app loading its details from the supplied file.
 func NewApp(file string, envFiles []string, tag string) (*App, error) {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -233,7 +232,7 @@ func (c Context) Confirm(action string) error {
 	}
 	inst, err := readline.NewEx(&readline.Config{
 		Prompt:              "Do you want to continue [y/n]: ",
-		Stdin:               ioutil.NopCloser(c.stdin),
+		Stdin:               io.NopCloser(c.stdin),
 		Stdout:              c.stdout,
 		Stderr:              c.stderr,
 		ForceUseInteractive: true,
