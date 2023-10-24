@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -110,7 +109,7 @@ func getValues(ret map[string]UserVal, name string, s strFiles, fn func(value st
 		if len(parts) == 1 {
 			return fmt.Errorf("%s-file no filename specified for %s", name, s)
 		}
-		b, err := ioutil.ReadFile(parts[1])
+		b, err := os.ReadFile(parts[1])
 		if err != nil {
 			return err
 		}
@@ -118,7 +117,7 @@ func getValues(ret map[string]UserVal, name string, s strFiles, fn func(value st
 		return nil
 	}
 	processList := func(l string) error {
-		b, err := ioutil.ReadFile(l)
+		b, err := os.ReadFile(l)
 		if err != nil {
 			return err
 		}

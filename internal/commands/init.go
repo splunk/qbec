@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -146,7 +145,7 @@ func writeTemplateFile(file string, t *template.Template, data interface{}) erro
 	if err := t.Execute(&w, data); err != nil {
 		return fmt.Errorf("unable to expand template for file %s, %v", file, err)
 	}
-	if err := ioutil.WriteFile(file, w.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(file, w.Bytes(), 0644); err != nil {
 		return err
 	}
 	sio.Noticeln("wrote", file)
@@ -204,7 +203,7 @@ func writeFiles(dir string, app model.QbecApp, config initCommandConfig) error {
 		return fmt.Errorf("yaml marshal: %v", err)
 	}
 	file := filepath.Join(dir, "qbec.yaml")
-	if err := ioutil.WriteFile(file, b, 0644); err != nil {
+	if err := os.WriteFile(file, b, 0644); err != nil {
 		return err
 	}
 	sio.Noticeln("wrote", file)

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -163,7 +162,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 		perm = fi.Mode().Perm()
 	}
 
-	src, err := ioutil.ReadAll(in)
+	src, err := io.ReadAll(in)
 	if err != nil {
 		return err
 	}
@@ -185,7 +184,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 			if err != nil {
 				return fmt.Errorf("error creating backup file %q: %v", filename+".", err)
 			}
-			err = ioutil.WriteFile(filename, res, perm)
+			err = os.WriteFile(filename, res, perm)
 			if err != nil {
 				os.Rename(bakname, filename)
 

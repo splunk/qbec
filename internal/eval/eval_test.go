@@ -19,7 +19,6 @@ package eval
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -462,7 +461,7 @@ func TestEvalPostProcessor(t *testing.T) {
 		},
 	}
 
-	tmpDir, err := ioutil.TempDir("", "pp*")
+	tmpDir, err := os.MkdirTemp("", "pp*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	count := 0
@@ -471,7 +470,7 @@ func TestEvalPostProcessor(t *testing.T) {
 			count++
 			ctx := decorate(Context{})
 			file := filepath.Join(tmpDir, fmt.Sprintf("f%03d.libsonnet", count))
-			err := ioutil.WriteFile(file, []byte(test.code), 0644)
+			err := os.WriteFile(file, []byte(test.code), 0644)
 			require.NoError(t, err)
 			pp := postProc{ctx: ctx, file: file}
 			ret, err := pp.run(obj)

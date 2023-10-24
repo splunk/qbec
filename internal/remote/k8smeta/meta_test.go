@@ -19,7 +19,7 @@ package k8smeta
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -59,7 +59,7 @@ func (d *disco) ServerResourcesForGroupVersion(groupVersion string) (*metav1.API
 
 func getServerMetadata(t *testing.T, verbosity int) *Resources {
 	var d disco
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "metadata.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "metadata.json"))
 	require.Nil(t, err)
 	err = json.Unmarshal(b, &d)
 	require.Nil(t, err)
@@ -72,7 +72,7 @@ func getServerMetadata(t *testing.T, verbosity int) *Resources {
 }
 
 func loadObject(t *testing.T, file string) model.K8sObject {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", file))
+	b, err := os.ReadFile(filepath.Join("testdata", file))
 	require.Nil(t, err)
 	var d map[string]interface{}
 	err = json.Unmarshal(b, &d)

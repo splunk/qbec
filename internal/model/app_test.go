@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -376,7 +375,7 @@ func TestHttpEnvFiles(t *testing.T) {
 	reset := setPwd(t, "testdata/http-app")
 	defer reset()
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		b, err := ioutil.ReadFile("envs.yaml")
+		b, err := os.ReadFile("envs.yaml")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -385,13 +384,13 @@ func TestHttpEnvFiles(t *testing.T) {
 	}))
 	defer s.Close()
 
-	b, err := ioutil.ReadFile("qbec-template.yaml")
+	b, err := os.ReadFile("qbec-template.yaml")
 	tmpl, err := template.New("qbec").Parse(string(b))
 	require.NoError(t, err)
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, map[string]interface{}{"URL": s.URL})
 	require.NoError(t, err)
-	err = ioutil.WriteFile("qbec.yaml", buf.Bytes(), 0640)
+	err = os.WriteFile("qbec.yaml", buf.Bytes(), 0640)
 	require.NoError(t, err)
 	app, err := NewApp("qbec.yaml", nil, "")
 	require.NoError(t, err)

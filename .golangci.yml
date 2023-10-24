@@ -7,25 +7,22 @@ linters-settings:
       default-signifies-exhaustive: false
     golint:
       min-confidence: 0
-          
+
 linters:
     disable-all: true
     enable:
-    - deadcode
-    - depguard
     - dogsled
     - errcheck
     - goconst
     - gocyclo
     - gofmt
     - goimports
-    - revive
     - gosimple
     - govet
     - ineffassign
+    - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
-    - varcheck
+    - unused

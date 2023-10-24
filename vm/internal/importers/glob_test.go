@@ -19,7 +19,6 @@ package importers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -47,7 +46,7 @@ type outputData map[string]interface{}
 
 func generateFile(t *testing.T, virtFile string, code string) (outFile string) {
 	file := virtFile + ".generated"
-	err := ioutil.WriteFile(file, []byte(code), 0644)
+	err := os.WriteFile(file, []byte(code), 0644)
 	require.NoError(t, err)
 	return file
 }

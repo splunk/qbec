@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -41,7 +40,7 @@ func main() {
 		}
 	}
 
-	b, err := ioutil.ReadFile(inFile)
+	b, err := os.ReadFile(inFile)
 	handle(err)
 
 	var data interface{}
@@ -61,7 +60,7 @@ var swaggerJSON = %s
 %s
 `, inFile, time.Now().UTC(), "`", b, "`")
 
-	err = ioutil.WriteFile(outFile, []byte(code), 0644)
+	err = os.WriteFile(outFile, []byte(code), 0644)
 	handle(err)
 	log.Println("Successfully wrote", outFile, "from", inFile)
 }

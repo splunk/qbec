@@ -16,7 +16,7 @@ package types
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -37,7 +37,7 @@ func TestObjectStatus(t *testing.T) {
 }
 
 func load(t *testing.T, file string) *unstructured.Unstructured {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	require.Nil(t, err)
 	var data map[string]interface{}
 	err = json.Unmarshal(b, &data)
