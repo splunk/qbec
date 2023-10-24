@@ -68,7 +68,7 @@ func TestHelmSimpleExpand(t *testing.T) {
 	err = json.Unmarshal([]byte(code), &output)
 	require.Nil(t, err)
 
-	require.Equal(t, 2, len(output))
+	require.Equal(t, 3, len(output))
 
 	sort.Slice(output, func(i, j int) bool {
 		return output[i].Kind < output[j].Kind
@@ -82,6 +82,9 @@ func TestHelmSimpleExpand(t *testing.T) {
 	a.Equal("baz", ob.Data["bar"])
 
 	ob = output[1]
+	a.Equal("networking.k8s.io/v1", ob.APIVersion)
+
+	ob = output[2]
 	a.Equal("Secret", ob.Kind)
 	a.Equal("my-ns", ob.Metadata.Namespace)
 	a.Equal("my-name", ob.Metadata.Name)
