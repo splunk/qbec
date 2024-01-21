@@ -13,4 +13,5 @@ bin/
 .tools/
 .vscode/
 *.generated
+.gitconfig
 

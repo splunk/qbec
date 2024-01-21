@@ -7,7 +7,17 @@ linters-settings:
       default-signifies-exhaustive: false
     golint:
       min-confidence: 0
-          
+    depguard:
+      rules:
+        main:
+          files:
+          - $all
+          - "!$test"
+          allow:
+          - $gostd
+          - github.com/splunk/qbec
+          - github.com/spf13/cobra
+
 linters:
     disable-all: true
     enable:
