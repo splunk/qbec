@@ -1,4 +1,4 @@
-// we pull in the generated config map as a string usiong importstr
+// we pull in the generated config map as a string using importstr
 // the syntax for the import is:
 //   data://<data-source-name>[/optional/path]
 // in this data source implementation the path appears in the config map
