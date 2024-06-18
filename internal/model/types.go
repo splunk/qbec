@@ -104,6 +104,8 @@ type AppSpec struct {
 	Environments map[string]Environment `json:"environments"`
 	// additional environments pulled in from external files
 	EnvFiles []string `json:"envFiles,omitempty"`
+	// additional vars pulled in from external files
+	VarFiles []string `json:"varFiles,omitempty"`
 	// list of components to exclude by default for every environment
 	Excludes []string `json:"excludes,omitempty"`
 	// list of library paths to add to the jsonnet VM at evaluation
@@ -161,4 +163,26 @@ type QbecApp struct {
 	// app specification
 	// required: true
 	Spec AppSpec `json:"spec"`
+}
+
+type VarsSpec struct {
+	Vars               Variables              `json:"vars,omitempty"`
+	DataSources        []string               `json:"dataSources,omitempty"`
+	DataSourceExamples map[string]interface{} `json:"dsExamples,omitempty"`
+}
+
+type QbecVars struct {
+	// object kind
+	// required: true
+	// pattern: ^App$
+	Kind string `json:"kind"`
+	// requested API version
+	// required: true
+	APIVersion string `json:"apiVersion"`
+	// app metadata
+	// required: true
+	Metadata AppMeta `json:"metadata,omitempty"`
+	// app specification
+	// required: true
+	Spec VarsSpec `json:"spec"`
 }
