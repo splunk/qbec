@@ -1,0 +1,22 @@
+apiVersion: qbec.io/v1alpha1
+kind: App
+metadata:
+  name: helm3
+spec:
+  environments:
+    default:
+      defaultNamespace: charts
+      context: kind
+  vars:
+    computed:
+      - name: helmSetup
+        code: |
+          {}
+      - name: victoria-config
+        code: |
+          (import 'components/victoria-metrics/datasource.libsonnet').config
+      - name: apache-config
+        code: |
+          (import 'components/apache/datasource.libsonnet').config
+  dataSources:
+    - helm3://helm?configVar=helmSetup

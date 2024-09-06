@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/vm/internal/ds"
 	"github.com/splunk/qbec/vm/internal/ds/exec"
+	"github.com/splunk/qbec/vm/internal/ds/helm3"
 )
 
 // Create creates a new data source from the supplied URL.
@@ -35,6 +36,7 @@ func Create(u string) (ds.DataSourceWithLifecycle, error) {
 	scheme := parsed.Scheme
 	switch scheme {
 	case exec.Scheme:
+	case helm3.Scheme:
 	default:
 		return nil, fmt.Errorf("data source URL '%s', unsupported scheme '%s'", u, scheme)
 	}
@@ -52,6 +54,8 @@ func Create(u string) (ds.DataSourceWithLifecycle, error) {
 	switch scheme {
 	case exec.Scheme:
 		return makeLazy(exec.New(name, varName)), nil
+	case helm3.Scheme:
+		return makeLazy(helm3.New(name, varName)), nil
 	default:
 		return nil, fmt.Errorf("internal error: unable to create a data source for %s", u)
 	}

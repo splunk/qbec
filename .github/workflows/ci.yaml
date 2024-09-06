@@ -13,10 +13,10 @@ jobs:
         with:
           go-version: 1.17
         id: go
-      - uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v4.2.0
         with:
-          version: "v3.7.0" # default is latest stable
-        id: helm
+          version: 'v3.7.0'
+        id: install
       - uses: azure/setup-kubectl@v1
         id: install-kubectl
       - uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
       - name: goreleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          args: release --snapshot --skip-publish --rm-dist --release-notes .release-notes.md
+          args: release --snapshot --skip=publish --clean --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   build-windows:
@@ -74,10 +74,10 @@ jobs:
         with:
           go-version: 1.17
         id: go
-      - uses: azure/setup-helm@v1
+      - uses: azure/setup-helm@v4.2.0
         with:
-          version: "v3.3.1" # default is latest stable
-        id: helm
+          version: 'v3.7.0'
+        id: install
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
         with:
