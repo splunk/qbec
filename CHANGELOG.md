@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.16.0 (Sept 6, 2024)
+
+* Added support for helm as an external data source
+
 ## v0.15.2 (Mar 5, 2022)
 
 * Add ability to filter by namespaces using `-p` and `-P` and the ability to filter out cluster-scoped-objects
