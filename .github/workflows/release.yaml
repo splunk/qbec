@@ -22,6 +22,6 @@ jobs:
       - name: Release via goreleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          args: release --rm-dist --release-notes .release-notes.md
+          args: release --release-notes .release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
