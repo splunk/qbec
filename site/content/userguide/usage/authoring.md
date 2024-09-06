@@ -26,13 +26,19 @@ A component is:
 It is valid for a component to return an empty set of objects if runtime parameters determine that
 nothing should be installed for a specific target environment.
 
-## Using helm charts and external data sources
+## Using external data sources
 
 qbec provides integration to run external commands and consume their output in jsonnet code. 
 See the [Jsonnet data importer](../../../reference/jsonnet-external-data) for more information on how this works.
 
 Note that the [expandHelmTemplate](../../../reference/jsonnet-native-funcs/#expandhelmtemplate) native function
 is now deprecated in favor of the data importer mechanism.
+
+## Native Helm integration
+
+qbec provides native support for Helm3, allowing you to render Helm `values` during runtime via jsonnet. To use this
+feature, configure a Helm datasource. See [examples/helm3](https://github.com/splunk/qbec/tree/main/examples/helm3/) for
+an example component.
 
 ## Using other jsonnet libraries
 
