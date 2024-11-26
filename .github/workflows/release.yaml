@@ -24,4 +24,4 @@ jobs:
         with:
           args: release --release-notes .release-notes.md
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
