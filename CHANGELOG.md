@@ -1,7 +1,12 @@
 Changelog
 ---
 
-## v0.16.0 (Sept 6, 2024)
+## v0.16.1 (Nov 26, 2024)
+
+* Fix typo in model.md: 
+* Fix Go Releaser build step
+
+## v0.16.0 (Sep 6, 2024)
 
 * Added support for helm as an external data source
 
