@@ -44,7 +44,9 @@ type DataSourceImporter struct {
 
 // NewDataSourceImporter returns an importer that can resolve paths for the specified datasource.
 // It processes entries of the form
-//    data://{name}[/{path-to-be-resolved}]
+//
+//	data://{name}[/{path-to-be-resolved}]
+//
 // If no path is provided, it is set to "/"
 func NewDataSourceImporter(source datasource.DataSource) *DataSourceImporter {
 	exact := fmt.Sprintf("%s://%s", dsPrefix, source.Name())
