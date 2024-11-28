@@ -1,0 +1,34 @@
+---
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: name-virtual-host-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: foo.bar.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service: 
+            name: service1
+            port:
+              number: 80
+{{- else }}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: name-virtual-host-ingress
+spec:
+  rules:
+    - host: foo.bar.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: service1
+            servicePort: 80
+{{- end }}
