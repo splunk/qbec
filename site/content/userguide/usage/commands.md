@@ -16,7 +16,7 @@ Usage:
 Available Commands:
   alpha       experimental qbec commands
   apply       apply one or more components to a Kubernetes cluster
-  completion  Output shell completion for bash
+  completion  Output shell completion for bash, zsh, and fish
   component   component lists and diffs
   delete      delete one or more components from a Kubernetes cluster
   diff        diff one or more components against objects in a Kubernetes cluster
@@ -205,4 +205,3 @@ To see a list of experimental commands, run:
 ```shell
 qbec alpha --help
 ```
-
