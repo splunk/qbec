@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
@@ -133,6 +134,12 @@ func TestEvalComponents(t *testing.T) {
 			Files: []string{"testdata/components/c.jsonnet"},
 		},
 		{
+			Name:         "cue",
+			Files:        []string{"testdata/components/cue/index.cue"},
+			TopLevelVars: []string{"fooVal=baz"},
+		},
+
+		{
 			Name:  "a",
 			Files: []string{"testdata/components/a.json"},
 		},
@@ -160,7 +167,7 @@ func TestEvalComponents(t *testing.T) {
 		producer,
 	)
 	require.Nil(t, err)
-	require.Equal(t, 6, len(objs))
+	require.Equal(t, 7, len(objs))
 	a := assert.New(t)
 
 	// ensure postprocessor is called everywhere
@@ -188,14 +195,20 @@ func TestEvalComponents(t *testing.T) {
 	t.Log(obj)
 
 	obj = objs[3]
-	a.Equal("d", obj.Component())
-	a.Equal("subdir-config-map1", obj.GetName())
+	a.Equal("cue", obj.Component())
+	a.Equal("name-from-helper-pkg", obj.GetName())
+	a.Equal("baz", obj.GetAnnotations()["qbec.io/injectedVar"])
+	a.Equal(runtime.GOOS, obj.GetAnnotations()["qbec.io/injectedBuiltinOS"])
 
 	obj = objs[4]
 	a.Equal("d", obj.Component())
-	a.Equal("subdir-config-map2", obj.GetName())
+	a.Equal("subdir-config-map1", obj.GetName())
 
 	obj = objs[5]
+	a.Equal("d", obj.Component())
+	a.Equal("subdir-config-map2", obj.GetName())
+
+	obj = objs[6]
 	a.Equal("tla", obj.Component())
 	a.Equal("tla-config-map", obj.GetName())
 }

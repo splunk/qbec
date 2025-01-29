@@ -1,0 +1,5 @@
+import "qbec.io/helper"
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata: name: "cue-config-map"
+data: foo: "bar"
