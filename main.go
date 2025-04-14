@@ -38,14 +38,14 @@ func main() {
 
 `, commands.Executable), "\n")
 	root := &cobra.Command{
-		Use:                    commands.Executable,
-		Short:                  "Kubernetes cluster config tool",
-		Long:                   longdesc,
-		BashCompletionFunction: commands.BashCompletionFunc,
+		Use:   commands.Executable,
+		Short: "Kubernetes cluster config tool",
+		Long:  longdesc,
 	}
 	root.SilenceUsage = true
 	root.SilenceErrors = true
 	commands.Setup(root)
+	root.AddCommand(commands.NewCompletionCommand(root))
 	c, err := root.ExecuteContextC(context.TODO())
 
 	exit := func(code int) {
