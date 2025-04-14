@@ -1,6 +1,6 @@
 module github.com/splunk/qbec
 
-go 1.19
+go 1.22
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2
