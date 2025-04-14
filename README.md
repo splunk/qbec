@@ -3,10 +3,6 @@
 [![Github build status](https://github.com/splunk/qbec/workflows/build/badge.svg)](https://github.com/splunk/qbec/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/splunk/qbec)](https://goreportcard.com/report/github.com/splunk/qbec)
 [![codecov](https://codecov.io/gh/splunk/qbec/branch/main/graph/badge.svg)](https://codecov.io/gh/splunk/qbec)
-[![GolangCI](https://golangci.com/badges/github.com/splunk/qbec.svg)](https://golangci.com/r/github.com/splunk/qbec)
-
-
-[![Build Stats](https://buildstats.info/github/chart/splunk/qbec?branch=main)](https://buildstats.info/github/chart/splunk/qbec?branch=main)
 
 
 Qbec (pronounced like the [Canadian province](https://en.wikipedia.org/wiki/Quebec)) is a CLI tool that
