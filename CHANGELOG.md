@@ -1,6 +1,24 @@
 Changelog
 ---
 
+## v0.16.3 (Dec 2, 2024)
+
+* update release documentation
+* update various dependencies to address security vulnerabilities
+
+## v0.16.2 (Nov 26, 2024)
+
+* Fix Release configuration
+
+## v0.16.1 (Nov 26, 2024)
+
+* Fix typo in model.md: 
+* Fix Go Releaser build step
+
+## v0.16.0 (Sep 6, 2024)
+
+* Added support for helm as an external data source
+
 ## v0.15.2 (Mar 5, 2022)
 
 * Add ability to filter by namespaces using `-p` and `-P` and the ability to filter out cluster-scoped-objects

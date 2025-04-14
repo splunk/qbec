@@ -1,3 +1,4 @@
+version: 2
 before:
   hooks:
     - make release-notes
@@ -36,14 +37,14 @@ builds:
         goarch: arm64
 archives:
   - name_template: "{{.ProjectName}}-{{.Os}}-{{.Arch}}"
-    format: tar.gz
+    formats: [ 'tar.gz' ]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ 'zip' ]
 
 brews:
   - name: qbec
-    tap:
+    repository:
       owner: splunk
       name: homebrew-tap
     url_template: https://github.com/splunk/qbec/releases/download/{{.Tag}}/{{.ArtifactName}}
@@ -59,7 +60,7 @@ brews:
 checksum:
   name_template: "sha256-checksums.txt"
 snapshot:
-  name_template: "{{.Version}}-next"
+  version_template: "{{.Version}}-next"
 changelog:
   sort: asc
   filters:
