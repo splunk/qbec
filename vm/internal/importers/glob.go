@@ -73,23 +73,22 @@ type globEntry struct {
 //
 // That is, given the following directory structure:
 //
-// 		lib
-//			- a.json
-//			- b.json
-//		caller
-//			- c.libsonnet
+//	lib
+//		- a.json
+//		- b.json
+//	caller
+//		- c.libsonnet
 //
 // where c.libsonnet has the following contents
 //
-//		import 'glob-import:../lib/*.json'
+//	import 'glob-import:../lib/*.json'
 //
 // evaluating `c.libsonnet` will return jsonnet code of the following form:
 //
-//		{
-//			'../lib/a.json': import '../lib/a.json',
-//			'../lib/b.json': import '../lib/b.json',
-//		}
-//
+//	{
+//		'../lib/a.json': import '../lib/a.json',
+//		'../lib/b.json': import '../lib/b.json',
+//	}
 type GlobImporter struct {
 	innerVerb string
 	prefix    string

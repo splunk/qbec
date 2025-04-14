@@ -76,7 +76,7 @@ install-ci:
 	# curl -sSL -o helm.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-${HELM_PLATFORM}-amd64.tar.gz
 	# tar -xvzf helm.tar.gz
 	# mv ${HELM_PLATFORM}-amd64/helm $(GOPATH)/bin/
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.44.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 
 .PHONY: create-cluster
 create-cluster:	.tools/kind
