@@ -116,10 +116,10 @@ func deleteEmpty(parent map[string]interface{}, key string) {
 // contains empty objects. It makes an assumption that there is actually no reason an empty object
 // needs to be updated for a Kubernetes resource considering that the server would already have an object
 // there on initial create if needed. Things considered empty will be of the form:
-//  {}
-//  { metadata: { labels: {}, annotations: {} }
-//  { metadata: { labels: {}, annotations: {} }, spec: { foo: { bar: {} } } }
 //
+//	{}
+//	{ metadata: { labels: {}, annotations: {} }
+//	{ metadata: { labels: {}, annotations: {} }, spec: { foo: { bar: {} } } }
 func isEmptyPatch(patch []byte) bool {
 	var root map[string]interface{}
 	err := json.Unmarshal(patch, &root)
