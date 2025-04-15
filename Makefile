@@ -68,7 +68,7 @@ fmt-license:
 
 .PHONY: check-license
 check-license:
-	addlicense -c "Splunk Inc." -l apache -check $$(find . -type f ! -path "*testdata*" -print0 | xargs -0)
+	addlicense -c "Splunk Inc." -l apache -check $$(find . -type f ! -path "*testdata*" ! -path "*examples*.yaml" -print0 | xargs -0)
 
 .PHONY: check-format
 check-format: build

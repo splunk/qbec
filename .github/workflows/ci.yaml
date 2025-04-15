@@ -66,6 +66,7 @@ jobs:
         run: |
           make lint
           make check-license
+          ./licenselint.sh
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.2.0
         with:

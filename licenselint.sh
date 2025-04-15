@@ -20,10 +20,25 @@ YEAR="2025"
 OWNER="Splunk Inc."
 ERROR=0
 
-addlicense -c "${OWNER}" -l apache -check $(find . -type f ! -path "*testdata*" ! -path "*examples*.yaml" -print0 | xargs -0) || ( echo -e "\nRun 'make fmt-license' to fix missing license headers" && exit 1 )
+addlicense -c "${OWNER}" -l apache -check \
+  $(find . -type f ! -path "*testdata*" ! -path "*examples*.yaml" -print0 | xargs -0) \
+  || ( echo -e "\nRun 'make fmt-license' to fix missing license headers" && exit 1 )
 
 # array of file patterns to exclude from header check
-EXCLUDE_PATTERNS=("*testdata*" ".git*" "site/*" "examples/*.yaml" "*.jsonnet" "*.json" "*.libsonnet" "*.xsonnet" "LICENSE" "*.md" "go.mod" "go.sum")
+EXCLUDE_PATTERNS=( \
+  "*.json" \
+  "*.jsonnet" \
+  "*.libsonnet" \
+  "*.md" \
+  "*.xsonnet" \
+  "*testdata*" \
+  ".git*" \
+  "examples/*.yaml" \
+  "go.mod" \
+  "go.sum" \
+  "LICENSE" 
+  "site/*" \
+)
 
 # check if the file matches any exclude pattern
 exclude_file() {
