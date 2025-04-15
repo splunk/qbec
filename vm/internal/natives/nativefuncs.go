@@ -18,7 +18,7 @@
 
 package natives
 
-// copied from original code at 
+// copied from original code at
 // and modified for use.
 
 import (
