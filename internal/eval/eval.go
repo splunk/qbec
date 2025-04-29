@@ -25,6 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"cuelang.org/go/cue/cuecontext"
+	cueerrors "cuelang.org/go/cue/errors"
+	"cuelang.org/go/cue/load"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
@@ -244,6 +247,59 @@ func evaluationCode(c Context, file string) evalFn {
 			}
 			defer f.Close()
 			return vmutil.ParseJSON(f)
+		}
+	case strings.HasSuffix(file, ".cue"):
+		return func(file string, component string, tlas []string) (interface{}, error) {
+
+			// The following does not work when there are refs to packages from a lib
+			// f, err := os.ReadFile(file)
+			// if err != nil {
+			// 	return nil, err
+			// }
+			//val := ctx.CompileBytes(f, cue.Filename(file))
+			// j, err := v.MarshalJSON()
+			// load cue files.
+			instances := load.Instances([]string{}, &load.Config{
+				Package: "_", // file that don't belong to a package
+				Dir:     filepath.Dir(file),
+				// Requires string array with values of form k=v
+				Tags: tlas,
+				// Add builtin tags
+				TagVars: load.DefaultTagVars(),
+				// Maybe we'll want to process only select files like index.cue instead of all cue files
+				//Overlay: map[string]load.Source{file: load.FromBytes(f)},
+			})
+			ctx := cuecontext.New()
+
+			if len(instances) != 1 {
+				return nil, errors.New("only one package is supported at a time")
+			}
+			for _, value := range instances {
+				if value.Err != nil {
+					return nil, value.Err
+				}
+			}
+			v, err := ctx.BuildInstances(instances)
+			if err != nil {
+				return nil, errors.New(cueerrors.Details(err, &cueerrors.Config{}))
+			}
+			for _, value := range v {
+				if value.Err() != nil {
+					return nil, value.Err()
+				}
+			}
+			if len(v) != 1 {
+				return nil, errors.New(fmt.Sprintf("wrong number of values, expected 1 but got %d", len(v)))
+			}
+			j, err := v[0].MarshalJSON()
+			if err != nil {
+				return nil, err
+			}
+			var data interface{}
+			if err := json.Unmarshal(j, &data); err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unexpected unmarshal '%s'", file))
+			}
+			return data, nil
 		}
 	default:
 		return func(file string, component string, tlas []string) (interface{}, error) {

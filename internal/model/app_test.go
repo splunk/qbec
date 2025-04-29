@@ -305,7 +305,7 @@ func TestAppComponentLoadSubdirs(t *testing.T) {
 	comps, err := app.ComponentsForEnvironment("dev", nil, nil)
 	require.Nil(t, err)
 	a := assert.New(t)
-	a.Equal(2, len(comps))
+	a.Equal(3, len(comps))
 	comp := comps[0]
 	a.Equal("comp1", comp.Name)
 	a.Equal(1, len(comp.Files))
@@ -317,6 +317,10 @@ func TestAppComponentLoadSubdirs(t *testing.T) {
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm1.yaml"))
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "cm2.json"))
 	a.Contains(comp.Files, filepath.Join("components", "comp2", "index.yaml"))
+	comp = comps[2]
+	a.Equal("comp3", comp.Name)
+	a.Equal(1, len(comp.Files))
+	a.Contains(comp.Files, filepath.Join("components", "comp3", "index.cue"))
 }
 
 func TestAppComponentLoadMultidirs(t *testing.T) {
