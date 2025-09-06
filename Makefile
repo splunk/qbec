@@ -1,9 +1,23 @@
+# Copyright 2025 Splunk Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 include Makefile.tools
 
 VERSION         := 0.16.3
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
-FMT_OPTIONS     := -x '**/testdata' -x site/themes -x '.vscode/*' -x dist -t jsonnet -t json -t yaml
+FMT_OPTIONS     := -x '**/testdata' -x site/themes -x '.vscode/*' -x dist -x 'internal/*' -x '.github/*' -t jsonnet -t json -t yaml
 
 LEARN_THEME_TAG := 2.2.0
 # When modifying this, also modify the corresponding ldflags in .goreleaser.yaml
@@ -48,9 +62,14 @@ lint: check-format
 	golangci-lint run $(LINT_FLAGS) .
 	./licenselint.sh
 
-.PHONY: license
-license:
-	addlicense -c "Splunk Inc." -l apache ./**/*.go
+.PHONY: fmt-license
+fmt-license:
+	addlicense -c "Splunk Inc." -l apache $$(find . -type f ! -path "*testdata*" -print0 | xargs -0)
+
+.PHONY: check-license
+check-license:
+	addlicense -c "Splunk Inc." -l apache -check $$(find . -type f ! -path "*testdata*" ! -path "*examples*.yaml" -print0 | xargs -0)
+
 .PHONY: check-format
 check-format: build
 	@echo "Running qbec fmt -e ..."
