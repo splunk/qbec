@@ -176,7 +176,7 @@ func processFile(config *fmtCommandConfig, filename string, in io.Reader, out io
 	if !bytes.Equal(src, res) {
 		// formatting has changed
 		if config.check {
-			return fmt.Errorf(filename)
+			return fmt.Errorf("%s", filename)
 		}
 		if config.write {
 			fmt.Println(filename)

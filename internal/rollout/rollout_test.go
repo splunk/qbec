@@ -160,7 +160,7 @@ func extractStatus(obj *unstructured.Unstructured, _ int64) (*types.RolloutStatu
 	errmsg := obj.GetAnnotations()["status/error"]
 	done := obj.GetAnnotations()["status/done"]
 	if errmsg != "" {
-		return nil, fmt.Errorf(errmsg)
+		return nil, fmt.Errorf("%s", errmsg)
 	}
 	return &types.RolloutStatus{Description: desc, Done: done == "true"}, nil
 }
