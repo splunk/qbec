@@ -1,6 +1,13 @@
 Changelog
 ---
 
+## v0.17.0 (Oct 28, 2025)
+
+* Update Go from 1.17 to 1.22
+* Update go-jsonnet from v0.18.0 to v0.20.0 & alter some Windows path parsing logic
+* Update various dependencies to address security vulnerabilities
+* Add license headers
+
 ## v0.16.3 (Dec 2, 2024)
 
 * update release documentation
