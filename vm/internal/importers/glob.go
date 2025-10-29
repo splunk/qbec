@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -131,8 +130,8 @@ func (g *GlobImporter) CanProcess(path string) bool {
 
 // Import implements the interface method.
 func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonnet.Contents, foundAt string, err error) {
-	// baseDir is the directory from which things are relatively imported
-	baseDir, _ := path.Split(importedFrom)
+	importedFromPath := filepath.Clean(filepath.FromSlash(importedFrom))
+	baseDir := filepath.Dir(importedFromPath)
 
 	relativeGlob := strings.TrimPrefix(importedPath, g.prefix)
 
@@ -140,11 +139,11 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		return contents, foundAt, fmt.Errorf("invalid glob pattern '%s', cannot be absolute", relativeGlob)
 	}
 
-	baseDir = filepath.FromSlash(baseDir)
 	relativeGlob = filepath.FromSlash(relativeGlob)
 
 	// globPath is the glob path relative to the working directory
 	globPath := filepath.Clean(filepath.Join(baseDir, relativeGlob))
+	globPathSlash := filepath.ToSlash(globPath)
 	r := g.getEntry(globPath, relativeGlob)
 	if r != nil {
 		return r.contents, r.foundAt, r.err
@@ -159,8 +158,12 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 		})
 	}()
 
-	fsDir, pat := doublestar.SplitPattern(filepath.ToSlash(globPath))
-	matches, err := doublestar.Glob(os.DirFS(fsDir), pat)
+	fsDirSlash, pat := doublestar.SplitPattern(globPathSlash)
+	fsDirPath := filepath.FromSlash(fsDirSlash)
+	if fsDirPath == "" {
+		fsDirPath = "."
+	}
+	matches, err := doublestar.Glob(os.DirFS(fsDirPath), pat)
 	if err != nil {
 		return contents, foundAt, fmt.Errorf("unable to expand glob %q, %v", globPath, err)
 	}
@@ -168,12 +171,12 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 	// convert matches to be relative to our baseDir
 	var relativeMatches []string
 	for _, m := range matches {
-		m = path.Join(fsDir, m)
-		rel, err := filepath.Rel(baseDir, m)
+		matchPath := filepath.Join(fsDirPath, filepath.FromSlash(m))
+		rel, err := filepath.Rel(baseDir, matchPath)
 		if err != nil {
-			return contents, globPath, fmt.Errorf("could not resolve %s from %s", m, importedFrom)
+			return contents, globPath, fmt.Errorf("could not resolve %s from %s", matchPath, importedFrom)
 		}
-		relativeMatches = append(relativeMatches, rel)
+		relativeMatches = append(relativeMatches, filepath.ToSlash(rel))
 	}
 
 	// ensure consistent order (not strictly required, makes it human friendly)
@@ -182,7 +185,6 @@ func (g *GlobImporter) Import(importedFrom, importedPath string) (contents jsonn
 	var out bytes.Buffer
 	out.WriteString("{\n")
 	for _, file := range relativeMatches {
-		file = filepath.ToSlash(file)
 		out.WriteString("\t")
 		_, _ = fmt.Fprintf(&out, `'%s': %s '%s',`, file, g.innerVerb, file)
 		out.WriteString("\n")
