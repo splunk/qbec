@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.19.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.23.1 to 1.24.17
+* Update various dependencies (spf13 & go-openapi among others)
+
 ## v0.18.0 (Oct 29, 2025)
 
 * Update Go from 1.22 to 1.24
