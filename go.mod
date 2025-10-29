@@ -1,8 +1,6 @@
 module github.com/splunk/qbec
 
-go 1.23.0
-
-toolchain go1.23.5
+go 1.23.7
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.0.2
@@ -12,11 +10,11 @@ require (
 	github.com/go-openapi/strfmt v0.19.8
 	github.com/go-openapi/validate v0.19.12
 	github.com/golang/protobuf v1.5.2
-	github.com/google/go-jsonnet v0.20.0
+	github.com/google/go-jsonnet v0.21.0
 	github.com/googleapis/gnostic v0.5.5
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jonboulle/clockwork v0.2.2
-	github.com/mattn/go-isatty v0.0.14
+	github.com/mattn/go-isatty v0.0.20
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/cobra v1.3.0
@@ -63,7 +61,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -106,5 +104,5 @@ require (
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
-	sigs.k8s.io/yaml v1.2.0 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
