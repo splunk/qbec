@@ -10,8 +10,8 @@ require (
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/go-openapi/validate v0.25.0
 	github.com/golang/protobuf v1.5.2
+	github.com/google/gnostic v0.5.7-v3refs
 	github.com/google/go-jsonnet v0.20.0
-	github.com/googleapis/gnostic v0.5.5
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jonboulle/clockwork v0.2.2
 	github.com/mattn/go-isatty v0.0.14
@@ -68,7 +68,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
