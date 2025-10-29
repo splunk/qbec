@@ -34,7 +34,7 @@ var (
 	version         = "dev"
 	commit          = "dev"
 	goVersion       = "unknown"
-	jsonnetVersion  = "v0.18.0"           // update this when library dependency is upgraded
+	jsonnetVersion  = "v0.20.0"           // update this when library dependency is upgraded
 	clientGoVersion = "kubernetes-1.23.1" // ditto when client go dep is upgraded
 )
 
