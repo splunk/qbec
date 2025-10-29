@@ -5,7 +5,7 @@ Changelog
 
 * Update Go from 1.22 to 1.24
 * Bump golang.org/x/oauth2 to v0.27.0
-* Bump doubelstarbmatcuk/doublestar to v4.0.2
+* Bump doubelstarbmatcuk/doublestar from v4.0.2 to v4.9.1
 
 ## v0.17.0 (Oct 28, 2025)
 

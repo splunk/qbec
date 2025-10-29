@@ -107,7 +107,7 @@ func (v *vm) LintCode(snippet linter.Snippet) (outErr error) {
 	var b bytes.Buffer
 	failure := linter.LintSnippet(v.jvm, &b, []linter.Snippet{snippet})
 	if failure {
-		return fmt.Errorf(b.String())
+		return fmt.Errorf("%s", b.String())
 	}
 	return nil
 }
