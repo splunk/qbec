@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.5
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.0.2
+	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.12
