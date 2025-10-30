@@ -31,7 +31,7 @@ jobs:
         with:
           version: 'v3.7.0'
         id: install
-      - uses: azure/setup-kubectl@v4.1.0
+      - uses: azure/setup-kubectl@v4.0.1
         id: install-kubectl
       - uses: actions/checkout@v2
         with:
