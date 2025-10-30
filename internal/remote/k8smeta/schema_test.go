@@ -20,10 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"google.golang.org/protobuf"
 	openapi_v2 "github.com/google/gnostic/openapiv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
