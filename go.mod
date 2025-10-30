@@ -9,8 +9,8 @@ require (
 	github.com/go-openapi/spec v0.22.0
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/go-openapi/validate v0.25.0
-	github.com/golang/protobuf v1.5.4
-	github.com/google/gnostic v0.5.7-v3refs
+	google.golang.org/protobuf v1.36.10
+	github.com/google/gnostic v0.7.1
 	github.com/google/go-jsonnet v0.20.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jonboulle/clockwork v0.2.2
