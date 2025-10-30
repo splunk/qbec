@@ -22,13 +22,13 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.29.15
-	k8s.io/apimachinery v0.29.15
-	k8s.io/cli-runtime v0.29.15
-	k8s.io/client-go v0.29.15
+	k8s.io/api v0.30.14
+	k8s.io/apimachinery v0.30.14
+	k8s.io/cli-runtime v0.30.14
+	k8s.io/client-go v0.30.14
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185
 	k8s.io/kube-openapi v0.0.0-20250627150254-e9823e99808e
-	k8s.io/kubectl v0.29.15
+	k8s.io/kubectl v0.30.14
 )
 
 require (
@@ -98,7 +98,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.29.15 // indirect
+	k8s.io/component-base v0.30.14 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
