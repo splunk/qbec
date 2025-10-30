@@ -20,21 +20,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	openapi_v2 "github.com/google/gnostic/openapiv2"
+	openapi_v2_models "github.com/google/gnostic-models/openapiv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type sd struct{}
 
-func (d sd) OpenAPISchema() (*openapi_v2.Document, error) {
+func (d sd) OpenAPISchema() (*openapi_v2_models.Document, error) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "swagger-2.0.0.pb-v1"))
 	if err != nil {
 		return nil, err
 	}
-	var doc openapi_v2.Document
+	var doc openapi_v2_models.Document
 	if err := proto.Unmarshal(b, &doc); err != nil {
 		return nil, err
 	}

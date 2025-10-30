@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"sync"
 
-	openapi_v2 "github.com/google/gnostic/openapiv2"
+	openapi_v2_models "github.com/google/gnostic-models/openapiv2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -87,7 +87,7 @@ type openapiResourceResult struct {
 
 // SchemaDiscovery is the minimal interface needed to discover the server schema.
 type SchemaDiscovery interface {
-	OpenAPISchema() (*openapi_v2.Document, error)
+	OpenAPISchema() (*openapi_v2_models.Document, error)
 }
 
 // ServerSchema is a representation of the resource schema of a Kubernetes server.
@@ -140,6 +140,9 @@ func (ss *ServerSchema) openAPIResources() (openapi.Resources, *validators, erro
 	doc, err := ss.disco.OpenAPISchema()
 	if err != nil {
 		return handle(nil, errors.Wrap(err, "Open API doc from server"))
+	}
+	if doc == nil {
+		return handle(nil, errors.New("Open API doc from server is nil"))
 	}
 	res, err := openapi.NewOpenAPIData(doc)
 	if err != nil {
