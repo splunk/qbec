@@ -14,7 +14,7 @@
 
 include Makefile.tools
 
-VERSION         := 0.24.0
+VERSION         := 0.25.0
 SHORT_COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 GO_VERSION      := $(shell go version | awk '{ print $$3}' | sed 's/^go//')
 FMT_OPTIONS     := -x '**/testdata' -x site/themes -x '.vscode/*' -x dist -x 'internal/*' -x '.github/*' -t jsonnet -t json -t yaml
