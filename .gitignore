@@ -14,3 +14,4 @@ bin/
 .vscode/
 *.generated
 .gitconfig
+.githooks/
