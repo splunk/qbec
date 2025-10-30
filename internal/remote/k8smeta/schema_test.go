@@ -23,7 +23,7 @@ import (
 	openapi_v2 "github.com/google/gnostic/openapiv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf"
+	proto "google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -35,7 +35,7 @@ func (d sd) OpenAPISchema() (*openapi_v2.Document, error) {
 		return nil, err
 	}
 	var doc openapi_v2.Document
-	if err := protobuf.Unmarshal(b, &doc); err != nil {
+	if err := proto.Unmarshal(b, &doc); err != nil {
 		return nil, err
 	}
 	return &doc, nil
