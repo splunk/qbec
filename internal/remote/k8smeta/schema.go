@@ -141,9 +141,6 @@ func (ss *ServerSchema) openAPIResources() (openapi.Resources, *validators, erro
 	if err != nil {
 		return handle(nil, errors.Wrap(err, "Open API doc from server"))
 	}
-	if doc == nil {
-		return handle(nil, errors.New("Open API doc from server is nil"))
-	}
 	res, err := openapi.NewOpenAPIData(doc)
 	if err != nil {
 		return handle(nil, errors.Wrap(err, "get resources from validator"))
