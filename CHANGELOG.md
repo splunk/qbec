@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.27.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.31.13 to 1.32.9
+
 ## v0.26.0 (Oct 30, 2025)
 
 * Update Kubernetes client from 1.30.14 to 1.31.13
