@@ -1,6 +1,10 @@
 Changelog
 ---
 
+## v0.29.0 (Nov 4, 2025)
+
+* Update Kubernetes client from 1.33.5 to 1.34.1
+
 ## v0.28.0 (Nov 4, 2025)
 
 * Update Kubernetes client from 1.32.9 to 1.33.5
