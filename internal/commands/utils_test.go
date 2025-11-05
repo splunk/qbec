@@ -28,7 +28,7 @@ import (
 	"strings"
 	"testing"
 
-	yamllib "github.com/ghodss/yaml"
+	yamllib "sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"

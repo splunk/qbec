@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/jonboulle/clockwork"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"

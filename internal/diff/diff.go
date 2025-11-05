@@ -18,7 +18,7 @@ package diff
 import (
 	"strings"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	godiff "github.com/pmezard/go-difflib/difflib"
 )

@@ -5,7 +5,6 @@ go 1.24.6
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.22.0
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/go-openapi/validate v0.25.0
@@ -29,6 +28,7 @@ require (
 	k8s.io/gengo v0.0.0-20250922181213-ec3ebc5fd46b
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
 	k8s.io/kubectl v0.34.1
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -97,7 +97,6 @@ require (
 	golang.org/x/time v0.9.0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/component-base v0.34.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
@@ -106,5 +105,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )

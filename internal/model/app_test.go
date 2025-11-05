@@ -29,7 +29,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
