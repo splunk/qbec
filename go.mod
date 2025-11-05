@@ -5,7 +5,6 @@ go 1.24.6
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.22.0
 	github.com/go-openapi/strfmt v0.24.0
 	github.com/go-openapi/validate v0.25.0
@@ -20,8 +19,8 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/pretty v1.2.1
+	go.yaml.in/yaml/v3 v3.0.4
 	google.golang.org/protobuf v1.36.10
-	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/cli-runtime v0.34.1
@@ -29,6 +28,7 @@ require (
 	k8s.io/gengo v0.0.0-20250922181213-ec3ebc5fd46b
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
 	k8s.io/kubectl v0.34.1
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -86,7 +86,6 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
@@ -97,7 +96,7 @@ require (
 	golang.org/x/time v0.9.0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/component-base v0.34.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
@@ -106,5 +105,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )
