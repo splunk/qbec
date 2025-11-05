@@ -1,6 +1,11 @@
 Changelog
 ---
 
+## v0.30.0 (Nov 4, 2025)
+
+* Update go-jsonnet to 0.21.0
+* Bump k8s.io/kube-openapi & k8s.io/gengo
+
 ## v0.29.0 (Nov 4, 2025)
 
 * Update Kubernetes client from 1.33.5 to 1.34.1
