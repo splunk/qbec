@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
@@ -32,6 +31,7 @@ import (
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/yaml"
 )
 
 // ctxProvider provides standard configuration available to all commands

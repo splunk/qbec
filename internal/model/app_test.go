@@ -29,11 +29,11 @@ import (
 	"text/template"
 	"time"
 
-	"sigs.k8s.io/yaml"
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 )
 
 func setPwd(t *testing.T, dir string) func() {

@@ -22,12 +22,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"sigs.k8s.io/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote"
 	"github.com/splunk/qbec/internal/sio"
+	"sigs.k8s.io/yaml"
 )
 
 type initCommandConfig struct {

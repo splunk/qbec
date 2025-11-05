@@ -21,7 +21,6 @@ import (
 	"sort"
 	"sync"
 
-	"sigs.k8s.io/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
@@ -31,6 +30,7 @@ import (
 	"github.com/splunk/qbec/internal/sio"
 	"github.com/splunk/qbec/internal/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 type diffIgnores struct {

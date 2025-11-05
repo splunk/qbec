@@ -21,13 +21,13 @@ import (
 	"io"
 	"sort"
 
-	"sigs.k8s.io/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/eval"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/sio"
+	"sigs.k8s.io/yaml"
 )
 
 var maxDisplayValueLength = 1024

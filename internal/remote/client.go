@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/yaml"
 	"github.com/jonboulle/clockwork"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
@@ -35,6 +34,7 @@ import (
 	apiTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/yaml"
 )
 
 const (

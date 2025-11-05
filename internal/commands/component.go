@@ -22,11 +22,11 @@ import (
 	"io"
 	"strings"
 
-	"sigs.k8s.io/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
 	"github.com/splunk/qbec/internal/diff"
 	"github.com/splunk/qbec/internal/model"
+	"sigs.k8s.io/yaml"
 )
 
 func newComponentCommand(cp ctxProvider) *cobra.Command {

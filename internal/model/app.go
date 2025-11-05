@@ -26,10 +26,10 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/yaml"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/filematcher"
 	"github.com/splunk/qbec/internal/sio"
+	"sigs.k8s.io/yaml"
 )
 
 // Baseline is a special environment name that represents the baseline environment with no customizations.
