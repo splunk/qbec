@@ -17,7 +17,7 @@ package natives
 import (
 	"io"
 
-	v3yaml "gopkg.in/yaml.v3"
+	v3yaml "go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 

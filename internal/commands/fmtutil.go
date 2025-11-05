@@ -28,7 +28,7 @@ import (
 
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/tidwall/pretty"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func format(in []byte, filename string) ([]byte, error) {
