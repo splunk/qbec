@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 // LatestAPIVersion is the latest version of the API we support.

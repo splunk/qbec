@@ -28,7 +28,6 @@ import (
 	"strings"
 	"testing"
 
-	yamllib "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
@@ -41,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
+	yamllib "sigs.k8s.io/yaml"
 )
 
 type objectKey struct {

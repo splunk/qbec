@@ -1,6 +1,71 @@
 Changelog
 ---
 
+## v0.30.0 (Nov 4, 2025)
+
+* Update go-jsonnet to 0.21.0
+* Bump k8s.io/kube-openapi & k8s.io/gengo
+
+## v0.29.0 (Nov 4, 2025)
+
+* Update Kubernetes client from 1.33.5 to 1.34.1
+
+## v0.28.0 (Nov 4, 2025)
+
+* Update Kubernetes client from 1.32.9 to 1.33.5
+
+## v0.27.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.31.13 to 1.32.9
+
+## v0.26.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.30.14 to 1.31.13
+
+## v0.25.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.29.15 to 1.30.14
+
+## v0.24.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.28.15 to 1.29.15
+
+## v0.23.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.27.16 to 1.28.15
+* Bump protobuf dependency to v1.36.10
+
+## v0.22.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.26.15 to 1.27.16
+
+## v0.21.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.25.16 to 1.26.15
+
+## v0.20.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.24.17 to 1.25.16
+* Update various dependencies (spf13 & go-openapi among others)
+
+## v0.19.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.23.1 to 1.24.17
+* Update various dependencies (spf13 & go-openapi among others)
+
+## v0.18.0 (Oct 29, 2025)
+
+* Update Go from 1.22 to 1.24
+* Bump golang.org/x/oauth2 to v0.27.0
+* Bump doubelstarbmatcuk/doublestar from v4.0.2 to v4.9.1
+
+## v0.17.0 (Oct 28, 2025)
+
+* Update Go from 1.17 to 1.22
+* Update go-jsonnet from v0.18.0 to v0.20.0 & alter some Windows path parsing logic
+* Update various dependencies to address security vulnerabilities
+* Add license headers
+
 ## v0.16.3 (Dec 2, 2024)
 
 * update release documentation
