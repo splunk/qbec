@@ -16,6 +16,7 @@ package model
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -31,6 +32,7 @@ type Namespaced interface {
 type Filters struct {
 	includes              []string
 	excludes              []string
+	regexpIncludes        []*regexp.Regexp
 	excludeClusterObjects bool
 	kindFilter            Filter
 	componentFilter       Filter
@@ -39,11 +41,12 @@ type Filters struct {
 
 // NewFilters sets up options in the supplied flags and returns a function to return filters.
 func NewFilters(flags *pflag.FlagSet, includeAllFilters bool) func() (Filters, error) {
-	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes []string
+	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes, regexpIncludes []string
 	var includeClusterScopedObjects bool
 
 	flags.StringArrayVarP(&includes, "component", "c", nil, "include just this component")
 	flags.StringArrayVarP(&excludes, "exclude-component", "C", nil, "exclude this component")
+	flags.StringArrayVarP(&regexpIncludes, "regexp", "r", nil, "include k8s components matching this regexp")
 	if includeAllFilters {
 		flags.StringArrayVarP(&kindIncludes, "kind", "k", nil, "include objects with this kind")
 		flags.StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
@@ -69,9 +72,16 @@ func NewFilters(flags *pflag.FlagSet, includeAllFilters bool) func() (Filters, e
 				includeClusterScopedObjects = false
 			}
 		}
+
+		regexps := make([]*regexp.Regexp, 0, len(regexpIncludes))
+		for _, re := range regexpIncludes {
+			regexps = append(regexps, regexp.MustCompile(re))
+		}
+
 		return Filters{
 			includes:              includes,
 			excludes:              excludes,
+			regexpIncludes:        regexps,
 			kindFilter:            of,
 			componentFilter:       cf,
 			namespaceFilter:       nf,
@@ -95,6 +105,16 @@ func (f Filters) GVKFilter(gvk schema.GroupVersionKind) bool {
 	return f.kindFilter != nil && f.kindFilter.ShouldInclude(gvk.Kind)
 }
 
+// RegexpFilter returns true if the name matches all regexpes.
+func (f Filters) RegexpFilter(name string) bool {
+	for _, re := range f.regexpIncludes {
+		if !re.MatchString(name) {
+			return false
+		}
+	}
+	return true
+}
+
 // HasNamespaceFilters returns true if filters based on namespace scope are in effect.
 func (f Filters) HasNamespaceFilters() bool {
 	return (f.namespaceFilter != nil && f.namespaceFilter.HasFilters()) || f.excludeClusterObjects
@@ -103,6 +123,9 @@ func (f Filters) HasNamespaceFilters() bool {
 // Match returns true if the current filters match the supplied object. The client can be nil
 // if namespace scope filters are not in effect.
 func (f Filters) Match(o K8sQbecMeta, client Namespaced, defaultNS string) (bool, error) {
+	if !f.RegexpFilter(o.GetName()) {
+		return false, nil
+	}
 	if f.HasNamespaceFilters() && client == nil {
 		return false, fmt.Errorf("no namespace metadata when namespace filters present")
 	}
