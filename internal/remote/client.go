@@ -503,7 +503,7 @@ func (c *Client) doSync(ctx context.Context, original model.K8sLocalObject, opts
 			c, _ := types.HideSensitiveInfo(remObj)
 			remObj = c
 		}
-		result, err = c.maybeUpdate(ctx, obj, remObj, opts)
+		result, err = c.maybeUpdate(ctx, obj, remObj, opts, internal)
 	}
 	if err != nil {
 		return nil, err
@@ -709,13 +709,15 @@ func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, 
 	return result, nil
 }
 
-func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
+func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
 	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
 		return &updateResult{
 			SkipReason: "update disabled due to user request",
 		}, nil
 	}
-	if opts.ApplyStrategy == model.ApplyStrategyServer {
+	// Secret dry-runs redact data for safe display. They are not a real apply preflight and
+	// must not be sent to the apiserver via SSA, or redacted values can trigger bogus conflicts.
+	if opts.ApplyStrategy == model.ApplyStrategyServer && !internal.secretDryRun {
 		return c.serverSideApply(ctx, obj, remObj, opts, opUpdate)
 	}
 	res, err := c.schema.OpenAPIResources()

@@ -16,10 +16,13 @@ package remote
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/splunk/qbec/internal/remote/k8smeta"
+	qtypes "github.com/splunk/qbec/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +52,10 @@ func (d testDisco) ServerGroups() (*metav1.APIGroupList, error) {
 
 func (d testDisco) ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error) {
 	return d.lists[groupVersion], nil
+}
+
+func (d testDisco) OpenAPISchema() (*openapi_v2.Document, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 type recorderDynamic struct {
@@ -156,6 +163,20 @@ func newGenerateNameConfigMap(namespace, generateName string) model.K8sLocalObje
 	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
 }
 
+func newSecret(namespace, name, value string) model.K8sLocalObject {
+	return model.NewK8sLocalObject(map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "Secret",
+		"metadata": map[string]interface{}{
+			"name":      name,
+			"namespace": namespace,
+		},
+		"data": map[string]interface{}{
+			"token": value,
+		},
+	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
+}
+
 func newServerSideApplyClient(t *testing.T, response *unstructured.Unstructured) (*Client, *recorderResource) {
 	t.Helper()
 	recorder := &recorderResource{patchResponse: response}
@@ -176,6 +197,7 @@ func newServerSideApplyClient(t *testing.T, response *unstructured.Unstructured)
 				GroupVersion: "v1",
 				APIResources: []metav1.APIResource{
 					{Name: "configmaps", Kind: "ConfigMap", Namespaced: true, Verbs: metav1.Verbs([]string{"create", "delete", "get", "list", "patch"})},
+					{Name: "secrets", Kind: "Secret", Namespaced: true, Verbs: metav1.Verbs([]string{"create", "delete", "get", "list", "patch"})},
 				},
 			},
 		},
@@ -183,6 +205,7 @@ func newServerSideApplyClient(t *testing.T, response *unstructured.Unstructured)
 	require.NoError(t, err)
 	return &Client{
 		resources: resources,
+		schema:    k8smeta.NewServerSchema(testDisco{}),
 		pool:      staticPool{client: recorderDynamic{resource: recorder}},
 		defaultNs: "default",
 	}, recorder
@@ -241,8 +264,26 @@ func TestMaybeUpdateServerSideApplyDetectsIdenticalObjects(t *testing.T) {
 	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
 		ApplyStrategy:   model.ApplyStrategyServer,
 		DisableUpdateFn: func(model.K8sMeta) bool { return false },
-	})
+	}, internalSyncOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, identicalObjects, result.SkipReason)
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+}
+
+func TestMaybeUpdateSecretDryRunBypassesServerSideApply(t *testing.T) {
+	existing := newSecret("default", "ssa-secret", "dmFsdWU=").ToUnstructured()
+	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	localObj, changed := qtypes.HideSensitiveLocalInfo(newSecret("default", "ssa-secret", "dmFsdWU="))
+	require.True(t, changed)
+	result, err := client.maybeUpdate(context.Background(), localObj, existing.DeepCopy(), SyncOptions{
+		DryRun:        true,
+		ApplyStrategy: model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool {
+			return false
+		},
+	}, internalSyncOptions{secretDryRun: true})
+	require.NoError(t, err)
+	assert.NotEqual(t, apiTypes.ApplyPatchType, result.Kind)
+	assert.Empty(t, recorder.patchName)
+	assert.Nil(t, recorder.patchData)
 }
