@@ -625,7 +625,7 @@ func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts
 			SkipReason: "creation disabled due to user request",
 		}, nil
 	}
-	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" {
+	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" && !opts.DryRun {
 		return c.serverSideApply(ctx, obj, nil, opts, opCreate)
 	}
 	b, err := json.Marshal(obj)

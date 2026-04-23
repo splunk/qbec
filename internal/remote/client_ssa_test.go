@@ -192,7 +192,6 @@ func TestMaybeCreateServerSideApplyUsesPatchOptions(t *testing.T) {
 	obj := newConfigMap("default", "ssa-config")
 	client, recorder := newServerSideApplyClient(t, obj.ToUnstructured())
 	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
-		DryRun:         true,
 		ApplyStrategy:  model.ApplyStrategyServer,
 		ForceConflicts: true,
 	})
@@ -201,7 +200,7 @@ func TestMaybeCreateServerSideApplyUsesPatchOptions(t *testing.T) {
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
 	assert.Equal(t, "ssa-config", recorder.patchName)
 	assert.Equal(t, ssaFieldManager, recorder.patchOptions.FieldManager)
-	assert.Equal(t, []string{metav1.DryRunAll}, recorder.patchOptions.DryRun)
+	assert.Nil(t, recorder.patchOptions.DryRun)
 	require.NotNil(t, recorder.patchOptions.Force)
 	assert.True(t, *recorder.patchOptions.Force)
 	assert.Equal(t, schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}, recorder.gvr)
@@ -219,6 +218,21 @@ func TestMaybeCreateServerSideApplyFallsBackForGenerateName(t *testing.T) {
 	assert.Equal(t, "", recorder.patchName)
 	require.NotNil(t, recorder.createObject)
 	assert.Equal(t, "ssa-config-", recorder.createObject.GetGenerateName())
+}
+
+func TestMaybeCreateServerSideApplyDryRunFallsBackToLocalCreate(t *testing.T) {
+	client, recorder := newServerSideApplyClient(t, nil)
+	obj := newConfigMap("default", "ssa-config")
+	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
+		DryRun:        true,
+		ApplyStrategy: model.ApplyStrategyServer,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, opCreate, result.Operation)
+	assert.Equal(t, "local", result.Source)
+	assert.Nil(t, recorder.createObject)
+	assert.Empty(t, recorder.patchName)
+	assert.Nil(t, recorder.patchData)
 }
 
 func TestMaybeUpdateServerSideApplyDetectsIdenticalObjects(t *testing.T) {
