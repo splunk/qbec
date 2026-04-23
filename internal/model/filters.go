@@ -77,12 +77,21 @@ func NewFilters(flags *pflag.FlagSet, includeAllFilters bool) func() (Filters, e
 
 		regexpIncludes := make([]*regexp.Regexp, 0, len(regexpObjectIncludes))
 		regexpExcludes := make([]*regexp.Regexp, 0, len(regexpObjectExcludes))
-		for _, re := range regexpObjectIncludes {
-			regexpIncludes = append(regexpIncludes, regexp.MustCompile(fmt.Sprintf(`(?i)^%s$`, re)))
-		}
-		for _, re := range regexpObjectExcludes {
-			regexpExcludes = append(regexpExcludes, regexp.MustCompile(fmt.Sprintf(`(?i)^%s$`, re)))
-		}
+for _, re := range regexpObjectIncludes {
+	compiled, err := regexp.Compile(fmt.Sprintf(`(?i)^%s$`, re))
+	if err != nil {
+		return Filters{}, errors.Wrapf(err, "invalid --object regexp %q", re)
+	}
+	regexpIncludes = append(regexpIncludes, compiled)
+}
+
+for _, re := range regexpObjectExcludes {
+	compiled, err := regexp.Compile(fmt.Sprintf(`(?i)^%s$`, re))
+	if err != nil {
+		return Filters{}, errors.Wrapf(err, "invalid --exclude-object regexp %q", re)
+	}
+	regexpExcludes = append(regexpExcludes, compiled)
+}
 
 		return Filters{
 			includes:              includes,
