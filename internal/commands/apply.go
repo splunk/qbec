@@ -118,6 +118,10 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 
 	opts := config.syncOptions
 	opts.DisableUpdateFn = newUpdatePolicy().disableUpdate
+	opts.ApplyStrategy = config.App().ApplyStrategy()
+	if opts.ForceConflicts && opts.ApplyStrategy != model.ApplyStrategyServer {
+		return cmd.NewUsageError("force-conflicts requires spec.applyStrategy: server")
+	}
 
 	if !opts.DryRun && len(objects) > 0 {
 		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))
@@ -285,6 +289,7 @@ func newApplyCommand(cp ctxProvider) *cobra.Command {
 	c.Flags().BoolVar(&config.syncOptions.DisableCreate, "skip-create", false, "set to true to only update existing resources but not create new ones")
 	c.Flags().BoolVarP(&config.syncOptions.DryRun, "dry-run", "n", false, "dry-run, do not create/ update resources but show what would happen")
 	c.Flags().BoolVarP(&config.syncOptions.ShowSecrets, "show-secrets", "S", false, "do not obfuscate secret values in the output")
+	c.Flags().BoolVar(&config.syncOptions.ForceConflicts, "force-conflicts", false, "force field ownership conflicts when using server-side apply")
 	c.Flags().BoolVar(&config.showDetails, "show-details", false, "show details for object operations")
 	c.Flags().BoolVar(&config.gc, "gc", true, "garbage collect extra objects on the server")
 	c.Flags().BoolVar(&config.wait, "wait", false, "wait for changed objects to be ready")

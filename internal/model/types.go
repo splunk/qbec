@@ -21,6 +21,14 @@ import (
 
 //go:generate gen-qbec-swagger swagger.yaml swagger-schema.go
 
+// ApplyStrategy controls how qbec updates objects on the cluster.
+type ApplyStrategy string
+
+const (
+	ApplyStrategyClient ApplyStrategy = "client"
+	ApplyStrategyServer ApplyStrategy = "server"
+)
+
 // Environment points to a specific destination and has its own set of runtime parameters.
 type Environment struct {
 	DefaultNamespace string                 `json:"defaultNamespace"`     // default namespace to set for k8s context
@@ -115,6 +123,8 @@ type AppSpec struct {
 	ClusterScopedLists bool `json:"clusterScopedLists,omitempty"`
 	// add component name as label to Kubernetes objects, default to false
 	AddComponentLabel bool `json:"addComponentLabel,omitempty"`
+	// strategy used for qbec apply, defaults to client
+	ApplyStrategy ApplyStrategy `json:"applyStrategy,omitempty"`
 }
 
 // QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.

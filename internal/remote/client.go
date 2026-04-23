@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -41,6 +42,7 @@ const (
 	identicalObjects = "objects are identical"
 	opUpdate         = "update object"
 	opCreate         = "create object"
+	ssaFieldManager  = "qbec"
 )
 
 // structured errors
@@ -68,6 +70,8 @@ type SyncOptions struct {
 	DisableUpdateFn ConditionFunc   // do not update an existing object
 	WaitOptions     TypeWaitOptions // opts for waiting
 	ShowSecrets     bool            // show secrets in patches and creations
+	ApplyStrategy   model.ApplyStrategy
+	ForceConflicts  bool
 }
 
 // DeleteOptions provides the caller with options for the delete operation.
@@ -621,6 +625,9 @@ func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts
 			SkipReason: "creation disabled due to user request",
 		}, nil
 	}
+	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" {
+		return c.serverSideApply(ctx, obj, nil, opts, opCreate)
+	}
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
@@ -647,11 +654,69 @@ func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts
 	return result, nil
 }
 
+func comparableObject(obj *unstructured.Unstructured) map[string]interface{} {
+	if obj == nil {
+		return nil
+	}
+	ret := obj.DeepCopy()
+	unstructured.RemoveNestedField(ret.Object, "metadata", "managedFields")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "resourceVersion")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "uid")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "generation")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "creationTimestamp")
+	return ret.Object
+}
+
+func sameObject(lhs, rhs *unstructured.Unstructured) bool {
+	return reflect.DeepEqual(comparableObject(lhs), comparableObject(rhs))
+}
+
+func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "json marshal")
+	}
+	result := &updateResult{
+		Operation: operation,
+		Source:    "server-side apply",
+		Kind:      apiTypes.ApplyPatchType,
+		patch:     b,
+	}
+	if obj.GetName() == "" {
+		return nil, fmt.Errorf("server-side apply requires object name")
+	}
+	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrap(err, "get resource interface")
+	}
+	patchOpts := metav1.PatchOptions{
+		FieldManager: ssaFieldManager,
+	}
+	if opts.DryRun {
+		patchOpts.DryRun = []string{metav1.DryRunAll}
+	}
+	if opts.ForceConflicts {
+		force := true
+		patchOpts.Force = &force
+	}
+	out, err := ri.Patch(ctx, obj.GetName(), apiTypes.ApplyPatchType, b, patchOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "server-side apply")
+	}
+	if remObj != nil && sameObject(remObj, out) {
+		return &updateResult{SkipReason: identicalObjects}, nil
+	}
+	return result, nil
+}
+
 func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
 	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
 		return &updateResult{
 			SkipReason: "update disabled due to user request",
 		}, nil
+	}
+	if opts.ApplyStrategy == model.ApplyStrategyServer {
+		return c.serverSideApply(ctx, obj, remObj, opts, opUpdate)
 	}
 	res, err := c.schema.OpenAPIResources()
 	if err != nil {

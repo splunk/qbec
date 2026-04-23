@@ -116,6 +116,10 @@ spec:
 
   # if the following attribute is set to true, qbec will add component names also as labels to Kubernetes objects. 
   addComponentLabel: true
+
+  # choose how `qbec apply` updates existing resources. Defaults to `client`.
+  # set to `server` to use Kubernetes server-side apply.
+  applyStrategy: server
 ```
 
 ### Environment files

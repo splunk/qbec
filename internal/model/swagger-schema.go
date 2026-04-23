@@ -70,6 +70,14 @@ var swaggerJSON = `
                     "description": "add component name as label to Kubernetes objects",
                     "type": "boolean"
                 },
+                "applyStrategy": {
+                    "description": "strategy used for qbec apply",
+                    "enum": [
+                        "client",
+                        "server"
+                    ],
+                    "type": "string"
+                },
                 "baseProperties": {
                     "description": "properties for the baseline environment",
                     "type": "object"

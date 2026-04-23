@@ -1,0 +1,234 @@
+// Copyright 2025 Splunk Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package remote
+
+import (
+	"context"
+	"testing"
+
+	"github.com/splunk/qbec/internal/model"
+	"github.com/splunk/qbec/internal/remote/k8smeta"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	apiTypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
+)
+
+type staticPool struct {
+	client dynamic.Interface
+}
+
+func (s staticPool) clientForGroupVersionKind(kind schema.GroupVersionKind) (dynamic.Interface, error) {
+	return s.client, nil
+}
+
+type testDisco struct {
+	groups *metav1.APIGroupList
+	lists  map[string]*metav1.APIResourceList
+}
+
+func (d testDisco) ServerGroups() (*metav1.APIGroupList, error) {
+	return d.groups, nil
+}
+
+func (d testDisco) ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error) {
+	return d.lists[groupVersion], nil
+}
+
+type recorderDynamic struct {
+	resource *recorderResource
+}
+
+func (r recorderDynamic) Resource(resource schema.GroupVersionResource) dynamic.NamespaceableResourceInterface {
+	r.resource.gvr = resource
+	return r.resource
+}
+
+type recorderResource struct {
+	gvr           schema.GroupVersionResource
+	namespace     string
+	patchName     string
+	patchType     apiTypes.PatchType
+	patchData     []byte
+	patchOptions  metav1.PatchOptions
+	patchResponse *unstructured.Unstructured
+	createObject  *unstructured.Unstructured
+}
+
+func (r *recorderResource) Namespace(namespace string) dynamic.ResourceInterface {
+	r.namespace = namespace
+	return r
+}
+
+func (r *recorderResource) Create(ctx context.Context, obj *unstructured.Unstructured, options metav1.CreateOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	r.createObject = obj.DeepCopy()
+	return obj, nil
+}
+
+func (r *recorderResource) Update(ctx context.Context, obj *unstructured.Unstructured, options metav1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	panic("unexpected call to Update")
+}
+
+func (r *recorderResource) UpdateStatus(ctx context.Context, obj *unstructured.Unstructured, options metav1.UpdateOptions) (*unstructured.Unstructured, error) {
+	panic("unexpected call to UpdateStatus")
+}
+
+func (r *recorderResource) Delete(ctx context.Context, name string, options metav1.DeleteOptions, subresources ...string) error {
+	panic("unexpected call to Delete")
+}
+
+func (r *recorderResource) DeleteCollection(ctx context.Context, options metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	panic("unexpected call to DeleteCollection")
+}
+
+func (r *recorderResource) Get(ctx context.Context, name string, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	panic("unexpected call to Get")
+}
+
+func (r *recorderResource) List(ctx context.Context, opts metav1.ListOptions) (*unstructured.UnstructuredList, error) {
+	panic("unexpected call to List")
+}
+
+func (r *recorderResource) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+	panic("unexpected call to Watch")
+}
+
+func (r *recorderResource) Patch(ctx context.Context, name string, pt apiTypes.PatchType, data []byte, options metav1.PatchOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	r.patchName = name
+	r.patchType = pt
+	r.patchData = append([]byte(nil), data...)
+	r.patchOptions = *options.DeepCopy()
+	if r.patchResponse != nil {
+		return r.patchResponse.DeepCopy(), nil
+	}
+	return &unstructured.Unstructured{}, nil
+}
+
+func (r *recorderResource) Apply(ctx context.Context, name string, obj *unstructured.Unstructured, options metav1.ApplyOptions, subresources ...string) (*unstructured.Unstructured, error) {
+	panic("unexpected call to Apply")
+}
+
+func (r *recorderResource) ApplyStatus(ctx context.Context, name string, obj *unstructured.Unstructured, options metav1.ApplyOptions) (*unstructured.Unstructured, error) {
+	panic("unexpected call to ApplyStatus")
+}
+
+func newConfigMap(namespace, name string) model.K8sLocalObject {
+	return model.NewK8sLocalObject(map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]interface{}{
+			"name":      name,
+			"namespace": namespace,
+		},
+		"data": map[string]interface{}{
+			"foo": "bar",
+		},
+	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
+}
+
+func newGenerateNameConfigMap(namespace, generateName string) model.K8sLocalObject {
+	return model.NewK8sLocalObject(map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]interface{}{
+			"generateName": generateName,
+			"namespace":    namespace,
+		},
+		"data": map[string]interface{}{
+			"foo": "bar",
+		},
+	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
+}
+
+func newServerSideApplyClient(t *testing.T, response *unstructured.Unstructured) (*Client, *recorderResource) {
+	t.Helper()
+	recorder := &recorderResource{patchResponse: response}
+	resources, err := k8smeta.NewResources(testDisco{
+		groups: &metav1.APIGroupList{
+			Groups: []metav1.APIGroup{
+				{
+					Name: "",
+					Versions: []metav1.GroupVersionForDiscovery{
+						{GroupVersion: "v1", Version: "v1"},
+					},
+					PreferredVersion: metav1.GroupVersionForDiscovery{GroupVersion: "v1", Version: "v1"},
+				},
+			},
+		},
+		lists: map[string]*metav1.APIResourceList{
+			"v1": {
+				GroupVersion: "v1",
+				APIResources: []metav1.APIResource{
+					{Name: "configmaps", Kind: "ConfigMap", Namespaced: true, Verbs: metav1.Verbs([]string{"create", "delete", "get", "list", "patch"})},
+				},
+			},
+		},
+	}, k8smeta.ResourceOpts{})
+	require.NoError(t, err)
+	return &Client{
+		resources: resources,
+		pool:      staticPool{client: recorderDynamic{resource: recorder}},
+		defaultNs: "default",
+	}, recorder
+}
+
+func TestMaybeCreateServerSideApplyUsesPatchOptions(t *testing.T) {
+	obj := newConfigMap("default", "ssa-config")
+	client, recorder := newServerSideApplyClient(t, obj.ToUnstructured())
+	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
+		DryRun:         true,
+		ApplyStrategy:  model.ApplyStrategyServer,
+		ForceConflicts: true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, opCreate, result.Operation)
+	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+	assert.Equal(t, "ssa-config", recorder.patchName)
+	assert.Equal(t, ssaFieldManager, recorder.patchOptions.FieldManager)
+	assert.Equal(t, []string{metav1.DryRunAll}, recorder.patchOptions.DryRun)
+	require.NotNil(t, recorder.patchOptions.Force)
+	assert.True(t, *recorder.patchOptions.Force)
+	assert.Equal(t, schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}, recorder.gvr)
+	assert.Equal(t, "default", recorder.namespace)
+}
+
+func TestMaybeCreateServerSideApplyFallsBackForGenerateName(t *testing.T) {
+	client, recorder := newServerSideApplyClient(t, nil)
+	obj := newGenerateNameConfigMap("default", "ssa-config-")
+	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
+		ApplyStrategy: model.ApplyStrategyServer,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, opCreate, result.Operation)
+	assert.Equal(t, "", recorder.patchName)
+	require.NotNil(t, recorder.createObject)
+	assert.Equal(t, "ssa-config-", recorder.createObject.GetGenerateName())
+}
+
+func TestMaybeUpdateServerSideApplyDetectsIdenticalObjects(t *testing.T) {
+	existing := newConfigMap("default", "ssa-config").ToUnstructured()
+	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	})
+	require.NoError(t, err)
+	assert.Equal(t, identicalObjects, result.SkipReason)
+	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+}
