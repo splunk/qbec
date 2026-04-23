@@ -118,10 +118,6 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 
 	opts := config.syncOptions
 	opts.DisableUpdateFn = newUpdatePolicy().disableUpdate
-	opts.ApplyStrategy = config.App().ApplyStrategy()
-	if opts.ForceConflicts && opts.ApplyStrategy != model.ApplyStrategyServer {
-		return cmd.NewUsageError("force-conflicts requires spec.applyStrategy: server")
-	}
 
 	if !opts.DryRun && len(objects) > 0 {
 		msg := fmt.Sprintf("will synchronize %d object(s)", len(objects))
@@ -182,6 +178,7 @@ func doApply(ctx context.Context, args []string, config applyCommandConfig) erro
 
 	waitPolicy := newWaitPolicy()
 	for _, ob := range objects {
+		opts.ApplyStrategy = applyStrategy(ob)
 		name := client.DisplayName(ob)
 		res, err := client.Sync(ctx, ob, opts)
 		if res != nil && res.GeneratedName != "" {

@@ -4,7 +4,6 @@ kind: App
 metadata:
   name: server-side-apply
 spec:
-  applyStrategy: server
   environments:
     local:
       context: kind-kind

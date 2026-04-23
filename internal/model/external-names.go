@@ -22,10 +22,11 @@ const QBECDirectivesNamespace = "directives.qbec.io/"
 
 // Directives is the list of directive names we support.
 type Directives struct {
-	ApplyOrder   string // numeric apply order for object
-	DeletePolicy string // delete policy "default" | "never"
-	UpdatePolicy string // update policy "default" | "never"
-	WaitPolicy   string // wait policy "default" | "never"
+	ApplyOrder    string // numeric apply order for object
+	ApplyStrategy string // apply strategy "default" | "server"
+	DeletePolicy  string // delete policy "default" | "never"
+	UpdatePolicy  string // update policy "default" | "never"
+	WaitPolicy    string // wait policy "default" | "never"
 }
 
 // QbecNames is the set of names used by Qbec.
@@ -55,9 +56,10 @@ var QbecNames = struct {
 	DefaultNsVarName:    QBECMetadataPrefix + "defaultNs",
 	CleanModeVarName:    QBECMetadataPrefix + "cleanMode",
 	Directives: Directives{
-		ApplyOrder:   QBECDirectivesNamespace + "apply-order",
-		DeletePolicy: QBECDirectivesNamespace + "delete-policy",
-		UpdatePolicy: QBECDirectivesNamespace + "update-policy",
-		WaitPolicy:   QBECDirectivesNamespace + "wait-policy",
+		ApplyOrder:    QBECDirectivesNamespace + "apply-order",
+		ApplyStrategy: QBECDirectivesNamespace + "apply-strategy",
+		DeletePolicy:  QBECDirectivesNamespace + "delete-policy",
+		UpdatePolicy:  QBECDirectivesNamespace + "update-policy",
+		WaitPolicy:    QBECDirectivesNamespace + "wait-policy",
 	},
 }

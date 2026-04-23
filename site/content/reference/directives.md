@@ -13,6 +13,15 @@ Annotations that you can use for your objects to control qbec behavior.
 controls the order in which objects are applied. This allows you, for example, to move updates of a custom 
 resource to after all other objects have been processed.
 
+#### `directives.qbec.io/apply-strategy`
+
+* Annotation source: local object
+* Allowed values: `"default"`, `"server"`
+* Default value: `"default"`
+
+when set to `"server"`, qbec uses Kubernetes server-side apply for that object during `qbec apply`.
+Objects without this annotation continue to use the existing client-side apply behavior.
+
 #### `directives.qbec.io/delete-policy` 
 
 * Annotation source: in-cluster object
@@ -41,4 +50,3 @@ object to remove this annotation will not work.
 
 when set to `"never"` for deployments or daemonsets, indicates that qbec should not wait for that object even when 
 the `--wait` or `--wait-all` flags are set for the `apply` command.
-

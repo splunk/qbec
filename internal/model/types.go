@@ -123,8 +123,6 @@ type AppSpec struct {
 	ClusterScopedLists bool `json:"clusterScopedLists,omitempty"`
 	// add component name as label to Kubernetes objects, default to false
 	AddComponentLabel bool `json:"addComponentLabel,omitempty"`
-	// strategy used for qbec apply, defaults to client
-	ApplyStrategy ApplyStrategy `json:"applyStrategy,omitempty"`
 }
 
 // QbecEnvironmentMapSpec is the spec for a QbecEnvironmentMap object.

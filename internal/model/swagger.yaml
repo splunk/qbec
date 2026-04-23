@@ -135,12 +135,6 @@ definitions:
       addComponentLabel:
         description: add component name as label to Kubernetes objects
         type: boolean
-      applyStrategy:
-        description: strategy used for qbec apply
-        type: string
-        enum:
-          - client
-          - server
       dataSources:
         description: a list of data sources to be defined for the qbec app.
         items:

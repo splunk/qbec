@@ -285,14 +285,6 @@ func (a *App) AddComponentLabel() bool {
 	return a.inner.Spec.AddComponentLabel
 }
 
-// ApplyStrategy returns the strategy used for qbec apply.
-func (a *App) ApplyStrategy() ApplyStrategy {
-	if a.inner.Spec.ApplyStrategy == "" {
-		return ApplyStrategyClient
-	}
-	return a.inner.Spec.ApplyStrategy
-}
-
 func (a *App) envObject(env string) (Environment, error) {
 	envObj, ok := a.inner.Spec.Environments[env]
 	if !ok {

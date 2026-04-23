@@ -138,28 +138,20 @@ func TestApplyFlags(t *testing.T) {
 func TestApplyServerSideApply(t *testing.T) {
 	s := newCustomScaffold(t, "testdata/projects/server-side-apply")
 	defer s.reset()
-	first := true
-	var captured remote.SyncOptions
+	var captured []remote.SyncOptions
 	s.client.syncFunc = func(ctx context.Context, obj model.K8sLocalObject, opts remote.SyncOptions) (*remote.SyncResult, error) {
-		if first {
-			first = false
-			captured = opts
-		}
+		captured = append(captured, opts)
 		return &remote.SyncResult{Type: remote.SyncCreated}, nil
 	}
 	err := s.executeCommand("apply", "local", "--gc=false", "--force-conflicts")
 	require.NoError(t, err)
-	assert.Equal(t, model.ApplyStrategyServer, captured.ApplyStrategy)
-	assert.True(t, captured.ForceConflicts)
-}
-
-func TestApplyForceConflictsRequiresServerSideApply(t *testing.T) {
-	s := newScaffold(t)
-	defer s.reset()
-	err := s.executeCommand("apply", "dev", "--gc=false", "--force-conflicts")
-	require.Error(t, err)
-	assert.True(t, cmd.IsUsageError(err))
-	assert.Equal(t, "force-conflicts requires spec.applyStrategy: server", err.Error())
+	require.Len(t, captured, 2)
+	assert.ElementsMatch(t,
+		[]model.ApplyStrategy{model.ApplyStrategyServer, model.ApplyStrategyClient},
+		[]model.ApplyStrategy{captured[0].ApplyStrategy, captured[1].ApplyStrategy},
+	)
+	assert.True(t, captured[0].ForceConflicts)
+	assert.True(t, captured[1].ForceConflicts)
 }
 
 func TestApplyNamespaceClusterFilters(t *testing.T) {
