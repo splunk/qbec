@@ -1,6 +1,14 @@
 Changelog
 ---
 
+## v0.31.0 (Apr 23, 2026)
+
+* Replace unmaintained YAML dependencies with `sigs.k8s.io/yaml` and `go.yaml.in/yaml/v3`
+* Bump `golang.org/x/crypto` from `0.42.0` to `0.45.0`
+* Update Kind GitHub Action and install Kind directly in CI
+* Bump `github.com/moby/spdystream` from `0.5.0` to `0.5.1`
+* Update go-jsonnet to `0.22.0`
+
 ## v0.30.0 (Nov 4, 2025)
 
 * Update go-jsonnet to 0.21.0
