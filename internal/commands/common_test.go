@@ -21,11 +21,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 )
 
 func TestRunInParallelNoObjects(t *testing.T) {

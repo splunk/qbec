@@ -20,9 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/splunk/qbec/internal/cmd"
+	"sigs.k8s.io/yaml"
 )
 
 func newEnvCommand(cp ctxProvider) *cobra.Command {
