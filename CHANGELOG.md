@@ -1,6 +1,40 @@
 Changelog
 ---
 
+## v0.30.0 (Nov 4, 2025)
+
+* Update go-jsonnet to 0.21.0
+* Bump k8s.io/kube-openapi & k8s.io/gengo
+
+## v0.29.0 (Nov 4, 2025)
+
+* Update Kubernetes client from 1.33.5 to 1.34.1
+
+## v0.28.0 (Nov 4, 2025)
+
+* Update Kubernetes client from 1.32.9 to 1.33.5
+
+## v0.27.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.31.13 to 1.32.9
+
+## v0.26.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.30.14 to 1.31.13
+
+## v0.25.0 (Oct 30, 2025)
+
+* Update Kubernetes client from 1.29.15 to 1.30.14
+
+## v0.24.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.28.15 to 1.29.15
+
+## v0.23.0 (Oct 29, 2025)
+
+* Update Kubernetes client from 1.27.16 to 1.28.15
+* Bump protobuf dependency to v1.36.10
+
 ## v0.22.0 (Oct 29, 2025)
 
 * Update Kubernetes client from 1.26.15 to 1.27.16

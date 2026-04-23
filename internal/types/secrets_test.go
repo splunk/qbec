@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ghodss/yaml"
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/yaml"
 )
 
 var cm = `
