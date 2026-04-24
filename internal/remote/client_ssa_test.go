@@ -16,6 +16,7 @@ package remote
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -286,4 +287,25 @@ func TestMaybeUpdateSecretDryRunBypassesServerSideApply(t *testing.T) {
 	assert.NotEqual(t, apiTypes.ApplyPatchType, result.Kind)
 	assert.Empty(t, recorder.patchName)
 	assert.Nil(t, recorder.patchData)
+}
+
+func TestServerSideApplyStripsPristineAnnotation(t *testing.T) {
+	existing := newConfigMap("default", "ssa-config").ToUnstructured()
+	annotated, err := qbecPristine{}.createFromPristine(newConfigMap("default", "ssa-config"))
+	require.NoError(t, err)
+
+	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	_, err = client.serverSideApply(context.Background(), annotated, existing.DeepCopy(), SyncOptions{}, opUpdate)
+	require.NoError(t, err)
+
+	var patch map[string]interface{}
+	require.NoError(t, json.Unmarshal(recorder.patchData, &patch))
+
+	metadata, ok := patch["metadata"].(map[string]interface{})
+	require.True(t, ok)
+	annotations, ok := metadata["annotations"].(map[string]interface{})
+	if ok {
+		_, found := annotations[model.QbecNames.PristineAnnotation]
+		assert.False(t, found)
+	}
 }

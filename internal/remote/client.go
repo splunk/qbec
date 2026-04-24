@@ -672,7 +672,12 @@ func sameObject(lhs, rhs *unstructured.Unstructured) bool {
 }
 
 func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
-	b, err := json.Marshal(obj)
+	applyObj := obj.ToUnstructured().DeepCopy()
+	if ann := applyObj.GetAnnotations(); ann != nil {
+		delete(ann, model.QbecNames.PristineAnnotation)
+		applyObj.SetAnnotations(ann)
+	}
+	b, err := json.Marshal(applyObj.Object)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
 	}
