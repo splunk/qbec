@@ -715,6 +715,57 @@ func markLegacyApplyAnnotationsForDeletion(obj model.K8sLocalObject, remObj *uns
 	return ret
 }
 
+func preserveLegacyApplyAnnotations(obj model.K8sLocalObject, remObj *unstructured.Unstructured) model.K8sLocalObject {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return obj
+	}
+	ret := cloneLocalObject(obj)
+	metadata, found, err := unstructured.NestedMap(ret.ToUnstructured().Object, "metadata")
+	if err != nil || !found {
+		metadata = map[string]interface{}{}
+	}
+	annotations, found, err := unstructured.NestedMap(metadata, "annotations")
+	if err != nil || !found {
+		annotations = map[string]interface{}{}
+	}
+	remoteAnnotations := remObj.GetAnnotations()
+	if v := remoteAnnotations[model.QbecNames.PristineAnnotation]; v != "" {
+		annotations[model.QbecNames.PristineAnnotation] = v
+	}
+	if v := remoteAnnotations[kubectlLastConfig]; v != "" {
+		annotations[kubectlLastConfig] = v
+	}
+	metadata["annotations"] = annotations
+	ret.ToUnstructured().Object["metadata"] = metadata
+	return ret
+}
+
+func (c *Client) legacyClientSideApplyMigrationPatch(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return nil, nil
+	}
+	res, err := c.schema.OpenAPIResources()
+	if err != nil {
+		sio.Warnln("get open API resources", err)
+	}
+	var lookup openAPILookup
+	if res != nil {
+		lookup = res.LookupResource
+	}
+
+	p := patcher{
+		provider:      c.resourceInterfaceWithDefaultNs,
+		cfgProvider:   pristineBytesForClientSideApply,
+		overwrite:     true,
+		backOff:       clockwork.NewRealClock(),
+		openAPILookup: lookup,
+	}
+	if opts.DryRun {
+		return p.getPatchContents(remObj, obj)
+	}
+	return p.patch(ctx, remObj, obj)
+}
+
 func managedFieldSet(obj *unstructured.Unstructured, fieldManager string) (*fieldpath.Set, error) {
 	set := fieldpath.NewSet()
 	if obj == nil {
@@ -925,6 +976,14 @@ func hasLegacyClientSideApplyState(obj *unstructured.Unstructured) bool {
 
 func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
 	obj = stripApplyHistoryAnnotations(obj)
+	migrationResult, err := c.legacyClientSideApplyMigrationPatch(ctx, preserveLegacyApplyAnnotations(obj, remObj), remObj, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "legacy client-side apply migration")
+	}
+	migrationChanged := migrationResult != nil && migrationResult.SkipReason == ""
+	if opts.DryRun && migrationChanged {
+		return migrationResult, nil
+	}
 	obj = markLegacyApplyAnnotationsForDeletion(obj, remObj)
 	b, err := json.Marshal(obj)
 	if err != nil {
@@ -962,7 +1021,7 @@ func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, 
 		if err != nil {
 			return nil, err
 		}
-		if same {
+		if same && !migrationChanged {
 			return &updateResult{SkipReason: identicalObjects}, nil
 		}
 	}

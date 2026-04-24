@@ -68,6 +68,13 @@ func (r recorderDynamic) Resource(resource schema.GroupVersionResource) dynamic.
 	return r.resource
 }
 
+type recordedPatch struct {
+	name    string
+	kind    apiTypes.PatchType
+	data    []byte
+	options metav1.PatchOptions
+}
+
 type recorderResource struct {
 	gvr           schema.GroupVersionResource
 	namespace     string
@@ -75,6 +82,7 @@ type recorderResource struct {
 	patchType     apiTypes.PatchType
 	patchData     []byte
 	patchOptions  metav1.PatchOptions
+	patchCalls    []recordedPatch
 	patchResponse *unstructured.Unstructured
 	createObject  *unstructured.Unstructured
 }
@@ -122,6 +130,12 @@ func (r *recorderResource) Patch(ctx context.Context, name string, pt apiTypes.P
 	r.patchType = pt
 	r.patchData = append([]byte(nil), data...)
 	r.patchOptions = *options.DeepCopy()
+	r.patchCalls = append(r.patchCalls, recordedPatch{
+		name:    name,
+		kind:    pt,
+		data:    append([]byte(nil), data...),
+		options: *options.DeepCopy(),
+	})
 	if r.patchResponse != nil {
 		return r.patchResponse.DeepCopy(), nil
 	}
@@ -160,6 +174,12 @@ func newConfigMapWithData(namespace, name string, data map[string]interface{}) m
 		},
 		"data": data,
 	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
+}
+
+func newConfigMapWithoutNamespace(name string) model.K8sLocalObject {
+	obj := newConfigMap("", name)
+	unstructured.RemoveNestedField(obj.ToUnstructured().Object, "metadata", "namespace")
+	return obj
 }
 
 func newGenerateNameConfigMap(namespace, generateName string) model.K8sLocalObject {
@@ -356,13 +376,14 @@ func TestMaybeUpdateServerSideApplyForcesLegacyClientSideMigration(t *testing.T)
 	annotations[model.QbecNames.PristineAnnotation] = "pristine"
 	existing.SetAnnotations(annotations)
 
-	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	out := newConfigMap("default", "ssa-config").ToUnstructured()
+	client, recorder := newServerSideApplyClient(t, out)
 	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
 		ApplyStrategy:   model.ApplyStrategyServer,
 		DisableUpdateFn: func(model.K8sMeta) bool { return false },
 	}, internalSyncOptions{})
 	require.NoError(t, err)
-	assert.Equal(t, identicalObjects, result.SkipReason)
+	assert.Equal(t, opUpdate, result.Operation)
 	require.NotNil(t, recorder.patchOptions.Force)
 	assert.True(t, *recorder.patchOptions.Force)
 }
@@ -373,15 +394,48 @@ func TestMaybeUpdateServerSideApplyForcesKubectlMigration(t *testing.T) {
 	annotations[kubectlLastConfig] = `{"apiVersion":"v1"}`
 	existing.SetAnnotations(annotations)
 
-	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	out := newConfigMap("default", "ssa-config").ToUnstructured()
+	client, recorder := newServerSideApplyClient(t, out)
 	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
 		ApplyStrategy:   model.ApplyStrategyServer,
 		DisableUpdateFn: func(model.K8sMeta) bool { return false },
 	}, internalSyncOptions{})
 	require.NoError(t, err)
-	assert.Equal(t, identicalObjects, result.SkipReason)
+	assert.Equal(t, opUpdate, result.Operation)
 	require.NotNil(t, recorder.patchOptions.Force)
 	assert.True(t, *recorder.patchOptions.Force)
+}
+
+func TestMaybeUpdateServerSideApplyCleansLegacyOwnedFields(t *testing.T) {
+	legacy := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
+		"foo":   "bar",
+		"stale": "remove-me",
+	})
+	clientApplied, err := qbecPristine{}.createFromPristine(legacy)
+	require.NoError(t, err)
+	existing := legacy.ToUnstructured().DeepCopy()
+	existing.SetAnnotations(clientApplied.ToUnstructured().GetAnnotations())
+	out := newConfigMap("default", "ssa-config").ToUnstructured()
+
+	client, recorder := newServerSideApplyClient(t, out)
+	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, opUpdate, result.Operation)
+	require.Len(t, recorder.patchCalls, 2)
+
+	cleanup := recorder.patchCalls[0]
+	assert.NotEqual(t, apiTypes.ApplyPatchType, cleanup.kind)
+	assert.Contains(t, string(cleanup.data), `"stale":null`)
+	assert.NotContains(t, string(cleanup.data), `"`+model.QbecNames.PristineAnnotation+`":null`)
+
+	ssa := recorder.patchCalls[1]
+	assert.Equal(t, apiTypes.ApplyPatchType, ssa.kind)
+	assert.Contains(t, string(ssa.data), `"`+model.QbecNames.PristineAnnotation+`":null`)
+	require.NotNil(t, ssa.options.Force)
+	assert.True(t, *ssa.options.Force)
 }
 
 func TestMaybeUpdateServerSideApplyTreatsEmptyDesiredCollectionAsUpdate(t *testing.T) {

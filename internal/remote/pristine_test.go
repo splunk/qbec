@@ -244,7 +244,7 @@ func TestPristineReaderManagedFields(t *testing.T) {
 	require.NotNil(t, pristine)
 	assert.Equal(t, "managed fields", source)
 	assert.Equal(t, "ssa-config", pristine.GetName())
-	assert.Equal(t, "default", pristine.GetNamespace())
+	assert.Empty(t, pristine.GetNamespace())
 	data, found, err := unstructured.NestedStringMap(pristine.Object, "data")
 	require.NoError(t, err)
 	require.True(t, found)
@@ -364,6 +364,52 @@ func TestClientSideApplyPristineSkipsInClusterDirectives(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotContains(t, string(result.patch), `"directives.qbec.io/delete-policy":null`)
 	assert.NotContains(t, string(result.patch), `"directives.qbec.io/update-policy":null`)
+}
+
+func TestClientSideApplySyntheticPristineOmitsLiveNamespace(t *testing.T) {
+	tests := []struct {
+		name string
+		mod  func(*unstructured.Unstructured)
+	}{
+		{
+			name: "without managed fields",
+		},
+		{
+			name: "from managed fields",
+			mod: func(serverObj *unstructured.Unstructured) {
+				serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+					{
+						Manager:    ssaFieldManager,
+						Operation:  metav1.ManagedFieldsOperationApply,
+						FieldsType: "FieldsV1",
+						FieldsV1: &metav1.FieldsV1{
+							Raw: []byte(`{"f:data":{"f:foo":{}}}`),
+						},
+					},
+				})
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			desired := newConfigMapWithoutNamespace("ssa-config")
+			serverObj := newConfigMap("default", "ssa-config").ToUnstructured()
+			if test.mod != nil {
+				test.mod(serverObj)
+			}
+
+			pristineBytes, err := pristineBytesForClientSideApply(serverObj)
+			require.NoError(t, err)
+			assert.NotContains(t, string(pristineBytes), `"namespace"`)
+
+			p := patcher{cfgProvider: pristineBytesForClientSideApply}
+			result, err := p.getPatchContents(serverObj, desired)
+			require.NoError(t, err)
+			assert.Equal(t, identicalObjects, result.SkipReason)
+			assert.NotContains(t, string(result.patch), `"namespace":null`)
+		})
+	}
 }
 
 func TestManagedFieldsPristinePreservesAssociativeListKeys(t *testing.T) {

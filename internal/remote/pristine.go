@@ -165,17 +165,13 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 type managedFieldsPristine struct{}
 
 func objectIdentityBase(obj *unstructured.Unstructured) *unstructured.Unstructured {
-	base := &unstructured.Unstructured{Object: map[string]interface{}{
+	return &unstructured.Unstructured{Object: map[string]interface{}{
 		"kind":       obj.GetKind(),
 		"apiVersion": obj.GetAPIVersion(),
 		"metadata": map[string]interface{}{
 			"name": obj.GetName(),
 		},
 	}}
-	if ns := obj.GetNamespace(); ns != "" {
-		_ = unstructured.SetNestedField(base.Object, ns, "metadata", "namespace")
-	}
-	return base
 }
 
 func pristineFromManagedFields(obj *unstructured.Unstructured, fieldManager string) (*unstructured.Unstructured, error) {
