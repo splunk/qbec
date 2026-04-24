@@ -90,6 +90,16 @@ func TestDirectivesUpdatePolicy(t *testing.T) {
 	a.True(ret)
 }
 
+func TestDirectivesApplyStrategy(t *testing.T) {
+	a := assert.New(t)
+	ret := applyStrategy(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", nil))
+	a.Equal(model.ApplyStrategyClient, ret)
+	ret = applyStrategy(k8sMetaWithAnnotations("ConfigMap", "foo", "bar", map[string]interface{}{
+		"directives.qbec.io/apply-strategy": "server",
+	}))
+	a.Equal(model.ApplyStrategyServer, ret)
+}
+
 func TestDirectivesDeletePolicy(t *testing.T) {
 	dp := newDeletePolicy(func(gvk schema.GroupVersionKind) (bool, error) {
 		return gvk.Kind == "ConfigMap", nil

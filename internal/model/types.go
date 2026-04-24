@@ -21,6 +21,14 @@ import (
 
 //go:generate gen-qbec-swagger swagger.yaml swagger-schema.go
 
+// ApplyStrategy controls how qbec updates objects on the cluster.
+type ApplyStrategy string
+
+const (
+	ApplyStrategyClient ApplyStrategy = "client"
+	ApplyStrategyServer ApplyStrategy = "server"
+)
+
 // Environment points to a specific destination and has its own set of runtime parameters.
 type Environment struct {
 	DefaultNamespace string                 `json:"defaultNamespace"`     // default namespace to set for k8s context

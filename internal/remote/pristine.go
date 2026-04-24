@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
@@ -161,8 +162,113 @@ func (f fallbackPristine) getPristine(annotations map[string]string, orig *unstr
 	return orig, "fallback - live object with some attributes removed"
 }
 
+type managedFieldsPristine struct{}
+
+func objectIdentityBase(obj *unstructured.Unstructured) *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]interface{}{
+		"kind":       obj.GetKind(),
+		"apiVersion": obj.GetAPIVersion(),
+		"metadata": map[string]interface{}{
+			"name": obj.GetName(),
+		},
+	}}
+}
+
+func pristineFromManagedFields(obj *unstructured.Unstructured, fieldManager string) (*unstructured.Unstructured, error) {
+	fieldSet, err := managedFieldSet(obj, fieldManager)
+	if err != nil {
+		return nil, err
+	}
+	if fieldSet.Empty() {
+		return nil, nil
+	}
+	projected := projectedObject(obj, fieldSet)
+	if projected == nil {
+		return nil, nil
+	}
+	base := objectIdentityBase(obj)
+	for k, v := range projected {
+		if k == "metadata" {
+			if projectedMetadata, ok := v.(map[string]interface{}); ok {
+				metadata, _ := base.Object["metadata"].(map[string]interface{})
+				for metadataKey, metadataValue := range projectedMetadata {
+					metadata[metadataKey] = metadataValue
+				}
+				continue
+			}
+		}
+		base.Object[k] = v
+	}
+	return base, nil
+}
+
+func includeInClientSidePristineAnnotation(name string) bool {
+	if strings.HasPrefix(name, model.QBECMetadataPrefix) {
+		return true
+	}
+	switch name {
+	case model.QbecNames.Directives.ApplyOrder,
+		model.QbecNames.Directives.ApplyStrategy,
+		model.QbecNames.Directives.WaitPolicy:
+		return true
+	default:
+		return false
+	}
+}
+
+func mergeQbecMetadata(pristine, obj *unstructured.Unstructured) *unstructured.Unstructured {
+	if pristine == nil {
+		pristine = objectIdentityBase(obj)
+	}
+
+	annotations := pristine.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	for k, v := range obj.GetAnnotations() {
+		if includeInClientSidePristineAnnotation(k) {
+			annotations[k] = v
+		}
+	}
+	if len(annotations) > 0 {
+		pristine.SetAnnotations(annotations)
+	}
+
+	labels := pristine.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	for k, v := range obj.GetLabels() {
+		if strings.HasPrefix(k, model.QBECMetadataPrefix) {
+			labels[k] = v
+		}
+	}
+	if len(labels) > 0 {
+		pristine.SetLabels(labels)
+	}
+	return pristine
+}
+
+func pristineBytesForClientSideApply(obj *unstructured.Unstructured) ([]byte, error) {
+	pristine, _ := getPristineVersion(obj, false)
+	pristine = mergeQbecMetadata(pristine, obj)
+	return json.Marshal(pristine)
+}
+
+func (m managedFieldsPristine) getPristine(_ map[string]string, obj *unstructured.Unstructured) (*unstructured.Unstructured, string) {
+	ret, err := pristineFromManagedFields(obj, ssaFieldManager)
+	if err != nil {
+		sio.Warnln("unable to read pristine from managed fields", err)
+		return nil, ""
+	}
+	if ret == nil {
+		return nil, ""
+	}
+	return ret, "managed fields"
+}
+
 func getPristineVersion(obj *unstructured.Unstructured, includeFallback bool) (*unstructured.Unstructured, string) {
-	pristineReaders := []pristineReader{qbecPristine{}, kubectlPristine{}}
+	pristineReaders := []pristineReader{qbecPristine{}, kubectlPristine{}, managedFieldsPristine{}}
 	if includeFallback {
 		pristineReaders = append(pristineReaders, fallbackPristine{})
 	}

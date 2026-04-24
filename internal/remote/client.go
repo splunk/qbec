@@ -30,10 +30,13 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"
+	"sigs.k8s.io/structured-merge-diff/v6/value"
 	"sigs.k8s.io/yaml"
 )
 
@@ -41,6 +44,7 @@ const (
 	identicalObjects = "objects are identical"
 	opUpdate         = "update object"
 	opCreate         = "create object"
+	ssaFieldManager  = "qbec"
 )
 
 // structured errors
@@ -68,6 +72,8 @@ type SyncOptions struct {
 	DisableUpdateFn ConditionFunc   // do not update an existing object
 	WaitOptions     TypeWaitOptions // opts for waiting
 	ShowSecrets     bool            // show secrets in patches and creations
+	ApplyStrategy   model.ApplyStrategy
+	ForceConflicts  bool
 }
 
 // DeleteOptions provides the caller with options for the delete operation.
@@ -499,7 +505,7 @@ func (c *Client) doSync(ctx context.Context, original model.K8sLocalObject, opts
 			c, _ := types.HideSensitiveInfo(remObj)
 			remObj = c
 		}
-		result, err = c.maybeUpdate(ctx, obj, remObj, opts)
+		result, err = c.maybeUpdate(ctx, obj, remObj, opts, internal)
 	}
 	if err != nil {
 		return nil, err
@@ -621,6 +627,9 @@ func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts
 			SkipReason: "creation disabled due to user request",
 		}, nil
 	}
+	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" && !opts.DryRun {
+		return c.serverSideApply(ctx, obj, nil, opts, opCreate)
+	}
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
@@ -647,11 +656,93 @@ func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts
 	return result, nil
 }
 
-func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
-	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
-		return &updateResult{
-			SkipReason: "update disabled due to user request",
-		}, nil
+func comparableObject(obj *unstructured.Unstructured) map[string]interface{} {
+	if obj == nil {
+		return nil
+	}
+	ret := obj.DeepCopy()
+	unstructured.RemoveNestedField(ret.Object, "metadata", "managedFields")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "resourceVersion")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "uid")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "generation")
+	unstructured.RemoveNestedField(ret.Object, "metadata", "creationTimestamp")
+	return ret.Object
+}
+
+func cloneLocalObject(obj model.K8sLocalObject) model.K8sLocalObject {
+	return model.NewK8sLocalObject(runtime.DeepCopyJSON(obj.ToUnstructured().Object), model.LocalAttrs{
+		App:       obj.Application(),
+		Tag:       obj.Tag(),
+		Component: obj.Component(),
+		Env:       obj.Environment(),
+	})
+}
+
+func stripApplyHistoryAnnotations(obj model.K8sLocalObject) model.K8sLocalObject {
+	ret := cloneLocalObject(obj)
+	annotations := ret.ToUnstructured().GetAnnotations()
+	if len(annotations) == 0 {
+		return ret
+	}
+	delete(annotations, model.QbecNames.PristineAnnotation)
+	delete(annotations, kubectlLastConfig)
+	ret.ToUnstructured().SetAnnotations(annotations)
+	return ret
+}
+
+func markLegacyApplyAnnotationsForDeletion(obj model.K8sLocalObject, remObj *unstructured.Unstructured) model.K8sLocalObject {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return obj
+	}
+	ret := cloneLocalObject(obj)
+	metadata, found, err := unstructured.NestedMap(ret.ToUnstructured().Object, "metadata")
+	if err != nil || !found {
+		metadata = map[string]interface{}{}
+	}
+	annotations, found, err := unstructured.NestedMap(metadata, "annotations")
+	if err != nil || !found {
+		annotations = map[string]interface{}{}
+	}
+	remoteAnnotations := remObj.GetAnnotations()
+	if remoteAnnotations[model.QbecNames.PristineAnnotation] != "" {
+		annotations[model.QbecNames.PristineAnnotation] = nil
+	}
+	if remoteAnnotations[kubectlLastConfig] != "" {
+		annotations[kubectlLastConfig] = nil
+	}
+	metadata["annotations"] = annotations
+	ret.ToUnstructured().Object["metadata"] = metadata
+	return ret
+}
+
+func preserveLegacyApplyAnnotations(obj model.K8sLocalObject, remObj *unstructured.Unstructured) model.K8sLocalObject {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return obj
+	}
+	ret := cloneLocalObject(obj)
+	metadata, found, err := unstructured.NestedMap(ret.ToUnstructured().Object, "metadata")
+	if err != nil || !found {
+		metadata = map[string]interface{}{}
+	}
+	annotations, found, err := unstructured.NestedMap(metadata, "annotations")
+	if err != nil || !found {
+		annotations = map[string]interface{}{}
+	}
+	remoteAnnotations := remObj.GetAnnotations()
+	if v := remoteAnnotations[model.QbecNames.PristineAnnotation]; v != "" {
+		annotations[model.QbecNames.PristineAnnotation] = v
+	}
+	if v := remoteAnnotations[kubectlLastConfig]; v != "" {
+		annotations[kubectlLastConfig] = v
+	}
+	metadata["annotations"] = annotations
+	ret.ToUnstructured().Object["metadata"] = metadata
+	return ret
+}
+
+func (c *Client) legacyClientSideApplyMigrationPatch(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions) (*updateResult, error) {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return nil, nil
 	}
 	res, err := c.schema.OpenAPIResources()
 	if err != nil {
@@ -663,23 +754,303 @@ func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remO
 	}
 
 	p := patcher{
-		provider: c.resourceInterfaceWithDefaultNs,
-		cfgProvider: func(obj *unstructured.Unstructured) ([]byte, error) {
-			pristine, _ := getPristineVersion(obj, false)
-			if pristine == nil {
-				p := map[string]interface{}{
-					"kind":       obj.GetKind(),
-					"apiVersion": obj.GetAPIVersion(),
-					"metadata": map[string]interface{}{
-						"name": obj.GetName(),
-					},
-				}
-				pb, _ := json.Marshal(p)
-				return pb, nil
+		provider:      c.resourceInterfaceWithDefaultNs,
+		cfgProvider:   pristineBytesForClientSideApply,
+		overwrite:     true,
+		backOff:       clockwork.NewRealClock(),
+		openAPILookup: lookup,
+	}
+	if opts.DryRun {
+		return p.getPatchContents(remObj, obj)
+	}
+	return p.patch(ctx, remObj, obj)
+}
+
+func managedFieldSet(obj *unstructured.Unstructured, fieldManager string) (*fieldpath.Set, error) {
+	set := fieldpath.NewSet()
+	if obj == nil {
+		return set, nil
+	}
+	for _, entry := range obj.GetManagedFields() {
+		if entry.Manager != fieldManager || entry.Operation != metav1.ManagedFieldsOperationApply || entry.Subresource != "" {
+			continue
+		}
+		if entry.FieldsV1 == nil || len(entry.FieldsV1.Raw) == 0 {
+			continue
+		}
+		entrySet := &fieldpath.Set{}
+		if err := entrySet.FromJSON(strings.NewReader(string(entry.FieldsV1.Raw))); err != nil {
+			return nil, errors.Wrap(err, "parse managed fields")
+		}
+		set = set.Union(entrySet.Leaves())
+	}
+	return set, nil
+}
+
+func emptyCollectionFieldSet(v interface{}) *fieldpath.Set {
+	set := fieldpath.NewSet()
+	collectEmptyCollectionPaths(v, nil, set)
+	return set
+}
+
+func collectEmptyCollectionPaths(v interface{}, path fieldpath.Path, set *fieldpath.Set) {
+	switch vv := v.(type) {
+	case map[string]interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for k, child := range vv {
+			fieldName := k
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{FieldName: &fieldName}), set)
+		}
+	case []interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for idx, child := range vv {
+			index := idx
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{Index: &index}), set)
+		}
+	}
+}
+
+func projectedObject(obj *unstructured.Unstructured, fieldSet *fieldpath.Set) map[string]interface{} {
+	if obj == nil || fieldSet == nil || fieldSet.Empty() {
+		return nil
+	}
+	projected, ok := projectValue(obj.Object, fieldSet)
+	if !ok {
+		return nil
+	}
+	ret, ok := projected.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return comparableObject(&unstructured.Unstructured{Object: ret})
+}
+
+func projectValue(v interface{}, fieldSet *fieldpath.Set) (interface{}, bool) {
+	if fieldSet == nil || fieldSet.Empty() || v == nil {
+		return nil, false
+	}
+	switch vv := v.(type) {
+	case map[string]interface{}:
+		out := map[string]interface{}{}
+		fieldSet.Members.Iterate(func(pe fieldpath.PathElement) {
+			fieldName, child, ok := mapItemForPathElement(vv, pe)
+			if ok {
+				out[fieldName] = runtime.DeepCopyJSONValue(child)
 			}
-			b, _ := json.Marshal(pristine)
-			return b, nil
-		},
+		})
+		fieldSet.Children.Iterate(func(pe fieldpath.PathElement) {
+			childSet, ok := fieldSet.Children.Get(pe)
+			if !ok {
+				return
+			}
+			fieldName, child, ok := mapItemForPathElement(vv, pe)
+			if !ok {
+				return
+			}
+			projected, ok := projectValue(child, childSet)
+			if ok {
+				out[fieldName] = projected
+			}
+		})
+		return out, len(out) > 0
+	case []interface{}:
+		out := []interface{}{}
+		fieldSet.Members.Iterate(func(pe fieldpath.PathElement) {
+			if child, ok := listItemForPathElement(vv, pe); ok {
+				out = append(out, runtime.DeepCopyJSONValue(child))
+			}
+		})
+		fieldSet.Children.Iterate(func(pe fieldpath.PathElement) {
+			childSet, ok := fieldSet.Children.Get(pe)
+			if !ok {
+				return
+			}
+			child, ok := listItemForPathElement(vv, pe)
+			if !ok {
+				return
+			}
+			projected, ok := projectValue(child, childSet)
+			if ok {
+				projected = withListItemKeys(projected, pe)
+				out = append(out, projected)
+			}
+		})
+		return out, len(out) > 0
+	default:
+		return runtime.DeepCopyJSONValue(v), true
+	}
+}
+
+func withListItemKeys(projected interface{}, pe fieldpath.PathElement) interface{} {
+	if pe.Key == nil {
+		return projected
+	}
+	m, ok := projected.(map[string]interface{})
+	if !ok {
+		return projected
+	}
+	for _, field := range *pe.Key {
+		m[field.Name] = runtime.DeepCopyJSONValue(field.Value.Unstructured())
+	}
+	return m
+}
+
+func mapItemForPathElement(m map[string]interface{}, pe fieldpath.PathElement) (string, interface{}, bool) {
+	if pe.FieldName == nil {
+		return "", nil, false
+	}
+	if child, ok := m[*pe.FieldName]; ok {
+		return *pe.FieldName, child, true
+	}
+	unescaped := strings.NewReplacer("~1", "/", "~0", "~").Replace(*pe.FieldName)
+	if unescaped != *pe.FieldName {
+		if child, ok := m[unescaped]; ok {
+			return unescaped, child, true
+		}
+	}
+	return "", nil, false
+}
+
+func listItemForPathElement(list []interface{}, pe fieldpath.PathElement) (interface{}, bool) {
+	for idx, item := range list {
+		if pathElementMatches(pe, idx, item) {
+			return item, true
+		}
+	}
+	return nil, false
+}
+
+func pathElementMatches(pe fieldpath.PathElement, idx int, item interface{}) bool {
+	switch {
+	case pe.Index != nil:
+		return idx == *pe.Index
+	case pe.Value != nil:
+		return value.Equals(*pe.Value, value.NewValueInterface(item))
+	case pe.Key != nil:
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		for _, field := range *pe.Key {
+			v, ok := m[field.Name]
+			if !ok || !value.Equals(field.Value, value.NewValueInterface(v)) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+func sameObject(lhs, rhs *unstructured.Unstructured, desired model.K8sLocalObject) (bool, error) {
+	fieldSet := fieldpath.SetFromValue(value.NewValueInterface(desired.ToUnstructured().Object))
+	fieldSet = fieldSet.Union(emptyCollectionFieldSet(desired.ToUnstructured().Object))
+	managedSet, err := managedFieldSet(lhs, ssaFieldManager)
+	if err != nil {
+		return false, err
+	}
+	fieldSet = fieldSet.Union(managedSet)
+	return value.Equals(
+		value.NewValueInterface(projectedObject(lhs, fieldSet)),
+		value.NewValueInterface(projectedObject(rhs, fieldSet)),
+	), nil
+}
+
+func hasLegacyClientSideApplyState(obj *unstructured.Unstructured) bool {
+	if obj == nil {
+		return false
+	}
+	annotations := obj.GetAnnotations()
+	if len(annotations) == 0 {
+		return false
+	}
+	return annotations[model.QbecNames.PristineAnnotation] != "" || annotations[kubectlLastConfig] != ""
+}
+
+func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
+	obj = stripApplyHistoryAnnotations(obj)
+	migrationResult, err := c.legacyClientSideApplyMigrationPatch(ctx, preserveLegacyApplyAnnotations(obj, remObj), remObj, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "legacy client-side apply migration")
+	}
+	migrationChanged := migrationResult != nil && migrationResult.SkipReason == ""
+	if opts.DryRun && migrationChanged {
+		return migrationResult, nil
+	}
+	obj = markLegacyApplyAnnotationsForDeletion(obj, remObj)
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "json marshal")
+	}
+	result := &updateResult{
+		Operation: operation,
+		Source:    "server-side apply",
+		Kind:      apiTypes.ApplyPatchType,
+		patch:     b,
+	}
+	if obj.GetName() == "" {
+		return nil, fmt.Errorf("server-side apply requires object name")
+	}
+	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrap(err, "get resource interface")
+	}
+	patchOpts := metav1.PatchOptions{
+		FieldManager: ssaFieldManager,
+	}
+	if opts.DryRun {
+		patchOpts.DryRun = []string{metav1.DryRunAll}
+	}
+	if opts.ForceConflicts || hasLegacyClientSideApplyState(remObj) {
+		force := true
+		patchOpts.Force = &force
+	}
+	out, err := ri.Patch(ctx, obj.GetName(), apiTypes.ApplyPatchType, b, patchOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "server-side apply")
+	}
+	if remObj != nil {
+		same, err := sameObject(remObj, out, obj)
+		if err != nil {
+			return nil, err
+		}
+		if same && !migrationChanged {
+			return &updateResult{SkipReason: identicalObjects}, nil
+		}
+	}
+	return result, nil
+}
+
+func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
+	if opts.DisableUpdateFn(model.NewK8sObject(remObj.Object)) {
+		return &updateResult{
+			SkipReason: "update disabled due to user request",
+		}, nil
+	}
+	// Secret dry-runs redact data for safe display. They are not a real apply preflight and
+	// must not be sent to the apiserver via SSA, or redacted values can trigger bogus conflicts.
+	if opts.ApplyStrategy == model.ApplyStrategyServer && !internal.secretDryRun {
+		return c.serverSideApply(ctx, obj, remObj, opts, opUpdate)
+	}
+	res, err := c.schema.OpenAPIResources()
+	if err != nil {
+		sio.Warnln("get open API resources", err)
+	}
+	var lookup openAPILookup
+	if res != nil {
+		lookup = res.LookupResource
+	}
+
+	p := patcher{
+		provider:      c.resourceInterfaceWithDefaultNs,
+		cfgProvider:   pristineBytesForClientSideApply,
 		overwrite:     true,
 		backOff:       clockwork.NewRealClock(),
 		openAPILookup: lookup,

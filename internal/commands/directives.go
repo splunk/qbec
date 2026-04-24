@@ -26,6 +26,7 @@ import (
 const (
 	policyNever   = "never"
 	policyDefault = "default"
+	policyServer  = "server"
 )
 
 // isSet return true if the annotation name specified as directive is equal to the supplied value.
@@ -57,6 +58,13 @@ func isSet(ob model.K8sMeta, directive, value string, otherAllowedValues []strin
 }
 
 type updatePolicy struct{}
+
+func applyStrategy(ob model.K8sMeta) model.ApplyStrategy {
+	if isSet(ob, model.QbecNames.Directives.ApplyStrategy, policyServer, []string{policyDefault}) {
+		return model.ApplyStrategyServer
+	}
+	return model.ApplyStrategyClient
+}
 
 func (u *updatePolicy) disableUpdate(ob model.K8sMeta) bool {
 	return isSet(ob, model.QbecNames.Directives.UpdatePolicy, policyNever, []string{policyDefault})

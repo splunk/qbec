@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssa-config
+  annotations:
+    directives.qbec.io/apply-strategy: server
+data:
+  foo: bar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-config
+data:
+  foo: baz
