@@ -711,6 +711,35 @@ func managedFieldSet(obj *unstructured.Unstructured, fieldManager string) (*fiel
 	return set, nil
 }
 
+func emptyCollectionFieldSet(v interface{}) *fieldpath.Set {
+	set := fieldpath.NewSet()
+	collectEmptyCollectionPaths(v, nil, set)
+	return set
+}
+
+func collectEmptyCollectionPaths(v interface{}, path fieldpath.Path, set *fieldpath.Set) {
+	switch vv := v.(type) {
+	case map[string]interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for k, child := range vv {
+			fieldName := k
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{FieldName: &fieldName}), set)
+		}
+	case []interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for idx, child := range vv {
+			index := idx
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{Index: &index}), set)
+		}
+	}
+}
+
 func projectedObject(obj *unstructured.Unstructured, fieldSet *fieldpath.Set) map[string]interface{} {
 	if obj == nil || fieldSet == nil || fieldSet.Empty() {
 		return nil
@@ -819,7 +848,8 @@ func pathElementMatches(pe fieldpath.PathElement, idx int, item interface{}) boo
 }
 
 func sameObject(lhs, rhs *unstructured.Unstructured, desired model.K8sLocalObject) (bool, error) {
-	fieldSet := fieldpath.SetFromValue(value.NewValueInterface(desired.ToUnstructured().Object)).Leaves()
+	fieldSet := fieldpath.SetFromValue(value.NewValueInterface(desired.ToUnstructured().Object))
+	fieldSet = fieldSet.Union(emptyCollectionFieldSet(desired.ToUnstructured().Object))
 	managedSet, err := managedFieldSet(lhs, ssaFieldManager)
 	if err != nil {
 		return false, err

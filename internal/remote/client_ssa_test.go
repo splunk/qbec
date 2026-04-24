@@ -350,6 +350,24 @@ func TestMaybeUpdateServerSideApplyDetectsRemovedManagedFields(t *testing.T) {
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
 }
 
+func TestMaybeUpdateServerSideApplyTreatsEmptyDesiredCollectionAsUpdate(t *testing.T) {
+	existing := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
+		"foo": "bar",
+	}).ToUnstructured()
+	desired := newConfigMapWithData("default", "ssa-config", map[string]interface{}{})
+	out := desired.ToUnstructured()
+
+	client, recorder := newServerSideApplyClient(t, out)
+	result, err := client.maybeUpdate(context.Background(), desired, existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Empty(t, result.SkipReason)
+	assert.Equal(t, opUpdate, result.Operation)
+	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+}
+
 func TestServerSideApplyStripsApplyHistoryAnnotations(t *testing.T) {
 	obj := newConfigMap("default", "ssa-config")
 	annotated := cloneLocalObject(obj)
