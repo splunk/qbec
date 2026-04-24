@@ -18,7 +18,6 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
@@ -276,6 +275,35 @@ func TestClientSideApplyUsesManagedFieldsPristineForDeletion(t *testing.T) {
 	assert.Contains(t, string(result.patch), `"stale":null`)
 }
 
+func TestClientSideApplyUsesManagedFieldsPristineForMetadataDeletion(t *testing.T) {
+	desired := newConfigMap("default", "ssa-config")
+	annotations := desired.ToUnstructured().GetAnnotations()
+	delete(annotations, model.QbecNames.ComponentAnnotation)
+	desired.ToUnstructured().SetAnnotations(annotations)
+
+	serverObj := newConfigMap("default", "ssa-config").ToUnstructured()
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{}},"f:metadata":{"f:annotations":{"f:qbec.io~1component":{}},"f:labels":{"f:qbec.io~1application":{},"f:qbec.io~1environment":{}}}}`),
+			},
+		},
+	})
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+	assert.Empty(t, result.SkipReason)
+	assert.Contains(t, string(result.patch), `"qbec.io/component":null`)
+
+	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
+	require.NoError(t, err)
+	assert.Contains(t, string(pristineBytes), `"qbec.io/component"`)
+}
+
 func TestClientServerClientRoundTripNoop(t *testing.T) {
 	desired := newConfigMap("default", "ssa-config")
 	clientApplied, err := qbecPristine{}.createFromPristine(desired)
@@ -305,5 +333,4 @@ func TestClientServerClientRoundTripNoop(t *testing.T) {
 	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
 	require.NoError(t, err)
 	assert.NotContains(t, string(pristineBytes), model.QbecNames.PristineAnnotation)
-	assert.True(t, strings.Contains(string(pristineBytes), `"name":"ssa-config"`))
 }

@@ -763,28 +763,23 @@ func projectValue(v interface{}, fieldSet *fieldpath.Set) (interface{}, bool) {
 	case map[string]interface{}:
 		out := map[string]interface{}{}
 		fieldSet.Members.Iterate(func(pe fieldpath.PathElement) {
-			if pe.FieldName == nil {
-				return
-			}
-			if child, ok := vv[*pe.FieldName]; ok {
-				out[*pe.FieldName] = runtime.DeepCopyJSONValue(child)
+			fieldName, child, ok := mapItemForPathElement(vv, pe)
+			if ok {
+				out[fieldName] = runtime.DeepCopyJSONValue(child)
 			}
 		})
 		fieldSet.Children.Iterate(func(pe fieldpath.PathElement) {
-			if pe.FieldName == nil {
-				return
-			}
 			childSet, ok := fieldSet.Children.Get(pe)
 			if !ok {
 				return
 			}
-			child, ok := vv[*pe.FieldName]
+			fieldName, child, ok := mapItemForPathElement(vv, pe)
 			if !ok {
 				return
 			}
 			projected, ok := projectValue(child, childSet)
 			if ok {
-				out[*pe.FieldName] = projected
+				out[fieldName] = projected
 			}
 		})
 		return out, len(out) > 0
@@ -813,6 +808,22 @@ func projectValue(v interface{}, fieldSet *fieldpath.Set) (interface{}, bool) {
 	default:
 		return runtime.DeepCopyJSONValue(v), true
 	}
+}
+
+func mapItemForPathElement(m map[string]interface{}, pe fieldpath.PathElement) (string, interface{}, bool) {
+	if pe.FieldName == nil {
+		return "", nil, false
+	}
+	if child, ok := m[*pe.FieldName]; ok {
+		return *pe.FieldName, child, true
+	}
+	unescaped := strings.NewReplacer("~1", "/", "~0", "~").Replace(*pe.FieldName)
+	if unescaped != *pe.FieldName {
+		if child, ok := m[unescaped]; ok {
+			return unescaped, child, true
+		}
+	}
+	return "", nil, false
 }
 
 func listItemForPathElement(list []interface{}, pe fieldpath.PathElement) (interface{}, bool) {
