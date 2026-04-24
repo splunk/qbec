@@ -197,6 +197,20 @@ func pristineFromManagedFields(obj *unstructured.Unstructured, fieldManager stri
 	return base, nil
 }
 
+func includeInClientSidePristineAnnotation(name string) bool {
+	if strings.HasPrefix(name, model.QBECMetadataPrefix) {
+		return true
+	}
+	switch name {
+	case model.QbecNames.Directives.ApplyOrder,
+		model.QbecNames.Directives.ApplyStrategy,
+		model.QbecNames.Directives.WaitPolicy:
+		return true
+	default:
+		return false
+	}
+}
+
 func mergeQbecMetadata(pristine, obj *unstructured.Unstructured) *unstructured.Unstructured {
 	if pristine == nil {
 		pristine = objectIdentityBase(obj)
@@ -207,7 +221,7 @@ func mergeQbecMetadata(pristine, obj *unstructured.Unstructured) *unstructured.U
 		annotations = map[string]string{}
 	}
 	for k, v := range obj.GetAnnotations() {
-		if strings.HasPrefix(k, model.QBECMetadataPrefix) || strings.HasPrefix(k, model.QBECDirectivesNamespace) {
+		if includeInClientSidePristineAnnotation(k) {
 			annotations[k] = v
 		}
 	}

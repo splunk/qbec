@@ -336,6 +336,66 @@ func TestClientSideApplyUsesManagedFieldsPristineForDirectiveDeletion(t *testing
 	assert.Contains(t, string(pristineBytes), `"directives.qbec.io/apply-strategy":"server"`)
 }
 
+func TestClientSideApplyPristineSkipsInClusterDirectives(t *testing.T) {
+	desired := newConfigMap("default", "ssa-config")
+	serverObj := desired.ToUnstructured().DeepCopy()
+	annotations := serverObj.GetAnnotations()
+	annotations[model.QbecNames.Directives.DeletePolicy] = "never"
+	annotations[model.QbecNames.Directives.UpdatePolicy] = "never"
+	serverObj.SetAnnotations(annotations)
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{}}}`),
+			},
+		},
+	})
+
+	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
+	require.NoError(t, err)
+	assert.NotContains(t, string(pristineBytes), model.QbecNames.Directives.DeletePolicy)
+	assert.NotContains(t, string(pristineBytes), model.QbecNames.Directives.UpdatePolicy)
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+	assert.NotContains(t, string(result.patch), `"directives.qbec.io/delete-policy":null`)
+	assert.NotContains(t, string(result.patch), `"directives.qbec.io/update-policy":null`)
+}
+
+func TestManagedFieldsPristinePreservesAssociativeListKeys(t *testing.T) {
+	desired := newDeployment("default", "ssa-deployment")
+	serverObj := desired.ToUnstructured().DeepCopy()
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:spec":{"f:template":{"f:spec":{"f:containers":{"k:{\"name\":\"app\"}":{"f:image":{}}}}}}}`),
+			},
+		},
+	})
+
+	pristine, err := pristineFromManagedFields(serverObj, ssaFieldManager)
+	require.NoError(t, err)
+	containers, found, err := unstructured.NestedSlice(pristine.Object, "spec", "template", "spec", "containers")
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Len(t, containers, 1)
+	container, ok := containers[0].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "app", container["name"])
+	assert.Equal(t, "nginx", container["image"])
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	_, err = p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+}
+
 func TestClientServerClientRoundTripNoop(t *testing.T) {
 	desired := newConfigMap("default", "ssa-config")
 	clientApplied, err := qbecPristine{}.createFromPristine(desired)
@@ -365,4 +425,37 @@ func TestClientServerClientRoundTripNoop(t *testing.T) {
 	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
 	require.NoError(t, err)
 	assert.NotContains(t, string(pristineBytes), model.QbecNames.PristineAnnotation)
+}
+
+func newDeployment(namespace, name string) model.K8sLocalObject {
+	return model.NewK8sLocalObject(map[string]interface{}{
+		"apiVersion": "apps/v1",
+		"kind":       "Deployment",
+		"metadata": map[string]interface{}{
+			"name":      name,
+			"namespace": namespace,
+		},
+		"spec": map[string]interface{}{
+			"selector": map[string]interface{}{
+				"matchLabels": map[string]interface{}{
+					"app": "demo",
+				},
+			},
+			"template": map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"labels": map[string]interface{}{
+						"app": "demo",
+					},
+				},
+				"spec": map[string]interface{}{
+					"containers": []interface{}{
+						map[string]interface{}{
+							"name":  "app",
+							"image": "nginx",
+						},
+					},
+				},
+			},
+		},
+	}, model.LocalAttrs{App: "app", Component: "comp", Env: "env"})
 }

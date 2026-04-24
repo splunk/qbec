@@ -826,6 +826,7 @@ func projectValue(v interface{}, fieldSet *fieldpath.Set) (interface{}, bool) {
 			}
 			projected, ok := projectValue(child, childSet)
 			if ok {
+				projected = withListItemKeys(projected, pe)
 				out = append(out, projected)
 			}
 		})
@@ -833,6 +834,20 @@ func projectValue(v interface{}, fieldSet *fieldpath.Set) (interface{}, bool) {
 	default:
 		return runtime.DeepCopyJSONValue(v), true
 	}
+}
+
+func withListItemKeys(projected interface{}, pe fieldpath.PathElement) interface{} {
+	if pe.Key == nil {
+		return projected
+	}
+	m, ok := projected.(map[string]interface{})
+	if !ok {
+		return projected
+	}
+	for _, field := range *pe.Key {
+		m[field.Name] = runtime.DeepCopyJSONValue(field.Value.Unstructured())
+	}
+	return m
 }
 
 func mapItemForPathElement(m map[string]interface{}, pe fieldpath.PathElement) (string, interface{}, bool) {
