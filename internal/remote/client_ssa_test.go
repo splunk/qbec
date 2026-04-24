@@ -350,6 +350,40 @@ func TestMaybeUpdateServerSideApplyDetectsRemovedManagedFields(t *testing.T) {
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
 }
 
+func TestMaybeUpdateServerSideApplyForcesLegacyClientSideMigration(t *testing.T) {
+	existing := newConfigMap("default", "ssa-config").ToUnstructured()
+	annotations := existing.GetAnnotations()
+	annotations[model.QbecNames.PristineAnnotation] = "pristine"
+	existing.SetAnnotations(annotations)
+
+	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, identicalObjects, result.SkipReason)
+	require.NotNil(t, recorder.patchOptions.Force)
+	assert.True(t, *recorder.patchOptions.Force)
+}
+
+func TestMaybeUpdateServerSideApplyForcesKubectlMigration(t *testing.T) {
+	existing := newConfigMap("default", "ssa-config").ToUnstructured()
+	annotations := existing.GetAnnotations()
+	annotations[kubectlLastConfig] = `{"apiVersion":"v1"}`
+	existing.SetAnnotations(annotations)
+
+	client, recorder := newServerSideApplyClient(t, existing.DeepCopy())
+	result, err := client.maybeUpdate(context.Background(), newConfigMap("default", "ssa-config"), existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, identicalObjects, result.SkipReason)
+	require.NotNil(t, recorder.patchOptions.Force)
+	assert.True(t, *recorder.patchOptions.Force)
+}
+
 func TestMaybeUpdateServerSideApplyTreatsEmptyDesiredCollectionAsUpdate(t *testing.T) {
 	existing := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
 		"foo": "bar",

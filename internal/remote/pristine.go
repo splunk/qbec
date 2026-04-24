@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/splunk/qbec/internal/model"
@@ -196,11 +197,42 @@ func pristineFromManagedFields(obj *unstructured.Unstructured, fieldManager stri
 	return base, nil
 }
 
-func pristineBytesForClientSideApply(obj *unstructured.Unstructured) ([]byte, error) {
-	pristine, _ := getPristineVersion(obj, false)
+func mergeQbecMetadata(pristine, obj *unstructured.Unstructured) *unstructured.Unstructured {
 	if pristine == nil {
 		pristine = objectIdentityBase(obj)
 	}
+
+	annotations := pristine.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	for k, v := range obj.GetAnnotations() {
+		if strings.HasPrefix(k, model.QBECMetadataPrefix) || strings.HasPrefix(k, model.QBECDirectivesNamespace) {
+			annotations[k] = v
+		}
+	}
+	if len(annotations) > 0 {
+		pristine.SetAnnotations(annotations)
+	}
+
+	labels := pristine.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	for k, v := range obj.GetLabels() {
+		if strings.HasPrefix(k, model.QBECMetadataPrefix) {
+			labels[k] = v
+		}
+	}
+	if len(labels) > 0 {
+		pristine.SetLabels(labels)
+	}
+	return pristine
+}
+
+func pristineBytesForClientSideApply(obj *unstructured.Unstructured) ([]byte, error) {
+	pristine, _ := getPristineVersion(obj, false)
+	pristine = mergeQbecMetadata(pristine, obj)
 	return json.Marshal(pristine)
 }
 

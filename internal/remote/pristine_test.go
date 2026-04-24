@@ -304,6 +304,38 @@ func TestClientSideApplyUsesManagedFieldsPristineForMetadataDeletion(t *testing.
 	assert.Contains(t, string(pristineBytes), `"qbec.io/component"`)
 }
 
+func TestClientSideApplyUsesManagedFieldsPristineForDirectiveDeletion(t *testing.T) {
+	desired := newConfigMap("default", "ssa-config")
+	annotations := desired.ToUnstructured().GetAnnotations()
+	delete(annotations, model.QbecNames.Directives.ApplyStrategy)
+	desired.ToUnstructured().SetAnnotations(annotations)
+
+	serverObj := newConfigMap("default", "ssa-config").ToUnstructured()
+	annotations = serverObj.GetAnnotations()
+	annotations[model.QbecNames.Directives.ApplyStrategy] = string(model.ApplyStrategyServer)
+	serverObj.SetAnnotations(annotations)
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{}},"f:metadata":{"f:annotations":{"f:qbec.io~1component":{}},"f:labels":{"f:qbec.io~1application":{},"f:qbec.io~1environment":{}}}}`),
+			},
+		},
+	})
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+	assert.Empty(t, result.SkipReason)
+	assert.Contains(t, string(result.patch), `"directives.qbec.io/apply-strategy":null`)
+
+	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
+	require.NoError(t, err)
+	assert.Contains(t, string(pristineBytes), `"directives.qbec.io/apply-strategy":"server"`)
+}
+
 func TestClientServerClientRoundTripNoop(t *testing.T) {
 	desired := newConfigMap("default", "ssa-config")
 	clientApplied, err := qbecPristine{}.createFromPristine(desired)

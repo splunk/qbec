@@ -690,6 +690,31 @@ func stripApplyHistoryAnnotations(obj model.K8sLocalObject) model.K8sLocalObject
 	return ret
 }
 
+func markLegacyApplyAnnotationsForDeletion(obj model.K8sLocalObject, remObj *unstructured.Unstructured) model.K8sLocalObject {
+	if !hasLegacyClientSideApplyState(remObj) {
+		return obj
+	}
+	ret := cloneLocalObject(obj)
+	metadata, found, err := unstructured.NestedMap(ret.ToUnstructured().Object, "metadata")
+	if err != nil || !found {
+		metadata = map[string]interface{}{}
+	}
+	annotations, found, err := unstructured.NestedMap(metadata, "annotations")
+	if err != nil || !found {
+		annotations = map[string]interface{}{}
+	}
+	remoteAnnotations := remObj.GetAnnotations()
+	if remoteAnnotations[model.QbecNames.PristineAnnotation] != "" {
+		annotations[model.QbecNames.PristineAnnotation] = nil
+	}
+	if remoteAnnotations[kubectlLastConfig] != "" {
+		annotations[kubectlLastConfig] = nil
+	}
+	metadata["annotations"] = annotations
+	ret.ToUnstructured().Object["metadata"] = metadata
+	return ret
+}
+
 func managedFieldSet(obj *unstructured.Unstructured, fieldManager string) (*fieldpath.Set, error) {
 	set := fieldpath.NewSet()
 	if obj == nil {
@@ -872,8 +897,20 @@ func sameObject(lhs, rhs *unstructured.Unstructured, desired model.K8sLocalObjec
 	), nil
 }
 
+func hasLegacyClientSideApplyState(obj *unstructured.Unstructured) bool {
+	if obj == nil {
+		return false
+	}
+	annotations := obj.GetAnnotations()
+	if len(annotations) == 0 {
+		return false
+	}
+	return annotations[model.QbecNames.PristineAnnotation] != "" || annotations[kubectlLastConfig] != ""
+}
+
 func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
 	obj = stripApplyHistoryAnnotations(obj)
+	obj = markLegacyApplyAnnotationsForDeletion(obj, remObj)
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
@@ -897,7 +934,7 @@ func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, 
 	if opts.DryRun {
 		patchOpts.DryRun = []string{metav1.DryRunAll}
 	}
-	if opts.ForceConflicts {
+	if opts.ForceConflicts || hasLegacyClientSideApplyState(remObj) {
 		force := true
 		patchOpts.Force = &force
 	}
