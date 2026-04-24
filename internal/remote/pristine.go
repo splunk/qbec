@@ -188,6 +188,15 @@ func pristineFromManagedFields(obj *unstructured.Unstructured, fieldManager stri
 	}
 	base := objectIdentityBase(obj)
 	for k, v := range projected {
+		if k == "metadata" {
+			if projectedMetadata, ok := v.(map[string]interface{}); ok {
+				metadata, _ := base.Object["metadata"].(map[string]interface{})
+				for metadataKey, metadataValue := range projectedMetadata {
+					metadata[metadataKey] = metadataValue
+				}
+				continue
+			}
+		}
 		base.Object[k] = v
 	}
 	return base, nil

@@ -252,6 +252,42 @@ func TestPristineReaderManagedFields(t *testing.T) {
 	assert.Equal(t, "remove-me", data["stale"])
 }
 
+func TestManagedFieldsPristinePreservesIdentityWhenProjectingMetadata(t *testing.T) {
+	desired := stripApplyHistoryAnnotations(newConfigMap("default", "ssa-config"))
+	annotations := desired.ToUnstructured().GetAnnotations()
+	annotations[model.QbecNames.Directives.ApplyStrategy] = string(model.ApplyStrategyServer)
+	desired.ToUnstructured().SetAnnotations(annotations)
+
+	serverObj := desired.ToUnstructured().DeepCopy()
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{}},"f:metadata":{"f:annotations":{"f:directives.qbec.io~1apply-strategy":{},"f:qbec.io~1component":{}},"f:labels":{"f:qbec.io~1application":{},"f:qbec.io~1environment":{}}}}`),
+			},
+		},
+	})
+
+	pristine, err := pristineFromManagedFields(serverObj, ssaFieldManager)
+	require.NoError(t, err)
+	require.NotNil(t, pristine)
+	assert.Equal(t, "ssa-config", pristine.GetName())
+	assert.Equal(t, "ConfigMap", pristine.GetKind())
+	assert.Equal(t, "v1", pristine.GetAPIVersion())
+	assert.Empty(t, pristine.GetNamespace())
+	assert.Equal(t, "comp", pristine.GetAnnotations()[model.QbecNames.ComponentAnnotation])
+	assert.Equal(t, string(model.ApplyStrategyServer), pristine.GetAnnotations()[model.QbecNames.Directives.ApplyStrategy])
+	assert.Equal(t, "app", pristine.GetLabels()[model.QbecNames.ApplicationLabel])
+	assert.Equal(t, "env", pristine.GetLabels()[model.QbecNames.EnvironmentLabel])
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+	assert.Equal(t, identicalObjects, result.SkipReason)
+}
+
 func TestClientSideApplyUsesManagedFieldsPristineForDeletion(t *testing.T) {
 	serverObj := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
 		"foo":   "bar",
