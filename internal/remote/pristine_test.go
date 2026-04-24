@@ -18,11 +18,13 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/splunk/qbec/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 )
@@ -221,4 +223,87 @@ func TestCreateFromPristine(t *testing.T) {
 	pObj, err := unzipData(pValue)
 	require.Nil(t, err)
 	a.EqualValues(un.Object, pObj)
+}
+
+func TestPristineReaderManagedFields(t *testing.T) {
+	obj := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
+		"foo":   "bar",
+		"stale": "remove-me",
+	}).ToUnstructured()
+	obj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{},"f:stale":{}}}`),
+			},
+		},
+	})
+
+	pristine, source := getPristineVersion(obj, false)
+	require.NotNil(t, pristine)
+	assert.Equal(t, "managed fields", source)
+	assert.Equal(t, "ssa-config", pristine.GetName())
+	assert.Equal(t, "default", pristine.GetNamespace())
+	data, found, err := unstructured.NestedStringMap(pristine.Object, "data")
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, "bar", data["foo"])
+	assert.Equal(t, "remove-me", data["stale"])
+}
+
+func TestClientSideApplyUsesManagedFieldsPristineForDeletion(t *testing.T) {
+	serverObj := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
+		"foo":   "bar",
+		"stale": "remove-me",
+	}).ToUnstructured()
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{},"f:stale":{}}}`),
+			},
+		},
+	})
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, newConfigMap("default", "ssa-config"))
+	require.NoError(t, err)
+	assert.Empty(t, result.SkipReason)
+	assert.Contains(t, string(result.patch), `"stale":null`)
+}
+
+func TestClientServerClientRoundTripNoop(t *testing.T) {
+	desired := newConfigMap("default", "ssa-config")
+	clientApplied, err := qbecPristine{}.createFromPristine(desired)
+	require.NoError(t, err)
+
+	serverObj := desired.ToUnstructured()
+	serverObj.SetManagedFields([]metav1.ManagedFieldsEntry{
+		{
+			Manager:    ssaFieldManager,
+			Operation:  metav1.ManagedFieldsOperationApply,
+			FieldsType: "FieldsV1",
+			FieldsV1: &metav1.FieldsV1{
+				Raw: []byte(`{"f:data":{"f:foo":{}},"f:metadata":{"f:annotations":{"f:qbec.io~1component":{}},"f:labels":{"f:qbec.io~1application":{},"f:qbec.io~1environment":{}}}}`),
+			},
+		},
+	})
+
+	sanitized := stripApplyHistoryAnnotations(clientApplied)
+	assert.NotContains(t, sanitized.GetAnnotations(), model.QbecNames.PristineAnnotation)
+	assert.NotContains(t, sanitized.GetAnnotations(), kubectlLastConfig)
+
+	p := patcher{cfgProvider: pristineBytesForClientSideApply}
+	result, err := p.getPatchContents(serverObj, desired)
+	require.NoError(t, err)
+	assert.Equal(t, identicalObjects, result.SkipReason)
+
+	pristineBytes, err := pristineBytesForClientSideApply(serverObj)
+	require.NoError(t, err)
+	assert.NotContains(t, string(pristineBytes), model.QbecNames.PristineAnnotation)
+	assert.True(t, strings.Contains(string(pristineBytes), `"name":"ssa-config"`))
 }
