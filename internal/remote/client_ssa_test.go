@@ -230,7 +230,7 @@ func TestMaybeCreateServerSideApplyUsesPatchOptions(t *testing.T) {
 	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
 		ApplyStrategy:  model.ApplyStrategyServer,
 		ForceConflicts: true,
-	})
+	}, internalSyncOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, opCreate, result.Operation)
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
@@ -248,7 +248,7 @@ func TestMaybeCreateServerSideApplyFallsBackForGenerateName(t *testing.T) {
 	obj := newGenerateNameConfigMap("default", "ssa-config-")
 	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
 		ApplyStrategy: model.ApplyStrategyServer,
-	})
+	}, internalSyncOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, opCreate, result.Operation)
 	assert.Equal(t, "", recorder.patchName)
@@ -256,13 +256,32 @@ func TestMaybeCreateServerSideApplyFallsBackForGenerateName(t *testing.T) {
 	assert.Equal(t, "ssa-config-", recorder.createObject.GetGenerateName())
 }
 
-func TestMaybeCreateServerSideApplyDryRunFallsBackToLocalCreate(t *testing.T) {
+func TestMaybeCreateServerSideApplyDryRunUsesServerPreflight(t *testing.T) {
+	// SSA dry-run creates must hit the apiserver with DryRunAll so that admission webhooks
+	// and field-ownership conflicts are surfaced before the real apply.
+	client, recorder := newServerSideApplyClient(t, &unstructured.Unstructured{})
+	obj := newConfigMap("default", "ssa-config")
+	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
+		DryRun:        true,
+		ApplyStrategy: model.ApplyStrategyServer,
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, opCreate, result.Operation)
+	assert.Equal(t, "server-side apply", result.Source)
+	assert.Nil(t, recorder.createObject)
+	assert.Equal(t, "ssa-config", recorder.patchName)
+	require.Equal(t, []string{metav1.DryRunAll}, recorder.patchOptions.DryRun)
+}
+
+func TestMaybeCreateServerSideApplySecretDryRunFallsBackToLocalCreate(t *testing.T) {
+	// The secret dry-run pass uses redacted placeholder values and must NOT reach the apiserver.
+	// It should fall back to the local-only create path instead.
 	client, recorder := newServerSideApplyClient(t, nil)
 	obj := newConfigMap("default", "ssa-config")
 	result, err := client.maybeCreate(context.Background(), obj, SyncOptions{
 		DryRun:        true,
 		ApplyStrategy: model.ApplyStrategyServer,
-	})
+	}, internalSyncOptions{secretDryRun: true})
 	require.NoError(t, err)
 	assert.Equal(t, opCreate, result.Operation)
 	assert.Equal(t, "local", result.Source)
@@ -348,6 +367,32 @@ func TestMaybeUpdateServerSideApplyDetectsRemovedManagedFields(t *testing.T) {
 	assert.Empty(t, result.SkipReason)
 	assert.Equal(t, opUpdate, result.Operation)
 	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+}
+
+func TestMaybeUpdateServerSideApplyTreatsEmptyDesiredCollectionAsUpdate(t *testing.T) {
+	existing := newConfigMapWithData("default", "ssa-config", map[string]interface{}{
+		"foo": "bar",
+	}).ToUnstructured()
+	desired := newConfigMapWithData("default", "ssa-config", map[string]interface{}{})
+	out := desired.ToUnstructured()
+
+	client, recorder := newServerSideApplyClient(t, out)
+	result, err := client.maybeUpdate(context.Background(), desired, existing.DeepCopy(), SyncOptions{
+		ApplyStrategy:   model.ApplyStrategyServer,
+		DisableUpdateFn: func(model.K8sMeta) bool { return false },
+	}, internalSyncOptions{})
+	require.NoError(t, err)
+	assert.Empty(t, result.SkipReason)
+	assert.Equal(t, opUpdate, result.Operation)
+	assert.Equal(t, apiTypes.ApplyPatchType, recorder.patchType)
+}
+
+func TestServerSideApplyResultHasNoPatchBytes(t *testing.T) {
+	obj := newConfigMap("default", "ssa-config")
+	client, _ := newServerSideApplyClient(t, obj.ToUnstructured())
+	result, err := client.serverSideApply(context.Background(), obj, nil, SyncOptions{}, opCreate)
+	require.NoError(t, err)
+	assert.Nil(t, result.patch, "patch bytes must be nil so DisplayPatch stays empty for secret objects")
 }
 
 func TestServerSideApplyStripsApplyHistoryAnnotations(t *testing.T) {

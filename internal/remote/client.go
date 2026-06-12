@@ -15,6 +15,7 @@
 package remote
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -493,7 +494,7 @@ func (c *Client) doSync(ctx context.Context, original model.K8sLocalObject, opts
 	var result *updateResult
 	var err error
 	if remObj == nil {
-		result, err = c.maybeCreate(ctx, obj, opts)
+		result, err = c.maybeCreate(ctx, obj, opts, internal)
 	} else {
 		if internal.secretDryRun {
 			ann := remObj.GetAnnotations()
@@ -621,13 +622,16 @@ func (c *Client) resourceInterfaceWithDefaultNs(gvk schema.GroupVersionKind, nam
 	return c.ResourceInterface(gvk, namespace)
 }
 
-func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts SyncOptions) (*updateResult, error) {
+func (c *Client) maybeCreate(ctx context.Context, obj model.K8sLocalObject, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {
 	if opts.DisableCreate {
 		return &updateResult{
 			SkipReason: "creation disabled due to user request",
 		}, nil
 	}
-	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" && !opts.DryRun {
+	// Use SSA for creates when strategy is server, the object has a name (generateName falls
+	// through to POST), and this is not the secret dry-run pass (redacted values must not reach
+	// the apiserver). This mirrors the explicit secretDryRun check in maybeUpdate.
+	if opts.ApplyStrategy == model.ApplyStrategyServer && obj.GetName() != "" && !internal.secretDryRun {
 		return c.serverSideApply(ctx, obj, nil, opts, opCreate)
 	}
 	b, err := json.Marshal(obj)
@@ -703,7 +707,7 @@ func managedFieldSet(obj *unstructured.Unstructured, fieldManager string) (*fiel
 			continue
 		}
 		entrySet := &fieldpath.Set{}
-		if err := entrySet.FromJSON(strings.NewReader(string(entry.FieldsV1.Raw))); err != nil {
+		if err := entrySet.FromJSON(bytes.NewReader(entry.FieldsV1.Raw)); err != nil {
 			return nil, errors.Wrap(err, "parse managed fields")
 		}
 		set = set.Union(entrySet.Leaves())
@@ -818,11 +822,44 @@ func pathElementMatches(pe fieldpath.PathElement, idx int, item interface{}) boo
 	}
 }
 
+func emptyCollectionFieldSet(v interface{}) *fieldpath.Set {
+	set := fieldpath.NewSet()
+	collectEmptyCollectionPaths(v, nil, set)
+	return set
+}
+
+func collectEmptyCollectionPaths(v interface{}, path fieldpath.Path, set *fieldpath.Set) {
+	switch vv := v.(type) {
+	case map[string]interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for k, child := range vv {
+			fieldName := k
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{FieldName: &fieldName}), set)
+		}
+	case []interface{}:
+		if len(vv) == 0 {
+			set.Insert(path)
+			return
+		}
+		for idx, child := range vv {
+			index := idx
+			collectEmptyCollectionPaths(child, append(path, fieldpath.PathElement{Index: &index}), set)
+		}
+	}
+}
+
 func sameObject(lhs, rhs *unstructured.Unstructured, desired model.K8sLocalObject) (bool, error) {
-	fieldSet := fieldpath.SetFromValue(value.NewValueInterface(desired.ToUnstructured().Object)).Leaves()
+	desiredObj := desired.ToUnstructured().Object
+	// SetFromValue only produces leaf paths; union with empty-collection paths so that
+	// removing a field to an empty map/slice is treated as a change, not identical.
+	fieldSet := fieldpath.SetFromValue(value.NewValueInterface(desiredObj)).Leaves()
+	fieldSet = fieldSet.Union(emptyCollectionFieldSet(desiredObj))
 	managedSet, err := managedFieldSet(lhs, ssaFieldManager)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "read managed fields for identity check")
 	}
 	fieldSet = fieldSet.Union(managedSet)
 	return value.Equals(
@@ -832,19 +869,13 @@ func sameObject(lhs, rhs *unstructured.Unstructured, desired model.K8sLocalObjec
 }
 
 func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, operation string) (*updateResult, error) {
+	if obj.GetName() == "" {
+		return nil, fmt.Errorf("server-side apply requires object name")
+	}
 	obj = stripApplyHistoryAnnotations(obj)
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")
-	}
-	result := &updateResult{
-		Operation: operation,
-		Source:    "server-side apply",
-		Kind:      apiTypes.ApplyPatchType,
-		patch:     b,
-	}
-	if obj.GetName() == "" {
-		return nil, fmt.Errorf("server-side apply requires object name")
 	}
 	ri, err := c.resourceInterfaceWithDefaultNs(obj.GroupVersionKind(), obj.GetNamespace())
 	if err != nil {
@@ -867,13 +898,19 @@ func (c *Client) serverSideApply(ctx context.Context, obj model.K8sLocalObject, 
 	if remObj != nil {
 		same, err := sameObject(remObj, out, obj)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "identity check after server-side apply")
 		}
 		if same {
 			return &updateResult{SkipReason: identicalObjects}, nil
 		}
 	}
-	return result, nil
+	// Do not populate result.patch: the full apply body is not a useful diff to display
+	// and may contain sensitive field values for Secret objects.
+	return &updateResult{
+		Operation: operation,
+		Source:    "server-side apply",
+		Kind:      apiTypes.ApplyPatchType,
+	}, nil
 }
 
 func (c *Client) maybeUpdate(ctx context.Context, obj model.K8sLocalObject, remObj *unstructured.Unstructured, opts SyncOptions, internal internalSyncOptions) (*updateResult, error) {

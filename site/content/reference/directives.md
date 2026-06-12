@@ -13,6 +13,19 @@ Annotations that you can use for your objects to control qbec behavior.
 controls the order in which objects are applied. This allows you, for example, to move updates of a custom 
 resource to after all other objects have been processed.
 
+#### `directives.qbec.io/apply-strategy`
+
+* Annotation source: local object
+* Allowed values: `"default"`, `"server"`
+* Default value: `"default"`
+
+when set to `"server"`, qbec uses Kubernetes server-side apply for that object during `qbec apply`.
+Objects without this annotation continue to use the existing client-side apply behavior.
+
+When migrating an existing object from client-side apply to server-side apply, run
+`qbec apply --force-conflicts` at least once to transfer field ownership. Subsequent applies
+do not require the flag unless other field managers hold conflicting ownership.
+
 #### `directives.qbec.io/delete-policy` 
 
 * Annotation source: in-cluster object
