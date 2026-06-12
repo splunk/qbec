@@ -30,16 +30,15 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 )
 
-func newUnstructuredList(apiVersion, kind string, continueVal int64, items ...*unstructured.Unstructured) *unstructured.UnstructuredList {
+func newUnstructuredList(apiVersion, kind string, continueVal string, items ...*unstructured.Unstructured) *unstructured.UnstructuredList {
 	list := &unstructured.UnstructuredList{
 		Object: map[string]interface{}{
 			"apiVersion": apiVersion,
 			"kind":       kind,
-			"metadata": map[string]interface{}{
-				"continue": continueVal,
-			},
+			"metadata":   map[string]interface{}{},
 		},
 	}
+	list.SetContinue(continueVal)
 	for i := range items {
 		list.Items = append(list.Items, *items[i])
 	}
@@ -74,7 +73,7 @@ func TestListPagination(t *testing.T) {
 	tf.FakeDynamicClient = dynamicfakeclient.NewSimpleDynamicClientWithCustomListKinds(scheme.Scheme, listMapping)
 	var uns []*unstructured.Unstructured
 	var totalItemsInList = int64(3)
-	for i := int64(0); i <= totalItemsInList; i++ {
+	for i := int64(0); i < totalItemsInList; i++ {
 		ns := "default"
 		uns = append(uns, newUnstructured("v1", "Secret", ns, fmt.Sprintf("test-secret-%d", i)))
 	}
@@ -83,7 +82,11 @@ func TestListPagination(t *testing.T) {
 		if callIndex >= totalItemsInList {
 			return true, nil, errors.New("unexpected call to list. list has been served already")
 		}
-		listWithContinue := newUnstructuredList("v1", "SecretList", totalItemsInList-callIndex-1, uns[callIndex])
+		continueToken := ""
+		if callIndex+1 < totalItemsInList {
+			continueToken = fmt.Sprintf("page-%d", callIndex+1)
+		}
+		listWithContinue := newUnstructuredList("v1", "SecretList", continueToken, uns[callIndex])
 		callIndex++
 		return true, listWithContinue, nil
 	})
@@ -111,7 +114,6 @@ func TestListPagination(t *testing.T) {
 	}
 	actual := len(objs)
 	if int(totalItemsInList) != actual {
-		t.Logf("expected items to be %d but found %d. Change this to Fatal when https://github.com/kubernetes/kubernetes/issues/107277 is fixed", totalItemsInList, actual)
-		//	t.Fatalf("expected items to be %d but found %d", totalItemsInList, actual)
+		t.Fatalf("expected items to be %d but found %d", totalItemsInList, actual)
 	}
 }
