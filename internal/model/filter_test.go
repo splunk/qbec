@@ -17,9 +17,36 @@ package model
 import (
 	"testing"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func newTestObject(kind, name string) K8sQbecMeta {
+	return NewK8sLocalObject(map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       kind,
+		"metadata":   map[string]interface{}{"name": name},
+	}, LocalAttrs{Component: "comp"})
+}
+
+// newTestFiltersErr parses the supplied flags through the filters setup and returns the filters
+// along with any setup error.
+func newTestFiltersErr(t *testing.T, args ...string) (Filters, error) {
+	t.Helper()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fn := NewFilters(flags, true)
+	require.Nil(t, flags.Parse(args))
+	return fn()
+}
+
+// newTestFilters parses the supplied flags through the filters setup and returns the filters.
+func newTestFilters(t *testing.T, args ...string) Filters {
+	t.Helper()
+	f, err := newTestFiltersErr(t, args...)
+	require.Nil(t, err)
+	return f
+}
 
 func TestComponentFilterIncludes(t *testing.T) {
 	filter, err := NewComponentFilter([]string{"foo", "bar"}, []string{})
@@ -117,4 +144,38 @@ func TestKindFilterBad(t *testing.T) {
 	_, err := newKindFilter([]string{"foo", "bar"}, []string{"baz"})
 	require.NotNil(t, err)
 	require.Equal(t, "cannot include as well as exclude kinds, specify one or the other", err.Error())
+}
+
+func TestObjectPatternFilterIncludes(t *testing.T) {
+	f := newTestFilters(t,
+		"--object-pattern=Deployment/(foo.*)",
+		"--object-pattern=ConfigMap/(bar.*)",
+	)
+	a := assert.New(t)
+	a.True(f.ObjectFilter(newTestObject("Deployment", "foo-1")))
+	a.True(f.ObjectFilter(newTestObject("Deployment", "FOO-1"))) // matching is case-insensitive
+	a.True(f.ObjectFilter(newTestObject("ConfigMap", "bar-2")))
+	a.False(f.ObjectFilter(newTestObject("Service", "foo-1")))
+	a.False(f.ObjectFilter(newTestObject("Deployment", "baz-1")))
+}
+
+func TestObjectPatternFilterExcludes(t *testing.T) {
+	f := newTestFilters(t, "--exclude-object-pattern=Deployment/(foo.*)")
+	a := assert.New(t)
+	a.True(f.ObjectFilter(newTestObject("ConfigMap", "foo-1")))
+	a.True(f.ObjectFilter(newTestObject("Deployment", "bar-1")))
+	a.False(f.ObjectFilter(newTestObject("Deployment", "foo-1")))
+}
+
+func TestObjectPatternFilterNoFilters(t *testing.T) {
+	f := newTestFilters(t)
+	a := assert.New(t)
+	a.True(f.ObjectFilter(newTestObject("Deployment", "foo-1")))
+	a.True(f.ObjectFilter(newTestObject("Service", "bar-1")))
+}
+
+func TestObjectPatternFilterInvalid(t *testing.T) {
+	_, err := newTestFiltersErr(t, "--object-pattern=([")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), `invalid --object-pattern regexp`)
 }

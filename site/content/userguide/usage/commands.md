@@ -110,6 +110,21 @@ cluster scoped objects.
 *Note:* specifying namespace / cluster-scope filters requires qbec to access the cluster in order to retrieve metadata
 on object kinds. This means that a `qbec show` command that normally does not need cluster access will now require it.
 
+### Object pattern filters
+
+Object pattern filters allow you to filter objects by matching their `Kind/Name` string against a regular expression.
+
+To include objects matching a pattern, use `-t pattern1 -t pattern2 ...`
+
+To exclude objects matching a pattern, use `-T pattern1 -T pattern2 ...`
+
+Patterns are matched case-insensitively against the `Kind/Name` string of every object and are anchored to both ends.
+For instance, `-t 'Deployment/(redis.*)'` matches all objects of kind `Deployment` whose name starts with `redis`.
+
+When multiple include patterns are specified, an object is included if it matches any of them. Similarly, when multiple
+exclude patterns are specified, an object is excluded if it matches any of them. Unlike kind and component filters,
+include and exclude patterns can be combined; objects matching an exclude pattern are always excluded.
+
 ## Command help
 
 Help and examples for every sub-command can be displayed with a `--help` flag.
@@ -139,19 +154,28 @@ qbec show dev -k deployment -k configmap
 # show all objects except secrets
 qbec show dev -K secret
 
+# show only deployments whose name starts with 'redis'
+qbec show dev -t 'Deployment/(redis.*)'
+
 # list all objects for the dev environment
 qbec show dev -O
 
 Flags:
-  -c, --component stringArray           include just this component
-  -C, --exclude-component stringArray   exclude this component
-  -K, --exclude-kind stringArray        exclude objects with this kind
-  -o, --format string                   Output format. Supported values are: json, yaml (default "yaml")
-  -h, --help                            help for show
-  -k, --kind stringArray                include objects with this kind
-  -O, --objects                         Only print names of objects instead of their contents
-  -S, --show-secrets                    do not obfuscate secret values in the output
-      --sort-apply                      sort output in apply order (requires cluster access)
+      --clean                                do not display qbec-generated labels and annotations
+  -c, --component stringArray                include just this component
+  -C, --exclude-component stringArray        exclude this component
+  -K, --exclude-kind stringArray             exclude objects with this kind
+  -P, --exclude-namespace stringArray        exclude objects with this namespace
+  -T, --exclude-object-pattern stringArray   exclude k8s objects whose Kind/Name matches this regexp
+  -o, --format string                        Output format. Supported values are: json, yaml (default "yaml")
+  -h, --help                                 help for show
+      --include-cluster-objects              include cluster scoped objects, false by default when namespace filters present (default true)
+  -p, --include-namespace stringArray        include objects with this namespace
+  -k, --kind stringArray                     include objects with this kind
+  -t, --object-pattern stringArray           include k8s objects whose Kind/Name matches this regexp
+  -O, --objects                              Only print names of objects instead of their contents
+  -S, --show-secrets                         do not obfuscate secret values in the output
+      --sort-apply                           sort output in apply order (requires cluster access)
 
 Use "qbec options" for a list of global options available to all commands.
 ```

@@ -16,6 +16,8 @@ package model
 
 import (
 	"fmt"
+	"regexp"
+	"slices"
 	"strings"
 
 	"k8s.io/gengo/namer"
@@ -109,4 +111,31 @@ func newKindFilter(includes, excludes []string) (Filter, error) {
 		return nil, err
 	}
 	return bf, nil
+}
+
+type regexpFilter struct {
+	includes []*regexp.Regexp
+	excludes []*regexp.Regexp
+}
+
+func (r *regexpFilter) HasFilters() bool {
+	return len(r.includes) > 0 || len(r.excludes) > 0
+}
+
+func (r *regexpFilter) ShouldInclude(s string) bool {
+	if len(r.includes) > 0 && !slices.ContainsFunc(r.includes, func(re *regexp.Regexp) bool {
+		return re.MatchString(s)
+	}) {
+		return false
+	}
+	return !slices.ContainsFunc(r.excludes, func(re *regexp.Regexp) bool {
+		return re.MatchString(s)
+	})
+}
+
+// newRegexpFilter returns a filter that matches values against the supplied compiled regular
+// expressions. A value is included if it matches at least one include pattern and none of the
+// exclude patterns.
+func newRegexpFilter(includes, excludes []*regexp.Regexp) Filter {
+	return &regexpFilter{includes: includes, excludes: excludes}
 }

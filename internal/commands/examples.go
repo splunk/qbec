@@ -61,6 +61,7 @@ func showExamples() string {
 		newExample("show dev -C postgres -C redis", "expand all but 2 components"),
 		newExample("show dev -k deployment -k configmap", "show only deployments and config maps"),
 		newExample("show dev -K secret", "show all objects except secrets"),
+		newExample("show dev -t 'Deployment/(redis.*)'", "show only deployments whose name starts with 'redis'"),
 		newExample("show dev -O", "list all objects for the dev environment"),
 	)
 }

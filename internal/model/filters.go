@@ -16,6 +16,7 @@ package model
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -31,6 +32,7 @@ type Namespaced interface {
 type Filters struct {
 	includes              []string
 	excludes              []string
+	objectPatternFilter   Filter
 	excludeClusterObjects bool
 	kindFilter            Filter
 	componentFilter       Filter
@@ -39,12 +41,14 @@ type Filters struct {
 
 // NewFilters sets up options in the supplied flags and returns a function to return filters.
 func NewFilters(flags *pflag.FlagSet, includeAllFilters bool) func() (Filters, error) {
-	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes []string
+	var includes, excludes, kindIncludes, kindExcludes, nsIncludes, nsExcludes, regexpObjectIncludes, regexpObjectExcludes []string
 	var includeClusterScopedObjects bool
 
 	flags.StringArrayVarP(&includes, "component", "c", nil, "include just this component")
 	flags.StringArrayVarP(&excludes, "exclude-component", "C", nil, "exclude this component")
 	if includeAllFilters {
+		flags.StringArrayVarP(&regexpObjectIncludes, "object-pattern", "t", nil, "include k8s objects whose Kind/Name matches this regexp")
+		flags.StringArrayVarP(&regexpObjectExcludes, "exclude-object-pattern", "T", nil, "exclude k8s objects whose Kind/Name matches this regexp")
 		flags.StringArrayVarP(&kindIncludes, "kind", "k", nil, "include objects with this kind")
 		flags.StringArrayVarP(&kindExcludes, "exclude-kind", "K", nil, "exclude objects with this kind")
 		flags.StringArrayVarP(&nsIncludes, "include-namespace", "p", nil, "include objects with this namespace")
@@ -69,9 +73,31 @@ func NewFilters(flags *pflag.FlagSet, includeAllFilters bool) func() (Filters, e
 				includeClusterScopedObjects = false
 			}
 		}
+
+		compilePatterns := func(patterns []string, flag string) ([]*regexp.Regexp, error) {
+			ret := make([]*regexp.Regexp, 0, len(patterns))
+			for _, pattern := range patterns {
+				compiled, err := regexp.Compile(fmt.Sprintf(`(?i)^(?:%s)$`, pattern))
+				if err != nil {
+					return nil, errors.Wrapf(err, "invalid --%s regexp %q", flag, pattern)
+				}
+				ret = append(ret, compiled)
+			}
+			return ret, nil
+		}
+		regexpIncludes, err := compilePatterns(regexpObjectIncludes, "object-pattern")
+		if err != nil {
+			return Filters{}, err
+		}
+		regexpExcludes, err := compilePatterns(regexpObjectExcludes, "exclude-object-pattern")
+		if err != nil {
+			return Filters{}, err
+		}
+
 		return Filters{
 			includes:              includes,
 			excludes:              excludes,
+			objectPatternFilter:   newRegexpFilter(regexpIncludes, regexpExcludes),
 			kindFilter:            of,
 			componentFilter:       cf,
 			namespaceFilter:       nf,
@@ -95,6 +121,18 @@ func (f Filters) GVKFilter(gvk schema.GroupVersionKind) bool {
 	return f.kindFilter != nil && f.kindFilter.ShouldInclude(gvk.Kind)
 }
 
+// ObjectFilter returns true if the object matches the object pattern filters. Matching is
+// case-insensitive against the Kind/Name of the object, with each pattern anchored to both ends.
+// When several include patterns are supplied, they are combined with a logical OR (union semantics).
+// This code was inspired and adapted from grafana tanka
+// https://github.com/grafana/tanka/blob/a6a63ac17f713d5fd64bb6d7972bc84c6b5902a6/pkg/process/filter.go#L74
+func (f Filters) ObjectFilter(object K8sQbecMeta) bool {
+	if f.objectPatternFilter == nil || !f.objectPatternFilter.HasFilters() {
+		return true
+	}
+	return f.objectPatternFilter.ShouldInclude(object.GetKind() + "/" + object.GetName())
+}
+
 // HasNamespaceFilters returns true if filters based on namespace scope are in effect.
 func (f Filters) HasNamespaceFilters() bool {
 	return (f.namespaceFilter != nil && f.namespaceFilter.HasFilters()) || f.excludeClusterObjects
@@ -103,6 +141,9 @@ func (f Filters) HasNamespaceFilters() bool {
 // Match returns true if the current filters match the supplied object. The client can be nil
 // if namespace scope filters are not in effect.
 func (f Filters) Match(o K8sQbecMeta, client Namespaced, defaultNS string) (bool, error) {
+	if !f.ObjectFilter(o) {
+		return false, nil
+	}
 	if f.HasNamespaceFilters() && client == nil {
 		return false, fmt.Errorf("no namespace metadata when namespace filters present")
 	}
