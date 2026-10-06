@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/version"
 )
 
 var defaultVerbs = []string{"create", "delete", "get", "list"}
@@ -304,10 +305,19 @@ func (r *Resources) init(opts ResourceOpts) error {
 			fixTypes = append(fixTypes, k)
 		}
 	}
+	// all versions of such a kind must share one canonical version, otherwise objects listed through
+	// one version never match objects declared with another (e.g. kyverno.io: preferred v2 has no
+	// ClusterPolicy, which exists in v1 and v2beta1)
 	for _, k := range fixTypes {
 		v := reg[k]
+		canonical := k
+		for _, other := range tracker[k.GroupKind()] {
+			if version.CompareKubeAwareVersionStrings(other.Version, canonical.Version) > 0 {
+				canonical = other
+			}
+		}
 		reg[k] = &gvkInfo{
-			canonical: k,
+			canonical: canonical,
 			resource:  v.resource,
 		}
 	}
