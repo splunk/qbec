@@ -26,11 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     name: goreleaser
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-go@v6
         with:
-          go-version: 1.24
+          go-version-file: go.mod
         id: go
-      - uses: actions/checkout@v2
       - name: Install package dependencies
         run: |
           echo "GO_VERSION=$(go version | awk '{ print $3}' | sed 's/^go//')" >> $GITHUB_ENV
