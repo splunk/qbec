@@ -23,9 +23,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "0"
       - uses: actions/setup-go@v6
         with:
-          go-version: 1.24
+          go-version-file: go.mod
         id: go
       - uses: azure/setup-helm@v4.2.0
         with:
@@ -33,9 +36,6 @@ jobs:
         id: install
       - uses: azure/setup-kubectl@v4.0.1
         id: install-kubectl
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "0"
       - uses: actions/cache@v4
         with:
           # In order:
@@ -86,15 +86,15 @@ jobs:
     name: Build(Windows)
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-go@v6
         with:
-          go-version: 1.24
+          go-version-file: go.mod
         id: go
       - uses: azure/setup-helm@v4.2.0
         with:
           version: 'v3.7.0'
         id: install
-      - uses: actions/checkout@v2
       - uses: actions/cache@v4
         with:
           # In order:
